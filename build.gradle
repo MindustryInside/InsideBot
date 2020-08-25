@@ -1,0 +1,36 @@
+apply plugin: 'java'
+
+repositories {
+    mavenCentral()
+    jcenter()
+    maven {
+        url 'https://www.jitpack.io'
+    }
+}
+
+project.ext.mainClassName = "insidebot.InsideBot"
+
+dependencies {
+    implementation "com.h2database:h2:1.4.200"
+    implementation "net.dv8tion:JDA:4.0.0_62"
+    implementation "org.hjson:hjson:3.0.0"
+    implementation "com.github.Anuken.Arc:arc-core:v104.6"
+}
+
+task dist(type: Jar) {
+    manifest{
+        attributes 'Main-Class': project.mainClassName
+    }
+
+    dependsOn configurations.runtimeClasspath
+    from {
+        configurations.runtimeClasspath.findAll {
+            it.name.endsWith('jar')
+        }.collect {
+            zipTree(it)
+        }
+    }
+
+    from files(sourceSets.main.output)
+}
+
