@@ -2,6 +2,7 @@ package insidebot;
 
 import java.sql.*;
 import java.time.LocalDateTime;
+import java.util.Date;
 
 import static insidebot.InsideBot.*;
 
@@ -36,12 +37,11 @@ public class MuteChecker extends Thread{
         }
     }
 
-    // да я знаю что это говно, но на пока сойдёт
     public boolean check(String time){
         try {
-            long timeSum = Integer.parseInt(time.replaceAll("-", ""));
-            long currentSum = Integer.parseInt(String.format("%s%s%s", LocalDateTime.now().getDayOfMonth(), LocalDateTime.now().getHour(), LocalDateTime.now().getMinute()));
-            return currentSum >= timeSum;
+            Date checkTime = data.format().parse(time);
+            Date nowTime = data.format().parse(data.nowDate());
+            return nowTime.getTime() >= checkTime.getTime();
         }catch (Exception e){
             return false;
         }

@@ -1,6 +1,7 @@
 package insidebot;
 
 import arc.math.Mathf;
+import arc.struct.Array;
 import arc.util.*;
 import arc.util.CommandHandler.*;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -59,7 +60,7 @@ public class Commands{
                     return;
                 }
 
-                data.setMute(user.getIdLong(), delayDays);
+                //data.setMute(user.getIdLong(), delayDays);
 
                 EmbedBuilder builder = new EmbedBuilder().setColor(listener.normalColor);
                 builder.addField(bundle.get("message.mute"), bundle.format("message.mute.text", user.getAsMention(), delayDays), false);
@@ -105,20 +106,20 @@ public class Commands{
                     return;
                 }
 
-                data.addWarn(l);
+                //data.addWarn(l);
 
-                int warnings = data.getWarns(l);
+                int warnings = 0;//data.getWarns(l);
 
                 listener.info(bundle.format("message.warn", user.getAsMention(), warningStrings[Mathf.clamp(warnings - 1, 0, warningStrings.length - 1)]));
 
-                if (data.getWarns(l) >= 3) {
+                //if (data.getWarns(l) >= 3) {
                     EmbedBuilder builder = new EmbedBuilder().setColor(listener.normalColor);
                     builder.addField(bundle.get("message.ban"), bundle.format("message.ban.text", user.getName()), true);
                     builder.setFooter(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss ZZZZ").format(ZonedDateTime.now()));
 
                     listener.log(builder.build());
                     listener.actionGuild.ban(user, 1).queue();
-                }
+                //}
             } catch (Exception e) {
                 Log.err(e);
                 listener.err(bundle.get("command.incorrect-name"));
@@ -130,7 +131,7 @@ public class Commands{
             try {
                 long l = Long.parseLong(author);
                 User user = jda.retrieveUserById(l).complete();
-                int warnings = data.getWarns(l);
+                int warnings = 0;//data.getWarns(l);
                 listener.info(bundle.format("command.warnings", user.getName(), warnings, warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns")));
             } catch (Exception e) {
                 listener.err(bundle.get("command.incorrect-name"));
@@ -149,7 +150,7 @@ public class Commands{
             try {
                 long l = Long.parseLong(author);
                 User user = jda.retrieveUserById(l).complete();
-                data.removeWarns(l, warnings);
+                //data.removeWarns(l, warnings);
 
                 listener.info(bundle.format("command.unwarn", user.getName(), warnings, warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns")));
             } catch (Exception e) {

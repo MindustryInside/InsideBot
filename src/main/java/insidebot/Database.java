@@ -3,6 +3,8 @@ package insidebot;
 import arc.util.Log;
 
 import java.sql.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 
 import static insidebot.InsideBot.config;
@@ -27,76 +29,29 @@ public class Database {
                 "CREATE SCHEMA IF NOT EXISTS DISCORD;"
             );
             getCon().createStatement().execute(
-                "CREATE TABLE IF NOT EXISTS DISCORD.WARNINGS (ID LONG, WARNS INT(11), MUTE_END_DATE VARCHAR(20));"
+                "CREATE TABLE IF NOT EXISTS DISCORD.WARNINGS (NAME VARCHAR(40), ID LONG, LAST_SENT_MESSAGE_DATE VARCHAR(20), WARNS INT(11), MUTE_END_DATE VARCHAR(20));"
             );
         } catch (SQLException e) {
             Log.info(e);
         }
     }
 
+    public UserInfo getUserInfo(long id){
+        return null; // TODO сделать наконец
+    }
+
     public Connection getCon() {
         return con;
     }
 
-    public void addWarn(long id){
-        try {
-            Statement statement = getCon().createStatement();
-
-            int warns = getWarns(id);
-            statement.executeUpdate("INSERT INTO DISCORD.WARNINGS (ID, WARNS, MUTE_END_DATE) " +
-                    "SELECT " + id + ", " + warns + ", '' FROM DUAL " +
-                    "WHERE NOT EXISTS (SELECT ID FROM DISCORD.WARNINGS WHERE ID=" + id + " AND WARNS=" + warns + ");");
-
-            statement.executeUpdate("UPDATE DISCORD.WARNINGS SET WARNS=" + (warns + 1) + " WHERE ID=" + id + ";");
-        } catch (SQLException e) {
-            Log.err(e);
-        }
+    public DateFormat format(){
+        return new SimpleDateFormat("MM-dd HH:mm");
     }
 
-    public void setMute(long id, int delayDay){
-        try {
-            Statement statement = getCon().createStatement();
-
-            int warns = getWarns(id);
-            statement.executeUpdate("INSERT INTO DISCORD.WARNINGS (ID, WARNS, MUTE_END_DATE) " +
-                    "SELECT " + id + ", " + warns + ", '' FROM DUAL " +
-                    "WHERE NOT EXISTS (SELECT ID FROM DISCORD.WARNINGS WHERE ID=" + id + " AND WARNS=" + warns + ");");
-
-            statement.executeUpdate("UPDATE DISCORD.WARNINGS SET MUTE_END_DATE=" + date(delayDay) + " WHERE ID=" + id + ";");
-        } catch (SQLException e) {
-            Log.err(e);
-        }
-    }
-
-    public void removeWarns(long id, int count){
-        try {
-            Statement statement = getCon().createStatement();
-            int warns = getWarns(id) - count;
-
-            statement.executeUpdate("UPDATE DISCORD.WARNINGS SET WARNS=" + warns + " WHERE ID=" + id + ";");
-        } catch (SQLException e) {
-            Log.err(e);
-        }
-    }
-
-    public int getWarns(long id){
-        try {
-            int warns = 0;
-            Statement statement = getCon().createStatement();
-            ResultSet resultSet = statement.executeQuery("SELECT WARNS FROM DISCORD.WARNINGS WHERE ID=" + id);
-
-            while (resultSet.next()) {
-                warns = resultSet.getInt(1);
-            }
-
-            return warns;
-        } catch (SQLException e) {
-            Log.err(e);
-            return 0;
-        }
-    }
-
-    public String date(int delayDays){
-        return String.format("%s-%s-%s", LocalDateTime.now().getDayOfMonth() + delayDays, LocalDateTime.now().getHour() + 6, LocalDateTime.now().getMinute());
+    public String nowDate(){
+        return String.format("%s-%s %s:%s",
+                LocalDateTime.now().getMonthValue(), LocalDateTime.now().getDayOfMonth(),
+                LocalDateTime.now().getHour(), LocalDateTime.now().getMinute()
+        );
     }
 }

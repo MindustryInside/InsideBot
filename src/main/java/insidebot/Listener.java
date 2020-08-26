@@ -37,6 +37,7 @@ public class Listener extends ListenerAdapter{
             if (!event.getAuthor().isBot()) {
                 commands.handle(event);
                 handleEvent(event, EventType.messageReceive);
+                new UserInfo(event.getAuthor().getName(), event.getAuthor().getIdLong(), event.getMessage());
             }
         }catch(Exception e){
             Log.err(e);
@@ -149,8 +150,8 @@ public class Listener extends ListenerAdapter{
                 embedBuilder.addField(bundle.get("message.edit"), bundle.format("message.edit.text",
                         event.getAuthor().getName(), event.getTextChannel().getAsMention()
                 ),true);
-                embedBuilder.addField(bundle.get("message.edit.old-content"), "```\n" + info.text + "\n```", false);
-                embedBuilder.addField(bundle.get("message.edit.new-content"), "```\n" + event.getMessage().getContentRaw() + "\n```", true);
+                embedBuilder.addField(bundle.get("message.edit.old-content"), info.text, false);
+                embedBuilder.addField(bundle.get("message.edit.new-content"), event.getMessage().getContentRaw(), true);
 
                 log(embedBuilder.build());
                 info.text = event.getMessage().getContentRaw();
@@ -161,7 +162,7 @@ public class Listener extends ListenerAdapter{
                 embedBuilder.addField(bundle.get("message.delete"), bundle.format("message.delete.text",
                         jda.retrieveUserById(info.id).complete().getName(), event.getTextChannel().getAsMention()
                 ),false);
-                embedBuilder.addField(bundle.get("message.delete.content"), "```\n" + info.text + "\n```", true);
+                embedBuilder.addField(bundle.get("message.delete.content"), info.text, true);
 
                 log(embedBuilder.build());
                 messages.remove(event.getMessageIdLong());
