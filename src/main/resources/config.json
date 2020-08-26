@@ -2,5 +2,6 @@
   "token": "",
   "db-url": "",
   "db-username": "",
-  "db-password": ""
+  "db-password": "",
+  "locale": "ru"
 }

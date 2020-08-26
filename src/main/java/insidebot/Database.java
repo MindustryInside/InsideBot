@@ -1,9 +1,9 @@
 package insidebot;
 
 import arc.util.Log;
-import org.h2.tools.Server;
 
 import java.sql.*;
+import java.time.LocalDateTime;
 
 import static insidebot.InsideBot.config;
 
@@ -24,7 +24,7 @@ public class Database {
     public void init(){
         try {
             getCon().createStatement().execute(
-                    "CREATE SCHEMA IF NOT EXISTS DISCORD;"
+                "CREATE SCHEMA IF NOT EXISTS DISCORD;"
             );
             getCon().createStatement().execute(
                 "CREATE TABLE IF NOT EXISTS DISCORD.WARNINGS (ID LONG, WARNS INT(11), MUTE_END_DATE VARCHAR(20));"
@@ -48,6 +48,21 @@ public class Database {
                     "WHERE NOT EXISTS (SELECT ID FROM DISCORD.WARNINGS WHERE ID=" + id + " AND WARNS=" + warns + ");");
 
             statement.executeUpdate("UPDATE DISCORD.WARNINGS SET WARNS=" + (warns + 1) + " WHERE ID=" + id + ";");
+        } catch (SQLException e) {
+            Log.err(e);
+        }
+    }
+
+    public void setMute(long id, int delayDay){
+        try {
+            Statement statement = getCon().createStatement();
+
+            int warns = getWarns(id);
+            statement.executeUpdate("INSERT INTO DISCORD.WARNINGS (ID, WARNS, MUTE_END_DATE) " +
+                    "SELECT " + id + ", " + warns + ", '' FROM DUAL " +
+                    "WHERE NOT EXISTS (SELECT ID FROM DISCORD.WARNINGS WHERE ID=" + id + " AND WARNS=" + warns + ");");
+
+            statement.executeUpdate("UPDATE DISCORD.WARNINGS SET MUTE_END_DATE=" + date(delayDay) + " WHERE ID=" + id + ";");
         } catch (SQLException e) {
             Log.err(e);
         }
@@ -79,5 +94,9 @@ public class Database {
             Log.err(e);
             return 0;
         }
+    }
+
+    public String date(int delayDays){
+        return String.format("%s-%s-%s", LocalDateTime.now().getDayOfMonth() + delayDays, LocalDateTime.now().getHour() + 6, LocalDateTime.now().getMinute());
     }
 }

@@ -15,9 +15,7 @@ import static insidebot.InsideBot.*;
 public class Commands{
     private final String prefix = "$";
     private final CommandHandler handler = new CommandHandler(prefix);
-    private final String[] warningStrings = {"once", "twice", "thrice"};
-
-    public Guild roleGuild;
+    private final String[] warningStrings = {bundle.get("command.first"), bundle.get("command.second"), bundle.get("command.third")};
 
     Commands() {
         handler.register("help", "Displays all bot commands.", args -> {
@@ -40,36 +38,56 @@ public class Commands{
             listener.info("Commands", builder.toString());
         });
         handler.register("mute", "<@user> <delayDays> [reason...]", "Mute a user.", args -> {
+            if(!Strings.canParsePostiveInt(args[1])){
+                listener.err(bundle.get("command.incorrect-number"));
+                return;
+            }
+
             String author = args[0].substring(2, args[0].length() - 1);
             if (author.startsWith("!")) author = author.substring(1);
 
             try {
                 long l = Long.parseLong(author);
+                int delayDays = Strings.parseInt(args[1]);
                 User user = jda.retrieveUserById(l).complete();
 
-                listener.text("**{0}**, you've been warned *{1}*.", user.getAsMention(), warningStrings[Mathf.clamp(1- 1, 0, warningStrings.length - 1)]);
+                if (isAdmin(listener.actionGuild.getMember(user))) {
+                    listener.err(bundle.get("command.user-is-admin"));
+                    return;
+                } else if (user.isBot()) {
+                    listener.err(bundle.get("command.user-is-bot"));
+                    return;
+                }
 
-                EmbedBuilder builder = new EmbedBuilder();
-                builder.setColor(listener.normalColor);
-                builder.addField("Mute", Strings.format("Пользователь **{0}** замьючен!", user.getName()), true);
+                data.setMute(user.getIdLong(), delayDays);
+
+                EmbedBuilder builder = new EmbedBuilder().setColor(listener.normalColor);
+                builder.addField(bundle.get("message.mute"), bundle.format("message.mute.text", user.getAsMention(), delayDays), false);
                 builder.setFooter(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss ZZZZ").format(ZonedDateTime.now()));
 
-                jda.getTextChannelById(logChannelID).sendMessage(builder.build()).queue();
-                roleGuild.ban(user, 1, args[1]).queue();
+                listener.log(builder.build());
+                listener.handleAction(listener.actionGuild.getMember(user), Listener.ActionType.mute);
             } catch (Exception e) {
                 Log.err(e);
-                listener.err("Incorrect name format.");
+                listener.err(bundle.get("command.incorrect-name"));
             }
         });
-        handler.register("delete", "<amount>", "Delete some messages.", args -> {
-            try {
-                int number = Integer.parseInt(args[0]) + 1;
-                MessageHistory hist = listener.channel.getHistoryBefore(listener.lastMessage, number).complete();
-                listener.channel.deleteMessages(hist.getRetrievedHistory()).queue();
-                Log.info("Deleted {0} messages.", number);
-            } catch (NumberFormatException e) {
-                listener.err("Invalid number.");
+        handler.register("delete", "<amount>", "Delete a some messages.", args -> {
+            if(!Strings.canParsePostiveInt(args[1])){
+                listener.err(bundle.get("command.incorrect-number"));
+                return;
             }
+
+            int number = Integer.parseInt(args[0]) + 1;
+
+            if(number >= 100){
+                listener.err(bundle.get("command.limit-number"));
+                return;
+            }
+
+            MessageHistory hist = listener.channel.getHistoryBefore(listener.lastMessage, number).complete();
+            listener.channel.deleteMessages(hist.getRetrievedHistory()).queue();
+            Log.info("Deleted {0} messages.", number);
         });
         handler.register("warn", "<@user> [reason...]", "Warn a user.", args -> {
             String author = args[0].substring(2, args[0].length() - 1);
@@ -79,23 +97,31 @@ public class Commands{
                 long l = Long.parseLong(author);
                 User user = jda.retrieveUserById(l).complete();
 
+                if (isAdmin(listener.actionGuild.getMember(user))) {
+                    listener.err(bundle.get("command.user-is-admin"));
+                    return;
+                } else if (user.isBot()) {
+                    listener.err(bundle.get("command.user-is-bot"));
+                    return;
+                }
+
                 data.addWarn(l);
 
                 int warnings = data.getWarns(l);
-                listener.text("**{0}**, you've been warned *{1}*.", user.getAsMention(), warningStrings[Mathf.clamp(warnings - 1, 0, warningStrings.length - 1)]);
+
+                listener.info(bundle.format("message.warn", user.getAsMention(), warningStrings[Mathf.clamp(warnings - 1, 0, warningStrings.length - 1)]));
 
                 if (data.getWarns(l) >= 3) {
-                    EmbedBuilder builder = new EmbedBuilder();
-                    builder.setColor(listener.normalColor);
-                    builder.addField("Ban", Strings.format("Пользователь **{0}** забанен!", user.getName()), true);
+                    EmbedBuilder builder = new EmbedBuilder().setColor(listener.normalColor);
+                    builder.addField(bundle.get("message.ban"), bundle.format("message.ban.text", user.getName()), true);
                     builder.setFooter(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss ZZZZ").format(ZonedDateTime.now()));
 
-                    jda.getTextChannelById(logChannelID).sendMessage(builder.build()).queue();
-                    roleGuild.ban(user, 1, args[1]).queue();
+                    listener.log(builder.build());
+                    listener.actionGuild.ban(user, 1).queue();
                 }
             } catch (Exception e) {
                 Log.err(e);
-                listener.err("Incorrect name format.");
+                listener.err(bundle.get("command.incorrect-name"));
             }
         });
         handler.register("warnings", "<@user>", "Get number of warnings a user has.", args -> {
@@ -105,14 +131,14 @@ public class Commands{
                 long l = Long.parseLong(author);
                 User user = jda.retrieveUserById(l).complete();
                 int warnings = data.getWarns(l);
-                listener.text("User '{0}' has **{1}** {2}.", user.getName(), warnings, warnings == 1 ? "warning" : "warnings");
+                listener.info(bundle.format("command.warnings", user.getName(), warnings, warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns")));
             } catch (Exception e) {
-                listener.err("Incorrect name format.");
+                listener.err(bundle.get("command.incorrect-name"));
             }
         });
         handler.register("unwarn", "<@user> [count]", "Unwarn a user.", args -> {
             if(args.length > 1 && !Strings.canParseInt(args[1])){
-                listener.lastSentMessage.getTextChannel().sendMessage("'count' must be a integer!").queue();
+                listener.lastSentMessage.getTextChannel().sendMessage(bundle.get("command.incorrect-number")).queue();
                 return;
             }
 
@@ -125,16 +151,16 @@ public class Commands{
                 User user = jda.retrieveUserById(l).complete();
                 data.removeWarns(l, warnings);
 
-                listener.text("{0} was removed from {1}", warnings > 1 ? "warnings" : "Warning", user.getName());
+                listener.info(bundle.format("command.unwarn", user.getName(), warnings, warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns")));
             } catch (Exception e) {
-                listener.err("Incorrect name format.");
+                listener.err(bundle.get("command.incorrect-name"));
             }
         });
     }
 
     void handle(MessageReceivedEvent event){
         String text = event.getMessage().getContentRaw();
-        roleGuild = event.getGuild();
+        listener.actionGuild = event.getGuild();
 
         if(event.getMessage().getContentRaw().startsWith(prefix)){
             listener.channel = event.getTextChannel();
@@ -149,7 +175,7 @@ public class Commands{
 
     boolean isAdmin(Member member) {
         try {
-            return member.getRoles().stream().anyMatch(r -> r.getName().equalsIgnoreCase("moderator") || r.getName().equalsIgnoreCase("ULTRAPOWERED SUPERSKAT"));
+            return member.getRoles().stream().anyMatch(r -> r.getName().equalsIgnoreCase("moderator"));
         } catch (Exception e) {
             return false;
         }
@@ -157,12 +183,12 @@ public class Commands{
 
     void handleResponse(CommandResponse response){
         if(response.type == ResponseType.unknownCommand){
-            listener.err("Неизвестная команда. Type " + prefix + "help для получения списка команд.");
+            listener.err(bundle.format("command.response.unknown", prefix));
         }else if(response.type == ResponseType.manyArguments || response.type == ResponseType.fewArguments){
             if(response.command.params.length == 0){
-                listener.err("Invalid arguments.", "Usage: {0}{1}", prefix, response.command.text);
+                listener.err(bundle.get("command.response.incorrect-arguments"), bundle.format("command.response.incorrect-argument", prefix, response.command.text));
             }else{
-                listener.err("Invalid arguments.", "Usage: {0}{1} *{2}*", prefix, response.command.text, response.command.paramText);
+                listener.err(bundle.get("command.response.incorrect-arguments"), bundle.format("command.response.incorrect-arguments.text", prefix, response.command.text, response.command.paramText));
             }
         }
     }

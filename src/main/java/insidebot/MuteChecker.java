@@ -3,8 +3,7 @@ package insidebot;
 import java.sql.*;
 import java.time.LocalDateTime;
 
-import static insidebot.InsideBot.data;
-import static insidebot.InsideBot.listener;
+import static insidebot.InsideBot.*;
 
 public class MuteChecker extends Thread{
     public MuteChecker(){
@@ -27,7 +26,7 @@ public class MuteChecker extends Thread{
                         while (resultId.next()){
                             id = resultId.getLong(1);
                         }
-                        listener.unMute(id);
+                        listener.handleAction(jda.retrieveUserById(id).complete(), Listener.ActionType.unMute);
                         statement.execute("DELETE FROM DISCORD.WARNINGS WHERE MUTE_END_DATE='" + end + "';");
                     }
                 }

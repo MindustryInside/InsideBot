@@ -13,6 +13,8 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 import static insidebot.InsideBot.*;
 
@@ -22,6 +24,7 @@ public class Listener extends ListenerAdapter{
     TextChannel channel;
     User lastUser;
     Guild guild;
+    Guild actionGuild;
     Message lastMessage;
     Message lastSentMessage;
 
@@ -43,9 +46,7 @@ public class Listener extends ListenerAdapter{
     @Override
     public void onMessageUpdate(@Nonnull MessageUpdateEvent event) {
         try{
-            if (!event.getAuthor().isBot() ) {
-                handleEvent(event, EventType.messageEdit);
-            }
+            if (!event.getAuthor().isBot()) handleEvent(event, EventType.messageEdit);
         }catch(Exception e){
             Log.err(e);
         }
@@ -87,21 +88,13 @@ public class Listener extends ListenerAdapter{
         }
     }
 
-    public void unMute(long id){
-        // TODO Допилить
-    }
-
-    public void mute(long id){
-        // TODO Допилить
-    }
-
-    public void text(String text, Object... args){
+    public void info(String text, Object... args){
         lastSentMessage = channel.sendMessage(Strings.format(text, args)).complete();
     }
 
-    public void info(String title, String text, Object... args){
+    public void info(String title, String text){
         MessageEmbed object = new EmbedBuilder()
-        .addField(title, Strings.format(text, args), true).setColor(normalColor).build();
+        .addField(title, text, true).setColor(normalColor).build();
 
         lastSentMessage = channel.sendMessage(object).complete();
     }
@@ -116,14 +109,31 @@ public class Listener extends ListenerAdapter{
         lastSentMessage = channel.sendMessage(e).complete();
     }
 
-    public void send(String title, String text, Object... args){
-        MessageEmbed e = new EmbedBuilder()
-                .addField(title, Strings.format(text, args), true)
-                .setColor(normalColor).build();
-        jda.getTextChannelById(logChannelID).sendMessage(e).queue();
+    public void log(MessageEmbed embed){
+        jda.getTextChannelById(logChannelID).sendMessage(embed).queue();
+    }
+
+    public void handleAction(Object object, ActionType type){
+        User user = (User) object;
+        switch (type) {
+            case kick -> {
+                actionGuild.kick(user.getId()).queue();
+            }case ban -> {
+                actionGuild.ban(user, 1).queue();
+            }case unBan ->{
+                actionGuild.unban(user).queue();
+            }case mute -> {
+                actionGuild.addRoleToMember(actionGuild.getMember(user), jda.getRolesByName(muteRoleName, true).get(0)).queue();
+            }case unMute -> {
+                actionGuild.removeRoleFromMember(actionGuild.getMember(user), jda.getRolesByName(muteRoleName, true).get(0)).queue();
+            }
+        }
     }
 
     public void handleEvent(Object object, EventType type){
+        EmbedBuilder embedBuilder = new EmbedBuilder().setColor(normalColor);
+        embedBuilder.setFooter(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss ZZZZ").format(ZonedDateTime.now()));
+
         switch (type) {
             case messageReceive -> {
                 MessageReceivedEvent event = (MessageReceivedEvent) object;
@@ -136,28 +146,55 @@ public class Listener extends ListenerAdapter{
                 MessageUpdateEvent event = (MessageUpdateEvent) object;
                 MetaInfo info = messages.get(event.getMessageIdLong());
 
-                send("MESSAGE EDIT", "`{0}` изменил сообщение `{1}` на `{2}`", event.getAuthor().getName(), info.text, event.getMessage().getContentRaw());
+                embedBuilder.addField(bundle.get("message.edit"), bundle.format("message.edit.text",
+                        event.getAuthor().getName(), event.getTextChannel().getAsMention()
+                ),true);
+                embedBuilder.addField(bundle.get("message.edit.old-content"), "```\n" + info.text + "\n```", false);
+                embedBuilder.addField(bundle.get("message.edit.new-content"), "```\n" + event.getMessage().getContentRaw() + "\n```", true);
+
+                log(embedBuilder.build());
                 info.text = event.getMessage().getContentRaw();
             }case messageDelete -> {
                 MessageDeleteEvent event = (MessageDeleteEvent) object;
                 MetaInfo info = messages.get(event.getMessageIdLong());
 
-                send("MESSADE DELETE", "`{0}` удалил сообщение `{1}`", jda.retrieveUserById(info.id).complete().getName(), info.text);
+                embedBuilder.addField(bundle.get("message.delete"), bundle.format("message.delete.text",
+                        jda.retrieveUserById(info.id).complete().getName(), event.getTextChannel().getAsMention()
+                ),false);
+                embedBuilder.addField(bundle.get("message.delete.content"), "```\n" + info.text + "\n```", true);
+
+                log(embedBuilder.build());
                 messages.remove(event.getMessageIdLong());
             }case userJoin -> {
                 GuildMemberJoinEvent event = (GuildMemberJoinEvent) object;
 
-                send("USER JOIN", "`{0}` присоединился", event.getUser().getName());
+                embedBuilder.addField(bundle.get("message.user-join"), bundle.format("message.user-join.text", event.getUser().getName()),false);
+
+                log(embedBuilder.build());
             }case userLeave -> {
                 GuildMemberLeaveEvent event = (GuildMemberLeaveEvent) object;
 
-                send("USER LEAVE", "`{0}` ушёл с сервера", event.getUser().getName());
+                embedBuilder.addField(bundle.get("message.user-leave"), bundle.format("message.user-leave.text", event.getUser().getName()),false);
+
+                log(embedBuilder.build());
             }case userNameEdit -> {
                 GuildMemberUpdateNicknameEvent event = (GuildMemberUpdateNicknameEvent) object;
 
-                send("USERNAME EDIT", "`{0}` сменил ник на `{1}`", event.getOldNickname(), event.getNewNickname());
+                embedBuilder.addField(bundle.get("message.username-changed"), bundle.format("message.username-changed.text",
+                        event.getOldNickname(), event.getNewNickname()
+                ),false);
+
+                log(embedBuilder.build());
             }
         }
+    }
+
+    public enum ActionType{
+        ban,
+        unBan,
+        kick,
+        mute,
+        unMute,
     }
 
     public enum EventType{
@@ -170,7 +207,7 @@ public class Listener extends ListenerAdapter{
         userLeave,
     }
 
-    public static class MetaInfo{
+    private static class MetaInfo{
         public String text;
         public long id;
     }
