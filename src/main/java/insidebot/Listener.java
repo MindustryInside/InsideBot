@@ -19,7 +19,7 @@ import java.time.format.DateTimeFormatter;
 import static insidebot.InsideBot.*;
 
 public class Listener extends ListenerAdapter{
-    ObjectMap<Long, MetaInfo> messages = new ObjectMap<>();
+    public ObjectMap<Long, MetaInfo> messages = new ObjectMap<>();
 
     TextChannel channel;
     User lastUser;
@@ -37,7 +37,7 @@ public class Listener extends ListenerAdapter{
             if (!event.getAuthor().isBot()) {
                 commands.handle(event);
                 handleEvent(event, EventType.messageReceive);
-                new UserInfo(event.getAuthor().getName(), event.getAuthor().getIdLong(), event.getMessage());
+                new UserInfo(event.getAuthor().getName(), event.getAuthor().getIdLong(), event.getMessageIdLong());
             }
         }catch(Exception e){
             Log.err(e);
@@ -147,11 +147,18 @@ public class Listener extends ListenerAdapter{
                 MessageUpdateEvent event = (MessageUpdateEvent) object;
                 MetaInfo info = messages.get(event.getMessageIdLong());
 
-                embedBuilder.addField(bundle.get("message.edit"), bundle.format("message.edit.text",
-                        event.getAuthor().getName(), event.getTextChannel().getAsMention()
-                ),true);
-                embedBuilder.addField(bundle.get("message.edit.old-content"), info.text, false);
-                embedBuilder.addField(bundle.get("message.edit.new-content"), event.getMessage().getContentRaw(), true);
+                if (!event.getMessage().isPinned()) {
+                    embedBuilder.addField(bundle.get("message.edit"), bundle.format("message.edit.text",
+                            event.getAuthor().getName(), event.getTextChannel().getAsMention()
+                    ), true);
+                    embedBuilder.addField(bundle.get("message.edit.old-content"), info.text, false);
+                    embedBuilder.addField(bundle.get("message.edit.new-content"), event.getMessage().getContentRaw(), true);
+                } else {
+                    embedBuilder.addField(bundle.get("message.pin"), bundle.format("message.pin.text",
+                            event.getAuthor().getName(), event.getTextChannel().getAsMention()
+                    ), true);
+                    embedBuilder.addField(bundle.get("message.pin.content"), lastMessage.getContentRaw(), false);
+                }
 
                 log(embedBuilder.build());
                 info.text = event.getMessage().getContentRaw();

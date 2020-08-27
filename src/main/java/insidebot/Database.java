@@ -29,19 +29,34 @@ public class Database {
                 "CREATE SCHEMA IF NOT EXISTS DISCORD;"
             );
             getCon().createStatement().execute(
-                "CREATE TABLE IF NOT EXISTS DISCORD.WARNINGS (NAME VARCHAR(40), ID LONG, LAST_SENT_MESSAGE_DATE VARCHAR(20), WARNS INT(11), MUTE_END_DATE VARCHAR(20));"
+                "CREATE TABLE IF NOT EXISTS DISCORD.USERS_INFO (NAME VARCHAR(40), ID LONG, LAST_SENT_MESSAGE_DATE VARCHAR(20), LAST_SENT_MESSAGE_ID LONG, MESSAGES_PER_WEEK, WARNS INT(11), MUTE_END_DATE VARCHAR(20));"
             );
         } catch (SQLException e) {
             Log.info(e);
         }
     }
 
-    public UserInfo getUserInfo(long id){
-        return null; // TODO сделать наконец
-    }
-
     public Connection getCon() {
         return con;
+    }
+
+    public UserInfo getUserInfo(long id){
+        try {
+            Statement statement = getCon().createStatement();
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM DISCORD.USERS_INFO WHERE ID=" + id + ";");
+
+            String name = "";
+            long lastMessageId = 0L;
+            while (resultSet.next()) {
+                name = resultSet.getString("NAME");
+                lastMessageId = resultSet.getLong("LAST_SENT_MESSAGE_ID");
+            }
+
+            return new UserInfo(name, id, lastMessageId);
+        } catch (SQLException e) {
+            Log.err(e);
+            return null;
+        }
     }
 
     public DateFormat format(){

@@ -1,13 +1,14 @@
-package insidebot;
+package insidebot.thread;
 
 import java.sql.*;
 import java.time.LocalDateTime;
+import java.util.Calendar;
 import java.util.Date;
 
 import static insidebot.InsideBot.*;
 
-public class MuteChecker extends Thread{
-    public MuteChecker(){
+public class Checker extends Thread{
+    public Checker(){
         start();
     }
 
@@ -16,19 +17,20 @@ public class MuteChecker extends Thread{
         while (true){
             try {
                 Statement statement = data.getCon().createStatement();
-                ResultSet resultSet = statement.executeQuery("SELECT MUTE_END_DATE FROM DISCORD.WARNINGS;");
+                ResultSet resultSet = statement.executeQuery("SELECT MUTE_END_DATE FROM DISCORD.USERS_INFO;");
 
                 while (resultSet.next()) {
                     String end = resultSet.getString("MUTE_END_DATE");
 
                     if(check(end)){
-                        ResultSet resultId = statement.executeQuery("SELECT ID FROM DISCORD.WARNINGS WHERE MUTE_END_DATE='" + end + "';");
+                        ResultSet resultId = statement.executeQuery("SELECT ID FROM DISCORD.USERS_INFO WHERE MUTE_END_DATE='" + end + "';");
+
                         long id = 0;
                         while (resultId.next()){
                             id = resultId.getLong(1);
                         }
-                        listener.handleAction(jda.retrieveUserById(id).complete(), Listener.ActionType.unMute);
-                        statement.execute("DELETE FROM DISCORD.WARNINGS WHERE MUTE_END_DATE='" + end + "';");
+
+                        data.getUserInfo(id).unmute();
                     }
                 }
 
@@ -37,11 +39,11 @@ public class MuteChecker extends Thread{
         }
     }
 
-    public boolean check(String time){
+    private boolean check(String time){
         try {
-            Date checkTime = data.format().parse(time);
-            Date nowTime = data.format().parse(data.nowDate());
-            return nowTime.getTime() >= checkTime.getTime();
+            Calendar unmuteDate = Calendar.getInstance();
+            unmuteDate.setTime(data.format().parse(time));
+            return LocalDateTime.now().getDayOfYear() >= unmuteDate.get(Calendar.DAY_OF_YEAR);
         }catch (Exception e){
             return false;
         }

@@ -1,9 +1,10 @@
 package insidebot;
 
-import arc.Core;
 import arc.Files;
 import arc.files.Fi;
 import arc.util.*;
+import insidebot.thread.Checker;
+import insidebot.thread.ClearThread;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 
@@ -13,6 +14,7 @@ import java.util.Locale;
 public class InsideBot {
     public static final long logChannelID = 747893115980873838L;
     public static final String muteRoleName = "muted";
+    public static final String activeUserRoleName = "Active user";
     public static final long guildID = 747805212366077953L;
 
     public static JDA jda;
@@ -35,8 +37,8 @@ public class InsideBot {
 
         Log.info("Discord bot up.");
 
-        new MuteChecker();
-        new IntervalThread();
+        new Checker();
+        new ClearThread();
     }
 
     public static void init(){
@@ -52,21 +54,5 @@ public class InsideBot {
 
         data = new Database();
         commands = new Commands();
-    }
-
-    private static class IntervalThread extends Thread{
-        public IntervalThread(){
-            start();
-        }
-
-        @Override
-        public void run() {
-            while (true){
-                try {
-                    listener.messages.clear();
-                    sleep(43200000);
-                }catch (InterruptedException ignored){}
-            }
-        }
     }
 }
