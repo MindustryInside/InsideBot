@@ -1,6 +1,7 @@
 package insidebot;
 
 import arc.util.Log;
+import org.h2.tools.Server;
 
 import java.sql.*;
 import java.text.DateFormat;
@@ -14,6 +15,7 @@ public class Database {
     public Database(){
         try {
             Class.forName("org.h2.Driver");
+            Server.createTcpServer("-tcpPort", "9092", "-tcpAllowOthers").start();
             con = DriverManager.getConnection(config.get("db-url"), config.get("db-username"), config.get("db-password"));
             Log.info("The database connection is made.");
             init();

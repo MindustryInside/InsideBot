@@ -168,6 +168,8 @@ public class Listener extends ListenerAdapter{
                 MessageDeleteEvent event = (MessageDeleteEvent) object;
                 MetaInfo info = messages.get(event.getMessageIdLong());
 
+                if(jda.retrieveUserById(info.id).complete() == null || info.text == null) return;
+
                 embedBuilder.addField(bundle.get("message.delete"), bundle.format("message.delete.text",
                         jda.retrieveUserById(info.id).complete().getName(), event.getTextChannel().getAsMention()
                 ),false);

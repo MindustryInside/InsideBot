@@ -72,7 +72,7 @@ public class Commands{
             }
         });
         handler.register("delete", "<amount>", "Delete a some messages.", args -> {
-            if(!Strings.canParsePostiveInt(args[1])){
+            if(!Strings.canParsePostiveInt(args[0])){
                 listener.err(bundle.get("command.incorrect-number"));
                 return;
             }

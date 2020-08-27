@@ -39,7 +39,7 @@ public class InsideBot {
 
         new Checker();
         new ClearThread();
-        new ActiveUsers();
+        //new ActiveUsers(); FIXME баги, не может найти юзеров
     }
 
     public static void init(){

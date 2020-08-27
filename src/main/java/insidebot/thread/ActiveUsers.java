@@ -29,17 +29,12 @@ public class ActiveUsers extends Thread{
                         id = resultId.getLong(1);
                     }
 
-                    if(check(lastSendMessage, messages)
-                            && listener.guild.getMemberById(id).getRoles().stream().noneMatch(role -> role.getName().equalsIgnoreCase(activeUserRoleName))){
-
-                        listener.guild.addRoleToMember(listener.guild.getMemberById(id), jda.getRolesByName(activeUserRoleName, true).get(0));
-                        data.getUserInfo(id).clearQueue();
-                    }else if(!check(lastSendMessage, messages)
-                            && listener.guild.getMemberById(id).getRoles().stream().anyMatch(role -> role.getName().equalsIgnoreCase(activeUserRoleName))){
-
-                        listener.guild.removeRoleFromMember(listener.guild.getMemberById(id), jda.getRolesByName(activeUserRoleName, true).get(0));
-                        data.getUserInfo(id).clearQueue();
+                    if(check(lastSendMessage, messages)){
+                        listener.guild.addRoleToMember(listener.guild.getMemberById(id), jda.getRolesByName(activeUserRoleName, true).get(0)).queue();
+                    }else{
+                        listener.guild.removeRoleFromMember(listener.guild.getMemberById(id), jda.getRolesByName(activeUserRoleName, true).get(0)).queue();
                     }
+                    data.getUserInfo(id).clearQueue();
                 }
 
                 sleep(60000);
