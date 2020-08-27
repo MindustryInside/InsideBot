@@ -170,15 +170,15 @@ public class UserInfo {
         try {
             Statement statement = data.getCon().createStatement();
 
-            if(LocalDateTime.now().getDayOfWeek().getValue() < getLastSentMessage().get(Calendar.DAY_OF_WEEK) && getMessagesQueue() <= 7){
+            if(LocalDateTime.now().getDayOfWeek().getValue() < getLastSentMessage().get(Calendar.DAY_OF_WEEK) && getMessagesQueue() <= 14){
                 listener.actionGuild.removeRoleFromMember(listener.actionGuild.getMemberById(id), jda.getRolesByName(activeUserRoleName, true).get(0));
                 clearQueue();
-            }else if(LocalDateTime.now().getDayOfWeek().getValue() >= getLastSentMessage().get(Calendar.DAY_OF_WEEK) && getMessagesQueue() >= 7) {
+            }else if(LocalDateTime.now().getDayOfWeek().getValue() >= getLastSentMessage().get(Calendar.DAY_OF_WEEK) && getMessagesQueue() >= 14) {
                 listener.actionGuild.addRoleToMember(listener.actionGuild.getMemberById(id), jda.getRolesByName(activeUserRoleName, true).get(0));
                 clearQueue();
             }
 
-            statement.executeUpdate("UPDATE DISCORD.USERS_INFO SET MESSAGES_PER_WEEK='" + (getMessagesQueue() + 1) + "' WHERE NAME='" + name + "' AND ID=" + id + ";");
+            statement.executeUpdate("UPDATE DISCORD.USERS_INFO SET MESSAGES_PER_WEEK=" + (getMessagesQueue() + 1) + " WHERE NAME='" + name + "' AND ID=" + id + ";");
         } catch (SQLException e) {
             Log.err(e);
         }
@@ -188,7 +188,7 @@ public class UserInfo {
         try {
             Statement statement = data.getCon().createStatement();
 
-            statement.executeUpdate("UPDATE DISCORD.USERS_INFO SET MESSAGES_PER_WEEK='' WHERE NAME='" + name + "' AND ID=" + id + ";");
+            statement.executeUpdate("UPDATE DISCORD.USERS_INFO SET MESSAGES_PER_WEEK=0 WHERE NAME='" + name + "' AND ID=" + id + ";");
         } catch (SQLException e) {
             Log.err(e);
         }

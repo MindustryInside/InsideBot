@@ -3,9 +3,8 @@ package insidebot.thread;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.Calendar;
-import java.util.Date;
 
-import static insidebot.InsideBot.*;
+import static insidebot.InsideBot.data;
 
 public class Checker extends Thread{
     public Checker(){

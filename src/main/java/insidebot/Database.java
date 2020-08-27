@@ -1,6 +1,7 @@
 package insidebot;
 
 import arc.util.Log;
+import org.h2.tools.Server;
 
 import java.sql.*;
 import java.text.DateFormat;
@@ -29,7 +30,7 @@ public class Database {
                 "CREATE SCHEMA IF NOT EXISTS DISCORD;"
             );
             getCon().createStatement().execute(
-                "CREATE TABLE IF NOT EXISTS DISCORD.USERS_INFO (NAME VARCHAR(40), ID LONG, LAST_SENT_MESSAGE_DATE VARCHAR(20), LAST_SENT_MESSAGE_ID LONG, MESSAGES_PER_WEEK, WARNS INT(11), MUTE_END_DATE VARCHAR(20));"
+                "CREATE TABLE IF NOT EXISTS DISCORD.USERS_INFO (NAME VARCHAR(40), ID LONG, LAST_SENT_MESSAGE_DATE VARCHAR(20), LAST_SENT_MESSAGE_ID LONG, MESSAGES_PER_WEEK INT(11), WARNS INT(11), MUTE_END_DATE VARCHAR(20));"
             );
         } catch (SQLException e) {
             Log.info(e);
