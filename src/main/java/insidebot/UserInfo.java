@@ -4,7 +4,8 @@ import arc.util.Log;
 
 import java.sql.*;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Objects;
 
 import static insidebot.InsideBot.*;
 
@@ -21,8 +22,6 @@ public class UserInfo {
 
         try {
             lastSentMessage = Calendar.getInstance();
-
-            addToQueue();
 
             Statement statement = InsideBot.data.getCon().createStatement();
             statement.executeUpdate(
@@ -69,11 +68,31 @@ public class UserInfo {
 
     public void setName(String name) {
         this.name = name;
+
+        try {
+            Statement statement = data.getCon().createStatement();
+
+            statement.executeUpdate("UPDATE DISCORD.USERS_INFO SET NAME='" + name + "' WHERE ID=" + id + ";");
+        } catch (SQLException e) {
+            Log.err(e);
+        }
     }
 
     public void setLastMessageId(long lastMessageId) {
         this.lastMessageId = lastMessageId;
         lastSentMessage = Calendar.getInstance();
+        addToQueue();
+
+        try{
+            Statement statement = data.getCon().createStatement();
+
+            statement.executeUpdate(
+                    "UPDATE DISCORD.USERS_INFO SET LAST_SENT_MESSAGE_ID=" + lastMessageId + ", LAST_SENT_MESSAGE_DATE='" + data.format().format(lastSentMessage.getTime()) + "' " +
+                        "WHERE ID=" + id + " AND NAME='" + name + "';"
+            );
+        } catch (SQLException e) {
+            Log.err(e);
+        }
     }
 
     public void mute(int delayDays) {
@@ -93,7 +112,7 @@ public class UserInfo {
         try {
             Statement statement = data.getCon().createStatement();
 
-            statement.execute("DELETE FROM DISCORD.USERS_INFO WHERE NAME='" +name + "' AND ID=" + id + ";");
+            statement.execute("DELETE FROM DISCORD.USERS_INFO WHERE NAME='" + name + "' AND ID=" + id + ";");
             listener.handleAction(jda.retrieveUserById(id).complete(), Listener.ActionType.ban);
         } catch (SQLException e) {
             Log.err(e);
@@ -166,17 +185,9 @@ public class UserInfo {
         }
     }
 
-    public void addToQueue(){
+    private void addToQueue(){
         try {
             Statement statement = data.getCon().createStatement();
-
-            if(LocalDateTime.now().getDayOfWeek().getValue() < getLastSentMessage().get(Calendar.DAY_OF_WEEK) && getMessagesQueue() <= 14){
-                listener.actionGuild.removeRoleFromMember(listener.actionGuild.getMemberById(id), jda.getRolesByName(activeUserRoleName, true).get(0));
-                clearQueue();
-            }else if(LocalDateTime.now().getDayOfWeek().getValue() >= getLastSentMessage().get(Calendar.DAY_OF_WEEK) && getMessagesQueue() >= 14) {
-                listener.actionGuild.addRoleToMember(listener.actionGuild.getMemberById(id), jda.getRolesByName(activeUserRoleName, true).get(0));
-                clearQueue();
-            }
 
             statement.executeUpdate("UPDATE DISCORD.USERS_INFO SET MESSAGES_PER_WEEK=" + (getMessagesQueue() + 1) + " WHERE NAME='" + name + "' AND ID=" + id + ";");
         } catch (SQLException e) {
@@ -184,7 +195,7 @@ public class UserInfo {
         }
     }
 
-    private void clearQueue(){
+    public void clearQueue(){
         try {
             Statement statement = data.getCon().createStatement();
 

@@ -2,9 +2,9 @@ package insidebot;
 
 import arc.Files;
 import arc.files.Fi;
-import arc.util.*;
-import insidebot.thread.Checker;
-import insidebot.thread.ClearThread;
+import arc.util.I18NBundle;
+import arc.util.Log;
+import insidebot.thread.*;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 
@@ -15,7 +15,7 @@ public class InsideBot {
     public static final long logChannelID = 747893115980873838L;
     public static final String muteRoleName = "muted";
     public static final String activeUserRoleName = "Active user";
-    public static final long guildID = 747805212366077953L;
+    public static final long guildID = 697929564210331681L;
 
     public static JDA jda;
 
@@ -39,6 +39,7 @@ public class InsideBot {
 
         new Checker();
         new ClearThread();
+        new ActiveUsers();
     }
 
     public static void init(){

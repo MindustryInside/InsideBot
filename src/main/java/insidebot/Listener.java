@@ -23,8 +23,7 @@ public class Listener extends ListenerAdapter{
 
     TextChannel channel;
     User lastUser;
-    Guild guild;
-    Guild actionGuild;
+    public Guild guild;
     Message lastMessage;
     Message lastSentMessage;
 
@@ -37,7 +36,10 @@ public class Listener extends ListenerAdapter{
             if (!event.getAuthor().isBot()) {
                 commands.handle(event);
                 handleEvent(event, EventType.messageReceive);
-                new UserInfo(event.getAuthor().getName(), event.getAuthor().getIdLong(), event.getMessageIdLong());
+
+                UserInfo info = data.getUserInfo(event.getAuthor().getIdLong());
+                info.setLastMessageId(event.getMessageIdLong());
+                info.setName(event.getAuthor().getName());
             }
         }catch(Exception e){
             Log.err(e);
@@ -118,15 +120,15 @@ public class Listener extends ListenerAdapter{
         User user = (User) object;
         switch (type) {
             case kick -> {
-                actionGuild.kick(user.getId()).queue();
+                guild.kick(user.getId()).queue();
             }case ban -> {
-                actionGuild.ban(user, 1).queue();
+                guild.ban(user, 1).queue();
             }case unBan ->{
-                actionGuild.unban(user).queue();
+                guild.unban(user).queue();
             }case mute -> {
-                actionGuild.addRoleToMember(actionGuild.getMember(user), jda.getRolesByName(muteRoleName, true).get(0)).queue();
+                guild.addRoleToMember(guild.getMember(user), jda.getRolesByName(muteRoleName, true).get(0)).queue();
             }case unMute -> {
-                actionGuild.removeRoleFromMember(actionGuild.getMember(user), jda.getRolesByName(muteRoleName, true).get(0)).queue();
+                guild.removeRoleFromMember(guild.getMember(user), jda.getRolesByName(muteRoleName, true).get(0)).queue();
             }
         }
     }

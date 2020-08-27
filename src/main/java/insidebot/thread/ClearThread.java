@@ -1,6 +1,6 @@
 package insidebot.thread;
 
-import static insidebot.InsideBot.*;
+import static insidebot.InsideBot.listener;
 
 public class ClearThread extends Thread{
     public ClearThread(){

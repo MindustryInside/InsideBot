@@ -52,7 +52,7 @@ public class Commands{
                 User user = jda.retrieveUserById(l).complete();
                 UserInfo info = data.getUserInfo(l);
 
-                if (isAdmin(listener.actionGuild.getMember(user))) {
+                if (isAdmin(listener.guild.getMember(user))) {
                     listener.err(bundle.get("command.user-is-admin"));
                     return;
                 } else if (user.isBot()) {
@@ -97,7 +97,7 @@ public class Commands{
                 User user = jda.retrieveUserById(l).complete();
                 UserInfo info = data.getUserInfo(l);
 
-                if (isAdmin(listener.actionGuild.getMember(user))) {
+                if (isAdmin(listener.guild.getMember(user))) {
                     listener.err(bundle.get("command.user-is-admin"));
                     return;
                 } else if (user.isBot()) {
@@ -162,7 +162,6 @@ public class Commands{
 
     void handle(MessageReceivedEvent event){
         String text = event.getMessage().getContentRaw();
-        listener.actionGuild = event.getGuild();
 
         if(event.getMessage().getContentRaw().startsWith(prefix)){
             listener.channel = event.getTextChannel();

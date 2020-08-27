@@ -1,12 +1,10 @@
 package insidebot;
 
 import arc.util.Log;
-import org.h2.tools.Server;
 
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
 
 import static insidebot.InsideBot.config;
 
@@ -62,12 +60,5 @@ public class Database {
 
     public DateFormat format(){
         return new SimpleDateFormat("MM-dd HH:mm");
-    }
-
-    public String nowDate(){
-        return String.format("%s-%s %s:%s",
-                LocalDateTime.now().getMonthValue(), LocalDateTime.now().getDayOfMonth(),
-                LocalDateTime.now().getHour(), LocalDateTime.now().getMinute()
-        );
     }
 }
