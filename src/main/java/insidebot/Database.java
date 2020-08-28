@@ -43,8 +43,11 @@ public class Database {
 
     public UserInfo getUserInfo(long id){
         try {
-            Statement statement = getCon().createStatement();
-            ResultSet resultSet = statement.executeQuery("SELECT * FROM DISCORD.USERS_INFO WHERE ID=" + id + ";");
+            PreparedStatement statement = getCon().prepareStatement("SELECT * FROM DISCORD.USERS_INFO WHERE ID=?;");
+
+            statement.setLong(1, id);
+
+            ResultSet resultSet = statement.executeQuery();
 
             String name = "";
             long lastMessageId = 0L;

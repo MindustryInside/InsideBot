@@ -58,6 +58,9 @@ public class Commands{
                 } else if (user.isBot()) {
                     listener.err(bundle.get("command.user-is-bot"));
                     return;
+                } else if (listener.lastUser == user){
+                    listener.err(bundle.get("command.self-user"));
+                    return;
                 }
 
                 EmbedBuilder builder = new EmbedBuilder().setColor(listener.normalColor);
@@ -103,6 +106,9 @@ public class Commands{
                 } else if (user.isBot()) {
                     listener.err(bundle.get("command.user-is-bot"));
                     return;
+                } else if (listener.lastUser == user){
+                    listener.err(bundle.get("command.self-user"));
+                    return;
                 }
 
                 info.addWarns();
@@ -138,7 +144,7 @@ public class Commands{
             }
         });
         handler.register("unwarn", "<@user> [count]", "Unwarn a user.", args -> {
-            if(args.length > 1 && !Strings.canParseInt(args[1])){
+            if(args.length > 1 && !Strings.canParsePostiveInt(args[1])){
                 listener.lastSentMessage.getTextChannel().sendMessage(bundle.get("command.incorrect-number")).queue();
                 return;
             }
@@ -154,6 +160,18 @@ public class Commands{
                 info.removeWarns(warnings);
 
                 listener.info(bundle.format("command.unwarn", user.getName(), warnings, warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns")));
+            } catch (Exception e) {
+                listener.err(bundle.get("command.incorrect-name"));
+            }
+        });
+        handler.register("unmute", "<@user>", "Unmute a user.", args -> {
+            String author = args[0].substring(2, args[0].length() - 1);
+            if (author.startsWith("!")) author = author.substring(1);
+
+            try {
+                long l = Long.parseLong(author);
+                UserInfo info = data.getUserInfo(l);
+                info.unmute();
             } catch (Exception e) {
                 listener.err(bundle.get("command.incorrect-name"));
             }

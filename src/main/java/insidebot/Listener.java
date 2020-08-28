@@ -27,8 +27,8 @@ public class Listener extends ListenerAdapter{
     Message lastMessage;
     Message lastSentMessage;
 
-    Color normalColor = Color.decode("#C4F5B7");
-    Color errorColor = Color.decode("#ff3838");
+    public Color normalColor = Color.decode("#C4F5B7");
+    public Color errorColor = Color.decode("#ff3838");
 
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
@@ -117,6 +117,7 @@ public class Listener extends ListenerAdapter{
     }
 
     public void handleAction(Object object, ActionType type){
+        EmbedBuilder builder = new EmbedBuilder().setColor(listener.normalColor);
         User user = (User) object;
         switch (type) {
             case kick -> {
@@ -128,6 +129,10 @@ public class Listener extends ListenerAdapter{
             }case mute -> {
                 guild.addRoleToMember(guild.getMember(user), jda.getRolesByName(muteRoleName, true).get(0)).queue();
             }case unMute -> {
+                builder.addField(bundle.get("message.unmute"), bundle.format("message.unmute.text", user.getName()), true);
+                builder.setFooter(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss ZZZZ").format(ZonedDateTime.now()));
+
+                listener.log(builder.build());
                 guild.removeRoleFromMember(guild.getMember(user), jda.getRolesByName(muteRoleName, true).get(0)).queue();
             }
         }

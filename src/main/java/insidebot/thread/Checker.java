@@ -1,10 +1,14 @@
 package insidebot.thread;
 
+import net.dv8tion.jda.api.EmbedBuilder;
+
 import java.sql.*;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 
-import static insidebot.InsideBot.data;
+import static insidebot.InsideBot.*;
 
 public class Checker extends Thread{
     public Checker(){
@@ -15,14 +19,20 @@ public class Checker extends Thread{
     public void run() {
         while (true){
             try {
-                Statement statement = data.getCon().createStatement();
-                ResultSet resultSet = statement.executeQuery("SELECT MUTE_END_DATE FROM DISCORD.USERS_INFO;");
+                PreparedStatement statement = data.getCon().prepareStatement("SELECT * FROM DISCORD.USERS_INFO;");
+                ResultSet resultSet = statement.getResultSet();
+                statement.executeUpdate();
 
                 while (resultSet.next()) {
                     String end = resultSet.getString("MUTE_END_DATE");
 
                     if(check(end)){
-                        ResultSet resultId = statement.executeQuery("SELECT ID FROM DISCORD.USERS_INFO WHERE MUTE_END_DATE='" + end + "';");
+                        PreparedStatement stmt = data.getCon().prepareStatement("SELECT ID FROM DISCORD.USERS_INFO WHERE MUTE_END_DATE=?;");
+
+                        stmt.setString(1, end);
+
+                        ResultSet resultId = stmt.getResultSet();
+                        stmt.executeUpdate();
 
                         long id = 0;
                         while (resultId.next()){
