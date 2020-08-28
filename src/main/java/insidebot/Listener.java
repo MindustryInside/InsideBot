@@ -19,17 +19,16 @@ import java.time.format.DateTimeFormatter;
 import static insidebot.InsideBot.*;
 
 public class Listener extends ListenerAdapter{
-    ObjectMap<Long, MetaInfo> messages = new ObjectMap<>();
+    public ObjectMap<Long, MetaInfo> messages = new ObjectMap<>();
 
     TextChannel channel;
     User lastUser;
-    Guild guild;
-    Guild actionGuild;
+    public Guild guild;
     Message lastMessage;
     Message lastSentMessage;
 
-    Color normalColor = Color.decode("#C4F5B7");
-    Color errorColor = Color.decode("#ff3838");
+    public Color normalColor = Color.decode("#C4F5B7");
+    public Color errorColor = Color.decode("#ff3838");
 
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
@@ -37,6 +36,10 @@ public class Listener extends ListenerAdapter{
             if (!event.getAuthor().isBot()) {
                 commands.handle(event);
                 handleEvent(event, EventType.messageReceive);
+
+                UserInfo info = data.getUserInfo(event.getAuthor().getIdLong());
+                info.setLastMessageId(event.getMessageIdLong());
+                info.setName(event.getAuthor().getName());
             }
         }catch(Exception e){
             Log.err(e);
@@ -114,18 +117,23 @@ public class Listener extends ListenerAdapter{
     }
 
     public void handleAction(Object object, ActionType type){
+        EmbedBuilder builder = new EmbedBuilder().setColor(listener.normalColor);
         User user = (User) object;
         switch (type) {
             case kick -> {
-                actionGuild.kick(user.getId()).queue();
+                guild.kick(user.getId()).queue();
             }case ban -> {
-                actionGuild.ban(user, 1).queue();
+                guild.ban(user, 1).queue();
             }case unBan ->{
-                actionGuild.unban(user).queue();
+                guild.unban(user).queue();
             }case mute -> {
-                actionGuild.addRoleToMember(actionGuild.getMember(user), jda.getRolesByName(muteRoleName, true).get(0)).queue();
+                guild.addRoleToMember(guild.getMember(user), jda.getRolesByName(muteRoleName, true).get(0)).queue();
             }case unMute -> {
-                actionGuild.removeRoleFromMember(actionGuild.getMember(user), jda.getRolesByName(muteRoleName, true).get(0)).queue();
+                builder.addField(bundle.get("message.unmute"), bundle.format("message.unmute.text", user.getName()), true);
+                builder.setFooter(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss ZZZZ").format(ZonedDateTime.now()));
+
+                listener.log(builder.build());
+                guild.removeRoleFromMember(guild.getMember(user), jda.getRolesByName(muteRoleName, true).get(0)).queue();
             }
         }
     }
@@ -146,11 +154,18 @@ public class Listener extends ListenerAdapter{
                 MessageUpdateEvent event = (MessageUpdateEvent) object;
                 MetaInfo info = messages.get(event.getMessageIdLong());
 
-                embedBuilder.addField(bundle.get("message.edit"), bundle.format("message.edit.text",
-                        event.getAuthor().getName(), event.getTextChannel().getAsMention()
-                ),true);
-                embedBuilder.addField(bundle.get("message.edit.old-content"), "```\n" + info.text + "\n```", false);
-                embedBuilder.addField(bundle.get("message.edit.new-content"), "```\n" + event.getMessage().getContentRaw() + "\n```", true);
+                if (!event.getMessage().isPinned()) {
+                    embedBuilder.addField(bundle.get("message.edit"), bundle.format("message.edit.text",
+                            event.getAuthor().getName(), event.getTextChannel().getAsMention()
+                    ), true);
+                    embedBuilder.addField(bundle.get("message.edit.old-content"), info.text, false);
+                    embedBuilder.addField(bundle.get("message.edit.new-content"), event.getMessage().getContentRaw(), true);
+                } else {
+                    embedBuilder.addField(bundle.get("message.pin"), bundle.format("message.pin.text",
+                            event.getAuthor().getName(), event.getTextChannel().getAsMention()
+                    ), true);
+                    embedBuilder.addField(bundle.get("message.pin.content"), lastMessage.getContentRaw(), false);
+                }
 
                 log(embedBuilder.build());
                 info.text = event.getMessage().getContentRaw();
@@ -158,10 +173,12 @@ public class Listener extends ListenerAdapter{
                 MessageDeleteEvent event = (MessageDeleteEvent) object;
                 MetaInfo info = messages.get(event.getMessageIdLong());
 
+                if(jda.retrieveUserById(info.id).complete() == null || info.text == null) return;
+
                 embedBuilder.addField(bundle.get("message.delete"), bundle.format("message.delete.text",
                         jda.retrieveUserById(info.id).complete().getName(), event.getTextChannel().getAsMention()
                 ),false);
-                embedBuilder.addField(bundle.get("message.delete.content"), "```\n" + info.text + "\n```", true);
+                embedBuilder.addField(bundle.get("message.delete.content"), info.text, true);
 
                 log(embedBuilder.build());
                 messages.remove(event.getMessageIdLong());

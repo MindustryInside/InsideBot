@@ -50,30 +50,32 @@ public class Commands{
                 long l = Long.parseLong(author);
                 int delayDays = Strings.parseInt(args[1]);
                 User user = jda.retrieveUserById(l).complete();
+                UserInfo info = data.getUserInfo(l);
 
-                if (isAdmin(listener.actionGuild.getMember(user))) {
+                if (isAdmin(listener.guild.getMember(user))) {
                     listener.err(bundle.get("command.user-is-admin"));
                     return;
                 } else if (user.isBot()) {
                     listener.err(bundle.get("command.user-is-bot"));
                     return;
+                } else if (listener.lastUser == user){
+                    listener.err(bundle.get("command.self-user"));
+                    return;
                 }
-
-                data.setMute(user.getIdLong(), delayDays);
 
                 EmbedBuilder builder = new EmbedBuilder().setColor(listener.normalColor);
                 builder.addField(bundle.get("message.mute"), bundle.format("message.mute.text", user.getAsMention(), delayDays), false);
                 builder.setFooter(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss ZZZZ").format(ZonedDateTime.now()));
 
                 listener.log(builder.build());
-                listener.handleAction(listener.actionGuild.getMember(user), Listener.ActionType.mute);
+                info.mute(delayDays);
             } catch (Exception e) {
                 Log.err(e);
                 listener.err(bundle.get("command.incorrect-name"));
             }
         });
         handler.register("delete", "<amount>", "Delete a some messages.", args -> {
-            if(!Strings.canParsePostiveInt(args[1])){
+            if(!Strings.canParsePostiveInt(args[0])){
                 listener.err(bundle.get("command.incorrect-number"));
                 return;
             }
@@ -96,28 +98,32 @@ public class Commands{
             try {
                 long l = Long.parseLong(author);
                 User user = jda.retrieveUserById(l).complete();
+                UserInfo info = data.getUserInfo(l);
 
-                if (isAdmin(listener.actionGuild.getMember(user))) {
+                if (isAdmin(listener.guild.getMember(user))) {
                     listener.err(bundle.get("command.user-is-admin"));
                     return;
                 } else if (user.isBot()) {
                     listener.err(bundle.get("command.user-is-bot"));
                     return;
+                } else if (listener.lastUser == user){
+                    listener.err(bundle.get("command.self-user"));
+                    return;
                 }
 
-                data.addWarn(l);
+                info.addWarns();
 
-                int warnings = data.getWarns(l);
+                int warnings = info.getWarns();
 
                 listener.info(bundle.format("message.warn", user.getAsMention(), warningStrings[Mathf.clamp(warnings - 1, 0, warningStrings.length - 1)]));
 
-                if (data.getWarns(l) >= 3) {
+                if (info.getWarns() >= 3) {
                     EmbedBuilder builder = new EmbedBuilder().setColor(listener.normalColor);
                     builder.addField(bundle.get("message.ban"), bundle.format("message.ban.text", user.getName()), true);
                     builder.setFooter(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss ZZZZ").format(ZonedDateTime.now()));
 
                     listener.log(builder.build());
-                    listener.actionGuild.ban(user, 1).queue();
+                    info.ban();
                 }
             } catch (Exception e) {
                 Log.err(e);
@@ -130,14 +136,15 @@ public class Commands{
             try {
                 long l = Long.parseLong(author);
                 User user = jda.retrieveUserById(l).complete();
-                int warnings = data.getWarns(l);
+                UserInfo info = data.getUserInfo(l);
+                int warnings = info.getWarns();
                 listener.info(bundle.format("command.warnings", user.getName(), warnings, warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns")));
             } catch (Exception e) {
                 listener.err(bundle.get("command.incorrect-name"));
             }
         });
         handler.register("unwarn", "<@user> [count]", "Unwarn a user.", args -> {
-            if(args.length > 1 && !Strings.canParseInt(args[1])){
+            if(args.length > 1 && !Strings.canParsePostiveInt(args[1])){
                 listener.lastSentMessage.getTextChannel().sendMessage(bundle.get("command.incorrect-number")).queue();
                 return;
             }
@@ -149,9 +156,22 @@ public class Commands{
             try {
                 long l = Long.parseLong(author);
                 User user = jda.retrieveUserById(l).complete();
-                data.removeWarns(l, warnings);
+                UserInfo info = data.getUserInfo(l);
+                info.removeWarns(warnings);
 
                 listener.info(bundle.format("command.unwarn", user.getName(), warnings, warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns")));
+            } catch (Exception e) {
+                listener.err(bundle.get("command.incorrect-name"));
+            }
+        });
+        handler.register("unmute", "<@user>", "Unmute a user.", args -> {
+            String author = args[0].substring(2, args[0].length() - 1);
+            if (author.startsWith("!")) author = author.substring(1);
+
+            try {
+                long l = Long.parseLong(author);
+                UserInfo info = data.getUserInfo(l);
+                info.unmute();
             } catch (Exception e) {
                 listener.err(bundle.get("command.incorrect-name"));
             }
@@ -160,7 +180,6 @@ public class Commands{
 
     void handle(MessageReceivedEvent event){
         String text = event.getMessage().getContentRaw();
-        listener.actionGuild = event.getGuild();
 
         if(event.getMessage().getContentRaw().startsWith(prefix)){
             listener.channel = event.getTextChannel();
