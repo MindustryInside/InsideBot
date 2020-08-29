@@ -4,18 +4,18 @@ import arc.Files;
 import arc.files.Fi;
 import arc.util.I18NBundle;
 import arc.util.Log;
-import insidebot.thread.Checker;
-import insidebot.thread.ClearThread;
+import insidebot.thread.*;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 
 import javax.security.auth.login.LoginException;
-import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.Locale;
 
 public class InsideBot {
     public static final long logChannelID = 747893115980873838L;
     public static final String muteRoleName = "muted";
+    public static final String moderatorRoleName = "Moderator";
     public static final String activeUserRoleName = "Active user";
     public static final long guildID = 697929564210331681L;
 
@@ -41,7 +41,9 @@ public class InsideBot {
 
         new Checker();
         new ClearThread();
-        //new ActiveUsers(); FIXME баги, не может найти юзеров
+
+        ActiveUsers activeUsers = new ActiveUsers();
+        activeUsers.lastWipe = LocalDateTime.now().getDayOfYear();
     }
 
     public static void init(){

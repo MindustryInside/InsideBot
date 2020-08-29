@@ -13,8 +13,6 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 
 import static insidebot.InsideBot.*;
 
@@ -123,14 +121,14 @@ public class Listener extends ListenerAdapter{
             case kick -> {
                 guild.kick(user.getId()).queue();
             }case ban -> {
-                guild.ban(user, 1).queue();
+                guild.ban(user, 0).queue();
             }case unBan ->{
                 guild.unban(user).queue();
             }case mute -> {
                 guild.addRoleToMember(guild.getMember(user), jda.getRolesByName(muteRoleName, true).get(0)).queue();
             }case unMute -> {
                 builder.addField(bundle.get("message.unmute"), bundle.format("message.unmute.text", user.getName()), true);
-                builder.setFooter(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss ZZZZ").format(ZonedDateTime.now()));
+                builder.setFooter(data.zonedFormat());
 
                 listener.log(builder.build());
                 guild.removeRoleFromMember(guild.getMember(user), jda.getRolesByName(muteRoleName, true).get(0)).queue();
@@ -140,7 +138,7 @@ public class Listener extends ListenerAdapter{
 
     public void handleEvent(Object object, EventType type){
         EmbedBuilder embedBuilder = new EmbedBuilder().setColor(normalColor);
-        embedBuilder.setFooter(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss ZZZZ").format(ZonedDateTime.now()));
+        embedBuilder.setFooter(data.zonedFormat());
 
         switch (type) {
             case messageReceive -> {
@@ -148,6 +146,10 @@ public class Listener extends ListenerAdapter{
                 MetaInfo info = new MetaInfo();
                 info.text = event.getMessage().getContentRaw();
                 info.id = event.getAuthor().getIdLong();
+
+                if(event.getMessage().getAttachments().size() > 0){
+                    info.file = event.getMessage().getAttachments();
+                }
 
                 messages.put(event.getMessageIdLong(), info);
             }case messageEdit -> {
@@ -227,5 +229,6 @@ public class Listener extends ListenerAdapter{
     private static class MetaInfo{
         public String text;
         public long id;
+        public java.util.List<Message.Attachment> file;
     }
 }

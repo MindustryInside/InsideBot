@@ -1,14 +1,12 @@
 package insidebot.thread;
 
-import net.dv8tion.jda.api.EmbedBuilder;
+import arc.util.Log;
 
 import java.sql.*;
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 
-import static insidebot.InsideBot.*;
+import static insidebot.InsideBot.data;
 
 public class Checker extends Thread{
     public Checker(){
@@ -20,8 +18,7 @@ public class Checker extends Thread{
         while (true){
             try {
                 PreparedStatement statement = data.getCon().prepareStatement("SELECT * FROM DISCORD.USERS_INFO;");
-                ResultSet resultSet = statement.getResultSet();
-                statement.executeUpdate();
+                ResultSet resultSet = statement.executeQuery();
 
                 while (resultSet.next()) {
                     String end = resultSet.getString("MUTE_END_DATE");
@@ -31,8 +28,7 @@ public class Checker extends Thread{
 
                         stmt.setString(1, end);
 
-                        ResultSet resultId = stmt.getResultSet();
-                        stmt.executeUpdate();
+                        ResultSet resultId = stmt.executeQuery();
 
                         long id = 0;
                         while (resultId.next()){
@@ -44,7 +40,9 @@ public class Checker extends Thread{
                 }
 
                 sleep(10000);
-            }catch (InterruptedException | SQLException ignored){}
+            }catch (InterruptedException | SQLException e){
+                Log.err(e);
+            }
         }
     }
 
@@ -52,7 +50,7 @@ public class Checker extends Thread{
         try {
             Calendar unmuteDate = Calendar.getInstance();
             unmuteDate.setTime(data.format().parse(time));
-            return LocalDateTime.now().getDayOfYear() >= unmuteDate.get(Calendar.DAY_OF_YEAR);
+            return LocalDateTime.now().getDayOfYear() > unmuteDate.get(Calendar.DAY_OF_YEAR);
         }catch (Exception e){
             return false;
         }

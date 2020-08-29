@@ -7,9 +7,6 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-
 import static insidebot.InsideBot.*;
 
 public class Commands{
@@ -65,7 +62,7 @@ public class Commands{
 
                 EmbedBuilder builder = new EmbedBuilder().setColor(listener.normalColor);
                 builder.addField(bundle.get("message.mute"), bundle.format("message.mute.text", user.getAsMention(), delayDays), false);
-                builder.setFooter(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss ZZZZ").format(ZonedDateTime.now()));
+                builder.setFooter(data.zonedFormat());
 
                 listener.log(builder.build());
                 info.mute(delayDays);
@@ -120,7 +117,7 @@ public class Commands{
                 if (info.getWarns() >= 3) {
                     EmbedBuilder builder = new EmbedBuilder().setColor(listener.normalColor);
                     builder.addField(bundle.get("message.ban"), bundle.format("message.ban.text", user.getName()), true);
-                    builder.setFooter(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss ZZZZ").format(ZonedDateTime.now()));
+                    builder.setFooter(data.zonedFormat());
 
                     listener.log(builder.build());
                     info.ban();
@@ -194,7 +191,7 @@ public class Commands{
 
     boolean isAdmin(Member member) {
         try {
-            return member.getRoles().stream().anyMatch(r -> r.getName().equalsIgnoreCase("moderator"));
+            return member.getRoles().stream().anyMatch(r -> r.getName().equalsIgnoreCase(moderatorRoleName));
         } catch (Exception e) {
             return false;
         }

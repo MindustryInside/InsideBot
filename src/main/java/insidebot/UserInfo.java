@@ -3,7 +3,6 @@ package insidebot;
 import arc.util.Log;
 
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.Calendar;
 import java.util.Objects;
 
@@ -238,7 +237,7 @@ public class UserInfo {
         try {
             PreparedStatement statement = data.getCon().prepareStatement("UPDATE DISCORD.USERS_INFO SET MESSAGES_PER_WEEK=? WHERE NAME=? AND ID=?;");
 
-            statement.setInt(1, getMessagesQueue());
+            statement.setInt(1, (getMessagesQueue() + 1));
             statement.setString(2, name);
             statement.setLong(3, id);
 
