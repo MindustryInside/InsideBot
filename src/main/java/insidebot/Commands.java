@@ -4,6 +4,7 @@ import arc.math.Mathf;
 import arc.util.*;
 import arc.util.CommandHandler.*;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
@@ -35,7 +36,7 @@ public class Commands{
             listener.info("Commands", builder.toString());
         });
         handler.register("mute", "<@user> <delayDays> [reason...]", "Mute a user.", args -> {
-            if(!Strings.canParsePostiveInt(args[1])){
+            if(Strings.parseInt(args[0]) <= 0){
                 listener.err(bundle.get("command.incorrect-number"));
                 return;
             }
@@ -46,7 +47,7 @@ public class Commands{
             try {
                 long l = Long.parseLong(author);
                 int delayDays = Strings.parseInt(args[1]);
-                User user = jda.retrieveUserById(l).complete();
+                User user = listener.jda.retrieveUserById(l).complete();
                 UserInfo info = data.getUserInfo(l);
 
                 if (isAdmin(listener.guild.getMember(user))) {
@@ -72,7 +73,7 @@ public class Commands{
             }
         });
         handler.register("delete", "<amount>", "Delete a some messages.", args -> {
-            if(!Strings.canParsePostiveInt(args[0])){
+            if(Strings.parseInt(args[0]) <= 0){
                 listener.err(bundle.get("command.incorrect-number"));
                 return;
             }
@@ -94,7 +95,7 @@ public class Commands{
 
             try {
                 long l = Long.parseLong(author);
-                User user = jda.retrieveUserById(l).complete();
+                User user = listener.jda.retrieveUserById(l).complete();
                 UserInfo info = data.getUserInfo(l);
 
                 if (isAdmin(listener.guild.getMember(user))) {
@@ -130,9 +131,10 @@ public class Commands{
         handler.register("warnings", "<@user>", "Get number of warnings a user has.", args -> {
             String author = args[0].substring(2, args[0].length() - 1);
             if (author.startsWith("!")) author = author.substring(1);
+
             try {
                 long l = Long.parseLong(author);
-                User user = jda.retrieveUserById(l).complete();
+                User user = listener.jda.retrieveUserById(l).complete();
                 UserInfo info = data.getUserInfo(l);
                 int warnings = info.getWarns();
                 listener.info(bundle.format("command.warnings", user.getName(), warnings, warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns")));
@@ -141,7 +143,7 @@ public class Commands{
             }
         });
         handler.register("unwarn", "<@user> [count]", "Unwarn a user.", args -> {
-            if(args.length > 1 && !Strings.canParsePostiveInt(args[1])){
+            if(args.length > 1 && Strings.parseInt(args[1]) <= 0){
                 listener.lastSentMessage.getTextChannel().sendMessage(bundle.get("command.incorrect-number")).queue();
                 return;
             }
@@ -152,7 +154,7 @@ public class Commands{
 
             try {
                 long l = Long.parseLong(author);
-                User user = jda.retrieveUserById(l).complete();
+                User user = listener.jda.retrieveUserById(l).complete();
                 UserInfo info = data.getUserInfo(l);
                 info.removeWarns(warnings);
 
@@ -191,7 +193,7 @@ public class Commands{
 
     boolean isAdmin(Member member) {
         try {
-            return member.getRoles().stream().anyMatch(r -> r.getName().equalsIgnoreCase(moderatorRoleName));
+            return member.getRoles().stream().anyMatch(r -> r.hasPermission(Permission.ADMINISTRATOR));
         } catch (Exception e) {
             return false;
         }

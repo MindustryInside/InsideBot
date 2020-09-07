@@ -9,6 +9,7 @@ import java.util.Calendar;
 import static insidebot.InsideBot.*;
 
 public class ActiveUsers extends Thread{
+
     public int lastWipe;
 
     public ActiveUsers(){
@@ -39,11 +40,11 @@ public class ActiveUsers extends Thread{
 
                     if (check(id, lastSendMessage, messages)) {
                         if (listener.guild.getMemberById(id) != null) {
-                            listener.guild.addRoleToMember(listener.guild.getMemberById(id), jda.getRolesByName(activeUserRoleName, true).get(0)).queue();
+                            listener.guild.addRoleToMember(listener.guild.getMemberById(id), listener.jda.getRolesByName(activeUserRoleName, true).get(0)).queue();
                         }
                     } else {
                         if (listener.guild.getMemberById(id) != null) {
-                            listener.guild.removeRoleFromMember(listener.guild.getMemberById(id), jda.getRolesByName(activeUserRoleName, true).get(0)).queue();
+                            listener.guild.removeRoleFromMember(listener.guild.getMemberById(id), listener.jda.getRolesByName(activeUserRoleName, true).get(0)).queue();
                         }
                     }
                 }

@@ -4,22 +4,19 @@ import arc.Files;
 import arc.files.Fi;
 import arc.util.I18NBundle;
 import arc.util.Log;
-import insidebot.thread.*;
-import net.dv8tion.jda.api.JDA;
+import insidebot.thread.Checker;
+import insidebot.thread.Cleaner;
 import net.dv8tion.jda.api.JDABuilder;
 
 import javax.security.auth.login.LoginException;
-import java.time.LocalDateTime;
 import java.util.Locale;
 
 public class InsideBot {
+
     public static final long logChannelID = 747893115980873838L;
     public static final String muteRoleName = "muted";
-    public static final String moderatorRoleName = "Moderator";
     public static final String activeUserRoleName = "Active user";
     public static final long guildID = 697929564210331681L;
-
-    public static JDA jda;
 
     public static Listener listener;
     public static Commands commands;
@@ -30,23 +27,23 @@ public class InsideBot {
     public static void main(String[] args) throws InterruptedException, LoginException {
         init();
 
-        jda = new JDABuilder(config.get("token"))
+        listener.jda = new JDABuilder(config.get("token"))
                 .addEventListeners(listener)
                 .build();
-        jda.awaitReady();
+        listener.jda.awaitReady();
 
-        listener.guild = jda.getGuildById(guildID);
+        listener.guild = listener.jda.getGuildById(guildID);
 
         Log.info("Discord bot up.");
 
         new Checker();
-        new ClearThread();
+        new Cleaner();
 
-        ActiveUsers activeUsers = new ActiveUsers();
-        activeUsers.lastWipe = LocalDateTime.now().getDayOfYear();
+        //ActiveUsers activeUsers = new ActiveUsers();   на время изменений
+        //activeUsers.lastWipe = LocalDateTime.now().getDayOfYear();
     }
 
-    public static void init(){
+    private static void init(){
         listener = new Listener();
         config = new Config();
 

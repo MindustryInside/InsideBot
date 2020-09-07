@@ -3,6 +3,7 @@ package insidebot;
 import arc.util.Log;
 import org.h2.tools.Server;
 
+import javax.annotation.Nonnull;
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -12,41 +13,56 @@ import java.time.format.DateTimeFormatter;
 import static insidebot.InsideBot.config;
 
 public class Database {
+
     private Connection con;
 
     public Database(){
         try {
+            Log.info("Connecting to database...");
             Class.forName("org.h2.Driver");
             Server.createTcpServer("-tcpPort", "9092", "-tcpAllowOthers").start();
             con = DriverManager.getConnection(config.get("db-url"), config.get("db-username"), config.get("db-password"));
-            Log.info("The database connection is made.");
             init();
         }catch (SQLException | ClassNotFoundException e){
             Log.err(e);
         }
     }
 
-    public void init(){
-        try {
-            getCon().createStatement().execute(
-                "CREATE SCHEMA IF NOT EXISTS DISCORD;"
-            );
-            getCon().createStatement().execute(
-                "CREATE TABLE IF NOT EXISTS DISCORD.USERS_INFO (NAME VARCHAR(40), ID LONG, LAST_SENT_MESSAGE_DATE VARCHAR(20), LAST_SENT_MESSAGE_ID LONG, MESSAGES_PER_WEEK INT(11), WARNS INT(11), MUTE_END_DATE VARCHAR(20));"
-            );
-        } catch (SQLException e) {
-            Log.info(e);
-        }
+    private void init() throws SQLException {
+        getCon().createStatement().execute(
+            "CREATE SCHEMA IF NOT EXISTS DISCORD;"
+        );
+        getCon().createStatement().execute(
+            "CREATE TABLE IF NOT EXISTS DISCORD.USERS_INFO (" +
+            "NAME VARCHAR(40), " +
+            "ID LONG, " +
+            "LAST_SENT_MESSAGE_DATE VARCHAR(20), " +
+            "LAST_SENT_MESSAGE_ID LONG, " +
+            "MESSAGES_PER_WEEK INT(11), " +
+            "WARNS INT(11), " +
+            "MUTE_END_DATE VARCHAR(20));"
+        );
     }
 
     public Connection getCon() {
         return con;
     }
 
-    public UserInfo getUserInfo(long id){
-        try {
-            PreparedStatement statement = getCon().prepareStatement("SELECT * FROM DISCORD.USERS_INFO WHERE ID=?;");
+    // гениально
+    public void preparedExecute(String sql, @Nonnull Object... values){
+        try (PreparedStatement stmt = getCon().prepareStatement(sql)) {
+            for(int i = 0; i < values.length; i++){
+                stmt.setObject(i+1, values[i]);
+            }
 
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            Log.err(e);
+        }
+    }
+
+    public UserInfo getUserInfo(long id){
+        try (PreparedStatement statement = getCon().prepareStatement("SELECT * FROM DISCORD.USERS_INFO WHERE ID=?;")) {
             statement.setLong(1, id);
 
             ResultSet resultSet = statement.executeQuery();

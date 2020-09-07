@@ -4,7 +4,9 @@ import arc.struct.ObjectMap;
 import arc.util.Log;
 import arc.util.Strings;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent;
 import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateNicknameEvent;
@@ -13,15 +15,19 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
+import java.util.List;
 
 import static insidebot.InsideBot.*;
 
 public class Listener extends ListenerAdapter{
+
     public ObjectMap<Long, MetaInfo> messages = new ObjectMap<>();
+
+    public Guild guild;
+    public JDA jda;
 
     TextChannel channel;
     User lastUser;
-    public Guild guild;
     Message lastMessage;
     Message lastSentMessage;
 
@@ -114,6 +120,10 @@ public class Listener extends ListenerAdapter{
         jda.getTextChannelById(logChannelID).sendMessage(embed).queue();
     }
 
+    public void log(MessageEmbed embed, List<Attachment> files){
+        //jda.getTextChannelById(logChannelID).sendMessage(embed).addFile(files.forEach(a -> a.downloadToFile("../tmp/" + a.getFileName()).get())).queue();
+    }
+
     public void handleAction(Object object, ActionType type){
         EmbedBuilder builder = new EmbedBuilder().setColor(listener.normalColor);
         User user = (User) object;
@@ -147,14 +157,18 @@ public class Listener extends ListenerAdapter{
                 info.text = event.getMessage().getContentRaw();
                 info.id = event.getAuthor().getIdLong();
 
-                if(event.getMessage().getAttachments().size() > 0){
+                if(!event.getMessage().getAttachments().isEmpty()){
                     info.file = event.getMessage().getAttachments();
                 }
 
                 messages.put(event.getMessageIdLong(), info);
             }case messageEdit -> {
                 MessageUpdateEvent event = (MessageUpdateEvent) object;
+
+                if(!messages.containsKey(event.getMessageIdLong())) return;
+
                 MetaInfo info = messages.get(event.getMessageIdLong());
+
 
                 if (!event.getMessage().isPinned()) {
                     embedBuilder.addField(bundle.get("message.edit"), bundle.format("message.edit.text",
@@ -169,8 +183,13 @@ public class Listener extends ListenerAdapter{
                     embedBuilder.addField(bundle.get("message.pin.content"), lastMessage.getContentRaw(), false);
                 }
 
-                log(embedBuilder.build());
-                info.text = event.getMessage().getContentRaw();
+                if (!event.getMessage().getAttachments().isEmpty()) {
+                    info.file = event.getMessage().getAttachments();
+                } else {
+                    log(embedBuilder.build());
+                }
+
+                if (!event.getMessage().getContentRaw().isEmpty()) info.text = event.getMessage().getContentRaw();
             }case messageDelete -> {
                 MessageDeleteEvent event = (MessageDeleteEvent) object;
                 MetaInfo info = messages.get(event.getMessageIdLong());
@@ -181,6 +200,11 @@ public class Listener extends ListenerAdapter{
                         jda.retrieveUserById(info.id).complete().getName(), event.getTextChannel().getAsMention()
                 ),false);
                 embedBuilder.addField(bundle.get("message.delete.content"), info.text, true);
+
+                /*for(AuditLogEntry e : guild.retrieveAuditLogs().type(net.dv8tion.jda.api.audit.ActionType.MESSAGE_DELETE)){
+                    e.getTargetIdLong();
+                    e.getUser().getIdLong();
+                }*/
 
                 log(embedBuilder.build());
                 messages.remove(event.getMessageIdLong());
@@ -229,6 +253,6 @@ public class Listener extends ListenerAdapter{
     private static class MetaInfo{
         public String text;
         public long id;
-        public java.util.List<Message.Attachment> file;
+        public List<Attachment> file;
     }
 }

@@ -2,8 +2,9 @@ package insidebot.thread;
 
 import static insidebot.InsideBot.listener;
 
-public class ClearThread extends Thread{
-    public ClearThread(){
+public class Cleaner extends Thread {
+
+    public Cleaner(){
         start();
     }
 
