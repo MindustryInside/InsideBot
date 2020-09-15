@@ -8,11 +8,11 @@ import java.util.Calendar;
 
 import static insidebot.InsideBot.*;
 
-public class ActiveUsers extends Thread{
+public class ActiveUsers extends Thread {
 
     public int lastWipe;
 
-    public ActiveUsers(){
+    public ActiveUsers() {
         start();
     }
 
@@ -56,12 +56,12 @@ public class ActiveUsers extends Thread{
         }
     }
 
-    private boolean check (long id, String time, int messages) {
+    private boolean check(long id, String time, int messages) {
         try {
             Calendar now = Calendar.getInstance();
             now.setTime(data.format().parse(time));
 
-            if (now.get(Calendar.DAY_OF_YEAR) - lastWipe == 14){
+            if (now.get(Calendar.DAY_OF_YEAR) - lastWipe == 14) {
                 data.getUserInfo(id).clearQueue();
                 lastWipe = LocalDateTime.now().getDayOfYear();
             }

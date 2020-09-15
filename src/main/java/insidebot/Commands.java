@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import static insidebot.InsideBot.*;
 
 public class Commands{
+
     private final String prefix = "$";
     private final CommandHandler handler = new CommandHandler(prefix);
     private final String[] warningStrings = {bundle.get("command.first"), bundle.get("command.second"), bundle.get("command.third")};
@@ -36,8 +37,8 @@ public class Commands{
             listener.info("Commands", builder.toString());
         });
         handler.register("mute", "<@user> <delayDays> [reason...]", "Mute a user.", args -> {
-            if(Strings.parseInt(args[0]) <= 0){
-                listener.err(bundle.get("command.incorrect-number"));
+            if (Strings.parseInt(args[0]) <= 0) {
+                listener.err("command.incorrect-number");
                 return;
             }
 
@@ -51,13 +52,13 @@ public class Commands{
                 UserInfo info = data.getUserInfo(l);
 
                 if (isAdmin(listener.guild.getMember(user))) {
-                    listener.err(bundle.get("command.user-is-admin"));
+                    listener.err("command.user-is-admin");
                     return;
                 } else if (user.isBot()) {
-                    listener.err(bundle.get("command.user-is-bot"));
+                    listener.err("command.user-is-bot");
                     return;
-                } else if (listener.lastUser == user){
-                    listener.err(bundle.get("command.self-user"));
+                } else if (listener.lastUser == user) {
+                    listener.err("command.self-user");
                     return;
                 }
 
@@ -69,19 +70,19 @@ public class Commands{
                 info.mute(delayDays);
             } catch (Exception e) {
                 Log.err(e);
-                listener.err(bundle.get("command.incorrect-name"));
+                listener.err("command.incorrect-name");
             }
         });
         handler.register("delete", "<amount>", "Delete a some messages.", args -> {
-            if(Strings.parseInt(args[0]) <= 0){
-                listener.err(bundle.get("command.incorrect-number"));
+            if (Strings.parseInt(args[0]) <= 0) {
+                listener.err("command.incorrect-number");
                 return;
             }
 
             int number = Integer.parseInt(args[0]) + 1;
 
-            if(number >= 100){
-                listener.err(bundle.get("command.limit-number"));
+            if (number >= 100) {
+                listener.err("command.limit-number");
                 return;
             }
 
@@ -99,13 +100,13 @@ public class Commands{
                 UserInfo info = data.getUserInfo(l);
 
                 if (isAdmin(listener.guild.getMember(user))) {
-                    listener.err(bundle.get("command.user-is-admin"));
+                    listener.err("command.user-is-admin");
                     return;
                 } else if (user.isBot()) {
-                    listener.err(bundle.get("command.user-is-bot"));
+                    listener.err("command.user-is-bot");
                     return;
-                } else if (listener.lastUser == user){
-                    listener.err(bundle.get("command.self-user"));
+                } else if (listener.lastUser == user) {
+                    listener.err("command.self-user");
                     return;
                 }
 
@@ -113,7 +114,7 @@ public class Commands{
 
                 int warnings = info.getWarns();
 
-                listener.info(bundle.format("message.warn", user.getAsMention(), warningStrings[Mathf.clamp(warnings - 1, 0, warningStrings.length - 1)]));
+                listener.text("message.warn", user.getAsMention(), warningStrings[Mathf.clamp(warnings - 1, 0, warningStrings.length - 1)]);
 
                 if (info.getWarns() >= 3) {
                     EmbedBuilder builder = new EmbedBuilder().setColor(listener.normalColor);
@@ -125,7 +126,7 @@ public class Commands{
                 }
             } catch (Exception e) {
                 Log.err(e);
-                listener.err(bundle.get("command.incorrect-name"));
+                listener.err("command.incorrect-name");
             }
         });
         handler.register("warnings", "<@user>", "Get number of warnings a user has.", args -> {
@@ -137,13 +138,13 @@ public class Commands{
                 User user = listener.jda.retrieveUserById(l).complete();
                 UserInfo info = data.getUserInfo(l);
                 int warnings = info.getWarns();
-                listener.info(bundle.format("command.warnings", user.getName(), warnings, warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns")));
+                listener.text("command.warnings", user.getName(), warnings, warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns"));
             } catch (Exception e) {
-                listener.err(bundle.get("command.incorrect-name"));
+                listener.err("command.incorrect-name");
             }
         });
         handler.register("unwarn", "<@user> [count]", "Unwarn a user.", args -> {
-            if(args.length > 1 && Strings.parseInt(args[1]) <= 0){
+            if (args.length > 1 && Strings.parseInt(args[1]) <= 0) {
                 listener.lastSentMessage.getTextChannel().sendMessage(bundle.get("command.incorrect-number")).queue();
                 return;
             }
@@ -158,9 +159,9 @@ public class Commands{
                 UserInfo info = data.getUserInfo(l);
                 info.removeWarns(warnings);
 
-                listener.info(bundle.format("command.unwarn", user.getName(), warnings, warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns")));
+                listener.text("command.unwarn", user.getName(), warnings, warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns"));
             } catch (Exception e) {
-                listener.err(bundle.get("command.incorrect-name"));
+                listener.err("command.incorrect-name");
             }
         });
         handler.register("unmute", "<@user>", "Unmute a user.", args -> {
@@ -172,15 +173,15 @@ public class Commands{
                 UserInfo info = data.getUserInfo(l);
                 info.unmute();
             } catch (Exception e) {
-                listener.err(bundle.get("command.incorrect-name"));
+                listener.err("command.incorrect-name");
             }
         });
     }
 
-    void handle(MessageReceivedEvent event){
+    void handle(MessageReceivedEvent event) {
         String text = event.getMessage().getContentRaw();
 
-        if(event.getMessage().getContentRaw().startsWith(prefix)){
+        if (event.getMessage().getContentRaw().startsWith(prefix)) {
             listener.channel = event.getTextChannel();
             listener.lastUser = event.getAuthor();
             listener.lastMessage = event.getMessage();
@@ -199,13 +200,13 @@ public class Commands{
         }
     }
 
-    void handleResponse(CommandResponse response){
-        if(response.type == ResponseType.unknownCommand){
+    void handleResponse(CommandResponse response) {
+        if (response.type == ResponseType.unknownCommand) {
             listener.err(bundle.format("command.response.unknown", prefix));
-        }else if(response.type == ResponseType.manyArguments || response.type == ResponseType.fewArguments){
-            if(response.command.params.length == 0){
+        } else if (response.type == ResponseType.manyArguments || response.type == ResponseType.fewArguments) {
+            if (response.command.params.length == 0) {
                 listener.err(bundle.get("command.response.incorrect-arguments"), bundle.format("command.response.incorrect-argument", prefix, response.command.text));
-            }else{
+            } else {
                 listener.err(bundle.get("command.response.incorrect-arguments"), bundle.format("command.response.incorrect-arguments.text", prefix, response.command.text, response.command.paramText));
             }
         }

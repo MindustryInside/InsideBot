@@ -15,7 +15,7 @@ public class Checker extends Thread{
     }
 
     @Override
-    public void run() {
+    public void run(){
         while (true){
             try {
                 PreparedStatement statement = data.getCon().prepareStatement("SELECT * FROM DISCORD.USERS_INFO;");
@@ -24,7 +24,7 @@ public class Checker extends Thread{
                 while (resultSet.next()) {
                     String end = resultSet.getString("MUTE_END_DATE");
 
-                    if(check(end)){
+                    if (check(end)) {
                         PreparedStatement stmt = data.getCon().prepareStatement("SELECT ID FROM DISCORD.USERS_INFO WHERE MUTE_END_DATE=?;");
 
                         stmt.setString(1, end);
@@ -32,7 +32,7 @@ public class Checker extends Thread{
                         ResultSet resultId = stmt.executeQuery();
 
                         long id = 0;
-                        while (resultId.next()){
+                        while (resultId.next()) {
                             id = resultId.getLong(1);
                         }
 
@@ -41,18 +41,18 @@ public class Checker extends Thread{
                 }
 
                 sleep(10000);
-            }catch (InterruptedException | SQLException e){
+            } catch (InterruptedException | SQLException e) {
                 Log.err(e);
             }
         }
     }
 
-    private boolean check(String time){
+    private boolean check(String time) {
         try {
             Calendar unmuteDate = Calendar.getInstance();
             unmuteDate.setTime(data.format().parse(time));
             return LocalDateTime.now().getDayOfYear() > unmuteDate.get(Calendar.DAY_OF_YEAR);
-        }catch (Exception e){
+        } catch (Exception e) {
             return false;
         }
     }

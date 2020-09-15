@@ -1,5 +1,6 @@
 package insidebot;
 
+import arc.files.Fi;
 import arc.struct.ObjectMap;
 import arc.util.Log;
 import arc.util.Strings;
@@ -9,7 +10,6 @@ import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent;
-import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateNicknameEvent;
 import net.dv8tion.jda.api.events.message.*;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -19,24 +19,24 @@ import java.util.List;
 
 import static insidebot.InsideBot.*;
 
-public class Listener extends ListenerAdapter{
+public class Listener extends ListenerAdapter {
 
     public ObjectMap<Long, MetaInfo> messages = new ObjectMap<>();
 
     public Guild guild;
     public JDA jda;
-
+    public Color normalColor = Color.decode("#C4F5B7");
+    public Color errorColor = Color.decode("#ff3838");
     TextChannel channel;
     User lastUser;
     Message lastMessage;
     Message lastSentMessage;
 
-    public Color normalColor = Color.decode("#C4F5B7");
-    public Color errorColor = Color.decode("#ff3838");
+    public Fi temp = new Fi("message.txt");
 
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
-        try{
+        try {
             if (!event.getAuthor().isBot()) {
                 commands.handle(event);
                 handleEvent(event, EventType.messageReceive);
@@ -45,98 +45,90 @@ public class Listener extends ListenerAdapter{
                 info.setLastMessageId(event.getMessageIdLong());
                 info.setName(event.getAuthor().getName());
             }
-        }catch(Exception e){
+        } catch (Exception e) {
             Log.err(e);
         }
     }
 
     @Override
     public void onMessageUpdate(@Nonnull MessageUpdateEvent event) {
-        try{
+        try {
             if (!event.getAuthor().isBot()) handleEvent(event, EventType.messageEdit);
-        }catch(Exception e){
+        } catch (Exception e) {
             Log.err(e);
         }
     }
 
     @Override
     public void onMessageDelete(@Nonnull MessageDeleteEvent event) {
-        try{
+        try {
             handleEvent(event, EventType.messageDelete);
-        }catch(Exception e){
+        } catch (Exception e) {
             Log.err(e);
         }
     }
 
     @Override
     public void onGuildMemberJoin(@Nonnull GuildMemberJoinEvent event) {
-        try{
-            if(!event.getUser().isBot()) handleEvent(event, EventType.userJoin);
-        }catch(Exception e){
+        try {
+            if (!event.getUser().isBot()) handleEvent(event, EventType.userJoin);
+        } catch (Exception e) {
             Log.err(e);
         }
     }
 
     @Override
     public void onGuildMemberLeave(@Nonnull GuildMemberLeaveEvent event) {
-        try{
-            if(!event.getUser().isBot()) handleEvent(event, EventType.userLeave);
-        }catch(Exception e){
+        try {
+            if (!event.getUser().isBot()) handleEvent(event, EventType.userLeave);
+        } catch (Exception e) {
             Log.err(e);
         }
     }
 
-    @Override
-    public void onGuildMemberUpdateNickname(@Nonnull GuildMemberUpdateNicknameEvent event) {
-        try{
-            if(!event.getUser().isBot()) handleEvent(event, EventType.userNameEdit);
-        }catch(Exception e){
-            Log.err(e);
-        }
+    public void text(String text, Object... args) {
+        lastSentMessage = channel.sendMessage(bundled(text, args)).complete();
     }
 
-    public void info(String text, Object... args){
-        lastSentMessage = channel.sendMessage(Strings.format(text, args)).complete();
-    }
-
-    public void info(String title, String text){
-        MessageEmbed object = new EmbedBuilder()
-        .addField(title, text, true).setColor(normalColor).build();
+    public void info(String title, String text, Object... args) {
+        MessageEmbed object = new EmbedBuilder().setColor(normalColor)
+                .addField(title, bundled(text, args), true).build();
 
         lastSentMessage = channel.sendMessage(object).complete();
     }
 
-    public void err(String text, Object... args){
+    public void err(String text, Object... args) {
         err("Error", text, args);
     }
 
-    public void err(String title, String text, Object... args){
-        MessageEmbed e = new EmbedBuilder()
-        .addField(title, Strings.format(text, args), true).setColor(errorColor).build();
+    public void err(String title, String text, Object... args) {
+        MessageEmbed e = new EmbedBuilder().setColor(errorColor)
+                .addField(title, bundled(text, args), true).build();
+
         lastSentMessage = channel.sendMessage(e).complete();
     }
 
-    public void log(MessageEmbed embed){
+    private String bundled(String text, Object... args) {
+        if (!bundle.format(text, args).equals("???" + text + "???") && args.length > 0) {
+            return bundle.format(text, args);
+        } else if (bundle.has(text) && args.length == 0) {
+            return bundle.get(text);
+        } else {
+            return Strings.format(text, args);
+        }
+    }
+
+    public void log(MessageEmbed embed) {
         jda.getTextChannelById(logChannelID).sendMessage(embed).queue();
     }
 
-    public void log(MessageEmbed embed, List<Attachment> files){
-        //jda.getTextChannelById(logChannelID).sendMessage(embed).addFile(files.forEach(a -> a.downloadToFile("../tmp/" + a.getFileName()).get())).queue();
-    }
-
-    public void handleAction(Object object, ActionType type){
+    public void handleAction(Object object, ActionType type) {
         EmbedBuilder builder = new EmbedBuilder().setColor(listener.normalColor);
         User user = (User) object;
         switch (type) {
-            case kick -> {
-                guild.kick(user.getId()).queue();
-            }case ban -> {
-                guild.ban(user, 0).queue();
-            }case unBan ->{
-                guild.unban(user).queue();
-            }case mute -> {
-                guild.addRoleToMember(guild.getMember(user), jda.getRolesByName(muteRoleName, true).get(0)).queue();
-            }case unMute -> {
+            case ban -> guild.ban(user, 0).queue();
+            case mute -> guild.addRoleToMember(guild.getMember(user), jda.getRolesByName(muteRoleName, true).get(0)).queue();
+            case unMute -> {
                 builder.addField(bundle.get("message.unmute"), bundle.format("message.unmute.text", user.getName()), true);
                 builder.setFooter(data.zonedFormat());
 
@@ -146,111 +138,132 @@ public class Listener extends ListenerAdapter{
         }
     }
 
-    public void handleEvent(Object object, EventType type){
+    private void writeTemp(String text){
+        temp.writeString(text, false);
+    }
+
+    public void handleEvent(Object object, EventType type) {
         EmbedBuilder embedBuilder = new EmbedBuilder().setColor(normalColor);
         embedBuilder.setFooter(data.zonedFormat());
 
+        int maxLength = 1024;
         switch (type) {
             case messageReceive -> {
                 MessageReceivedEvent event = (MessageReceivedEvent) object;
                 MetaInfo info = new MetaInfo();
+                StringBuilder c = new StringBuilder();
                 info.text = event.getMessage().getContentRaw();
                 info.id = event.getAuthor().getIdLong();
 
-                if(!event.getMessage().getAttachments().isEmpty()){
+                if (!event.getMessage().getAttachments().isEmpty()) {
                     info.file = event.getMessage().getAttachments();
+                    c.append("\n---\n");
+                    info.file.forEach(a -> c.append(a.getUrl()).append("\n"));
+                    info.text += c.toString();
                 }
 
                 messages.put(event.getMessageIdLong(), info);
-            }case messageEdit -> {
+            }
+            case messageEdit -> {
                 MessageUpdateEvent event = (MessageUpdateEvent) object;
 
-                if(!messages.containsKey(event.getMessageIdLong())) return;
+                if (!messages.containsKey(event.getMessageIdLong()) | event.getMessage().isPinned()) return;
 
                 MetaInfo info = messages.get(event.getMessageIdLong());
 
+                String oldContent = info.text;
+                String newContent = event.getMessage().getContentRaw();
 
-                if (!event.getMessage().isPinned()) {
-                    embedBuilder.addField(bundle.get("message.edit"), bundle.format("message.edit.text",
-                            event.getAuthor().getName(), event.getTextChannel().getAsMention()
-                    ), true);
-                    embedBuilder.addField(bundle.get("message.edit.old-content"), info.text, false);
-                    embedBuilder.addField(bundle.get("message.edit.new-content"), event.getMessage().getContentRaw(), true);
+                embedBuilder.addField(bundle.get("message.edit"), bundle.format("message.edit.text",
+                        event.getAuthor().getName(), event.getTextChannel().getAsMention()
+                ), true);
+
+                if (newContent.length() < maxLength && oldContent.length() < maxLength) {
+                    embedBuilder.addField(bundle.get("message.edit.old-content"), oldContent, false);
+                    embedBuilder.addField(bundle.get("message.edit.new-content"), newContent, true);
                 } else {
-                    embedBuilder.addField(bundle.get("message.pin"), bundle.format("message.pin.text",
-                            event.getAuthor().getName(), event.getTextChannel().getAsMention()
-                    ), true);
-                    embedBuilder.addField(bundle.get("message.pin.content"), lastMessage.getContentRaw(), false);
+                    embedBuilder.addField(bundle.get("message.edit.old-content"), oldContent.substring(0, maxLength - 4) + "...", false);
+                    embedBuilder.addField(bundle.get("message.edit.new-content"), newContent.substring(0, maxLength - 4) + "...", true);
+                    writeTemp(Strings.format("{0}\n{1}\n\n{2}\n{3}",
+                                             bundle.get("message.edit.old-content"), oldContent,
+                                             bundle.get("message.edit.new-content"), newContent));
                 }
 
                 if (!event.getMessage().getAttachments().isEmpty()) {
                     info.file = event.getMessage().getAttachments();
                 } else {
-                    log(embedBuilder.build());
+                    if(newContent.length() < maxLength && oldContent.length() < maxLength)
+                        log(embedBuilder.build());
+                    else
+                        jda.getTextChannelById(logChannelID).sendMessage(embedBuilder.build()).addFile(temp.file()).queue();
                 }
 
                 if (!event.getMessage().getContentRaw().isEmpty()) info.text = event.getMessage().getContentRaw();
-            }case messageDelete -> {
+            }
+            case messageDelete -> {
                 MessageDeleteEvent event = (MessageDeleteEvent) object;
+                StringBuilder c = new StringBuilder();
                 MetaInfo info = messages.get(event.getMessageIdLong());
 
-                if(jda.retrieveUserById(info.id).complete() == null || info.text == null) return;
+                if (jda.retrieveUserById(info.id).complete() == null
+                        || info.text == null
+                        || !messages.containsKey(event.getMessageIdLong())) return;
+
+                User user = jda.retrieveUserById(info.id).complete();
+                String content = info.text;
+
+                if(!info.file.isEmpty()){
+                    info.file.forEach(a -> c.append("\n---").append(a.getUrl()).append("\n"));
+                    content += c.toString();
+                }
 
                 embedBuilder.addField(bundle.get("message.delete"), bundle.format("message.delete.text",
-                        jda.retrieveUserById(info.id).complete().getName(), event.getTextChannel().getAsMention()
-                ),false);
-                embedBuilder.addField(bundle.get("message.delete.content"), info.text, true);
+                        user.getName(), event.getTextChannel().getAsMention()
+                ), false);
+                if(content.length() < maxLength){
+                    embedBuilder.addField(bundle.get("message.delete.content"), content, true);
+                    log(embedBuilder.build());
+                }else{
+                    embedBuilder.addField(bundle.get("message.delete.content"), content.substring(0, maxLength - 4) + "...", true);
+                    writeTemp(Strings.format("{0}\n{1}", bundle.get("message.delete.content"), content));
+                    jda.getTextChannelById(logChannelID).sendMessage(embedBuilder.build()).addFile(temp.file()).queue();
+                }
 
-                /*for(AuditLogEntry e : guild.retrieveAuditLogs().type(net.dv8tion.jda.api.audit.ActionType.MESSAGE_DELETE)){
-                    e.getTargetIdLong();
-                    e.getUser().getIdLong();
-                }*/
-
-                log(embedBuilder.build());
                 messages.remove(event.getMessageIdLong());
-            }case userJoin -> {
+            }
+            case userJoin -> {
                 GuildMemberJoinEvent event = (GuildMemberJoinEvent) object;
 
-                embedBuilder.addField(bundle.get("message.user-join"), bundle.format("message.user-join.text", event.getUser().getName()),false);
+                embedBuilder.addField(bundle.get("message.user-join"), bundle.format("message.user-join.text", event.getUser().getName()), false);
 
                 log(embedBuilder.build());
-            }case userLeave -> {
+            }
+            case userLeave -> {
                 GuildMemberLeaveEvent event = (GuildMemberLeaveEvent) object;
 
-                embedBuilder.addField(bundle.get("message.user-leave"), bundle.format("message.user-leave.text", event.getUser().getName()),false);
-
-                log(embedBuilder.build());
-            }case userNameEdit -> {
-                GuildMemberUpdateNicknameEvent event = (GuildMemberUpdateNicknameEvent) object;
-
-                embedBuilder.addField(bundle.get("message.username-changed"), bundle.format("message.username-changed.text",
-                        event.getOldNickname(), event.getNewNickname()
-                ),false);
+                embedBuilder.addField(bundle.get("message.user-leave"), bundle.format("message.user-leave.text", event.getUser().getName()), false);
 
                 log(embedBuilder.build());
             }
         }
     }
 
-    public enum ActionType{
+    public enum ActionType {
         ban,
-        unBan,
-        kick,
         mute,
         unMute,
     }
 
-    public enum EventType{
+    public enum EventType {
         messageEdit,
         messageDelete,
         messageReceive,
 
-        userNameEdit,
         userJoin,
         userLeave,
     }
 
-    private static class MetaInfo{
+    private static class MetaInfo {
         public String text;
         public long id;
         public List<Attachment> file;

@@ -9,14 +9,14 @@ import java.util.Objects;
 import static insidebot.InsideBot.data;
 import static insidebot.InsideBot.listener;
 
-public class UserInfo {
+public class UserInfo{
 
-    private String name;
     private final long id;
+    private String name;
     private long lastMessageId;
     private Calendar lastSentMessage;
 
-    public UserInfo(String name, long id, long lastMessageId) {
+    public UserInfo(String name, long id, long lastMessageId){
         this.name = name;
         this.id = id;
         this.lastMessageId = lastMessageId;
@@ -24,14 +24,21 @@ public class UserInfo {
         lastSentMessage = Calendar.getInstance();
 
         data.preparedExecute(
-            "INSERT INTO DISCORD.USERS_INFO (NAME, ID, LAST_SENT_MESSAGE_DATE, LAST_SENT_MESSAGE_ID, MESSAGES_PER_WEEK, WARNS, MUTE_END_DATE) " +
-                "SELECT ?, ?, ?, ?, ?, ?, ? FROM DUAL WHERE NOT EXISTS (SELECT ID FROM DISCORD.USERS_INFO WHERE NAME=? AND ID=?);",
+                "INSERT INTO DISCORD.USERS_INFO (NAME, ID, LAST_SENT_MESSAGE_DATE, LAST_SENT_MESSAGE_ID, MESSAGES_PER_WEEK, WARNS, MUTE_END_DATE) " +
+                        "SELECT ?, ?, ?, ?, ?, ?, ? FROM DUAL WHERE NOT EXISTS (SELECT ID FROM DISCORD.USERS_INFO WHERE NAME=? AND ID=?);",
                 name, id, data.format().format(lastSentMessage.getTime()), lastMessageId,
                 getMessagesQueue(), getWarns(), unmuteDate(), name, id);
     }
 
     public String getName() {
         return name;
+    }
+
+    public void setName(String name){
+        this.name = name;
+
+        data.preparedExecute("UPDATE DISCORD.USERS_INFO SET NAME=? WHERE ID=?;",
+                             name, id);
     }
 
     public long getId() {
@@ -42,39 +49,7 @@ public class UserInfo {
         return lastMessageId;
     }
 
-    public Calendar getLastSentMessage() {
-        return lastSentMessage;
-    }
-
-    public String unmuteDate(){
-        // позже и с результ сетом разберусь
-        try (PreparedStatement statement = data.getCon().prepareStatement("SELECT * FROM DISCORD.USERS_INFO WHERE NAME=? AND ID=?;")) {
-
-            statement.setString(1, name);
-            statement.setLong(2, id);
-
-            ResultSet resultSet = statement.executeQuery();
-
-            String date = "";
-            while (resultSet.next()) {
-                date = resultSet.getString("MUTE_END_DATE");
-            }
-
-            return date;
-        } catch (SQLException e) {
-            Log.err(e);
-            return "";
-        }
-    }
-
-    public void setName(String name) {
-        this.name = name;
-
-        data.preparedExecute("UPDATE DISCORD.USERS_INFO SET NAME=? WHERE ID=?;",
-                             name, id);
-    }
-
-    public void setLastMessageId(long lastMessageId) {
+    public void setLastMessageId(long lastMessageId){
         this.lastMessageId = lastMessageId;
         lastSentMessage = Calendar.getInstance();
         addToQueue();
@@ -83,7 +58,17 @@ public class UserInfo {
                              lastMessageId, data.format().format(lastSentMessage.getTime()), name, id);
     }
 
-    public void mute(int delayDays) {
+    public Calendar getLastSentMessage() {
+        return lastSentMessage;
+    }
+
+    public String unmuteDate(){
+        return data.preparedQuery("SELECT * FROM DISCORD.USERS_INFO WHERE NAME=? AND ID=?;",
+                                 (rs, rowNum) -> rs.getString("MUTE_END_DATE"),
+                                  name, id).first();
+    }
+
+    public void mute(int delayDays){
         Calendar calendar = Calendar.getInstance();
         calendar.roll(Calendar.DAY_OF_YEAR, +delayDays);
 
@@ -102,7 +87,7 @@ public class UserInfo {
 
     public void unmute(){
         data.preparedExecute("UPDATE DISCORD.USERS_INFO SET MUTE_END_DATE=? WHERE NAME=? AND ID=?;",
-                      "", name, id);
+                "", name, id);
 
         listener.handleAction(listener.jda.retrieveUserById(id).complete(), Listener.ActionType.unMute);
     }
@@ -114,54 +99,26 @@ public class UserInfo {
                              warns, name, id);
     }
 
-    public void addWarns() {
+    public void addWarns(){
         data.preparedExecute("UPDATE DISCORD.USERS_INFO SET WARNS=? WHERE NAME=? AND ID=?;",
-                             (getWarns() + 1), name, id);
+                            (getWarns() + 1), name, id);
     }
 
-    public int getWarns() {
-        try (PreparedStatement statement = data.getCon().prepareStatement("SELECT * FROM DISCORD.USERS_INFO WHERE NAME=? AND ID=?;")) {
-
-            statement.setString(1, name);
-            statement.setLong(2, id);
-
-            ResultSet resultSet = statement.executeQuery();
-
-            int warns = 0;
-            while (resultSet.next()) {
-                warns = resultSet.getInt("WARNS");
-            }
-
-            return warns;
-        } catch (SQLException e) {
-            Log.err(e);
-            return 0;
-        }
+    public int getWarns(){
+        return data.preparedQuery("SELECT * FROM DISCORD.USERS_INFO WHERE NAME=? AND ID=?;",
+                                 (rs, rowNum) -> rs.getInt("WARNS"),
+                                  name, id).first();
     }
 
     public int getMessagesQueue(){
-        try (PreparedStatement statement = data.getCon().prepareStatement("SELECT * FROM DISCORD.USERS_INFO WHERE NAME=? AND ID=?;")) {
-
-            statement.setString(1, name);
-            statement.setLong(2, id);
-
-            ResultSet resultSet = statement.executeQuery();
-
-            int queue = 0;
-            while (resultSet.next()) {
-                queue = resultSet.getInt("MESSAGES_PER_WEEK");
-            }
-
-            return queue;
-        } catch (SQLException e) {
-            Log.err(e);
-            return 0;
-        }
+        return data.preparedQuery("SELECT * FROM DISCORD.USERS_INFO WHERE NAME=? AND ID=?;",
+                                 (rs, rowNum) -> rs.getInt("MESSAGES_PER_WEEK"),
+                                  name, id).first();
     }
 
     private void addToQueue(){
         data.preparedExecute("UPDATE DISCORD.USERS_INFO SET MESSAGES_PER_WEEK=? WHERE NAME=? AND ID=?;",
-                             (getMessagesQueue() + 1), name, id);
+                            (getMessagesQueue() + 1), name, id);
     }
 
     public void clearQueue(){
