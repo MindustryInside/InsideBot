@@ -4,17 +4,17 @@ import static insidebot.InsideBot.listener;
 
 public class Cleaner extends Thread{
 
-    public Cleaner() {
+    public Cleaner(){
         start();
     }
 
     @Override
     public void run(){
-        while (true) {
-            try {
+        while(true){
+            try{
                 listener.messages.clear();
                 sleep(43200000); // 12 часов
-            } catch (InterruptedException ignored) {}
+            }catch(InterruptedException ignored){}
         }
     }
 }

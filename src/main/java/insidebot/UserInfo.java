@@ -1,8 +1,5 @@
 package insidebot;
 
-import arc.util.Log;
-
-import java.sql.*;
 import java.util.Calendar;
 import java.util.Objects;
 
@@ -25,12 +22,12 @@ public class UserInfo{
 
         data.preparedExecute(
                 "INSERT INTO DISCORD.USERS_INFO (NAME, ID, LAST_SENT_MESSAGE_DATE, LAST_SENT_MESSAGE_ID, MESSAGES_PER_WEEK, WARNS, MUTE_END_DATE) " +
-                        "SELECT ?, ?, ?, ?, ?, ?, ? FROM DUAL WHERE NOT EXISTS (SELECT ID FROM DISCORD.USERS_INFO WHERE NAME=? AND ID=?);",
+                "SELECT ?, ?, ?, ?, ?, ?, ? FROM DUAL WHERE NOT EXISTS (SELECT ID FROM DISCORD.USERS_INFO WHERE NAME=? AND ID=?);",
                 name, id, data.format().format(lastSentMessage.getTime()), lastMessageId,
                 getMessagesQueue(), getWarns(), unmuteDate(), name, id);
     }
 
-    public String getName() {
+    public String getName(){
         return name;
     }
 
@@ -41,11 +38,11 @@ public class UserInfo{
                              name, id);
     }
 
-    public long getId() {
+    public long getId(){
         return id;
     }
 
-    public long getLastMessageId() {
+    public long getLastMessageId(){
         return lastMessageId;
     }
 
@@ -58,7 +55,7 @@ public class UserInfo{
                              lastMessageId, data.format().format(lastSentMessage.getTime()), name, id);
     }
 
-    public Calendar getLastSentMessage() {
+    public Calendar getLastSentMessage(){
         return lastSentMessage;
     }
 
@@ -87,7 +84,7 @@ public class UserInfo{
 
     public void unmute(){
         data.preparedExecute("UPDATE DISCORD.USERS_INFO SET MUTE_END_DATE=? WHERE NAME=? AND ID=?;",
-                "", name, id);
+                             "", name, id);
 
         listener.handleAction(listener.jda.retrieveUserById(id).complete(), Listener.ActionType.unMute);
     }
@@ -127,9 +124,9 @@ public class UserInfo{
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+    public boolean equals(Object o){
+        if(this == o) return true;
+        if(o == null || getClass() != o.getClass()) return false;
         UserInfo userInfo = (UserInfo) o;
         return id == userInfo.id && Objects.equals(name, userInfo.name);
     }

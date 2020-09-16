@@ -21,13 +21,13 @@ public class Database{
     private Connection con;
 
     public Database(){
-        try {
+        try{
             Log.info("Connecting to database...");
             Class.forName("org.h2.Driver");
             Server.createTcpServer("-tcpAllowOthers").start();
             con = DriverManager.getConnection(config.get("db-url"), config.get("db-username"), config.get("db-password"));
             init();
-        } catch (SQLException | ClassNotFoundException e) {
+        }catch(SQLException | ClassNotFoundException e){
             Log.err(e);
         }
     }
@@ -48,19 +48,19 @@ public class Database{
         );
     }
 
-    public Connection getCon() {
+    public Connection getCon(){
         return con;
     }
 
     // гениально
     public void preparedExecute(String sql, @Nonnull Object... values){
-        try (PreparedStatement stmt = getCon().prepareStatement(sql)) {
-            for (int i = 0; i < values.length; i++) {
+        try(PreparedStatement stmt = getCon().prepareStatement(sql)){
+            for(int i = 0; i < values.length; i++){
                 stmt.setObject(i + 1, values[i]);
             }
 
             stmt.executeUpdate();
-        } catch (SQLException e) {
+        }catch(SQLException e){
             Log.err(e);
         }
     }
@@ -68,15 +68,15 @@ public class Database{
     // хммм
     @Nullable
     public <T> Array<T> preparedQuery(String sql, @Nonnull Object[] args, RowMapper<T> rowMapper){
-        try (PreparedStatement statement = getCon().prepareStatement(sql)) {
-            for (int i = 0; i < args.length; i++) {
+        try(PreparedStatement statement = getCon().prepareStatement(sql)){
+            for(int i = 0; i < args.length; i++){
                 statement.setObject(i + 1, args[i]);
             }
 
             RowExtractor<T> r = new RowExtractor<>(rowMapper);
 
             return r.extractData(statement.executeQuery());
-        } catch (SQLException e) {
+        }catch(SQLException e){
             Log.err(e);
             return null;
         }
@@ -87,7 +87,7 @@ public class Database{
         return preparedQuery(sql, args, rowMapper);
     }
 
-    public UserInfo getUserInfo(long id) {
+    public UserInfo getUserInfo(long id){
         return preparedQuery("SELECT * FROM DISCORD.USERS_INFO WHERE ID=?;", (rs, rowNum) ->
                 new UserInfo(rs.getString("NAME"), id, rs.getLong("LAST_SENT_MESSAGE_ID")), id).first();
     }

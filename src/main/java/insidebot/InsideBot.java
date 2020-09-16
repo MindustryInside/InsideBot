@@ -13,7 +13,7 @@ import org.hjson.JsonValue;
 import javax.security.auth.login.LoginException;
 import java.util.Locale;
 
-public class InsideBot {
+public class InsideBot{
 
     public static final long guildID = 697929564210331681L;
     public static final long logChannelID = 747893115980873838L;
@@ -26,7 +26,7 @@ public class InsideBot {
     public static Database data;
     public static I18NBundle bundle;
 
-    public static void main(String[] args) throws InterruptedException, LoginException {
+    public static void main(String[] args) throws InterruptedException, LoginException{
         init();
 
         listener.jda = new JDABuilder(config.get("token"))
@@ -45,15 +45,15 @@ public class InsideBot {
         //activeUsers.lastWipe = LocalDateTime.now().getDayOfYear();
     }
 
-    private static void init() {
+    private static void init(){
         listener = new Listener();
         config = new Config();
 
         Fi fi = new Fi("bundle", Files.FileType.classpath);
 
-        try {
+        try{
             bundle = I18NBundle.createBundle(fi, new Locale(config.get("locale")), "Windows-1251");
-        } catch (Exception e) {
+        }catch(Exception e){
             Log.err(e);
             bundle = I18NBundle.createBundle(fi, new Locale(""), "Windows-1251");
         }
@@ -67,19 +67,19 @@ public class InsideBot {
         private final Fi config = new Fi("config.json", Files.FileType.classpath);
         private JsonObject object;
 
-        public Config() {
-            try {
+        public Config(){
+            try{
                 object = JsonValue.readJSON(config.readString()).asObject();
-            } catch (Exception e) {
+            }catch(Exception e){
                 Log.err(e);
             }
         }
 
-        public String get(String key) {
-            try {
+        public String get(String key){
+            try{
                 object = JsonValue.readJSON(config.readString()).asObject();
                 return object.get(key).asString();
-            } catch (Exception e) {
+            }catch(Exception e){
                 return "";
             }
         }
