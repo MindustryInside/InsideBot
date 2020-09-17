@@ -87,33 +87,25 @@ public class Listener extends ListenerAdapter{
     }
 
     public void text(String text, Object... args){
-        lastSentMessage = channel.sendMessage(bundled(text, args)).complete();
+        lastSentMessage = channel.sendMessage(Strings.format(text, args)).complete();
     }
 
     public void info(String title, String text, Object... args){
         MessageEmbed object = new EmbedBuilder().setColor(normalColor)
-                .addField(bundled(title), Strings.format(text, args), true).build();
+                .addField(title, Strings.format(text, args), true).build();
 
         lastSentMessage = channel.sendMessage(object).complete();
     }
 
     public void err(String text, Object... args){
-        err("$error", text, args);
+        err(bundle.get("error"), text, args);
     }
 
     public void err(String title, String text, Object... args){
         MessageEmbed e = new EmbedBuilder().setColor(errorColor)
-                .addField(bundled(title), bundled(text, args), true).build();
+                .addField(title, Strings.format(text, args), true).build();
 
         lastSentMessage = channel.sendMessage(e).complete();
-    }
-
-    public String bundled(String text, Object... args){
-        if(text.startsWith("$")){
-            return args.length > 0 ? bundle.format(text.substring(1), args) : bundle.get(text.substring(1));
-        }else{
-            return Strings.format(text, args);
-        }
     }
 
     public void log(MessageEmbed embed){
@@ -198,10 +190,10 @@ public class Listener extends ListenerAdapter{
 
                 info.text = event.getMessage().getContentRaw();
                 if(!event.getMessage().getAttachments().isEmpty() || !info.file.isEmpty()){
-                    StringBuilder c = new StringBuilder();
-                    c.append("\n---\n");
-                    event.getMessage().getAttachments().forEach(a -> c.append(a.getUrl()).append("\n"));
-                    info.text += c.toString();
+                    StringBuilder builder = new StringBuilder();
+                    builder.append("\n---\n");
+                    event.getMessage().getAttachments().forEach(a -> builder.append(a.getUrl()).append("\n"));
+                    info.text += builder.toString();
                 }
             }
             case messageDelete -> {
@@ -216,7 +208,7 @@ public class Listener extends ListenerAdapter{
                 String content = info.text;
 
                 embedBuilder.addField(bundle.get("message.delete"), bundle.format("message.delete.text",
-                        user.getName(), event.getTextChannel().getAsMention()
+                                      user.getName(), event.getTextChannel().getAsMention()
                 ), false);
                 if(content.length() < maxLength){
                     embedBuilder.addField(bundle.get("message.delete.content"), content, true);
