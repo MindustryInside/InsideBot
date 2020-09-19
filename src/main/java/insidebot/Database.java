@@ -1,13 +1,9 @@
 package insidebot;
 
-import arc.struct.Array;
 import arc.util.Log;
-import insidebot.data.RowExtractor;
-import insidebot.data.RowMapper;
 import org.h2.tools.Server;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -65,35 +61,28 @@ public class Database{
         }
     }
 
-    // хммм
-    @Nullable
-    public <T> Array<T> preparedQuery(String sql, @Nonnull Object[] args, RowMapper<T> rowMapper){
-        try(PreparedStatement statement = getCon().prepareStatement(sql)){
-            for(int i = 0; i < args.length; i++){
-                statement.setObject(i + 1, args[i]);
+    public UserInfo getUserInfo(long id){
+        try(PreparedStatement statement = getCon().prepareStatement("SELECT * FROM DISCORD.USERS_INFO WHERE ID=?;")){
+
+            statement.setLong(1, id);
+
+            ResultSet resultSet = statement.executeQuery();
+
+            String name = "";
+            long lastMessageId = 0L;
+            while(resultSet.next()){
+                name = resultSet.getString("NAME");
+                lastMessageId = resultSet.getLong("LAST_SENT_MESSAGE_ID");
             }
 
-            RowExtractor<T> r = new RowExtractor<>(rowMapper);
-
-            return r.extractData(statement.executeQuery());
+            return new UserInfo(name, id, lastMessageId);
         }catch(SQLException e){
-            Log.err(e);
             return null;
         }
     }
 
-    @Nullable
-    public <T> Array<T> preparedQuery(String sql, RowMapper<T> rowMapper, @Nonnull Object... args){
-        return preparedQuery(sql, args, rowMapper);
-    }
-
-    public UserInfo getUserInfo(long id){
-        return preparedQuery("SELECT * FROM DISCORD.USERS_INFO WHERE ID=?;", (rs, rowNum) ->
-                new UserInfo(rs.getString("NAME"), id, rs.getLong("LAST_SENT_MESSAGE_ID")), id).first();
-    }
-
     public DateFormat format(){
-        return new SimpleDateFormat("MM-dd HH:mm");
+        return new SimpleDateFormat("yyyy-MM-dd HH:mm");
     }
 
     public String zonedFormat(){

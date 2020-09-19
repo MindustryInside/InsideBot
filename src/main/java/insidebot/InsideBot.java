@@ -4,8 +4,7 @@ import arc.Files;
 import arc.files.Fi;
 import arc.util.I18NBundle;
 import arc.util.Log;
-import insidebot.thread.Checker;
-import insidebot.thread.Cleaner;
+import insidebot.thread.*;
 import net.dv8tion.jda.api.JDABuilder;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
@@ -38,11 +37,10 @@ public class InsideBot{
 
         Log.info("Discord bot up.");
 
+        //threads
         new Checker();
         new Cleaner();
-
-        //ActiveUsers activeUsers = new ActiveUsers();   на время изменений
-        //activeUsers.lastWipe = LocalDateTime.now().getDayOfYear();
+        new ActiveUsers();
     }
 
     private static void init(){
@@ -54,7 +52,6 @@ public class InsideBot{
         try{
             bundle = I18NBundle.createBundle(fi, new Locale(config.get("locale")), "Windows-1251");
         }catch(Exception e){
-            Log.err(e);
             bundle = I18NBundle.createBundle(fi, new Locale(""), "Windows-1251");
         }
 
@@ -63,12 +60,11 @@ public class InsideBot{
     }
 
     public static class Config{
-
-        private final Fi config = new Fi("config.json", Files.FileType.classpath);
-        private JsonObject object;
+        public JsonObject object;
 
         public Config(){
             try{
+                Fi config = new Fi("config.json", Files.FileType.classpath);
                 object = JsonValue.readJSON(config.readString()).asObject();
             }catch(Exception e){
                 Log.err(e);
@@ -76,12 +72,7 @@ public class InsideBot{
         }
 
         public String get(String key){
-            try{
-                object = JsonValue.readJSON(config.readString()).asObject();
-                return object.get(key).asString();
-            }catch(Exception e){
-                return "";
-            }
+            return object.getString(key, "");
         }
     }
 }

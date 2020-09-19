@@ -1,6 +1,7 @@
 package insidebot.thread;
 
 import arc.util.Log;
+import net.dv8tion.jda.api.entities.Member;
 
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -9,8 +10,6 @@ import java.util.Calendar;
 import static insidebot.InsideBot.*;
 
 public class ActiveUsers extends Thread{
-
-    public int lastWipe;
 
     public ActiveUsers(){
         start();
@@ -26,7 +25,7 @@ public class ActiveUsers extends Thread{
                 while(resultSet.next()){
                     String lastSendMessage = resultSet.getString("LAST_SENT_MESSAGE_DATE");
                     int messages = resultSet.getInt("MESSAGES_PER_WEEK");
-                    PreparedStatement stmt = data.getCon().prepareStatement("SELECT ID FROM DISCORD.USERS_INFO WHERE LAST_SENT_MESSAGE_DATE=? AND MESSAGES_PER_WEEK=?;");
+                    PreparedStatement stmt = data.getCon().prepareStatement("SELECT * FROM DISCORD.USERS_INFO WHERE LAST_SENT_MESSAGE_DATE=? AND MESSAGES_PER_WEEK=?;");
 
                     stmt.setString(1, lastSendMessage);
                     stmt.setInt(2, messages);
@@ -35,16 +34,15 @@ public class ActiveUsers extends Thread{
 
                     long id = 0;
                     while(resultId.next()){
-                        id = resultId.getLong(1);
+                        id = resultId.getLong("ID");
                     }
 
-                    if(check(id, lastSendMessage, messages)){
-                        if(listener.guild.getMemberById(id) != null){
-                            listener.guild.addRoleToMember(listener.guild.getMemberById(id), listener.jda.getRolesByName(activeUserRoleName, true).get(0)).queue();
-                        }
-                    }else{
-                        if(listener.guild.getMemberById(id) != null){
-                            listener.guild.removeRoleFromMember(listener.guild.getMemberById(id), listener.jda.getRolesByName(activeUserRoleName, true).get(0)).queue();
+                    Member member = listener.guild.getMemberById(id);
+                    if(member != null){
+                        if(check(lastSendMessage, messages, id)){
+                            listener.guild.addRoleToMember(member, listener.jda.getRolesByName(activeUserRoleName, true).get(0)).queue();
+                        }else{
+                            listener.guild.removeRoleFromMember(member, listener.jda.getRolesByName(activeUserRoleName, true).get(0)).queue();
                         }
                     }
                 }
@@ -56,17 +54,17 @@ public class ActiveUsers extends Thread{
         }
     }
 
-    private boolean check(long id, String time, int messages){
+    private boolean check(String time, int messages, long id){
         try{
-            Calendar now = Calendar.getInstance();
-            now.setTime(data.format().parse(time));
+            Calendar lastSentMessage = Calendar.getInstance();
+            lastSentMessage.setTime(data.format().parse(time));
+            int nowWeek = LocalDateTime.now().getDayOfWeek().getValue();
+            int lastSentWeek = lastSentMessage.get(Calendar.WEEK_OF_YEAR);
 
-            if(now.get(Calendar.DAY_OF_YEAR) - lastWipe == 14){
+            if(nowWeek - lastSentWeek >= 3){
                 data.getUserInfo(id).clearQueue();
-                lastWipe = LocalDateTime.now().getDayOfYear();
-            }
-
-            return (LocalDateTime.now().getDayOfWeek().getValue() - now.get(Calendar.DAY_OF_WEEK) <= 7) && messages >= 20;
+                return false;
+            }else return messages >= 75 && nowWeek - lastSentWeek < 3;
         }catch(Exception e){
             return false;
         }

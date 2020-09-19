@@ -206,10 +206,10 @@ public class Commands{
         }else if(response.type == ResponseType.manyArguments || response.type == ResponseType.fewArguments){
             if(response.command.params.length == 0){
                 listener.err(bundle.get("command.response.incorrect-arguments"), bundle.format("command.response.incorrect-argument",
-                             prefix, response.command.text));
+                        prefix, response.command.text));
             }else{
                 listener.err(bundle.get("command.response.incorrect-arguments"), bundle.format("command.response.incorrect-arguments.text",
-                             prefix, response.command.text, response.command.paramText));
+                        prefix, response.command.text, response.command.paramText));
             }
         }
     }

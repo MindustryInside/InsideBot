@@ -156,6 +156,7 @@ public class Listener extends ListenerAdapter{
             }
             case messageEdit -> {
                 MessageUpdateEvent event = (MessageUpdateEvent) object;
+                boolean write = false;
 
                 if(!messages.containsKey(event.getMessageIdLong()) | event.getMessage().isPinned()) return;
 
@@ -168,29 +169,27 @@ public class Listener extends ListenerAdapter{
                         event.getAuthor().getName(), event.getTextChannel().getAsMention()
                 ), true);
 
-                if(newContent.length() < maxLength && oldContent.length() < maxLength){
-                    embedBuilder.addField(bundle.get("message.edit.old-content"), oldContent, false);
-                    embedBuilder.addField(bundle.get("message.edit.new-content"), newContent, true);
-                }else{
-                    embedBuilder.addField(bundle.get("message.edit.old-content"), oldContent.substring(0, maxLength - 4) + "...", false);
-                    embedBuilder.addField(bundle.get("message.edit.new-content"), newContent.substring(0, maxLength - 4) + "...", true);
+                if(newContent.length() >= maxLength || oldContent.length() >= maxLength){
+                    write = true;
                     writeTemp(Strings.format("{0}\n{1}\n\n{2}\n{3}",
-                                             bundle.get("message.edit.old-content"), oldContent,
-                                             bundle.get("message.edit.new-content"), newContent));
+                            bundle.get("message.edit.old-content"), oldContent,
+                            bundle.get("message.edit.new-content"), newContent));
                 }
 
-                if(!event.getMessage().getAttachments().isEmpty()){
-                    info.file = event.getMessage().getAttachments();
+                embedBuilder.addField(bundle.get("message.edit.old-content"), oldContent.length() >= maxLength
+                        ? (oldContent.substring(0, maxLength - 4) + "...") : oldContent, false);
+                embedBuilder.addField(bundle.get("message.edit.new-content"), newContent.length() >= maxLength
+                        ? (newContent.substring(0, maxLength - 4)) + "..." : newContent, true);
+
+                if(write){
+                    jda.getTextChannelById(logChannelID).sendMessage(embedBuilder.build()).addFile(temp.file()).queue();
                 }else{
-                    if(newContent.length() < maxLength && oldContent.length() < maxLength)
-                        log(embedBuilder.build());
-                    else
-                        jda.getTextChannelById(logChannelID).sendMessage(embedBuilder.build()).addFile(temp.file()).queue();
+                    log(embedBuilder.build());
                 }
 
                 info.text = event.getMessage().getContentRaw();
-                if(!event.getMessage().getAttachments().isEmpty() || !info.file.isEmpty()){
-                    StringBuilder builder = new StringBuilder();
+                if(!event.getMessage().getAttachments().isEmpty()){
+                    StringBuilder builder = new StringBuilder(); // wtf, why npe?
                     builder.append("\n---\n");
                     event.getMessage().getAttachments().forEach(a -> builder.append(a.getUrl()).append("\n"));
                     info.text += builder.toString();
@@ -208,15 +207,16 @@ public class Listener extends ListenerAdapter{
                 String content = info.text;
 
                 embedBuilder.addField(bundle.get("message.delete"), bundle.format("message.delete.text",
-                                      user.getName(), event.getTextChannel().getAsMention()
+                        user.getName(), event.getTextChannel().getAsMention()
                 ), false);
-                if(content.length() < maxLength){
-                    embedBuilder.addField(bundle.get("message.delete.content"), content, true);
-                    log(embedBuilder.build());
-                }else{
+
+                if(content.length() >= maxLength){
                     embedBuilder.addField(bundle.get("message.delete.content"), content.substring(0, maxLength - 4) + "...", true);
                     writeTemp(Strings.format("{0}\n{1}", bundle.get("message.delete.content"), content));
                     jda.getTextChannelById(logChannelID).sendMessage(embedBuilder.build()).addFile(temp.file()).queue();
+                }else{
+                    embedBuilder.addField(bundle.get("message.delete.content"), content, true);
+                    log(embedBuilder.build());
                 }
 
                 messages.remove(event.getMessageIdLong());
@@ -230,6 +230,7 @@ public class Listener extends ListenerAdapter{
             }
             case userLeave -> {
                 GuildMemberLeaveEvent event = (GuildMemberLeaveEvent) object;
+                data.getUserInfo(event.getUser().getIdLong()).remove();
 
                 embedBuilder.addField(bundle.get("message.user-leave"), bundle.format("message.user-leave.text", event.getUser().getName()), false);
 
@@ -239,9 +240,7 @@ public class Listener extends ListenerAdapter{
     }
 
     public enum ActionType{
-        ban,
-        mute,
-        unMute,
+        ban, mute, unMute,
     }
 
     public enum EventType{

@@ -1,5 +1,6 @@
 package insidebot;
 
+import java.sql.*;
 import java.util.Calendar;
 import java.util.Objects;
 
@@ -60,9 +61,21 @@ public class UserInfo{
     }
 
     public String unmuteDate(){
-        return data.preparedQuery("SELECT * FROM DISCORD.USERS_INFO WHERE NAME=? AND ID=?;",
-                                 (rs, rowNum) -> rs.getString("MUTE_END_DATE"),
-                                  name, id).first();
+        try(PreparedStatement statement = data.getCon().prepareStatement("SELECT * FROM DISCORD.USERS_INFO WHERE NAME=? AND ID=?;")){
+            statement.setString(1, name);
+            statement.setLong(2, id);
+
+            ResultSet rs = statement.executeQuery();
+
+            String muteEnd = "";
+            while(rs.next()){
+                muteEnd = rs.getString("MUTE_END_DATE");
+            }
+
+            return muteEnd;
+        }catch(SQLException e){
+            return "";
+        }
     }
 
     public void mute(int delayDays){
@@ -76,10 +89,14 @@ public class UserInfo{
     }
 
     public void ban(){
-        data.preparedExecute("DELETE FROM DISCORD.USERS_INFO WHERE NAME=? AND ID=?;",
-                             name, id);
+        remove();
 
         listener.handleAction(listener.jda.retrieveUserById(id).complete(), Listener.ActionType.ban);
+    }
+
+    public void remove(){
+        data.preparedExecute("DELETE FROM DISCORD.USERS_INFO WHERE NAME=? AND ID=?;",
+                name, id);
     }
 
     public void unmute(){
@@ -102,15 +119,39 @@ public class UserInfo{
     }
 
     public int getWarns(){
-        return data.preparedQuery("SELECT * FROM DISCORD.USERS_INFO WHERE NAME=? AND ID=?;",
-                                 (rs, rowNum) -> rs.getInt("WARNS"),
-                                  name, id).first();
+        try(PreparedStatement statement = data.getCon().prepareStatement("SELECT * FROM DISCORD.USERS_INFO WHERE NAME=? AND ID=?;")){
+            statement.setString(1, name);
+            statement.setLong(2, id);
+
+            ResultSet rs = statement.executeQuery();
+
+            int warns = 0;
+            while(rs.next()){
+                warns = rs.getInt("WARNS");
+            }
+
+            return warns;
+        }catch(SQLException e){
+            return 0;
+        }
     }
 
     public int getMessagesQueue(){
-        return data.preparedQuery("SELECT * FROM DISCORD.USERS_INFO WHERE NAME=? AND ID=?;",
-                                 (rs, rowNum) -> rs.getInt("MESSAGES_PER_WEEK"),
-                                  name, id).first();
+        try(PreparedStatement statement = data.getCon().prepareStatement("SELECT * FROM DISCORD.USERS_INFO WHERE NAME=? AND ID=?;")){
+            statement.setString(1, name);
+            statement.setLong(2, id);
+
+            ResultSet rs = statement.executeQuery();
+
+            int warns = 0;
+            while(rs.next()){
+                warns = rs.getInt("MESSAGES_PER_WEEK");
+            }
+
+            return warns;
+        }catch(SQLException e){
+            return 0;
+        }
     }
 
     private void addToQueue(){
@@ -120,7 +161,7 @@ public class UserInfo{
 
     public void clearQueue(){
         data.preparedExecute("UPDATE DISCORD.USERS_INFO SET MESSAGES_PER_WEEK=? WHERE NAME=? AND ID=?;",
-                      0, name, id);
+                             0, name, id);
     }
 
     @Override
