@@ -1,9 +1,9 @@
 package insidebot;
 
 import arc.files.Fi;
+import arc.func.Cons;
 import arc.struct.ObjectMap;
-import arc.util.Log;
-import arc.util.Strings;
+import arc.util.*;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.events.message.*;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.awt.*;
 import java.util.List;
 
@@ -92,9 +93,13 @@ public class Listener extends ListenerAdapter{
 
     public void info(String title, String text, Object... args){
         MessageEmbed object = new EmbedBuilder().setColor(normalColor)
-                .addField(title, Strings.format(text, args), true).build();
+                .setTitle(title).setDescription(Strings.format(text, args)).build();
 
         lastSentMessage = channel.sendMessage(object).complete();
+    }
+
+    public void embed(MessageEmbed embed){
+        lastSentMessage = channel.sendMessage(embed).complete();
     }
 
     public void err(String text, Object... args){
@@ -103,7 +108,7 @@ public class Listener extends ListenerAdapter{
 
     public void err(String title, String text, Object... args){
         MessageEmbed e = new EmbedBuilder().setColor(errorColor)
-                .addField(title, Strings.format(text, args), true).build();
+                .setTitle(title).setDescription(Strings.format(text, args)).build();
 
         lastSentMessage = channel.sendMessage(e).complete();
     }
@@ -119,7 +124,8 @@ public class Listener extends ListenerAdapter{
             case ban -> guild.ban(user, 0).queue();
             case mute -> guild.addRoleToMember(guild.getMember(user), jda.getRolesByName(muteRoleName, true).get(0)).queue();
             case unMute -> {
-                builder.addField(bundle.get("message.unmute"), bundle.format("message.unmute.text", user.getName()), true);
+                builder.setTitle(bundle.get("message.unmute"));
+                builder.setDescription(bundle.format("message.unmute.text", user.getName()));
                 builder.setFooter(data.zonedFormat());
 
                 listener.log(builder.build());
@@ -165,15 +171,22 @@ public class Listener extends ListenerAdapter{
                 String oldContent = info.text;
                 String newContent = event.getMessage().getContentRaw();
 
-                embedBuilder.addField(bundle.get("message.edit"), bundle.format("message.edit.text",
-                        event.getAuthor().getName(), event.getTextChannel().getAsMention()
-                ), true);
+                embedBuilder.setAuthor(memberedName(event.getAuthor()), null, event.getAuthor().getAvatarUrl());
+                embedBuilder.setTitle(bundle.format("message.edit", event.getTextChannel().getName()));
+                embedBuilder.setDescription(bundle.format("message.edit.description",
+                                            event.getGuild().getId(), event.getTextChannel().getId(), event.getMessageId()));
 
                 if(newContent.length() >= maxLength || oldContent.length() >= maxLength){
                     write = true;
-                    writeTemp(Strings.format("{0}\n{1}\n\n{2}\n{3}",
-                            bundle.get("message.edit.old-content"), oldContent,
-                            bundle.get("message.edit.new-content"), newContent));
+                    writeTemp(String.format("%s\n%s\n\n%s\n%s", bundle.get("message.edit.old-content"), oldContent,
+                                            bundle.get("message.edit.new-content"), newContent));
+                }
+
+                if(!event.getMessage().getAttachments().isEmpty()){
+                    StringBuilder builder = new StringBuilder();
+                    builder.append("\n---\n");
+                    event.getMessage().getAttachments().forEach(a -> builder.append(a.getUrl()).append("\n"));
+                    newContent += builder.toString();
                 }
 
                 embedBuilder.addField(bundle.get("message.edit.old-content"), oldContent.length() >= maxLength
@@ -187,32 +200,24 @@ public class Listener extends ListenerAdapter{
                     log(embedBuilder.build());
                 }
 
-                info.text = event.getMessage().getContentRaw();
-                if(!event.getMessage().getAttachments().isEmpty()){
-                    StringBuilder builder = new StringBuilder(); // wtf, why npe?
-                    builder.append("\n---\n");
-                    event.getMessage().getAttachments().forEach(a -> builder.append(a.getUrl()).append("\n"));
-                    info.text += builder.toString();
-                }
+                info.text = newContent;
             }
             case messageDelete -> {
                 MessageDeleteEvent event = (MessageDeleteEvent) object;
+                if(!messages.containsKey(event.getMessageIdLong())) return;
                 MetaInfo info = messages.get(event.getMessageIdLong());
-
-                if(jda.retrieveUserById(info.id).complete() == null
-                        || info.text == null
-                        || !messages.containsKey(event.getMessageIdLong())) return;
 
                 User user = jda.retrieveUserById(info.id).complete();
                 String content = info.text;
 
-                embedBuilder.addField(bundle.get("message.delete"), bundle.format("message.delete.text",
-                        user.getName(), event.getTextChannel().getAsMention()
-                ), false);
+                if(user == null || content == null) return;
+
+                embedBuilder.setAuthor(memberedName(user), null, user.getAvatarUrl());
+                embedBuilder.setTitle(bundle.format("message.delete", event.getTextChannel().getName()));
 
                 if(content.length() >= maxLength){
                     embedBuilder.addField(bundle.get("message.delete.content"), content.substring(0, maxLength - 4) + "...", true);
-                    writeTemp(Strings.format("{0}\n{1}", bundle.get("message.delete.content"), content));
+                    writeTemp(String.format("%s\n%s", bundle.get("message.delete.content"), content));
                     jda.getTextChannelById(logChannelID).sendMessage(embedBuilder.build()).addFile(temp.file()).queue();
                 }else{
                     embedBuilder.addField(bundle.get("message.delete.content"), content, true);
@@ -224,7 +229,8 @@ public class Listener extends ListenerAdapter{
             case userJoin -> {
                 GuildMemberJoinEvent event = (GuildMemberJoinEvent) object;
 
-                embedBuilder.addField(bundle.get("message.user-join"), bundle.format("message.user-join.text", event.getUser().getName()), false);
+                embedBuilder.setTitle(bundle.get("message.user-join"));
+                embedBuilder.setDescription(bundle.format("message.user-join.text", event.getUser().getName()));
 
                 log(embedBuilder.build());
             }
@@ -232,11 +238,27 @@ public class Listener extends ListenerAdapter{
                 GuildMemberLeaveEvent event = (GuildMemberLeaveEvent) object;
                 data.getUserInfo(event.getUser().getIdLong()).remove();
 
-                embedBuilder.addField(bundle.get("message.user-leave"), bundle.format("message.user-leave.text", event.getUser().getName()), false);
+                embedBuilder.setTitle(bundle.get("message.user-leave"));
+                embedBuilder.setDescription(bundle.format("message.user-leave.text", event.getUser().getName()));
 
                 log(embedBuilder.build());
             }
         }
+    }
+
+    public EmbedBuilder createEmbed(Cons<EmbedBuilder> embed){
+        EmbedBuilder embedBuilder = new EmbedBuilder();
+        embed.get(embedBuilder);
+        return embedBuilder;
+    }
+
+    public String memberedName(User user){
+        String name = user.getName();
+        Member member = guild.getMember(user);
+        if(member.getNickname() != null){
+            name += " / " + member.getNickname();
+        }
+        return name;
     }
 
     public enum ActionType{
@@ -244,12 +266,12 @@ public class Listener extends ListenerAdapter{
     }
 
     public enum EventType{
+        messageReceive,
         messageEdit,
         messageDelete,
-        messageReceive,
 
         userJoin,
-        userLeave,
+        userLeave
     }
 
     private static class MetaInfo{

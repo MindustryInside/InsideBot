@@ -17,7 +17,7 @@ public class Commands{
     private final String[] warningStrings = {bundle.get("command.first"), bundle.get("command.second"), bundle.get("command.third")};
 
     Commands(){
-        handler.register("help", "Displays all bot commands.", args -> {
+        handler.register("help", bundle.get("command.help.description"), args -> {
             StringBuilder builder = new StringBuilder();
 
             for(Command command : handler.getCommandList()){
@@ -34,9 +34,9 @@ public class Commands{
                 builder.append(command.description);
                 builder.append("\n");
             }
-            listener.info(bundle.get("command.list"), builder.toString());
+            listener.info(bundle.get("command.help"), builder.toString());
         });
-        handler.register("mute", "<@user> <delayDays> [reason...]", "Mute a user.", args -> {
+        handler.register("mute", "<@user> <delayDays> [reason...]", bundle.get("command.mute.description"), args -> {
             if(Strings.parseInt(args[1]) <= 0){
                 listener.err(bundle.get("command.incorrect-number"));
                 return;
@@ -58,7 +58,7 @@ public class Commands{
                     listener.err(bundle.get("command.user-is-bot"));
                     return;
                 }else if(listener.lastUser == user){
-                    listener.err(bundle.get("command.self-user"));
+                    listener.err(bundle.get("command.mute.self-user"));
                     return;
                 }
 
@@ -73,7 +73,7 @@ public class Commands{
                 listener.err(bundle.get("command.incorrect-name"));
             }
         });
-        handler.register("delete", "<amount>", "Delete some messages.", args -> {
+        handler.register("delete", "<amount>", bundle.get("command.delete.description"), args -> {
             if(Strings.parseInt(args[0]) <= 0){
                 listener.err(bundle.get("command.incorrect-number"));
                 return;
@@ -90,7 +90,7 @@ public class Commands{
             listener.channel.deleteMessages(hist.getRetrievedHistory()).queue();
             Log.info("Deleted {0} messages.", number);
         });
-        handler.register("warn", "<@user> [reason...]", "Warn a user.", args -> {
+        handler.register("warn", "<@user> [reason...]", bundle.get("command.warn.description"), args -> {
             String author = args[0].substring(2, args[0].length() - 1);
             if(author.startsWith("!")) author = author.substring(1);
 
@@ -106,7 +106,7 @@ public class Commands{
                     listener.err(bundle.get("command.user-is-bot"));
                     return;
                 }else if(listener.lastUser == user){
-                    listener.err(bundle.get("command.self-user"));
+                    listener.err(bundle.get("command.warn.self-user"));
                     return;
                 }
 
@@ -118,7 +118,8 @@ public class Commands{
 
                 if(info.getWarns() >= 3){
                     EmbedBuilder builder = new EmbedBuilder().setColor(listener.normalColor);
-                    builder.addField(bundle.get("message.ban"), bundle.format("message.ban.text", user.getName()), true);
+                    builder.setTitle(bundle.get("message.ban"));
+                    builder.setDescription(bundle.format("message.ban.text", user.getName()));
                     builder.setFooter(InsideBot.data.zonedFormat());
 
                     listener.log(builder.build());
@@ -128,7 +129,7 @@ public class Commands{
                 listener.err(bundle.get("command.incorrect-name"));
             }
         });
-        handler.register("warnings", "<@user>", "Get number of warnings a user has.", args -> {
+        handler.register("warnings", "<@user>", bundle.get("command.warnings.description"), args -> {
             String author = args[0].substring(2, args[0].length() - 1);
             if(author.startsWith("!")) author = author.substring(1);
 
@@ -143,7 +144,7 @@ public class Commands{
                 listener.err(bundle.get("command.incorrect-name"));
             }
         });
-        handler.register("unwarn", "<@user> [count]", "Unwarn a user.", args -> {
+        handler.register("unwarn", "<@user> [count]", bundle.get("command.unwarn.description"), args -> {
             if(args.length > 1 && Strings.parseInt(args[1]) <= 0){
                 listener.text(bundle.get("command.incorrect-number"));
                 return;
@@ -159,12 +160,13 @@ public class Commands{
                 UserInfo info = InsideBot.data.getUserInfo(l);
                 info.removeWarns(warnings);
 
-                listener.text(bundle.format("command.unwarn", user.getName(), warnings, warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns")));
+                listener.text(bundle.format("command.unwarn", user.getName(), warnings,
+                        warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns")));
             }catch(Exception e){
                 listener.err(bundle.get("command.incorrect-name"));
             }
         });
-        handler.register("unmute", "<@user>", "Unmute a user.", args -> {
+        handler.register("unmute", "<@user>", bundle.get("command.unmute.description"), args -> {
             String author = args[0].substring(2, args[0].length() - 1);
             if(author.startsWith("!")) author = author.substring(1);
 
@@ -206,10 +208,10 @@ public class Commands{
         }else if(response.type == ResponseType.manyArguments || response.type == ResponseType.fewArguments){
             if(response.command.params.length == 0){
                 listener.err(bundle.get("command.response.incorrect-arguments"), bundle.format("command.response.incorrect-argument",
-                        prefix, response.command.text));
+                             prefix, response.command.text));
             }else{
                 listener.err(bundle.get("command.response.incorrect-arguments"), bundle.format("command.response.incorrect-arguments.text",
-                        prefix, response.command.text, response.command.paramText));
+                             prefix, response.command.text, response.command.paramText));
             }
         }
     }

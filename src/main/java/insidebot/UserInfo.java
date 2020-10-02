@@ -96,7 +96,7 @@ public class UserInfo{
 
     public void remove(){
         data.preparedExecute("DELETE FROM DISCORD.USERS_INFO WHERE NAME=? AND ID=?;",
-                name, id);
+                             name, id);
     }
 
     public void unmute(){
