@@ -38,6 +38,7 @@ public class InsideBot{
         Log.info("Discord bot up.");
 
         //threads
+        // TODO может юзать трид-пулл?
         new Checker();
         new Cleaner();
         new ActiveUsers();

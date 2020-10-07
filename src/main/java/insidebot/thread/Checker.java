@@ -1,6 +1,7 @@
 package insidebot.thread;
 
 import arc.util.Log;
+import insidebot.UserInfo;
 
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -36,7 +37,7 @@ public class Checker extends Thread{
                             id = resultId.getLong(1);
                         }
 
-                        data.getUserInfo(id).unmute();
+                        UserInfo.get(id).unmute();
                     }
                 }
 

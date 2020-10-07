@@ -1,6 +1,7 @@
 package insidebot.thread;
 
 import arc.util.Log;
+import insidebot.UserInfo;
 import net.dv8tion.jda.api.entities.Member;
 
 import java.sql.*;
@@ -62,7 +63,7 @@ public class ActiveUsers extends Thread{
             int lastSentWeek = lastSentMessage.get(Calendar.WEEK_OF_YEAR);
 
             if(nowWeek - lastSentWeek >= 3){
-                data.getUserInfo(id).clearQueue();
+                UserInfo.get(id).clearQueue();
                 return false;
             }else return messages >= 75 && nowWeek - lastSentWeek < 3;
         }catch(Exception e){

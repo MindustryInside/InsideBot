@@ -3,7 +3,6 @@ package insidebot;
 import arc.math.Mathf;
 import arc.util.*;
 import arc.util.CommandHandler.*;
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -16,8 +15,8 @@ public class Commands{
     private final CommandHandler handler = new CommandHandler(prefix);
     private final String[] warningStrings = {bundle.get("command.first"), bundle.get("command.second"), bundle.get("command.third")};
 
-    Commands(){
-        handler.register("help", bundle.get("command.help.description"), args -> {
+    public Commands(){
+        handler.<MessageInfo>register("help", bundle.get("command.help.description"), (args, messageInfo) -> {
             StringBuilder builder = new StringBuilder();
 
             for(Command command : handler.getCommandList()){
@@ -36,20 +35,17 @@ public class Commands{
             }
             listener.info(bundle.get("command.help"), builder.toString());
         });
-        handler.register("mute", "<@user> <delayDays> [reason...]", bundle.get("command.mute.description"), args -> {
+        handler.<MessageInfo>register("mute", "<@user> <delayDays> [reason...]", bundle.get("command.mute.description"), (args, messageInfo) -> {
             if(Strings.parseInt(args[1]) <= 0){
                 listener.err(bundle.get("command.incorrect-number"));
                 return;
             }
 
-            String author = args[0].substring(2, args[0].length() - 1);
-            if(author.startsWith("!")) author = author.substring(1);
-
             try{
-                long l = Long.parseLong(author);
+                long l = MessageUtil.parseUserId(args[0]);
                 int delayDays = Strings.parseInt(args[1]);
                 User user = listener.jda.retrieveUserById(l).complete();
-                UserInfo info = InsideBot.data.getUserInfo(l);
+                UserInfo info = UserInfo.get(l);
 
                 if(isAdmin(listener.guild.getMember(user))){
                     listener.err(bundle.get("command.user-is-admin"));
@@ -62,18 +58,12 @@ public class Commands{
                     return;
                 }
 
-                EmbedBuilder builder = new EmbedBuilder().setColor(listener.normalColor);
-                builder.addField(bundle.get("message.mute"), bundle.format("message.mute.text", user.getAsMention(), delayDays), false);
-                builder.setFooter(InsideBot.data.zonedFormat());
-
-                listener.log(builder.build());
                 info.mute(delayDays);
             }catch(Exception e){
-                Log.err(e);
                 listener.err(bundle.get("command.incorrect-name"));
             }
         });
-        handler.register("delete", "<amount>", bundle.get("command.delete.description"), args -> {
+        handler.<MessageInfo>register("delete", "<amount>", bundle.get("command.delete.description"), (args, messageInfo) -> {
             if(Strings.parseInt(args[0]) <= 0){
                 listener.err(bundle.get("command.incorrect-number"));
                 return;
@@ -87,17 +77,14 @@ public class Commands{
             }
 
             MessageHistory hist = listener.channel.getHistoryBefore(listener.lastMessage, number).complete();
+            listener.onMessageClear(hist, listener.lastUser, number);
             listener.channel.deleteMessages(hist.getRetrievedHistory()).queue();
-            Log.info("Deleted {0} messages.", number);
         });
-        handler.register("warn", "<@user> [reason...]", bundle.get("command.warn.description"), args -> {
-            String author = args[0].substring(2, args[0].length() - 1);
-            if(author.startsWith("!")) author = author.substring(1);
-
+        handler.<MessageInfo>register("warn", "<@user> [reason...]", bundle.get("command.warn.description"), (args, messageInfo) -> {
             try{
-                long l = Long.parseLong(author);
+                long l = MessageUtil.parseUserId(args[0]);
                 User user = listener.jda.retrieveUserById(l).complete();
-                UserInfo info = InsideBot.data.getUserInfo(l);
+                UserInfo info = UserInfo.get(l);
 
                 if(isAdmin(listener.guild.getMember(user))){
                     listener.err(bundle.get("command.user-is-admin"));
@@ -114,29 +101,19 @@ public class Commands{
 
                 int warnings = info.getWarns();
 
-                listener.text(bundle.format("message.warn", user.getAsMention(), warningStrings[Mathf.clamp(warnings - 1, 0, warningStrings.length - 1)]));
+                listener.text(bundle.format("message.warn", user.getAsMention(),
+                        warningStrings[Mathf.clamp(warnings - 1, 0, warningStrings.length - 1)]));
 
-                if(info.getWarns() >= 3){
-                    EmbedBuilder builder = new EmbedBuilder().setColor(listener.normalColor);
-                    builder.setTitle(bundle.get("message.ban"));
-                    builder.setDescription(bundle.format("message.ban.text", user.getName()));
-                    builder.setFooter(InsideBot.data.zonedFormat());
-
-                    listener.log(builder.build());
-                    info.ban();
-                }
+                if(warnings >= 3) info.ban();
             }catch(Exception e){
                 listener.err(bundle.get("command.incorrect-name"));
             }
         });
-        handler.register("warnings", "<@user>", bundle.get("command.warnings.description"), args -> {
-            String author = args[0].substring(2, args[0].length() - 1);
-            if(author.startsWith("!")) author = author.substring(1);
-
+        handler.<MessageInfo>register("warnings", "<@user>", bundle.get("command.warnings.description"), (args, messageInfo) -> {
             try{
-                long l = Long.parseLong(author);
+                long l = MessageUtil.parseUserId(args[0]);
                 User user = listener.jda.retrieveUserById(l).complete();
-                UserInfo info = InsideBot.data.getUserInfo(l);
+                UserInfo info = UserInfo.get(l);
                 int warnings = info.getWarns();
                 listener.text(bundle.format("command.warnings", user.getName(), warnings,
                         warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns")));
@@ -144,20 +121,18 @@ public class Commands{
                 listener.err(bundle.get("command.incorrect-name"));
             }
         });
-        handler.register("unwarn", "<@user> [count]", bundle.get("command.unwarn.description"), args -> {
+        handler.<MessageInfo>register("unwarn", "<@user> [count]", bundle.get("command.unwarn.description"), (args, messageInfo) -> {
             if(args.length > 1 && Strings.parseInt(args[1]) <= 0){
                 listener.text(bundle.get("command.incorrect-number"));
                 return;
             }
 
-            String author = args[0].substring(2, args[0].length() - 1);
             int warnings = args.length > 1 ? Strings.parseInt(args[1]) : 1;
-            if(author.startsWith("!")) author = author.substring(1);
 
             try{
-                long l = Long.parseLong(author);
+                long l = MessageUtil.parseUserId(args[0]);
                 User user = listener.jda.retrieveUserById(l).complete();
-                UserInfo info = InsideBot.data.getUserInfo(l);
+                UserInfo info = UserInfo.get(l);
                 info.removeWarns(warnings);
 
                 listener.text(bundle.format("command.unwarn", user.getName(), warnings,
@@ -166,13 +141,10 @@ public class Commands{
                 listener.err(bundle.get("command.incorrect-name"));
             }
         });
-        handler.register("unmute", "<@user>", bundle.get("command.unmute.description"), args -> {
-            String author = args[0].substring(2, args[0].length() - 1);
-            if(author.startsWith("!")) author = author.substring(1);
-
+        handler.<MessageInfo>register("unmute", "<@user>", bundle.get("command.unmute.description"), (args, messageInfo) -> {
             try{
-                long l = Long.parseLong(author);
-                UserInfo info = InsideBot.data.getUserInfo(l);
+                long l = MessageUtil.parseUserId(args[0]);
+                UserInfo info = UserInfo.get(l);
                 info.unmute();
             }catch(Exception e){
                 listener.err(bundle.get("command.incorrect-name"));
@@ -180,7 +152,7 @@ public class Commands{
         });
     }
 
-    void handle(MessageReceivedEvent event){
+    public void handle(MessageReceivedEvent event, MessageInfo info){
         String text = event.getMessage().getContentRaw();
 
         if(event.getMessage().getContentRaw().startsWith(prefix)){
@@ -190,11 +162,11 @@ public class Commands{
         }
 
         if(isAdmin(event.getMember())){
-            handleResponse(handler.handleMessage(text));
+            handleResponse(handler.handleMessage(text, info));
         }
     }
 
-    boolean isAdmin(Member member){
+    public boolean isAdmin(Member member){
         try{
             return member.getRoles().stream().anyMatch(r -> r.hasPermission(Permission.ADMINISTRATOR));
         }catch(Exception e){

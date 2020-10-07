@@ -1,9 +1,12 @@
 package insidebot;
 
+import arc.struct.Array;
 import arc.util.Log;
+import insidebot.data.RowMapper;
+import insidebot.data.ResultSetExtractor;
 import org.h2.tools.Server;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -48,37 +51,44 @@ public class Database{
         return con;
     }
 
-    // гениально
-    public void preparedExecute(String sql, @Nonnull Object... values){
-        try(PreparedStatement stmt = getCon().prepareStatement(sql)){
-            for(int i = 0; i < values.length; i++){
-                stmt.setObject(i + 1, values[i]);
+    @Nullable
+    private PreparedStatement filledStatement(String sql, Object... args){
+        try{
+            PreparedStatement stmt = getCon().prepareStatement(sql);
+            for(int i = 0; i < args.length; i++){
+                stmt.setObject(i + 1, args[i]);
             }
 
-            stmt.executeUpdate();
+            return stmt;
+        }catch(SQLException e){
+            return null;
+        }
+    }
+
+    // гениально
+    public void execute(String sql, Object... args){
+        try(PreparedStatement stmt = filledStatement(sql, args)){
+            if(stmt != null){
+                stmt.executeUpdate();
+            }
         }catch(SQLException e){
             Log.err(e);
         }
     }
 
-    public UserInfo getUserInfo(long id){
-        try(PreparedStatement statement = getCon().prepareStatement("SELECT * FROM DISCORD.USERS_INFO WHERE ID=?;")){
-
-            statement.setLong(1, id);
-
-            ResultSet resultSet = statement.executeQuery();
-
-            String name = "";
-            long lastMessageId = 0L;
-            while(resultSet.next()){
-                name = resultSet.getString("NAME");
-                lastMessageId = resultSet.getLong("LAST_SENT_MESSAGE_ID");
-            }
-
-            return new UserInfo(name, id, lastMessageId);
+    @Nullable
+    public <T> Array<T> query(String sql, RowMapper<T> rowMapper, Object... args){
+        try(PreparedStatement statement = filledStatement(sql, args)){
+            return new ResultSetExtractor<>(rowMapper).extractData(statement.executeQuery());
         }catch(SQLException e){
             return null;
         }
+    }
+
+    @Nullable
+    public <T> T get(String sql, RowMapper<T> rowMapper, Object... args){
+        Array<T> t = query(sql, rowMapper, args);
+        return (t != null && !t.isEmpty()) ? t.first() : null;
     }
 
     public DateFormat format(){
