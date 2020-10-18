@@ -1,8 +1,12 @@
 package insidebot;
 
 import arc.math.Mathf;
-import arc.util.*;
+import arc.util.CommandHandler;
 import arc.util.CommandHandler.*;
+import arc.util.Strings;
+import insidebot.data.dao.UserInfoDao;
+import insidebot.data.model.MessageInfo;
+import insidebot.data.model.UserInfo;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -44,8 +48,8 @@ public class Commands{
             try{
                 long l = MessageUtil.parseUserId(args[0]);
                 int delayDays = Strings.parseInt(args[1]);
-                User user = listener.jda.retrieveUserById(l).complete();
-                UserInfo info = UserInfo.get(l);
+                insidebot.data.model.UserInfo info = UserInfoDao.get(l);
+                User user = info.asUser();
 
                 if(isAdmin(listener.guild.getMember(user))){
                     listener.err(bundle.get("command.user-is-admin"));
@@ -58,7 +62,7 @@ public class Commands{
                     return;
                 }
 
-                info.mute(delayDays);
+                listener.onMemberMute(user, delayDays);
             }catch(Exception e){
                 listener.err(bundle.get("command.incorrect-name"));
             }
@@ -83,8 +87,8 @@ public class Commands{
         handler.<MessageInfo>register("warn", "<@user> [reason...]", bundle.get("command.warn.description"), (args, messageInfo) -> {
             try{
                 long l = MessageUtil.parseUserId(args[0]);
-                User user = listener.jda.retrieveUserById(l).complete();
-                UserInfo info = UserInfo.get(l);
+                UserInfo info = UserInfoDao.get(l);
+                User user = info.asUser();
 
                 if(isAdmin(listener.guild.getMember(user))){
                     listener.err(bundle.get("command.user-is-admin"));
@@ -97,14 +101,16 @@ public class Commands{
                     return;
                 }
 
-                info.addWarns();
-
-                int warnings = info.getWarns();
+                int warnings = info.addWarn();
 
                 listener.text(bundle.format("message.warn", user.getAsMention(),
-                        warningStrings[Mathf.clamp(warnings - 1, 0, warningStrings.length - 1)]));
+                                            warningStrings[Mathf.clamp(warnings - 1, 0, warningStrings.length - 1)]));
 
-                if(warnings >= 3) info.ban();
+                if(warnings >= 3){
+                    listener.ban(info);
+                }else{
+                    UserInfoDao.update(info);
+                }
             }catch(Exception e){
                 listener.err(bundle.get("command.incorrect-name"));
             }
@@ -112,11 +118,11 @@ public class Commands{
         handler.<MessageInfo>register("warnings", "<@user>", bundle.get("command.warnings.description"), (args, messageInfo) -> {
             try{
                 long l = MessageUtil.parseUserId(args[0]);
-                User user = listener.jda.retrieveUserById(l).complete();
-                UserInfo info = UserInfo.get(l);
+                UserInfo info = UserInfoDao.get(l);
                 int warnings = info.getWarns();
-                listener.text(bundle.format("command.warnings", user.getName(), warnings,
-                        warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns")));
+
+                listener.text(bundle.format("command.warnings", info.getName(), warnings,
+                                            warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns")));
             }catch(Exception e){
                 listener.err(bundle.get("command.incorrect-name"));
             }
@@ -131,12 +137,12 @@ public class Commands{
 
             try{
                 long l = MessageUtil.parseUserId(args[0]);
-                User user = listener.jda.retrieveUserById(l).complete();
-                UserInfo info = UserInfo.get(l);
-                info.removeWarns(warnings);
+                UserInfo info = UserInfoDao.get(l);
+                info.setWarns(info.getWarns() - warnings);
 
-                listener.text(bundle.format("command.unwarn", user.getName(), warnings,
-                        warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns")));
+                listener.text(bundle.format("command.unwarn", info.getName(), warnings,
+                                            warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns")));
+                UserInfoDao.save(info);
             }catch(Exception e){
                 listener.err(bundle.get("command.incorrect-name"));
             }
@@ -144,8 +150,8 @@ public class Commands{
         handler.<MessageInfo>register("unmute", "<@user>", bundle.get("command.unmute.description"), (args, messageInfo) -> {
             try{
                 long l = MessageUtil.parseUserId(args[0]);
-                UserInfo info = UserInfo.get(l);
-                info.unmute();
+                UserInfo info = UserInfoDao.get(l);
+                listener.onMemberUnmute(info);
             }catch(Exception e){
                 listener.err(bundle.get("command.incorrect-name"));
             }
@@ -153,8 +159,6 @@ public class Commands{
     }
 
     public void handle(MessageReceivedEvent event, MessageInfo info){
-        String text = event.getMessage().getContentRaw();
-
         if(event.getMessage().getContentRaw().startsWith(prefix)){
             listener.channel = event.getTextChannel();
             listener.lastUser = event.getAuthor();
@@ -162,7 +166,7 @@ public class Commands{
         }
 
         if(isAdmin(event.getMember())){
-            handleResponse(handler.handleMessage(text, info));
+            handleResponse(handler.handleMessage(event.getMessage().getContentRaw(), info));
         }
     }
 
@@ -179,11 +183,13 @@ public class Commands{
             listener.err(bundle.format("command.response.unknown", prefix));
         }else if(response.type == ResponseType.manyArguments || response.type == ResponseType.fewArguments){
             if(response.command.params.length == 0){
-                listener.err(bundle.get("command.response.incorrect-arguments"), bundle.format("command.response.incorrect-argument",
-                             prefix, response.command.text));
+                listener.err(bundle.get("command.response.incorrect-arguments"),
+                             bundle.format("command.response.incorrect-argument",
+                                           prefix, response.command.text));
             }else{
-                listener.err(bundle.get("command.response.incorrect-arguments"), bundle.format("command.response.incorrect-arguments.text",
-                             prefix, response.command.text, response.command.paramText));
+                listener.err(bundle.get("command.response.incorrect-arguments"),
+                             bundle.format("command.response.incorrect-arguments.text",
+                                           prefix, response.command.text, response.command.paramText));
             }
         }
     }

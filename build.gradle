@@ -3,29 +3,44 @@ apply plugin: 'java'
 repositories{
     mavenCentral()
     jcenter()
-    maven{ url 'https://www.jitpack.io' }
+    maven { url 'https://www.jitpack.io' }
 }
 
+ext{
+    lombokVersion     = '1.18.12'
+    jdaVersion        = '4.0.0_62'
+    hibernateVersion  = '5.4.22.Final'
+    postgresqlVersion = '9.0-801.jdbc4'
+}
+
+sourceSets.main.java.srcDirs = ["src/main/java/"]
+sourceSets.main.resources.srcDirs = ["src/main/resources"]
 project.ext.mainClassName = "insidebot.InsideBot"
 
 dependencies{
-    implementation "com.h2database:h2:1.4.200"
-    implementation "net.dv8tion:JDA:4.0.0_62"
-    implementation "org.hjson:hjson:3.0.0"
+    // TODO хочу discord4j
+    implementation ("net.dv8tion:JDA:$jdaVersion"){
+        exclude group: 'club.minnced', module: 'opus-java'
+    }
     implementation "com.github.Anuken.Arc:arc-core:v104.6"
+    implementation "org.reflections:reflections:0.9.9-RC1"
+
+    // data implements
+    implementation "javax.xml.bind:jaxb-api:2.2.11"
+    implementation "org.hibernate:hibernate-core:$hibernateVersion"
+    implementation "postgresql:postgresql:$postgresqlVersion"
+
+    compileOnly "org.projectlombok:lombok:$lombokVersion"
+    annotationProcessor "org.projectlombok:lombok:$lombokVersion"
 }
 
 task dist(type: Jar){
-    from files(sourceSets.main.output)
-    manifest{ attributes 'Main-Class': project.mainClassName }
+    from files(sourceSets.main.output.classesDirs)
+    from files(sourceSets.main.output.resourcesDir)
+    from {configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}}
 
-    dependsOn configurations.runtimeClasspath
-    from {
-        configurations.runtimeClasspath.findAll {
-            it.name.endsWith('jar')
-        }.collect {
-            zipTree(it)
-        }
-    }
+    archiveFileName = "${project.name}.jar"
+
+    manifest { attributes 'Main-Class': project.mainClassName }
 }
 

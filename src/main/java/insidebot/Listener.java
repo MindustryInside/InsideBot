@@ -2,30 +2,34 @@ package insidebot;
 
 import arc.files.Fi;
 import arc.func.Cons;
-import arc.struct.ObjectMap;
 import arc.struct.ObjectSet;
 import arc.util.Log;
 import arc.util.Strings;
+import insidebot.data.dao.MessageInfoDao;
+import insidebot.data.dao.UserInfoDao;
+import insidebot.data.model.MessageInfo;
+import insidebot.data.model.UserInfo;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.guild.GuildBanEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent;
-import net.dv8tion.jda.api.events.guild.voice.*;
+import net.dv8tion.jda.api.events.guild.voice.GuildVoiceJoinEvent;
+import net.dv8tion.jda.api.events.guild.voice.GuildVoiceLeaveEvent;
 import net.dv8tion.jda.api.events.message.*;
+import net.dv8tion.jda.api.events.user.update.UserUpdateNameEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.io.File;
+import java.util.Calendar;
 
 import static insidebot.AuditEventType.*;
 import static insidebot.InsideBot.*;
 
 public class Listener extends ListenerAdapter{
-    public ObjectMap<Long, MessageInfo> messages = new ObjectMap<>();
-
     public Guild guild;
     public JDA jda;
     public Color normalColor = Color.decode("#C4F5B7");
@@ -44,25 +48,31 @@ public class Listener extends ListenerAdapter{
     public void onMessageReceived(@Nonnull MessageReceivedEvent event){
         try{
             if(event.getAuthor().isBot()) return;
-            MessageInfo info = new MessageInfo();
             StringBuilder c = new StringBuilder();
-            info.messageContent = event.getMessage().getContentRaw();
-            info.member = event.getMember();
-            info.channel = event.getTextChannel();
+            MessageInfo info = new MessageInfo();
+            insidebot.data.model.UserInfo userInfo = UserInfoDao.getOr(event.getAuthor().getIdLong(), insidebot.data.model.UserInfo::new);
+            String content = event.getMessage().getContentRaw().trim();
+
+            userInfo.setName(event.getAuthor().getName());
+            userInfo.setUserId(event.getAuthor().getIdLong());
+            userInfo.setLastSentMessage(Calendar.getInstance());
+            userInfo.addToSeq();
+
+            info.setUser(userInfo);
+            info.setMessageId(event.getMessageIdLong());
+            info.setChannelId(event.getTextChannel().getIdLong());
 
             if(!event.getMessage().getAttachments().isEmpty()){
-                info.files = event.getMessage().getAttachments();
                 c.append("\n---\n");
-                info.files.forEach(a -> c.append(a.getUrl()).append("\n"));
-                info.messageContent += c.toString();
+                event.getMessage().getAttachments().forEach(a -> c.append(a.getUrl()).append("\n"));
+                content += c.toString();
             }
 
-            commands.handle(event, info);
-            messages.put(event.getMessageIdLong(), info);
+            info.setContent(content);
+            userInfo.getMessageInfo().add(info);
 
-            UserInfo userInfo = UserInfo.get(event.getAuthor().getIdLong());
-            userInfo.setLastMessageId(event.getMessageIdLong());
-            userInfo.setName(event.getAuthor().getName());
+            commands.handle(event, info);
+            UserInfoDao.saveOrUpdate(userInfo);
         }catch(Exception e){
             Log.err(e);
         }
@@ -75,12 +85,12 @@ public class Listener extends ListenerAdapter{
             EmbedBuilder embedBuilder = new EmbedBuilder();
             boolean write = false;
 
-            if(!messages.containsKey(event.getMessageIdLong())) return;
+            if(!MessageInfoDao.repo().containsKey(event.getMessageIdLong())) return;
 
-            MessageInfo info = messages.get(event.getMessageIdLong());
+            MessageInfo info = MessageInfoDao.repo().get(event.getMessageIdLong());
 
             User user = event.getAuthor();
-            String oldContent = info.messageContent;
+            String oldContent = info.getContent();
             String newContent = event.getMessage().getContentRaw();
             int maxLength = 1024;
 
@@ -95,7 +105,7 @@ public class Listener extends ListenerAdapter{
             if(newContent.length() >= maxLength || oldContent.length() >= maxLength){
                 write = true;
                 writeTemp(String.format("%s\n%s\n\n%s\n%s", bundle.get("message.edit.old-content"), oldContent,
-                        bundle.get("message.edit.new-content"), newContent));
+                                        bundle.get("message.edit.new-content"), newContent));
             }
 
             if(!event.getMessage().getAttachments().isEmpty()){
@@ -118,7 +128,8 @@ public class Listener extends ListenerAdapter{
                 log(embedBuilder);
             }
 
-            info.messageContent = newContent;
+            info.setContent(newContent);
+            MessageInfoDao.update(info);
         }catch(Exception e){
             Log.err(e);
         }
@@ -127,17 +138,17 @@ public class Listener extends ListenerAdapter{
     @Override
     public void onMessageDelete(@Nonnull MessageDeleteEvent event){
         try{
-            if(!messages.containsKey(event.getMessageIdLong())) return;
+            if(!MessageInfoDao.repo().containsKey(event.getMessageIdLong())) return;
             if(buffer.contains(event.getMessageIdLong())){
                 buffer.remove(event.getMessageIdLong());
                 return;
             }
 
             EmbedBuilder embedBuilder = new EmbedBuilder();
-            MessageInfo info = messages.get(event.getMessageIdLong());
+            MessageInfo info = MessageInfoDao.repo().get(event.getMessageIdLong());
 
-            User user = info.member.getUser();
-            String content = info.messageContent;
+            User user = info.getUser().asUser();
+            String content = info.getContent();
             int maxLength = 1024;
 
             if(user == null || content == null || content.isEmpty()) return;
@@ -156,7 +167,7 @@ public class Listener extends ListenerAdapter{
                 log(embedBuilder);
             }
 
-            messages.remove(event.getMessageIdLong());
+            MessageInfoDao.remove(info);
         }catch(Exception e){
             Log.err(e);
         }
@@ -170,7 +181,8 @@ public class Listener extends ListenerAdapter{
             log(embedBuilder -> {
                 embedBuilder.setColor(voiceJoin.color);
                 embedBuilder.setTitle(bundle.get("message.voice-join"));
-                embedBuilder.setDescription(bundle.format("message.voice-join.text", memberedName(user), event.getChannelJoined().getName()));
+                embedBuilder.setDescription(bundle.format("message.voice-join.text", memberedName(user),
+                                                          event.getChannelJoined().getName()));
                 embedBuilder.setFooter(data.zonedFormat());
             });
         }catch(Exception e){
@@ -186,7 +198,8 @@ public class Listener extends ListenerAdapter{
             log(embedBuilder -> {
                 embedBuilder.setColor(voiceLeave.color);
                 embedBuilder.setTitle(bundle.get("message.voice-leave"));
-                embedBuilder.setDescription(bundle.format("message.voice-leave.text", memberedName(user), event.getChannelLeft().getName()));
+                embedBuilder.setDescription(bundle.format("message.voice-leave.text", memberedName(user),
+                                                          event.getChannelLeft().getName()));
                 embedBuilder.setFooter(data.zonedFormat());
             });
         }catch(Exception e){
@@ -213,8 +226,7 @@ public class Listener extends ListenerAdapter{
     public void onGuildMemberLeave(@Nonnull GuildMemberLeaveEvent event){
         try{
             if(event.getUser().isBot()) return;
-            UserInfo.get(event.getUser().getIdLong()).remove();
-
+            UserInfoDao.removeById(event.getUser().getIdLong());
             log(embedBuilder -> {
                 embedBuilder.setColor(userLeave.color);
                 embedBuilder.setTitle(bundle.get("message.user-leave"));
@@ -230,6 +242,7 @@ public class Listener extends ListenerAdapter{
     public void onGuildBan(@Nonnull GuildBanEvent event){
         try{
             if(event.getUser().isBot()) return;
+            UserInfoDao.removeById(event.getUser().getIdLong());
             log(embedBuilder -> {
                 embedBuilder.setColor(userBan.color);
                 embedBuilder.setTitle(bundle.get("message.ban"));
@@ -241,12 +254,25 @@ public class Listener extends ListenerAdapter{
         }
     }
 
+    @Override
+    public void onUserUpdateName(@Nonnull UserUpdateNameEvent event){
+        try{
+            if(event.getEntity().isBot()) return;
+            UserInfo info = UserInfoDao.get(event.getEntity().getIdLong());
+            info.setName(event.getNewName());
+            UserInfoDao.save(info);
+        }catch(Exception e){
+            Log.err(e);
+        }
+    }
+
     // voids
 
     public void onMessageClear(MessageHistory history, User user, int count){
         log(embedBuilder -> {
             embedBuilder.setTitle(bundle.format("message.clear", count, history.getChannel().getName()));
-            embedBuilder.setDescription(bundle.format("message.clear.text", user.getAsMention(), count, history.getChannel().getName()));
+            embedBuilder.setDescription(bundle.format("message.clear.text", user.getAsMention(),
+                                                      count, history.getChannel().getName()));
             embedBuilder.setFooter(data.zonedFormat());
             embedBuilder.setColor(messageClear.color);
 
@@ -268,9 +294,14 @@ public class Listener extends ListenerAdapter{
 
     public void onMemberMute(User user, int delayDays){
         Member member = guild.getMember(user);
+        insidebot.data.model.UserInfo userInfo = UserInfoDao.get(user.getIdLong());
         if(member == null) return;
 
-        guild.addRoleToMember(member, jda.getRolesByName(muteRoleName, true).get(0)).queue();
+        Calendar calendar = Calendar.getInstance();
+        calendar.roll(Calendar.DAY_OF_YEAR, +delayDays);
+        userInfo.setMuteEndDate(calendar);
+        UserInfoDao.update(userInfo);
+        guild.addRoleToMember(member, muteRole).queue();
         log(embedBuilder -> {
             embedBuilder.setTitle(bundle.get("message.mute"));
             embedBuilder.setDescription(bundle.format("message.mute.text", user.getAsMention(), delayDays));
@@ -279,20 +310,27 @@ public class Listener extends ListenerAdapter{
         });
     }
 
-    public void onMemberUnmute(User user){
-        Member member = guild.getMember(user);
+    public void onMemberUnmute(insidebot.data.model.UserInfo userInfo){
+        Member member = userInfo.asMember();
         if(member == null) return;
 
-        guild.removeRoleFromMember(guild.getMember(user), jda.getRolesByName(muteRoleName, true).get(0)).queue();
+        userInfo.setMuteEndDate(null);
+        UserInfoDao.update(userInfo);
+        guild.removeRoleFromMember(member, muteRole).queue();
         log(embedBuilder -> {
             embedBuilder.setTitle(bundle.get("message.unmute"));
-            embedBuilder.setDescription(bundle.format("message.unmute.text", user.getName()));
+            embedBuilder.setDescription(bundle.format("message.unmute.text", userInfo.getName()));
             embedBuilder.setFooter(data.zonedFormat());
             embedBuilder.setColor(userUnmute.color);
         });
     }
 
     // utils
+
+    public void ban(insidebot.data.model.UserInfo userInfo){
+        listener.guild.ban(userInfo.asUser(), 0).queue();
+        UserInfoDao.remove(userInfo);
+    }
 
     public void text(String text, Object... args){
         lastSentMessage = channel.sendMessage(Strings.format(text, args)).complete();
@@ -344,6 +382,7 @@ public class Listener extends ListenerAdapter{
         temp.writeString(text, false);
     }
 
+    // username / membername
     public String memberedName(User user){
         String name = user.getName();
         Member member = guild.getMember(user);
