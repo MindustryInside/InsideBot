@@ -54,10 +54,12 @@ public class Commands{
                 if(isAdmin(listener.guild.getMember(user))){
                     listener.err(bundle.get("command.user-is-admin"));
                     return;
-                }else if(user.isBot()){
+                }
+                if(user.isBot()){
                     listener.err(bundle.get("command.user-is-bot"));
                     return;
-                }else if(listener.lastUser == user){
+                }
+                if(listener.lastUser == user){
                     listener.err(bundle.get("command.mute.self-user"));
                     return;
                 }
@@ -93,10 +95,12 @@ public class Commands{
                 if(isAdmin(listener.guild.getMember(user))){
                     listener.err(bundle.get("command.user-is-admin"));
                     return;
-                }else if(user.isBot()){
+                }
+                if(user.isBot()){
                     listener.err(bundle.get("command.user-is-bot"));
                     return;
-                }else if(listener.lastUser == user){
+                }
+                if(listener.lastUser == user){
                     listener.err(bundle.get("command.warn.self-user"));
                     return;
                 }

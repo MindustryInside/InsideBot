@@ -260,7 +260,7 @@ public class Listener extends ListenerAdapter{
             if(event.getEntity().isBot()) return;
             UserInfo info = UserInfoDao.get(event.getEntity().getIdLong());
             info.setName(event.getNewName());
-            UserInfoDao.save(info);
+            UserInfoDao.update(info);
         }catch(Exception e){
             Log.err(e);
         }
