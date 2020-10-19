@@ -44,7 +44,7 @@ public class UserInfo extends BaseEntity{
 
     @Transient
     public int addWarn(){
-         return warns + 1;
+        return warns += 1;
     }
 
     @Transient

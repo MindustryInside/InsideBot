@@ -13,7 +13,7 @@ public class Unmuter implements Runnable{
     @Override
     public void run(){
         for(UserInfo info : UserInfoDao.getAll()){
-            if(check(info)){
+            if(check(info) && info.asMember() != null){
                 listener.onMemberUnmute(info);
             }
         }

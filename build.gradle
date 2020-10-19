@@ -24,6 +24,7 @@ dependencies{
     }
     implementation "com.github.Anuken.Arc:arc-core:v104.6"
     implementation "org.reflections:reflections:0.9.9-RC1"
+    implementation "com.github.JodaOrg:joda-time:v2.10.6"
 
     // data implements
     implementation "javax.xml.bind:jaxb-api:2.2.11"

@@ -3,9 +3,8 @@ package insidebot.thread;
 import insidebot.data.dao.UserInfoDao;
 import insidebot.data.model.UserInfo;
 import net.dv8tion.jda.api.entities.Member;
-
-import java.time.LocalDateTime;
-import java.util.Calendar;
+import org.joda.time.DateTime;
+import org.joda.time.Weeks;
 
 import static insidebot.InsideBot.activeUserRole;
 import static insidebot.InsideBot.listener;
@@ -29,13 +28,13 @@ public class ActiveUsers implements Runnable{
 
     private boolean check(UserInfo userInfo){
         try{
-            int nowWeek = LocalDateTime.now().getDayOfWeek().getValue();
-            int lastSentWeek = userInfo.getLastSentMessage().get(Calendar.WEEK_OF_YEAR);
+            DateTime last = new DateTime(userInfo.getLastSentMessage());
+            int diff = Weeks.weeksBetween(last, DateTime.now()).getWeeks();
 
-            if(nowWeek - lastSentWeek >= 3){
+            if(diff >= 3){
                 userInfo.setMessageSeq(0);
                 return false;
-            }else return userInfo.getMessageSeq() >= 75 && nowWeek - lastSentWeek < 3;
+            }else return userInfo.getMessageSeq() >= 75;
         }catch(Exception e){
             return false;
         }
