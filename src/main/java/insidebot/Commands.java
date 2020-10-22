@@ -39,6 +39,7 @@ public class Commands{
             }
             listener.info(bundle.get("command.help"), builder.toString());
         });
+
         handler.<MessageInfo>register("mute", "<@user> <delayDays> [reason...]", bundle.get("command.mute.description"), (args, messageInfo) -> {
             if(Strings.parseInt(args[1]) <= 0){
                 listener.err(bundle.get("command.incorrect-number"));
@@ -69,6 +70,7 @@ public class Commands{
                 listener.err(bundle.get("command.incorrect-name"));
             }
         });
+
         handler.<MessageInfo>register("delete", "<amount>", bundle.get("command.delete.description"), (args, messageInfo) -> {
             if(Strings.parseInt(args[0]) <= 0){
                 listener.err(bundle.get("command.incorrect-number"));
@@ -78,7 +80,7 @@ public class Commands{
             int number = Integer.parseInt(args[0]) + 1;
 
             if(number >= 100){
-                listener.err(bundle.get("command.limit-number"));
+                listener.err(bundle.format("command.limit-number", 100));
                 return;
             }
 
@@ -86,6 +88,7 @@ public class Commands{
             listener.onMessageClear(hist, listener.lastUser, number);
             listener.channel.deleteMessages(hist.getRetrievedHistory()).queue();
         });
+
         handler.<MessageInfo>register("warn", "<@user> [reason...]", bundle.get("command.warn.description"), (args, messageInfo) -> {
             try{
                 long l = MessageUtil.parseUserId(args[0]);
@@ -119,6 +122,7 @@ public class Commands{
                 listener.err(bundle.get("command.incorrect-name"));
             }
         });
+
         handler.<MessageInfo>register("warnings", "<@user>", bundle.get("command.warnings.description"), (args, messageInfo) -> {
             try{
                 long l = MessageUtil.parseUserId(args[0]);
@@ -131,6 +135,7 @@ public class Commands{
                 listener.err(bundle.get("command.incorrect-name"));
             }
         });
+
         handler.<MessageInfo>register("unwarn", "<@user> [count]", bundle.get("command.unwarn.description"), (args, messageInfo) -> {
             if(args.length > 1 && Strings.parseInt(args[1]) <= 0){
                 listener.text(bundle.get("command.incorrect-number"));
@@ -151,6 +156,7 @@ public class Commands{
                 listener.err(bundle.get("command.incorrect-name"));
             }
         });
+
         handler.<MessageInfo>register("unmute", "<@user>", bundle.get("command.unmute.description"), (args, messageInfo) -> {
             try{
                 long l = MessageUtil.parseUserId(args[0]);

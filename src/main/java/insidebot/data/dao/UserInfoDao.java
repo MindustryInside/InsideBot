@@ -66,7 +66,9 @@ public class UserInfoDao{
     public static void removeById(long id){
         try(Session session = data.getSessionFactory().openSession()){
             Transaction t = session.beginTransaction();
-            session.remove(get(id));
+            UserInfo info = get(id);
+            if(info == null) return;
+            session.remove(info);
             t.commit();
         }
     }
