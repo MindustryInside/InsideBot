@@ -8,7 +8,7 @@ repositories{
 
 ext{
     lombokVersion     = '1.18.12'
-    jdaVersion        = '4.0.0_62'
+    jdaVersion        = '4.2.0_168'
     hibernateVersion  = '5.4.22.Final'
     postgresqlVersion = '9.0-801.jdbc4'
 }

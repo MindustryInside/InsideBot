@@ -38,7 +38,7 @@ public class InsideBot{
     public static void main(String[] args) throws InterruptedException, LoginException{
         init();
 
-        listener.jda = new JDABuilder(settings.get("token"))
+        listener.jda = JDABuilder.createDefault(settings.get("token"))
                 .addEventListeners(listener)
                 .build();
         listener.jda.awaitReady();
