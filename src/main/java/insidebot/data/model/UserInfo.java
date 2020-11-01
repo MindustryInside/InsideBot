@@ -1,5 +1,6 @@
 package insidebot.data.model;
 
+import arc.util.Log;
 import lombok.Getter;
 import lombok.Setter;
 import net.dv8tion.jda.api.entities.Member;
@@ -59,6 +60,6 @@ public class UserInfo extends BaseEntity{
 
     @Transient
     public Member asMember(){
-        return listener.guild.getMember(asUser());
+        return listener.guild.retrieveMember(asUser()).complete();
     }
 }

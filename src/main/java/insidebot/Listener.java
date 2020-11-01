@@ -100,7 +100,9 @@ public class Listener extends ListenerAdapter{
             embedBuilder.setAuthor(memberedName(user), null, user.getEffectiveAvatarUrl());
             embedBuilder.setTitle(bundle.format("message.edit", event.getTextChannel().getName()));
             embedBuilder.setDescription(bundle.format("message.edit.description",
-                    event.getGuild().getId(), event.getTextChannel().getId(), event.getMessageId()));
+                                                      event.getGuild().getId(),
+                                                      event.getTextChannel().getId(),
+                                                      event.getMessageId()));
 
             if(newContent.length() >= maxLength || oldContent.length() >= maxLength){
                 write = true;
@@ -387,7 +389,7 @@ public class Listener extends ListenerAdapter{
     public String memberedName(User user){
         String name = user.getName();
         Member member = guild.getMember(user);
-        if(member.getNickname() != null && member != null){
+        if(member != null && member.getNickname() != null){
             name += " / " + member.getNickname();
         }
         return name;

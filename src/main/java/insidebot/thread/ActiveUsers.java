@@ -1,5 +1,6 @@
 package insidebot.thread;
 
+import arc.util.Log;
 import insidebot.data.dao.UserInfoDao;
 import insidebot.data.model.UserInfo;
 import net.dv8tion.jda.api.entities.Member;
@@ -21,7 +22,7 @@ public class ActiveUsers implements Runnable{
                 }else{
                     listener.guild.removeRoleFromMember(member, activeUserRole).queue();
                 }
-                UserInfoDao.saveOrUpdate(info);
+                UserInfoDao.update(info);
             }
         }
     }
