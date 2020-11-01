@@ -13,8 +13,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.guild.GuildBanEvent;
-import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
-import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent;
+import net.dv8tion.jda.api.events.guild.member.*;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceJoinEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceLeaveEvent;
 import net.dv8tion.jda.api.events.message.*;
@@ -50,7 +49,7 @@ public class Listener extends ListenerAdapter{
             if(event.getAuthor().isBot()) return;
             StringBuilder c = new StringBuilder();
             MessageInfo info = new MessageInfo();
-            insidebot.data.model.UserInfo userInfo = UserInfoDao.getOr(event.getAuthor().getIdLong(), insidebot.data.model.UserInfo::new);
+            UserInfo userInfo = UserInfoDao.getOr(event.getAuthor().getIdLong(), UserInfo::new);
             String content = event.getMessage().getContentRaw().trim();
 
             userInfo.setName(event.getAuthor().getName());
@@ -225,7 +224,7 @@ public class Listener extends ListenerAdapter{
     }
 
     @Override
-    public void onGuildMemberLeave(@Nonnull GuildMemberLeaveEvent event){
+    public void onGuildMemberRemove(@Nonnull GuildMemberRemoveEvent event){
         try{
             if(event.getUser().isBot()) return;
             UserInfoDao.removeById(event.getUser().getIdLong());
@@ -297,8 +296,8 @@ public class Listener extends ListenerAdapter{
 
     public void onMemberMute(User user, int delayDays){
         Member member = guild.getMember(user);
-        insidebot.data.model.UserInfo userInfo = UserInfoDao.get(user.getIdLong());
-        if(member == null) return;
+        UserInfo userInfo = UserInfoDao.get(user.getIdLong());
+        if(member == null || userInfo == null) return;
 
         Calendar calendar = Calendar.getInstance();
         calendar.roll(Calendar.DAY_OF_YEAR, +delayDays);
@@ -313,7 +312,7 @@ public class Listener extends ListenerAdapter{
         });
     }
 
-    public void onMemberUnmute(insidebot.data.model.UserInfo userInfo){
+    public void onMemberUnmute(UserInfo userInfo){
         Member member = userInfo.asMember();
         if(member == null) return;
 
@@ -330,7 +329,7 @@ public class Listener extends ListenerAdapter{
 
     // utils
 
-    public void ban(insidebot.data.model.UserInfo userInfo){
+    public void ban(UserInfo userInfo){
         listener.guild.ban(userInfo.asUser(), 0).queue();
         UserInfoDao.remove(userInfo);
     }
