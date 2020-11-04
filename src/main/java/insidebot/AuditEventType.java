@@ -3,6 +3,7 @@ package insidebot;
 import java.awt.*;
 
 // юзается пока только ради цвета емебеда
+// позже будет привязка к ивенту или нет
 public enum AuditEventType{
     messageEdit("#33CC33"),
     messageClear("#FF2400"),

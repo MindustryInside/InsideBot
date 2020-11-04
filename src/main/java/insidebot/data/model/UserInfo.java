@@ -1,13 +1,11 @@
 package insidebot.data.model;
 
-import arc.util.Log;
-import lombok.Getter;
-import lombok.Setter;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.User;
+import lombok.*;
+import net.dv8tion.jda.api.entities.*;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
+import javax.annotation.*;
 import javax.persistence.*;
 import java.util.*;
 
@@ -53,11 +51,13 @@ public class UserInfo extends BaseEntity{
         messageSeq += 1;
     }
 
+    @Nonnull
     @Transient
     public User asUser(){
         return listener.jda.retrieveUserById(userId).complete();
     }
 
+    @Nullable
     @Transient
     public Member asMember(){
         return listener.guild.retrieveMember(asUser()).complete();

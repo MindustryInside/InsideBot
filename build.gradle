@@ -18,12 +18,11 @@ sourceSets.main.resources.srcDirs = ["src/main/resources"]
 project.ext.mainClassName = "insidebot.InsideBot"
 
 dependencies{
-    // TODO хочу discord4j
     implementation ("net.dv8tion:JDA:$jdaVersion"){
         exclude group: 'club.minnced', module: 'opus-java'
     }
-    implementation "com.github.Anuken.Arc:arc-core:v104.6"
-    implementation "org.reflections:reflections:0.9.9-RC1"
+    implementation "com.github.Anuken.Arc:arc-core:v112.1"
+    implementation "org.reflections:reflections:0.9.12"
     implementation "com.github.JodaOrg:joda-time:v2.10.6"
 
     // data implements

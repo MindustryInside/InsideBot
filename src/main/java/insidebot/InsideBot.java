@@ -54,10 +54,10 @@ public class InsideBot{
 
     private static void init(){
         // да, с миндастри взял
-        Log.setLogger((level, text) -> {
+        Log.logger = (level, text) -> {
             String result = "[" + dateTime.format(LocalDateTime.now()) + "] " + format(tags[level.ordinal()] + " " + text + "&fr");
             System.out.println(result);
-        });
+        };
 
         listener = new Listener();
 

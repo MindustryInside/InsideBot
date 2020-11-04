@@ -5,14 +5,12 @@ import arc.util.CommandHandler;
 import arc.util.CommandHandler.*;
 import arc.util.Strings;
 import insidebot.data.dao.UserInfoDao;
-import insidebot.data.model.MessageInfo;
-import insidebot.data.model.UserInfo;
+import insidebot.data.model.*;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
-import static insidebot.InsideBot.bundle;
-import static insidebot.InsideBot.listener;
+import static insidebot.InsideBot.*;
 
 public class Commands{
     private final String prefix = "$";
@@ -40,8 +38,8 @@ public class Commands{
             listener.info(bundle.get("command.help"), builder.toString());
         });
 
-        handler.<MessageInfo>register("mute", "<@user> <delayDays> [reason...]", bundle.get("command.mute.description"), (args, messageInfo) -> {
-            if(Strings.parseInt(args[1]) <= 0){
+        handler.<MessageInfo>register("mute","<@user> <delayDays> [reason...]", bundle.get("command.mute.description"), (args, messageInfo) -> {
+            if(!MessageUtil.canParseInt(args[1])){
                 listener.err(bundle.get("command.incorrect-number"));
                 return;
             }
@@ -72,7 +70,7 @@ public class Commands{
         });
 
         handler.<MessageInfo>register("delete", "<amount>", bundle.get("command.delete.description"), (args, messageInfo) -> {
-            if(Strings.parseInt(args[0]) <= 0){
+            if(!MessageUtil.canParseInt(args[0])){
                 listener.err(bundle.get("command.incorrect-number"));
                 return;
             }
@@ -137,7 +135,7 @@ public class Commands{
         });
 
         handler.<MessageInfo>register("unwarn", "<@user> [count]", bundle.get("command.unwarn.description"), (args, messageInfo) -> {
-            if(args.length > 1 && Strings.parseInt(args[1]) <= 0){
+            if(args.length > 1 && !MessageUtil.canParseInt(args[1])){
                 listener.text(bundle.get("command.incorrect-number"));
                 return;
             }

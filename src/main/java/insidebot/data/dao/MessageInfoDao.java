@@ -77,7 +77,7 @@ public class MessageInfoDao{
 
     public static boolean exists(long id){
         try(Session session = data.getSessionFactory().openSession()){
-            return session.get(MessageInfo.class, id) != null;
+            return get(id) != null;
         }
     }
 }

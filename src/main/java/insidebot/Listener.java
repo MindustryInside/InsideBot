@@ -5,17 +5,14 @@ import arc.func.Cons;
 import arc.struct.ObjectSet;
 import arc.util.Log;
 import arc.util.Strings;
-import insidebot.data.dao.MessageInfoDao;
-import insidebot.data.dao.UserInfoDao;
-import insidebot.data.model.MessageInfo;
-import insidebot.data.model.UserInfo;
+import insidebot.data.dao.*;
+import insidebot.data.model.*;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.guild.GuildBanEvent;
 import net.dv8tion.jda.api.events.guild.member.*;
-import net.dv8tion.jda.api.events.guild.voice.GuildVoiceJoinEvent;
-import net.dv8tion.jda.api.events.guild.voice.GuildVoiceLeaveEvent;
+import net.dv8tion.jda.api.events.guild.voice.*;
 import net.dv8tion.jda.api.events.message.*;
 import net.dv8tion.jda.api.events.user.update.UserUpdateNameEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -82,16 +79,16 @@ public class Listener extends ListenerAdapter{
         try{
             if(event.getAuthor().isBot()) return;
             EmbedBuilder embedBuilder = new EmbedBuilder();
-            boolean write = false;
 
-            if(!MessageInfoDao.repo().containsKey(event.getMessageIdLong())) return;
+            MessageInfo info = MessageInfoDao.get(event.getMessageIdLong());
 
-            MessageInfo info = MessageInfoDao.repo().get(event.getMessageIdLong());
+            if(info == null) return;
 
             User user = event.getAuthor();
             String oldContent = info.getContent();
             String newContent = event.getMessage().getContentRaw();
             int maxLength = 1024;
+            boolean write = newContent.length() >= maxLength || oldContent.length() >= maxLength;
 
             if(event.getMessage().isPinned() || newContent.equals(oldContent)) return;
 
@@ -103,8 +100,7 @@ public class Listener extends ListenerAdapter{
                                                       event.getTextChannel().getId(),
                                                       event.getMessageId()));
 
-            if(newContent.length() >= maxLength || oldContent.length() >= maxLength){
-                write = true;
+            if(write){
                 writeTemp(String.format("%s\n%s\n\n%s\n%s", bundle.get("message.edit.old-content"), oldContent,
                                         bundle.get("message.edit.new-content"), newContent));
             }
@@ -132,27 +128,27 @@ public class Listener extends ListenerAdapter{
             info.setContent(newContent);
             MessageInfoDao.update(info);
         }catch(Exception e){
-            Log.err(e);
+            Log.err(e); // По сути эти методы безопасны, но я не буду пока удалять *ловушки*
         }
     }
 
     @Override
     public void onMessageDelete(@Nonnull MessageDeleteEvent event){
         try{
-            if(!MessageInfoDao.repo().containsKey(event.getMessageIdLong())) return;
+            if(!MessageInfoDao.exists(event.getMessageIdLong())) return;
             if(buffer.contains(event.getMessageIdLong())){
                 buffer.remove(event.getMessageIdLong());
                 return;
             }
 
             EmbedBuilder embedBuilder = new EmbedBuilder();
-            MessageInfo info = MessageInfoDao.repo().get(event.getMessageIdLong());
+            MessageInfo info = MessageInfoDao.get(event.getMessageIdLong());
 
-            User user = info.getUser().asUser();
+            User user = info.getUser().asUser(); // Nonnull
             String content = info.getContent();
             int maxLength = 1024;
 
-            if(user == null || content == null || content.isEmpty()) return;
+            if(content.isEmpty()) return;
 
             embedBuilder.setColor(messageDelete.color);
             embedBuilder.setAuthor(memberedName(user), null, user.getEffectiveAvatarUrl());
@@ -288,7 +284,7 @@ public class Listener extends ListenerAdapter{
                     builder.append("\n---\n");
                     m.getAttachments().forEach(a -> builder.append(a.getUrl()).append("\n"));
                 }
-                builder.append("\n");
+                builder.append('\n');
             });
             writeTemp(builder.toString());
         }, temp.file());

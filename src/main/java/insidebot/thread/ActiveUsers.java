@@ -3,11 +3,9 @@ package insidebot.thread;
 import insidebot.data.dao.UserInfoDao;
 import insidebot.data.model.UserInfo;
 import net.dv8tion.jda.api.entities.Member;
-import org.joda.time.DateTime;
-import org.joda.time.Weeks;
+import org.joda.time.*;
 
-import static insidebot.InsideBot.activeUserRole;
-import static insidebot.InsideBot.listener;
+import static insidebot.InsideBot.*;
 
 public class ActiveUsers implements Runnable{
 

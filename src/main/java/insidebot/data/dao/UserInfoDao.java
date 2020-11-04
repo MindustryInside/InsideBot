@@ -77,7 +77,7 @@ public class UserInfoDao{
 
     public static boolean exists(long id){
         try(Session session = data.getSessionFactory().openSession()){
-            return session.get(UserInfo.class, id) != null;
+            return get(id) != null;
         }
     }
 }
