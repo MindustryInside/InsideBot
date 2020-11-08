@@ -6,7 +6,6 @@ import insidebot.data.model.MessageInfo;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -17,12 +16,10 @@ public class MessageInfoDao{
 
     private MessageInfoDao(){}
 
-    @Nullable
     public static MessageInfo get(Snowflake id){
         return get(id.asLong());
     }
 
-    @Nullable
     public static MessageInfo get(long id){
         try(Session session = data.getSessionFactory().openSession()){
             return session.get(MessageInfo.class, id);

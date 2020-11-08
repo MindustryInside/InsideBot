@@ -15,14 +15,6 @@ import static insidebot.InsideBot.settings;
 public class Database{
     private final SessionFactory sessionFactory;
 
-    public Configuration getConfig(){
-        return new Configuration().setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQL9Dialect")
-                                  .setProperty("hibernate.connection.driver_class", "org.postgresql.Driver")
-                                  .setProperty("hibernate.connection.username", settings.get("db-username"))
-                                  .setProperty("hibernate.connection.password", settings.get("db-password"))
-                                  .setProperty("hibernate.connection.url", settings.get("db-url"));
-    }
-
     public Database(){
         Log.info("Connecting to database...");
 
@@ -34,6 +26,14 @@ public class Database{
         classes.forEach(configuration::addAnnotatedClass);
 
         sessionFactory = configuration.buildSessionFactory();
+    }
+
+    public Configuration getConfig(){
+        return new Configuration().setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQL9Dialect")
+                                  .setProperty("hibernate.connection.driver_class", "org.postgresql.Driver")
+                                  .setProperty("hibernate.connection.username", settings.get("db-username"))
+                                  .setProperty("hibernate.connection.password", settings.get("db-password"))
+                                  .setProperty("hibernate.connection.url", settings.get("db-url"));
     }
 
     public SessionFactory getSessionFactory(){

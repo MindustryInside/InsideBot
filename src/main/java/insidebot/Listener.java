@@ -14,16 +14,12 @@ import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.object.entity.channel.VoiceChannel;
 import discord4j.core.spec.*;
-import discord4j.discordjson.json.gateway.GuildBanAdd;
 import discord4j.rest.util.Color;
 import insidebot.data.dao.MessageInfoDao;
 import insidebot.data.dao.UserInfoDao;
 import insidebot.data.model.MessageInfo;
 import insidebot.data.model.UserInfo;
-import net.dv8tion.jda.api.events.guild.voice.GuildVoiceDeafenEvent;
-import reactor.core.publisher.Flux;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.function.Consumer;
 

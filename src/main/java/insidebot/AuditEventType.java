@@ -20,7 +20,7 @@ public enum AuditEventType{
 
     public final Color color;
 
-    AuditEventType(int hex) {
+    AuditEventType(int hex){
         this.color = Color.of(hex);
     }
 }

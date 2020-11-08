@@ -12,7 +12,6 @@ import discord4j.rest.util.Permission;
 import insidebot.data.dao.UserInfoDao;
 import insidebot.data.model.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static insidebot.InsideBot.*;
@@ -43,7 +42,7 @@ public class Commands{
             listener.info(bundle.get("command.help"), builder.toString());
         });
 
-        handler.register("mute","<@user> <delayDays> [reason...]", bundle.get("command.mute.description"), (args, messageInfo) -> {
+        handler.register("mute", "<@user> <delayDays> [reason...]", bundle.get("command.mute.description"), (args, messageInfo) -> {
             if(!MessageUtil.canParseInt(args[1])){
                 listener.err(bundle.get("command.incorrect-number"));
                 return;
@@ -105,7 +104,7 @@ public class Commands{
                 UserInfo info = UserInfoDao.get(MessageUtil.parseUserId(args[0]));
                 User user = info.asUser();
 
-                if(isAdmin(listener.guild.getChannelById(user.))){
+                if(isAdmin(listener.guild.getMemberById(user.getId()).block())){
                     listener.err(bundle.get("command.user-is-admin"));
                     return;
                 }

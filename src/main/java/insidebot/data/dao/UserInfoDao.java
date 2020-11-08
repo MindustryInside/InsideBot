@@ -6,7 +6,6 @@ import insidebot.data.model.UserInfo;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
-import javax.annotation.Nullable;
 import java.util.List;
 
 import static insidebot.InsideBot.data;
@@ -15,12 +14,10 @@ public class UserInfoDao{
 
     private UserInfoDao(){}
 
-    @Nullable
     public static UserInfo get(Snowflake id){
         return get(id.asLong());
     }
 
-    @Nullable
     public static UserInfo get(long id){
         try(Session session = data.getSessionFactory().openSession()){
             return session.get(UserInfo.class, id);

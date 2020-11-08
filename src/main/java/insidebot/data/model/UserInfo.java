@@ -7,7 +7,6 @@ import lombok.*;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
-import javax.annotation.*;
 import javax.persistence.*;
 import java.util.*;
 
@@ -58,7 +57,6 @@ public class UserInfo extends BaseEntity{
         return listener.gateway.getUserById(Snowflake.of(userId)).block();
     }
 
-    @Nullable
     @Transient
     public Member asMember(){
         return listener.guild.getMemberById(Snowflake.of(userId)).block();

@@ -8,7 +8,7 @@ repositories{
 
 ext{
     lombokVersion     = '1.18.12'
-    jdaVersion        = '4.2.0_168'
+    discord4j         = '3.1.1'
     hibernateVersion  = '5.4.22.Final'
     postgresqlVersion = '9.0-801.jdbc4'
 }
@@ -18,10 +18,7 @@ sourceSets.main.resources.srcDirs = ["src/main/resources"]
 project.ext.mainClassName = "insidebot.InsideBot"
 
 dependencies{
-    implementation("net.dv8tion:JDA:$jdaVersion"){
-        exclude group: 'club.minnced', module: 'opus-java'
-    }
-    implementation "com.discord4j:discord4j-core:3.1.1"
+    implementation "com.discord4j:discord4j-core:$discord4j"
     implementation "com.github.Anuken.Arc:arc-core:v112.1"
     implementation "org.reflections:reflections:0.9.12"
     implementation "com.github.JodaOrg:joda-time:v2.10.6"

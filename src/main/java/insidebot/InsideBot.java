@@ -19,22 +19,19 @@ import static arc.Files.FileType.classpath;
 import static arc.util.Log.format;
 
 public class InsideBot{
-    static String[] tags = {"&lc&fb[D]", "&lg&fb[I]", "&ly&fb[W]", "&lr&fb[E]", ""};
-    static DateTimeFormatter dateTime = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
-
     public static final Snowflake
-    guildID = Snowflake.of(697929564210331681L),
-    logChannelID = Snowflake.of(747893115980873838L),
-    muteRoleID = Snowflake.of(747910443816976568L),
-    activeUserRoleID = Snowflake.of(697939241308651580L);
-
+            guildID = Snowflake.of(697929564210331681L),
+            logChannelID = Snowflake.of(747893115980873838L),
+            muteRoleID = Snowflake.of(747910443816976568L),
+            activeUserRoleID = Snowflake.of(697939241308651580L);
     public static ScheduledExecutorService executorService;
     public static ObjectMap<String, String> settings = new ObjectMap<>();
-
     public static Listener listener;
     public static Commands commands;
     public static Database data;
     public static I18NBundle bundle;
+    static String[] tags = {"&lc&fb[D]", "&lg&fb[I]", "&ly&fb[W]", "&lr&fb[E]", ""};
+    static DateTimeFormatter dateTime = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
 
     public static void main(String[] args){
         init();
