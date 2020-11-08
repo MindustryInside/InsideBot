@@ -1,65 +1,73 @@
 package insidebot;
 
 import arc.files.Fi;
-import arc.func.Cons;
 import arc.struct.ObjectSet;
 import arc.util.Log;
 import arc.util.Strings;
-import insidebot.data.dao.*;
-import insidebot.data.model.*;
-import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.entities.*;
-import net.dv8tion.jda.api.events.guild.GuildBanEvent;
-import net.dv8tion.jda.api.events.guild.member.*;
-import net.dv8tion.jda.api.events.guild.voice.*;
-import net.dv8tion.jda.api.events.message.*;
-import net.dv8tion.jda.api.events.user.update.UserUpdateNameEvent;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import discord4j.common.util.Snowflake;
+import discord4j.core.DiscordClient;
+import discord4j.core.GatewayDiscordClient;
+import discord4j.core.event.domain.VoiceStateUpdateEvent;
+import discord4j.core.event.domain.guild.*;
+import discord4j.core.event.domain.message.*;
+import discord4j.core.object.entity.*;
+import discord4j.core.object.entity.channel.TextChannel;
+import discord4j.core.object.entity.channel.VoiceChannel;
+import discord4j.core.spec.*;
+import discord4j.discordjson.json.gateway.GuildBanAdd;
+import discord4j.rest.util.Color;
+import insidebot.data.dao.MessageInfoDao;
+import insidebot.data.dao.UserInfoDao;
+import insidebot.data.model.MessageInfo;
+import insidebot.data.model.UserInfo;
+import net.dv8tion.jda.api.events.guild.voice.GuildVoiceDeafenEvent;
+import reactor.core.publisher.Flux;
 
 import javax.annotation.Nonnull;
-import java.awt.*;
-import java.io.File;
-import java.util.Calendar;
+import java.util.*;
+import java.util.function.Consumer;
 
 import static insidebot.AuditEventType.*;
 import static insidebot.InsideBot.*;
 
-public class Listener extends ListenerAdapter{
-    public Guild guild;
-    public JDA jda;
-    public Color normalColor = Color.decode("#C4F5B7");
-    public Color errorColor = Color.decode("#ff3838");
+public class Listener{
+    public discord4j.core.object.entity.Guild guild;
+    public DiscordClient client;
+    public GatewayDiscordClient gateway;
+    public Color normalColor = Color.of(0xC4F5B7);
+    public Color errorColor = Color.of(0xff3838);
     public Fi temp = new Fi("message.txt");
 
-    // привет костыль
-    public ObjectSet<Long> buffer = new ObjectSet<>();
+    // привет костыль (на самом деле не совсем то и костыль)
+    public ObjectSet<Snowflake> buffer = new ObjectSet<>();
 
     TextChannel channel;
     User lastUser;
-    Message lastMessage;
-    Message lastSentMessage;
+    Message lastMessage, lastSentMessage;
 
-    @Override
-    public void onMessageReceived(@Nonnull MessageReceivedEvent event){
-        try{
-            if(event.getAuthor().isBot()) return;
-            StringBuilder c = new StringBuilder();
+    // Регистрируем ивентики
+    protected void register(){
+        listener.guild = listener.gateway.getGuildById(guildID).block();
+
+        gateway.on(MessageCreateEvent.class).subscribe(event -> {
+            discord4j.core.object.entity.User user = event.getMessage().getAuthor().get();
+            discord4j.core.object.entity.Message message = event.getMessage();
+            if(user.isBot()) return;
             MessageInfo info = new MessageInfo();
-            UserInfo userInfo = UserInfoDao.getOr(event.getAuthor().getIdLong(), UserInfo::new);
-            String content = event.getMessage().getContentRaw().trim();
+            UserInfo userInfo = UserInfoDao.getOr(message.getAuthor().get().getId(), UserInfo::new);
+            String content = message.getContent().trim();
 
-            userInfo.setName(event.getAuthor().getName());
-            userInfo.setUserId(event.getAuthor().getIdLong());
+            userInfo.setName(user.getUsername());
+            userInfo.setUserId(user.getId().asLong());
             userInfo.setLastSentMessage(Calendar.getInstance());
             userInfo.addToSeq();
 
             info.setUser(userInfo);
-            info.setMessageId(event.getMessageIdLong());
-            info.setChannelId(event.getTextChannel().getIdLong());
+            info.setMessageId(message.getId().asLong());
+            info.setChannelId(message.getChannelId().asLong());
 
             if(!event.getMessage().getAttachments().isEmpty()){
-                c.append("\n---\n");
+                StringBuilder c = new StringBuilder("\n---\n");
                 event.getMessage().getAttachments().forEach(a -> c.append(a.getUrl()).append("\n"));
                 content += c.toString();
             }
@@ -67,243 +75,198 @@ public class Listener extends ListenerAdapter{
             info.setContent(content);
             userInfo.getMessageInfo().add(info);
 
-            commands.handle(event, info);
+            commands.handle(event);
             UserInfoDao.saveOrUpdate(userInfo);
-        }catch(Exception e){
-            Log.err(e);
-        }
-    }
+        }, Log::err);
 
-    @Override
-    public void onMessageUpdate(@Nonnull MessageUpdateEvent event){
-        try{
-            if(event.getAuthor().isBot()) return;
-            EmbedBuilder embedBuilder = new EmbedBuilder();
+        gateway.on(MessageUpdateEvent.class).subscribe(event -> {
+            Message message = event.getMessage().block();
+            User user = message.getAuthor().get();
+            if(user.isBot()) return;
 
-            MessageInfo info = MessageInfoDao.get(event.getMessageIdLong());
+            EmbedCreateSpec embed = new EmbedCreateSpec();
+            MessageInfo info = MessageInfoDao.get(event.getMessageId());
 
             if(info == null) return;
 
-            User user = event.getAuthor();
             String oldContent = info.getContent();
-            String newContent = event.getMessage().getContentRaw();
+            String newContent = message.getContent();
             int maxLength = 1024;
             boolean write = newContent.length() >= maxLength || oldContent.length() >= maxLength;
 
-            if(event.getMessage().isPinned() || newContent.equals(oldContent)) return;
+            if(message.isPinned() || newContent.equals(oldContent)) return;
 
-            embedBuilder.setColor(messageEdit.color);
-            embedBuilder.setAuthor(memberedName(user), null, user.getEffectiveAvatarUrl());
-            embedBuilder.setTitle(bundle.format("message.edit", event.getTextChannel().getName()));
-            embedBuilder.setDescription(bundle.format("message.edit.description",
-                                                      event.getGuild().getId(),
-                                                      event.getTextChannel().getId(),
-                                                      event.getMessageId()));
+            embed.setColor(messageEdit.color);
+            embed.setAuthor(memberedName(user), null, user.getAvatarUrl());
+            embed.setTitle(bundle.format("message.edit", event.getChannel().block().getMention()));
+            embed.setDescription(bundle.format("message.edit.description", event.getGuildId().get().asLong(),
+                                               event.getChannelId().asLong(), event.getMessageId().asLong()));
 
-            if(write){
-                writeTemp(String.format("%s\n%s\n\n%s\n%s", bundle.get("message.edit.old-content"), oldContent,
-                                        bundle.get("message.edit.new-content"), newContent));
-            }
-
-            if(!event.getMessage().getAttachments().isEmpty()){
-                StringBuilder builder = new StringBuilder();
-                builder.append("\n---\n");
-                event.getMessage().getAttachments().forEach(a -> builder.append(a.getUrl()).append("\n"));
+            if(!message.getAttachments().isEmpty()){
+                StringBuilder builder = new StringBuilder("\n---\n");
+                message.getAttachments().forEach(a -> builder.append(a.getUrl()).append("\n"));
                 newContent += builder.toString();
             }
 
-            embedBuilder.addField(bundle.get("message.edit.old-content"),
-                    MessageUtil.substringTo(oldContent, maxLength), false);
-            embedBuilder.addField(bundle.get("message.edit.new-content"),
-                    MessageUtil.substringTo(newContent, maxLength), true);
+            embed.addField(bundle.get("message.edit.old-content"),
+                           MessageUtil.substringTo(oldContent, maxLength), false);
+            embed.addField(bundle.get("message.edit.new-content"),
+                           MessageUtil.substringTo(newContent, maxLength), true);
 
-            embedBuilder.setFooter(data.zonedFormat());
+            embed.setFooter(data.zonedFormat(), null);
 
             if(write){
-                jda.getTextChannelById(logChannelID).sendMessage(embedBuilder.build()).addFile(temp.file()).queue();
-            }else{
-                log(embedBuilder);
+                temp.writeString(String.format("%s\n%s\n\n%s\n%s", bundle.get("message.edit.old-content"), oldContent,
+                                               bundle.get("message.edit.new-content"), newContent));
             }
+
+            log(embed, write);
 
             info.setContent(newContent);
             MessageInfoDao.update(info);
-        }catch(Exception e){
-            Log.err(e); // По сути эти методы безопасны, но я не буду пока удалять *ловушки*
-        }
-    }
+        }, Log::err);
 
-    @Override
-    public void onMessageDelete(@Nonnull MessageDeleteEvent event){
-        try{
-            if(!MessageInfoDao.exists(event.getMessageIdLong())) return;
-            if(buffer.contains(event.getMessageIdLong())){
-                buffer.remove(event.getMessageIdLong());
+        gateway.on(MessageDeleteEvent.class).subscribe(event -> {
+            if(!MessageInfoDao.exists(event.getMessageId())) return;
+            if(buffer.contains(event.getMessageId())){
+                buffer.remove(event.getMessageId());
                 return;
             }
 
-            EmbedBuilder embedBuilder = new EmbedBuilder();
-            MessageInfo info = MessageInfoDao.get(event.getMessageIdLong());
+            EmbedCreateSpec embed = new EmbedCreateSpec();
+            MessageInfo info = MessageInfoDao.get(event.getMessageId());
 
             User user = info.getUser().asUser(); // Nonnull
             String content = info.getContent();
             int maxLength = 1024;
 
+            boolean under = content.length() >= maxLength;
+
             if(content.isEmpty()) return;
 
-            embedBuilder.setColor(messageDelete.color);
-            embedBuilder.setAuthor(memberedName(user), null, user.getEffectiveAvatarUrl());
-            embedBuilder.setTitle(bundle.format("message.delete", event.getTextChannel().getName()));
-            embedBuilder.setFooter(data.zonedFormat());
+            embed.setColor(messageDelete.color);
+            embed.setAuthor(memberedName(user), null, user.getAvatarUrl());
+            embed.setTitle(bundle.format("message.delete", event.getChannel().block().getMention()));
+            embed.setFooter(data.zonedFormat(), null);
 
-            if(content.length() >= maxLength){
-                embedBuilder.addField(bundle.get("message.delete.content"), MessageUtil.substringTo(content, maxLength), true);
-                writeTemp(String.format("%s\n%s", bundle.get("message.delete.content"), content));
-                log(embedBuilder, temp.file());
-            }else{
-                embedBuilder.addField(bundle.get("message.delete.content"), content, true);
-                log(embedBuilder);
-            }
+            embed.addField(bundle.get("message.delete.content"), under ? MessageUtil.substringTo(content, maxLength)
+                                                                       : content, true);
+
+            log(embed, under);
 
             MessageInfoDao.remove(info);
-        }catch(Exception e){
-            Log.err(e);
-        }
-    }
+        }, Log::err);
 
-    @Override
-    public void onGuildVoiceJoin(@Nonnull GuildVoiceJoinEvent event){
-        try{
-            User user = event.getMember().getUser();
-            if(user.isBot()) return;
+        gateway.on(VoiceStateUpdateEvent.class).subscribe(event -> {
+            VoiceChannel channel = event.getCurrent().getChannel().block();
+            User user = event.getCurrent().getUser().block();
+            if(user == null || user.isBot() || channel == null) return;
             log(embedBuilder -> {
                 embedBuilder.setColor(voiceJoin.color);
                 embedBuilder.setTitle(bundle.get("message.voice-join"));
-                embedBuilder.setDescription(bundle.format("message.voice-join.text", memberedName(user),
-                                                          event.getChannelJoined().getName()));
-                embedBuilder.setFooter(data.zonedFormat());
+                embedBuilder.setDescription(bundle.format("message.voice-join.text", memberedName(user), channel.getName()));
+                embedBuilder.setFooter(data.zonedFormat(), null);
             });
-        }catch(Exception e){
-            Log.err(e);
-        }
-    }
+        }, Log::err);
 
-    @Override
-    public void onGuildVoiceLeave(@Nonnull GuildVoiceLeaveEvent event){
-        try{
-            User user = event.getMember().getUser();
-            if(user.isBot()) return;
+        gateway.on(VoiceStateUpdateEvent.class).subscribe(event -> {
+            VoiceChannel channel = event.getOld().get().getChannel().block();
+            User user = event.getOld().get().getUser().block();
+            if(user == null || user.isBot() || channel == null) return;
             log(embedBuilder -> {
                 embedBuilder.setColor(voiceLeave.color);
                 embedBuilder.setTitle(bundle.get("message.voice-leave"));
-                embedBuilder.setDescription(bundle.format("message.voice-leave.text", memberedName(user),
-                                                          event.getChannelLeft().getName()));
-                embedBuilder.setFooter(data.zonedFormat());
+                embedBuilder.setDescription(bundle.format("message.voice-leave.text", memberedName(user), channel.getName()));
+                embedBuilder.setFooter(data.zonedFormat(), null);
             });
-        }catch(Exception e){
-            Log.err(e);
-        }
-    }
+        }, Log::err);
 
-    @Override
-    public void onGuildMemberJoin(@Nonnull GuildMemberJoinEvent event){
-        try{
-            if(event.getUser().isBot()) return;
+        gateway.on(MemberJoinEvent.class).subscribe(event -> {
+            User user = gateway.getUserById(event.getMember().getId()).block();
+            if(user == null || user.isBot()) return;
             log(embedBuilder -> {
                 embedBuilder.setColor(userJoin.color);
                 embedBuilder.setTitle(bundle.get("message.user-join"));
-                embedBuilder.setDescription(bundle.format("message.user-join.text", event.getUser().getName()));
-                embedBuilder.setFooter(data.zonedFormat());
+                embedBuilder.setDescription(bundle.format("message.user-join.text", user.getUsername()));
+                embedBuilder.setFooter(data.zonedFormat(), null);
             });
-        }catch(Exception e){
-            Log.err(e);
-        }
-    }
+        }, Log::err);
 
-    @Override
-    public void onGuildMemberRemove(@Nonnull GuildMemberRemoveEvent event){
-        try{
-            if(event.getUser().isBot()) return;
-            UserInfoDao.removeById(event.getUser().getIdLong());
+        gateway.on(MemberLeaveEvent.class).subscribe(event -> {
+            User user = event.getUser();
+            if(user.isBot()) return;
+            UserInfoDao.removeById(user.getId());
             log(embedBuilder -> {
                 embedBuilder.setColor(userLeave.color);
                 embedBuilder.setTitle(bundle.get("message.user-leave"));
-                embedBuilder.setDescription(bundle.format("message.user-leave.text", event.getUser().getName()));
-                embedBuilder.setFooter(data.zonedFormat());
+                embedBuilder.setDescription(bundle.format("message.user-leave.text", user.getUsername()));
+                embedBuilder.setFooter(data.zonedFormat(), null);
             });
-        }catch(Exception e){
-            Log.err(e);
-        }
-    }
+        }, Log::err);
 
-    @Override
-    public void onGuildBan(@Nonnull GuildBanEvent event){
-        try{
-            if(event.getUser().isBot()) return;
-            UserInfoDao.removeById(event.getUser().getIdLong());
+        gateway.on(BanEvent.class).subscribe(event -> {
+            User user = event.getUser();
+            if(user.isBot()) return;
+            UserInfoDao.removeById(user.getId());
             log(embedBuilder -> {
                 embedBuilder.setColor(userBan.color);
                 embedBuilder.setTitle(bundle.get("message.ban"));
-                embedBuilder.setDescription(bundle.format("message.ban.text", event.getUser().getName()));
-                embedBuilder.setFooter(data.zonedFormat());
+                embedBuilder.setDescription(bundle.format("message.ban.text", user.getUsername()));
+                embedBuilder.setFooter(data.zonedFormat(), null);
             });
-        }catch(Exception e){
-            Log.err(e);
-        }
-    }
+        }, Log::err);
 
-    @Override
-    public void onUserUpdateName(@Nonnull UserUpdateNameEvent event){
-        try{
-            if(event.getEntity().isBot()) return;
-            UserInfo info = UserInfoDao.get(event.getEntity().getIdLong());
+        gateway.on(MemberUpdateEvent.class).subscribe(event -> {
+            User user = gateway.getUserById(event.getMemberId()).block();
+            if(user == null || user.isBot()) return;
+            UserInfo info = UserInfoDao.get(user.getId());
             if(info == null) return;
-            info.setName(event.getNewName());
+            info.setName(event.getCurrentNickname().get());
             UserInfoDao.update(info);
-        }catch(Exception e){
-            Log.err(e);
-        }
+        }, Log::err);
     }
 
     // voids
 
-    public void onMessageClear(MessageHistory history, User user, int count){
+    public void onMessageClear(List<Message> history, User user, int count){
         log(embedBuilder -> {
-            embedBuilder.setTitle(bundle.format("message.clear", count, history.getChannel().getName()));
-            embedBuilder.setDescription(bundle.format("message.clear.text", user.getAsMention(),
-                                                      count, history.getChannel().getName()));
-            embedBuilder.setFooter(data.zonedFormat());
+            String channel = history.get(0).getChannel().block().getMention();
+            if(channel == null) return; // нереально
+            embedBuilder.setTitle(bundle.format("message.clear", count, channel));
+            embedBuilder.setDescription(bundle.format("message.clear.text", user.getUsername(), count, channel));
+            embedBuilder.setFooter(data.zonedFormat(), null);
             embedBuilder.setColor(messageClear.color);
 
             StringBuilder builder = new StringBuilder();
-            history.getRetrievedHistory().forEach(m -> buffer.add(m.getIdLong()));
-            history.getRetrievedHistory().forEach(m -> {
-                builder.append('[').append(m.getTimeCreated()).append("] ");
-                builder.append(user.getName()).append(" = ");
-                builder.append(m.getContentRaw());
+            history.forEach(m -> {
+                buffer.add(m.getId());
+                builder.append('[').append(m).append("] ");
+                builder.append(user.getUsername()).append(" = ");
+                builder.append(m.getContent());
                 if(!m.getAttachments().isEmpty()){
                     builder.append("\n---\n");
                     m.getAttachments().forEach(a -> builder.append(a.getUrl()).append("\n"));
                 }
                 builder.append('\n');
             });
-            writeTemp(builder.toString());
-        }, temp.file());
+            temp.writeString(builder.toString());
+        }, true);
     }
 
     public void onMemberMute(User user, int delayDays){
-        Member member = guild.getMember(user);
-        UserInfo userInfo = UserInfoDao.get(user.getIdLong());
+        Member member = guild.getMemberById(user.getId()).block();
+        UserInfo userInfo = UserInfoDao.get(user.getId());
         if(member == null || userInfo == null) return;
 
         Calendar calendar = Calendar.getInstance();
         calendar.roll(Calendar.DAY_OF_YEAR, +delayDays);
         userInfo.setMuteEndDate(calendar);
         UserInfoDao.update(userInfo);
-        guild.addRoleToMember(member, muteRole).queue();
+        member.addRole(muteRoleID).block();
         log(embedBuilder -> {
             embedBuilder.setTitle(bundle.get("message.mute"));
-            embedBuilder.setDescription(bundle.format("message.mute.text", user.getAsMention(), delayDays));
-            embedBuilder.setFooter(data.zonedFormat());
+            embedBuilder.setDescription(bundle.format("message.mute.text", user.getMention(), delayDays));
+            embedBuilder.setFooter(data.zonedFormat(), null);
             embedBuilder.setColor(userMute.color);
         });
     }
@@ -314,35 +277,31 @@ public class Listener extends ListenerAdapter{
 
         userInfo.setMuteEndDate(null);
         UserInfoDao.update(userInfo);
-        guild.removeRoleFromMember(member, muteRole).queue();
-        log(embedBuilder -> {
-            embedBuilder.setTitle(bundle.get("message.unmute"));
-            embedBuilder.setDescription(bundle.format("message.unmute.text", userInfo.getName()));
-            embedBuilder.setFooter(data.zonedFormat());
-            embedBuilder.setColor(userUnmute.color);
+        member.removeRole(muteRoleID).block();
+        log(e -> {
+            e.setTitle(bundle.get("message.unmute"));
+            e.setDescription(bundle.format("message.unmute.text", userInfo.getName()));
+            e.setFooter(data.zonedFormat(), null);
+            e.setColor(userUnmute.color);
         });
     }
 
     // utils
 
     public void ban(UserInfo userInfo){
-        listener.guild.ban(userInfo.asUser(), 0).queue();
+        guild.ban(Snowflake.of(userInfo.getUserId()), b -> b.setDeleteMessageDays(0)).block();
         UserInfoDao.remove(userInfo);
     }
 
     public void text(String text, Object... args){
-        lastSentMessage = channel.sendMessage(Strings.format(text, args)).complete();
+        lastSentMessage = channel.createMessage(Strings.format(text, args)).block();
     }
 
     public void info(String title, String text, Object... args){
-        MessageEmbed object = new EmbedBuilder().setColor(normalColor)
-                .setTitle(title).setDescription(Strings.format(text, args)).build();
+        MessageCreateSpec m = new MessageCreateSpec().setEmbed(e -> e.setColor(normalColor).setTitle(title)
+                                                                     .setDescription(Strings.format(text, args)));
 
-        lastSentMessage = channel.sendMessage(object).complete();
-    }
-
-    public void embed(MessageEmbed embed){
-        lastSentMessage = channel.sendMessage(embed).complete();
+        lastSentMessage = channel.createMessage(e -> e = m).block();
     }
 
     public void err(String text, Object... args){
@@ -350,41 +309,39 @@ public class Listener extends ListenerAdapter{
     }
 
     public void err(String title, String text, Object... args){
-        MessageEmbed e = new EmbedBuilder().setColor(errorColor)
-                .setTitle(title).setDescription(Strings.format(text, args)).build();
+        MessageCreateSpec result = new MessageCreateSpec().setEmbed(e -> e.setColor(errorColor).setTitle(title)
+                                                                          .setDescription(Strings.format(text, args)));
 
-        lastSentMessage = channel.sendMessage(e).complete();
+        lastSentMessage = channel.createMessage(m -> m = result).block();
     }
 
-    public void log(EmbedBuilder embed){
-        jda.getTextChannelById(logChannelID).sendMessage(embed.build()).queue();
+    public void log(MessageCreateSpec message){
+        guild.getChannelById(logChannelID).cast(TextChannel.class).block()
+             .getRestChannel().createMessage(message.asRequest()).block();
     }
 
-    public void log(Cons<EmbedBuilder> embed){
-        EmbedBuilder embedBuilder = new EmbedBuilder();
-        embed.get(embedBuilder);
-        log(embedBuilder);
+    public void log(EmbedCreateSpec embed){
+        log(e -> e = embed, false);
     }
 
-    public void log(EmbedBuilder embed, File temp){
-        jda.getTextChannelById(logChannelID).sendMessage(embed.build()).addFile(temp).queue();
+    public void log(EmbedCreateSpec embed, boolean file){
+        log(e -> e = embed, file);
     }
 
-    public void log(Cons<EmbedBuilder> embed, File temp){
-        EmbedBuilder embedBuilder = new EmbedBuilder();
-        embed.get(embedBuilder);
-        log(embedBuilder, temp);
+    public void log(Consumer<EmbedCreateSpec> embed, boolean file){
+        MessageCreateSpec m = new MessageCreateSpec().setEmbed(embed);
+        log(file ? m.addFile("message", temp.read()) : m);
     }
 
-    private void writeTemp(String text){
-        temp.writeString(text, false);
+    public void log(Consumer<EmbedCreateSpec> embed){
+        log(embed, false);
     }
 
     // username / membername
     public String memberedName(User user){
-        String name = user.getName();
-        Member member = guild.getMember(user);
-        if(member != null && member.getNickname() != null){
+        String name = user.getUsername();
+        Member member = guild.getMemberById(user.getId()).block();
+        if(member != null && member.getNickname().isPresent()){
             name += " / " + member.getNickname();
         }
         return name;

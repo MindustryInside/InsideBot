@@ -1,7 +1,9 @@
 package insidebot.data.model;
 
+import discord4j.common.util.Snowflake;
+import discord4j.core.object.entity.Member;
+import discord4j.core.object.entity.User;
 import lombok.*;
-import net.dv8tion.jda.api.entities.*;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
@@ -51,15 +53,14 @@ public class UserInfo extends BaseEntity{
         messageSeq += 1;
     }
 
-    @Nonnull
     @Transient
     public User asUser(){
-        return listener.jda.retrieveUserById(userId).complete();
+        return listener.gateway.getUserById(Snowflake.of(userId)).block();
     }
 
     @Nullable
     @Transient
     public Member asMember(){
-        return listener.guild.retrieveMember(asUser()).complete();
+        return listener.guild.getMemberById(Snowflake.of(userId)).block();
     }
 }

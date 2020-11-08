@@ -1,6 +1,7 @@
 package insidebot.data.dao;
 
 import arc.func.Prov;
+import discord4j.common.util.Snowflake;
 import insidebot.data.model.UserInfo;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -15,10 +16,19 @@ public class UserInfoDao{
     private UserInfoDao(){}
 
     @Nullable
+    public static UserInfo get(Snowflake id){
+        return get(id.asLong());
+    }
+
+    @Nullable
     public static UserInfo get(long id){
         try(Session session = data.getSessionFactory().openSession()){
             return session.get(UserInfo.class, id);
         }
+    }
+
+    public static UserInfo getOr(Snowflake id, Prov<UserInfo> prov){
+        return getOr(id.asLong(), prov);
     }
 
     public static UserInfo getOr(long id, Prov<UserInfo> prov){
@@ -65,6 +75,10 @@ public class UserInfoDao{
         }
     }
 
+    public static void removeById(Snowflake id){
+        removeById(id.asLong());
+    }
+
     public static void removeById(long id){
         try(Session session = data.getSessionFactory().openSession()){
             Transaction t = session.beginTransaction();
@@ -75,9 +89,11 @@ public class UserInfoDao{
         }
     }
 
+    public static boolean exists(Snowflake id){
+        return exists(id.asLong());
+    }
+
     public static boolean exists(long id){
-        try(Session session = data.getSessionFactory().openSession()){
-            return get(id) != null;
-        }
+        return get(id) != null;
     }
 }

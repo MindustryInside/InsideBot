@@ -4,11 +4,16 @@ import arc.math.Mathf;
 import arc.util.CommandHandler;
 import arc.util.CommandHandler.*;
 import arc.util.Strings;
+import discord4j.common.util.Snowflake;
+import discord4j.core.event.domain.message.MessageCreateEvent;
+import discord4j.core.object.entity.*;
+import discord4j.core.object.entity.channel.TextChannel;
+import discord4j.rest.util.Permission;
 import insidebot.data.dao.UserInfoDao;
 import insidebot.data.model.*;
-import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.*;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static insidebot.InsideBot.*;
 
@@ -18,10 +23,10 @@ public class Commands{
     private final String[] warningStrings = {bundle.get("command.first"), bundle.get("command.second"), bundle.get("command.third")};
 
     public Commands(){
-        handler.<MessageInfo>register("help", bundle.get("command.help.description"), (args, messageInfo) -> {
+        handler.register("help", bundle.get("command.help.description"), args -> {
             StringBuilder builder = new StringBuilder();
 
-            for(Command command : handler.getCommandList()){
+            handler.getCommandList().forEach(command -> {
                 builder.append(prefix);
                 builder.append("**");
                 builder.append(command.text);
@@ -34,23 +39,22 @@ public class Commands{
                 builder.append(" - ");
                 builder.append(command.description);
                 builder.append("\n");
-            }
+            });
             listener.info(bundle.get("command.help"), builder.toString());
         });
 
-        handler.<MessageInfo>register("mute","<@user> <delayDays> [reason...]", bundle.get("command.mute.description"), (args, messageInfo) -> {
+        handler.register("mute","<@user> <delayDays> [reason...]", bundle.get("command.mute.description"), (args, messageInfo) -> {
             if(!MessageUtil.canParseInt(args[1])){
                 listener.err(bundle.get("command.incorrect-number"));
                 return;
             }
 
             try{
-                long l = MessageUtil.parseUserId(args[0]);
                 int delayDays = Strings.parseInt(args[1]);
-                insidebot.data.model.UserInfo info = UserInfoDao.get(l);
+                insidebot.data.model.UserInfo info = UserInfoDao.get(MessageUtil.parseUserId(args[0]));
                 User user = info.asUser();
 
-                if(isAdmin(listener.guild.getMember(user))){
+                if(isAdmin(listener.guild.getMemberById(user.getId()).block())){
                     listener.err(bundle.get("command.user-is-admin"));
                     return;
                 }
@@ -69,7 +73,7 @@ public class Commands{
             }
         });
 
-        handler.<MessageInfo>register("delete", "<amount>", bundle.get("command.delete.description"), (args, messageInfo) -> {
+        handler.register("delete", "<amount>", bundle.get("command.delete.description"), args -> {
             if(!MessageUtil.canParseInt(args[0])){
                 listener.err(bundle.get("command.incorrect-number"));
                 return;
@@ -82,18 +86,26 @@ public class Commands{
                 return;
             }
 
-            MessageHistory hist = listener.channel.getHistoryBefore(listener.lastMessage, number).complete();
-            listener.onMessageClear(hist, listener.lastUser, number);
-            listener.channel.deleteMessages(hist.getRetrievedHistory()).queue();
+            List<Message> history = listener.channel.getMessagesBefore(listener.lastMessage.getId())
+                                                    .limitRequest(number)
+                                                    .collectList()
+                                                    .block();
+
+            if(history == null || (history.isEmpty() && number > 0)){
+                listener.err(bundle.get("command.hist-error"));
+                return;
+            }
+
+            listener.onMessageClear(history, listener.lastUser, number);
+            history.forEach(m -> m.delete().block());
         });
 
-        handler.<MessageInfo>register("warn", "<@user> [reason...]", bundle.get("command.warn.description"), (args, messageInfo) -> {
+        handler.register("warn", "<@user> [reason...]", bundle.get("command.warn.description"), args -> {
             try{
-                long l = MessageUtil.parseUserId(args[0]);
-                UserInfo info = UserInfoDao.get(l);
+                UserInfo info = UserInfoDao.get(MessageUtil.parseUserId(args[0]));
                 User user = info.asUser();
 
-                if(isAdmin(listener.guild.getMember(user))){
+                if(isAdmin(listener.guild.getChannelById(user.))){
                     listener.err(bundle.get("command.user-is-admin"));
                     return;
                 }
@@ -108,7 +120,7 @@ public class Commands{
 
                 int warnings = info.addWarn();
 
-                listener.text(bundle.format("message.warn", user.getAsMention(),
+                listener.text(bundle.format("message.warn", user.getUsername(),
                                             warningStrings[Mathf.clamp(warnings - 1, 0, warningStrings.length - 1)]));
 
                 if(warnings >= 3){
@@ -121,10 +133,9 @@ public class Commands{
             }
         });
 
-        handler.<MessageInfo>register("warnings", "<@user>", bundle.get("command.warnings.description"), (args, messageInfo) -> {
+        handler.register("warnings", "<@user>", bundle.get("command.warnings.description"), args -> {
             try{
-                long l = MessageUtil.parseUserId(args[0]);
-                UserInfo info = UserInfoDao.get(l);
+                UserInfo info = UserInfoDao.get(MessageUtil.parseUserId(args[0]));
                 int warnings = info.getWarns();
 
                 listener.text(bundle.format("command.warnings", info.getName(), warnings,
@@ -134,7 +145,7 @@ public class Commands{
             }
         });
 
-        handler.<MessageInfo>register("unwarn", "<@user> [count]", bundle.get("command.unwarn.description"), (args, messageInfo) -> {
+        handler.register("unwarn", "<@user> [count]", bundle.get("command.unwarn.description"), args -> {
             if(args.length > 1 && !MessageUtil.canParseInt(args[1])){
                 listener.text(bundle.get("command.incorrect-number"));
                 return;
@@ -143,22 +154,21 @@ public class Commands{
             int warnings = args.length > 1 ? Strings.parseInt(args[1]) : 1;
 
             try{
-                long l = MessageUtil.parseUserId(args[0]);
+                Snowflake l = MessageUtil.parseUserId(args[0]);
                 UserInfo info = UserInfoDao.get(l);
                 info.setWarns(info.getWarns() - warnings);
 
                 listener.text(bundle.format("command.unwarn", info.getName(), warnings,
                                             warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns")));
-                UserInfoDao.save(info);
+                UserInfoDao.update(info);
             }catch(Exception e){
                 listener.err(bundle.get("command.incorrect-name"));
             }
         });
 
-        handler.<MessageInfo>register("unmute", "<@user>", bundle.get("command.unmute.description"), (args, messageInfo) -> {
+        handler.register("unmute", "<@user>", bundle.get("command.unmute.description"), args -> {
             try{
-                long l = MessageUtil.parseUserId(args[0]);
-                UserInfo info = UserInfoDao.get(l);
+                UserInfo info = UserInfoDao.get(MessageUtil.parseUserId(args[0]));
                 listener.onMemberUnmute(info);
             }catch(Exception e){
                 listener.err(bundle.get("command.incorrect-name"));
@@ -166,22 +176,22 @@ public class Commands{
         });
     }
 
-    public void handle(MessageReceivedEvent event, MessageInfo info){
-        if(event.getMessage().getContentRaw().startsWith(prefix)){
-            listener.channel = event.getTextChannel();
-            listener.lastUser = event.getAuthor();
+    public void handle(MessageCreateEvent event){
+        if(event.getMessage().getContent().startsWith(prefix)){
+            listener.channel = event.getMessage().getChannel().cast(TextChannel.class).block();
+            listener.lastUser = event.getMessage().getAuthor().get();
             listener.lastMessage = event.getMessage();
         }
 
-        if(isAdmin(event.getMember())){
-            handleResponse(handler.handleMessage(event.getMessage().getContentRaw(), info));
+        if(isAdmin(event.getMember().get())){
+            handleResponse(handler.handleMessage(event.getMessage().getContent()));
         }
     }
 
     public boolean isAdmin(Member member){
         try{
-            return member.getRoles().stream().anyMatch(r -> r.hasPermission(Permission.ADMINISTRATOR));
-        }catch(Exception e){
+            return member.getRoles().map(Role::getPermissions).any(r -> r.contains(Permission.ADMINISTRATOR)).block();
+        }catch(Throwable t){
             return false;
         }
     }

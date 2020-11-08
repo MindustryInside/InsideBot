@@ -5,11 +5,11 @@ import arc.struct.ObjectMap;
 import arc.util.I18NBundle;
 import arc.util.Log;
 import arc.util.io.PropertiesUtils;
-import insidebot.thread.*;
-import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.entities.Role;
+import discord4j.common.util.Snowflake;
+import discord4j.core.DiscordClient;
+import insidebot.thread.ActiveUsers;
+import insidebot.thread.Unmuter;
 
-import javax.security.auth.login.LoginException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
@@ -22,12 +22,13 @@ public class InsideBot{
     static String[] tags = {"&lc&fb[D]", "&lg&fb[I]", "&ly&fb[W]", "&lr&fb[E]", ""};
     static DateTimeFormatter dateTime = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
 
-    public static final long guildID = 697929564210331681L;
-    public static final long logChannelID = 747893115980873838L;
-    public static Role muteRole = null;
-    public static Role activeUserRole = null;
+    public static final Snowflake
+    guildID = Snowflake.of(697929564210331681L),
+    logChannelID = Snowflake.of(747893115980873838L),
+    muteRoleID = Snowflake.of(747910443816976568L),
+    activeUserRoleID = Snowflake.of(697939241308651580L);
 
-    public static ScheduledExecutorService executorService = Executors.newScheduledThreadPool(4);
+    public static ScheduledExecutorService executorService;
     public static ObjectMap<String, String> settings = new ObjectMap<>();
 
     public static Listener listener;
@@ -35,21 +36,21 @@ public class InsideBot{
     public static Database data;
     public static I18NBundle bundle;
 
-    public static void main(String[] args) throws InterruptedException, LoginException{
+    public static void main(String[] args){
         init();
 
-        listener.jda = JDABuilder.createDefault(settings.get("token"))
-                .addEventListeners(listener)
-                .build();
-        listener.jda.awaitReady();
-        listener.guild = listener.jda.getGuildById(guildID);
-        muteRole = listener.guild.getRoleById(747910443816976568L);
-        activeUserRole = listener.guild.getRoleById(697939241308651580L);
+        listener.client = DiscordClient.create(settings.get("token"));
+        listener.client.gateway().withGateway(gateway -> {
+            listener.gateway = gateway;
 
-        Log.info("Bot up.");
+            Log.info("Bot up.");
 
-        executorService.scheduleAtFixedRate(new Unmuter(), 5, 15, TimeUnit.SECONDS);
-        executorService.scheduleAtFixedRate(new ActiveUsers(), 10, 60, TimeUnit.SECONDS);
+            listener.register();
+
+            executorService.scheduleAtFixedRate(new Unmuter(), 5, 15, TimeUnit.SECONDS);
+            executorService.scheduleAtFixedRate(new ActiveUsers(), 10, 60, TimeUnit.SECONDS);
+            return gateway.onDisconnect();
+        }).block();
     }
 
     private static void init(){
@@ -60,6 +61,7 @@ public class InsideBot{
         };
 
         listener = new Listener();
+        executorService = Executors.newScheduledThreadPool(3);
 
         Fi cfg = new Fi("settings.properties", classpath);
         Fi fi = new Fi("bundle", classpath);

@@ -31,9 +31,7 @@ public class Database{
 
         Configuration configuration = getConfig();
 
-        for(Class<?> clazz : classes){
-            configuration.addAnnotatedClass(clazz);
-        }
+        classes.forEach(configuration::addAnnotatedClass);
 
         sessionFactory = configuration.buildSessionFactory();
     }

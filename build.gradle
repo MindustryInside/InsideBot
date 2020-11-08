@@ -18,9 +18,10 @@ sourceSets.main.resources.srcDirs = ["src/main/resources"]
 project.ext.mainClassName = "insidebot.InsideBot"
 
 dependencies{
-    implementation ("net.dv8tion:JDA:$jdaVersion"){
+    implementation("net.dv8tion:JDA:$jdaVersion"){
         exclude group: 'club.minnced', module: 'opus-java'
     }
+    implementation "com.discord4j:discord4j-core:3.1.1"
     implementation "com.github.Anuken.Arc:arc-core:v112.1"
     implementation "org.reflections:reflections:0.9.12"
     implementation "com.github.JodaOrg:joda-time:v2.10.6"
@@ -37,6 +38,7 @@ dependencies{
 task dist(type: Jar){
     from files(sourceSets.main.output.classesDirs)
     from files(sourceSets.main.output.resourcesDir)
+    from (rootDir){ include "settings.properties" }
     from {configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}}
 
     archiveFileName = "${project.name}.jar"

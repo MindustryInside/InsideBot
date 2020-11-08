@@ -1,6 +1,7 @@
 package insidebot.data.dao;
 
 import arc.func.Prov;
+import discord4j.common.util.Snowflake;
 import insidebot.data.model.MessageInfo;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -15,6 +16,11 @@ import static insidebot.InsideBot.data;
 public class MessageInfoDao{
 
     private MessageInfoDao(){}
+
+    @Nullable
+    public static MessageInfo get(Snowflake id){
+        return get(id.asLong());
+    }
 
     @Nullable
     public static MessageInfo get(long id){
@@ -75,9 +81,11 @@ public class MessageInfoDao{
         }
     }
 
+    public static boolean exists(Snowflake id){
+        return get(id.asLong()) != null;
+    }
+
     public static boolean exists(long id){
-        try(Session session = data.getSessionFactory().openSession()){
-            return get(id) != null;
-        }
+        return get(id) != null;
     }
 }

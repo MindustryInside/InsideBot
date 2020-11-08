@@ -1,6 +1,7 @@
 package insidebot;
 
 import arc.util.Strings;
+import discord4j.common.util.Snowflake;
 
 public class MessageUtil{
 
@@ -19,8 +20,8 @@ public class MessageUtil{
         }
     }
 
-    public static long parseUserId(String message){
-        return Long.parseLong(message.replaceAll("[<>@!]", ""));
+    public static Snowflake parseUserId(String message){
+        return Snowflake.of(message.replaceAll("[<>@!]", ""));
     }
 
     public static long parseRoleId(String message){
