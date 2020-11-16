@@ -7,6 +7,7 @@ import org.hibernate.Session;
 import org.hibernate.Transaction;
 
 import java.util.List;
+import java.util.Objects;
 
 import static insidebot.InsideBot.data;
 
@@ -15,6 +16,7 @@ public class UserInfoDao{
     private UserInfoDao(){}
 
     public static UserInfo get(Snowflake id){
+        Objects.requireNonNull(id, "Id must not be null.");
         return get(id.asLong());
     }
 
@@ -25,6 +27,7 @@ public class UserInfoDao{
     }
 
     public static UserInfo getOr(Snowflake id, Prov<UserInfo> prov){
+        Objects.requireNonNull(id, "Id must not be null.");
         return getOr(id.asLong(), prov);
     }
 
@@ -73,6 +76,7 @@ public class UserInfoDao{
     }
 
     public static void removeById(Snowflake id){
+        Objects.requireNonNull(id, "Id must not be null.");
         removeById(id.asLong());
     }
 
@@ -87,6 +91,7 @@ public class UserInfoDao{
     }
 
     public static boolean exists(Snowflake id){
+        Objects.requireNonNull(id, "Id must not be null.");
         return exists(id.asLong());
     }
 

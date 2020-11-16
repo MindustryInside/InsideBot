@@ -1,5 +1,6 @@
 package insidebot;
 
+import arc.Events;
 import arc.math.Mathf;
 import arc.util.CommandHandler;
 import arc.util.CommandHandler.*;
@@ -9,6 +10,7 @@ import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.rest.util.Permission;
+import insidebot.EventType.*;
 import insidebot.data.dao.UserInfoDao;
 import insidebot.data.model.*;
 
@@ -33,11 +35,11 @@ public class Commands{
                 if(command.params.length > 0){
                     builder.append(" *");
                     builder.append(command.paramText);
-                    builder.append("*");
+                    builder.append('*');
                 }
                 builder.append(" - ");
                 builder.append(command.description);
-                builder.append("\n");
+                builder.append('\n');
             });
             listener.info(bundle.get("command.help"), builder.toString());
         });
@@ -50,7 +52,7 @@ public class Commands{
 
             try{
                 int delayDays = Strings.parseInt(args[1]);
-                insidebot.data.model.UserInfo info = UserInfoDao.get(MessageUtil.parseUserId(args[0]));
+                UserInfo info = UserInfoDao.get(MessageUtil.parseUserId(args[0]));
                 User user = info.asUser();
 
                 if(isAdmin(listener.guild.getMemberById(user.getId()).block())){
@@ -66,7 +68,7 @@ public class Commands{
                     return;
                 }
 
-                listener.onMemberMute(user, delayDays);
+                Events.fire(new MemberMuteEvent(info, delayDays));
             }catch(Exception e){
                 listener.err(bundle.get("command.incorrect-name"));
             }
@@ -95,7 +97,7 @@ public class Commands{
                 return;
             }
 
-            listener.onMessageClear(history, listener.lastUser, number);
+            Events.fire(new EventType.MessageClearEvent(history, listener.lastUser, listener.channel, number));
             history.forEach(m -> m.delete().block());
         });
 
@@ -123,7 +125,7 @@ public class Commands{
                                             warningStrings[Mathf.clamp(warnings - 1, 0, warningStrings.length - 1)]));
 
                 if(warnings >= 3){
-                    listener.ban(info);
+                    Events.fire(new MemberBanEvent(info));
                 }else{
                     UserInfoDao.update(info);
                 }
@@ -168,7 +170,8 @@ public class Commands{
         handler.register("unmute", "<@user>", bundle.get("command.unmute.description"), args -> {
             try{
                 UserInfo info = UserInfoDao.get(MessageUtil.parseUserId(args[0]));
-                listener.onMemberUnmute(info);
+                Events.fire(new MemberUnmuteEvent(info));
+                Events.fire(new MemberUnmuteEvent(info));
             }catch(Exception e){
                 listener.err(bundle.get("command.incorrect-name"));
             }
@@ -189,7 +192,7 @@ public class Commands{
 
     public boolean isAdmin(Member member){
         try{
-            return member.getRoles().map(Role::getPermissions).any(r -> r.contains(Permission.ADMINISTRATOR)).block();
+            return member != null && member.getRoles().map(Role::getPermissions).any(r -> r.contains(Permission.ADMINISTRATOR)).block();
         }catch(Throwable t){
             return false;
         }

@@ -35,7 +35,7 @@ dependencies{
 task dist(type: Jar){
     from files(sourceSets.main.output.classesDirs)
     from files(sourceSets.main.output.resourcesDir)
-    from (rootDir){ include "settings.properties" }
+    from (rootDir){ include "settings.properties" } // опционально
     from {configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}}
 
     archiveFileName = "${project.name}.jar"

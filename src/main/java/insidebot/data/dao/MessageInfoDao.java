@@ -6,8 +6,7 @@ import insidebot.data.model.MessageInfo;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static insidebot.InsideBot.data;
@@ -17,6 +16,7 @@ public class MessageInfoDao{
     private MessageInfoDao(){}
 
     public static MessageInfo get(Snowflake id){
+        Objects.requireNonNull(id, "Id must not be null.");
         return get(id.asLong());
     }
 
@@ -79,7 +79,8 @@ public class MessageInfoDao{
     }
 
     public static boolean exists(Snowflake id){
-        return get(id.asLong()) != null;
+        Objects.requireNonNull(id, "Id must not be null.");
+        return exists(id.asLong());
     }
 
     public static boolean exists(long id){

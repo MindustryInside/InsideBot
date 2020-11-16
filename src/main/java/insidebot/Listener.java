@@ -1,5 +1,6 @@
 package insidebot;
 
+import arc.Events;
 import arc.files.Fi;
 import arc.struct.ObjectSet;
 import arc.util.Log;
@@ -15,10 +16,12 @@ import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.object.entity.channel.VoiceChannel;
 import discord4j.core.spec.*;
 import discord4j.rest.util.Color;
+import insidebot.EventType.*;
 import insidebot.data.dao.MessageInfoDao;
 import insidebot.data.dao.UserInfoDao;
 import insidebot.data.model.MessageInfo;
 import insidebot.data.model.UserInfo;
+import reactor.util.annotation.NonNull;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -27,11 +30,10 @@ import static insidebot.AuditEventType.*;
 import static insidebot.InsideBot.*;
 
 public class Listener{
-    public discord4j.core.object.entity.Guild guild;
+    public Guild guild;
     public DiscordClient client;
     public GatewayDiscordClient gateway;
-    public Color normalColor = Color.of(0xC4F5B7);
-    public Color errorColor = Color.of(0xff3838);
+    public Color normalColor = Color.of(0xC4F5B7), errorColor = Color.of(0xff3838);
     public Fi temp = new Fi("message.txt");
 
     // привет костыль (на самом деле не совсем то и костыль)
@@ -46,12 +48,11 @@ public class Listener{
         listener.guild = listener.gateway.getGuildById(guildID).block();
 
         gateway.on(MessageCreateEvent.class).subscribe(event -> {
-            discord4j.core.object.entity.User user = event.getMessage().getAuthor().get();
-            discord4j.core.object.entity.Message message = event.getMessage();
+            User user = event.getMessage().getAuthor().get();
+            Message message = event.getMessage();
             if(user.isBot()) return;
             MessageInfo info = new MessageInfo();
-            UserInfo userInfo = UserInfoDao.getOr(message.getAuthor().get().getId(), UserInfo::new);
-            String content = message.getContent().trim();
+            UserInfo userInfo = UserInfoDao.getOr(user.getId(), UserInfo::new);
 
             userInfo.setName(user.getUsername());
             userInfo.setUserId(user.getId().asLong());
@@ -62,13 +63,7 @@ public class Listener{
             info.setMessageId(message.getId().asLong());
             info.setChannelId(message.getChannelId().asLong());
 
-            if(!event.getMessage().getAttachments().isEmpty()){
-                StringBuilder c = new StringBuilder("\n---\n");
-                event.getMessage().getAttachments().forEach(a -> c.append(a.getUrl()).append("\n"));
-                content += c.toString();
-            }
-
-            info.setContent(content);
+            info.setContent(effectiveContent(message));
             userInfo.getMessageInfo().add(info);
 
             commands.handle(event);
@@ -86,7 +81,7 @@ public class Listener{
             if(info == null) return;
 
             String oldContent = info.getContent();
-            String newContent = message.getContent();
+            String newContent = effectiveContent(message);
             int maxLength = 1024;
             boolean write = newContent.length() >= maxLength || oldContent.length() >= maxLength;
 
@@ -97,12 +92,6 @@ public class Listener{
             embed.setTitle(bundle.format("message.edit", event.getChannel().block().getMention()));
             embed.setDescription(bundle.format("message.edit.description", event.getGuildId().get().asLong(),
                                                event.getChannelId().asLong(), event.getMessageId().asLong()));
-
-            if(!message.getAttachments().isEmpty()){
-                StringBuilder builder = new StringBuilder("\n---\n");
-                message.getAttachments().forEach(a -> builder.append(a.getUrl()).append("\n"));
-                newContent += builder.toString();
-            }
 
             embed.addField(bundle.get("message.edit.old-content"),
                            MessageUtil.substringTo(oldContent, maxLength), false);
@@ -220,74 +209,73 @@ public class Listener{
             info.setName(event.getCurrentNickname().get());
             UserInfoDao.update(info);
         }, Log::err);
-    }
 
-    // voids
+        // Внутренние ивенты
 
-    public void onMessageClear(List<Message> history, User user, int count){
-        log(embedBuilder -> {
-            String channel = history.get(0).getChannel().block().getMention();
-            if(channel == null) return; // нереально
-            embedBuilder.setTitle(bundle.format("message.clear", count, channel));
-            embedBuilder.setDescription(bundle.format("message.clear.text", user.getUsername(), count, channel));
-            embedBuilder.setFooter(data.zonedFormat(), null);
-            embedBuilder.setColor(messageClear.color);
+        Events.on(MemberUnmuteEvent.class, event -> {
+            Member member = event.userInfo.asMember();
+            if(member == null) return;
 
-            StringBuilder builder = new StringBuilder();
-            history.forEach(m -> {
-                buffer.add(m.getId());
-                builder.append('[').append(m).append("] ");
-                builder.append(user.getUsername()).append(" = ");
-                builder.append(m.getContent());
-                if(!m.getAttachments().isEmpty()){
-                    builder.append("\n---\n");
-                    m.getAttachments().forEach(a -> builder.append(a.getUrl()).append("\n"));
-                }
-                builder.append('\n');
+            event.userInfo.setMuteEndDate(null);
+            UserInfoDao.update(event.userInfo);
+            member.removeRole(muteRoleID).block();
+            log(e -> {
+                e.setTitle(bundle.get("message.unmute"));
+                e.setDescription(bundle.format("message.unmute.text", event.userInfo.getName()));
+                e.setFooter(data.zonedFormat(), null);
+                e.setColor(userUnmute.color);
             });
-            temp.writeString(builder.toString());
-        }, true);
-    }
-
-    public void onMemberMute(User user, int delayDays){
-        Member member = guild.getMemberById(user.getId()).block();
-        UserInfo userInfo = UserInfoDao.get(user.getId());
-        if(member == null || userInfo == null) return;
-
-        Calendar calendar = Calendar.getInstance();
-        calendar.roll(Calendar.DAY_OF_YEAR, +delayDays);
-        userInfo.setMuteEndDate(calendar);
-        UserInfoDao.update(userInfo);
-        member.addRole(muteRoleID).block();
-        log(embedBuilder -> {
-            embedBuilder.setTitle(bundle.get("message.mute"));
-            embedBuilder.setDescription(bundle.format("message.mute.text", user.getMention(), delayDays));
-            embedBuilder.setFooter(data.zonedFormat(), null);
-            embedBuilder.setColor(userMute.color);
         });
-    }
 
-    public void onMemberUnmute(UserInfo userInfo){
-        Member member = userInfo.asMember();
-        if(member == null) return;
+        Events.on(MemberMuteEvent.class, event -> {
+            Member member = guild.getMemberById(event.user.getId()).block();
+            UserInfo userInfo = UserInfoDao.get(event.user.getId());
+            if(member == null || userInfo == null) return;
 
-        userInfo.setMuteEndDate(null);
-        UserInfoDao.update(userInfo);
-        member.removeRole(muteRoleID).block();
-        log(e -> {
-            e.setTitle(bundle.get("message.unmute"));
-            e.setDescription(bundle.format("message.unmute.text", userInfo.getName()));
-            e.setFooter(data.zonedFormat(), null);
-            e.setColor(userUnmute.color);
+            Calendar calendar = Calendar.getInstance();
+            calendar.roll(Calendar.DAY_OF_YEAR, +event.delay);
+            userInfo.setMuteEndDate(calendar);
+            UserInfoDao.update(userInfo);
+            member.addRole(muteRoleID).block();
+            log(embedBuilder -> {
+                embedBuilder.setTitle(bundle.get("message.mute"));
+                embedBuilder.setDescription(bundle.format("message.mute.text", event.user.getMention(), event.delay));
+                embedBuilder.setFooter(data.zonedFormat(), null);
+                embedBuilder.setColor(userMute.color);
+            });
+        });
+
+        Events.on(MessageClearEvent.class, event -> {
+            log(embedBuilder -> {
+                String channel = event.history.get(0).getChannel().block().getMention();
+                embedBuilder.setTitle(bundle.format("message.clear", event.count, channel));
+                embedBuilder.setDescription(bundle.format("message.clear.text", event.user.getUsername(), event.count, channel));
+                embedBuilder.setFooter(data.zonedFormat(), null);
+                embedBuilder.setColor(messageClear.color);
+
+                StringBuilder builder = new StringBuilder();
+                event.history.forEach(m -> {
+                    buffer.add(m.getId());
+                    builder.append('[').append(m.getTimestamp()).append("] ");
+                    builder.append(m.getUserData().username()).append(" = ");
+                    builder.append(m.getContent());
+                    if(!m.getAttachments().isEmpty()){
+                        builder.append("\n---\n");
+                        m.getAttachments().forEach(a -> builder.append(a.getUrl()).append("\n"));
+                    }
+                    builder.append('\n');
+                });
+                temp.writeString(builder.toString());
+            }, true);
+        });
+
+        Events.on(MemberBanEvent.class, event -> { // переадресирует на ивент от d4j. oh no кандидат на чистку
+            guild.ban(Snowflake.of(event.userInfo.getUserId()), b -> b.setDeleteMessageDays(0)).block();
+            UserInfoDao.remove(event.userInfo);
         });
     }
 
     // utils
-
-    public void ban(UserInfo userInfo){
-        guild.ban(Snowflake.of(userInfo.getUserId()), b -> b.setDeleteMessageDays(0)).block();
-        UserInfoDao.remove(userInfo);
-    }
 
     public void text(String text, Object... args){
         lastSentMessage = channel.createMessage(Strings.format(text, args)).block();
@@ -334,12 +322,21 @@ public class Listener{
     }
 
     // username / membername
-    public String memberedName(User user){
+    public String memberedName(@NonNull User user){
         String name = user.getUsername();
         Member member = guild.getMemberById(user.getId()).block();
         if(member != null && member.getNickname().isPresent()){
             name += " / " + member.getNickname();
         }
         return name;
+    }
+
+    public String effectiveContent(@NonNull Message message){
+        StringBuilder builder = new StringBuilder(message.getContent());
+        if(!message.getAttachments().isEmpty()){
+            builder.append("\n---\n");
+            message.getAttachments().forEach(a -> builder.append(a.getUrl()).append("\n"));
+        }
+        return builder.toString();
     }
 }

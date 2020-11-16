@@ -6,6 +6,8 @@ import discord4j.core.object.entity.User;
 import lombok.*;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import reactor.util.annotation.NonNull;
+import reactor.util.annotation.Nullable;
 
 import javax.persistence.*;
 import java.util.*;
@@ -23,6 +25,7 @@ public class UserInfo extends BaseEntity{
     @Column(name = "user_id")
     private long userId;
 
+    @NonNull
     @Column(length = 32)
     private String name;
 
@@ -32,12 +35,15 @@ public class UserInfo extends BaseEntity{
     @Column(name = "message_seq")
     private long messageSeq;
 
+    @Nullable
     @Column(name = "last_sent_message")
     private Calendar lastSentMessage;
 
+    @Nullable
     @Column(name = "mute_end_date")
     private Calendar muteEndDate;
 
+    @NonNull
     @Fetch(FetchMode.SELECT)
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<MessageInfo> messageInfo = new ArrayList<>();
@@ -57,6 +63,7 @@ public class UserInfo extends BaseEntity{
         return listener.gateway.getUserById(Snowflake.of(userId)).block();
     }
 
+    @Nullable
     @Transient
     public Member asMember(){
         return listener.guild.getMemberById(Snowflake.of(userId)).block();

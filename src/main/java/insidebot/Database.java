@@ -4,6 +4,7 @@ import arc.util.Log;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 import org.reflections.Reflections;
+import reactor.util.annotation.NonNull;
 
 import javax.persistence.Entity;
 import java.time.ZonedDateTime;
@@ -28,7 +29,7 @@ public class Database{
         sessionFactory = configuration.buildSessionFactory();
     }
 
-    public Configuration getConfig(){
+    private Configuration getConfig(){
         return new Configuration().setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQL9Dialect")
                                   .setProperty("hibernate.connection.driver_class", "org.postgresql.Driver")
                                   .setProperty("hibernate.connection.username", settings.get("db-username"))
