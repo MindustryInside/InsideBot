@@ -17,6 +17,7 @@ import discord4j.rest.util.Color;
 import insidebot.EventType.*;
 import insidebot.data.dao.*;
 import insidebot.data.model.*;
+import reactor.core.publisher.*;
 import reactor.util.annotation.*;
 
 import java.util.*;
@@ -252,6 +253,11 @@ public class Listener{
         });
 
         Events.on(MessageClearEvent.class, event -> {
+            Flux.fromIterable(event.history).subscribe(m -> {
+                buffer.add(m.getId());
+                m.delete();
+            });
+
             log(embedBuilder -> {
                 String channel = event.channel.getMention();
                 embedBuilder.setTitle(bundle.format("message.clear", event.count, channel));

@@ -100,8 +100,7 @@ public class Commands{
                 return;
             }
 
-            Events.fire(new EventType.MessageClearEvent(history, listener.lastUser, listener.channel, number));
-            history.forEach(m -> m.delete().block());
+            Events.fire(new MessageClearEvent(history, listener.lastUser, listener.channel, number));
         });
 
         handler.register("warn", "<@user> [reason...]", bundle.get("command.warn.description"), args -> {
