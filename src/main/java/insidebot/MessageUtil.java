@@ -19,19 +19,27 @@ public class MessageUtil{
         return Strings.canParseInt(message) && Strings.parseInt(message) > 0;
     }
 
-    /* Сообщение может быть пустым, и из-за этого вылетит ошибка */
+    public static boolean canParseId(String message){
+        try{
+            Snowflake.of(message);
+            return true;
+        }catch(Exception e){
+            return false;
+        }
+    }
+
     public static Snowflake parseUserId(@NonNull String message){
-        Objects.requireNonNull(message, "Message must not be null.");
-        return Snowflake.of(message.replaceAll("[<>@!]", ""));
+        message = message.replaceAll("[<>@!]", "");
+        return canParseId(message) ? Snowflake.of(message) : null;
     }
 
     public static Snowflake parseRoleId(@NonNull String message){
-        Objects.requireNonNull(message, "Message must not be null.");
-        return Snowflake.of(message.replaceAll("[<>@&]", ""));
+        message = message.replaceAll("[<>@&]", "");
+        return canParseId(message) ? Snowflake.of(message) : null;
     }
 
     public static Snowflake parseChannelId(@NonNull String message){
-        Objects.requireNonNull(message, "Message must not be null.");
-        return Snowflake.of(message.replaceAll("[<>#]", ""));
+        message = message.replaceAll("[<>#]", "");
+        return canParseId(message) ? Snowflake.of(message) : null;
     }
 }

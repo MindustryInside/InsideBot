@@ -48,7 +48,8 @@ public class Listener{
         });
 
         gateway.on(MessageCreateEvent.class).subscribe(event -> {
-            User user = event.getMessage().getAuthor().get(); /* Kак удалённый пользователь может отослать сообщение? */
+            User user = event.getMessage().getAuthor().orElse(null);
+            if(user == null) return;
             Message message = event.getMessage();
             MessageInfo info = new MessageInfo();
             UserInfo userInfo = UserInfoDao.getOr(user.getId(), UserInfo::new);

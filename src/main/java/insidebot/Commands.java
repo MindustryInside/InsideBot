@@ -13,6 +13,7 @@ import discord4j.rest.util.Permission;
 import insidebot.EventType.*;
 import insidebot.data.dao.UserInfoDao;
 import insidebot.data.model.*;
+import reactor.util.annotation.NonNull;
 
 import java.util.List;
 
@@ -186,11 +187,11 @@ public class Commands{
 
         if(c.startsWith(prefix)){
             listener.channel = event.getMessage().getChannel().cast(TextChannel.class).block();
-            listener.lastUser = event.getMessage().getAuthor().get();
+            listener.lastUser = event.getMessage().getAuthor().orElse(null);
             listener.lastMessage = event.getMessage();
         }
 
-        if(isAdmin(event.getMember().get())){
+        if(isAdmin(event.getMember().orElse(null))){
             handleResponse(handler.handleMessage(event.getMessage().getContent()));
         }
     }
@@ -203,7 +204,7 @@ public class Commands{
         }
     }
 
-    void handleResponse(CommandResponse response){
+    void handleResponse(@NonNull CommandResponse response){
         if(response.type == ResponseType.unknownCommand){
             listener.err(bundle.format("command.response.unknown", prefix));
         }else if(response.type == ResponseType.manyArguments || response.type == ResponseType.fewArguments){

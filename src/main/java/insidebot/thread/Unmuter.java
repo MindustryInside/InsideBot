@@ -4,10 +4,8 @@ import arc.Events;
 import insidebot.EventType.MemberUnmuteEvent;
 import insidebot.data.dao.UserInfoDao;
 import insidebot.data.model.UserInfo;
+import org.joda.time.*;
 import reactor.util.annotation.NonNull;
-
-import java.time.LocalDateTime;
-import java.util.Calendar;
 
 public class Unmuter implements Runnable{
 
@@ -21,7 +19,7 @@ public class Unmuter implements Runnable{
     }
 
     private boolean check(@NonNull UserInfo userInfo){
-        return userInfo.getMuteEndDate() != null &&
-               LocalDateTime.now().getDayOfYear() > userInfo.getMuteEndDate().get(Calendar.DAY_OF_YEAR);
+        DateTime d = new DateTime(userInfo.getMuteEndDate());
+        return userInfo.getMuteEndDate() != null && DateTime.now().isAfter(d);
     }
 }
