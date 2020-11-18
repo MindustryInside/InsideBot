@@ -3,25 +3,21 @@ package insidebot;
 import arc.Events;
 import arc.files.Fi;
 import arc.struct.ObjectSet;
-import arc.util.Log;
-import arc.util.Strings;
+import arc.util.*;
 import discord4j.common.util.Snowflake;
-import discord4j.core.DiscordClient;
-import discord4j.core.GatewayDiscordClient;
+import discord4j.core.*;
 import discord4j.core.event.domain.VoiceStateUpdateEvent;
 import discord4j.core.event.domain.guild.*;
+import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.*;
 import discord4j.core.object.entity.*;
-import discord4j.core.object.entity.channel.TextChannel;
-import discord4j.core.object.entity.channel.VoiceChannel;
+import discord4j.core.object.entity.channel.*;
 import discord4j.core.spec.*;
 import discord4j.rest.util.Color;
 import insidebot.EventType.*;
-import insidebot.data.dao.MessageInfoDao;
-import insidebot.data.dao.UserInfoDao;
-import insidebot.data.model.MessageInfo;
-import insidebot.data.model.UserInfo;
-import reactor.util.annotation.NonNull;
+import insidebot.data.dao.*;
+import insidebot.data.model.*;
+import reactor.util.annotation.*;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -47,10 +43,13 @@ public class Listener{
     protected void register(){
         listener.guild = listener.gateway.getGuildById(guildID).block();
 
+        gateway.on(ReadyEvent.class).subscribe(event -> {
+            Log.info("Bot up.");
+        });
+
         gateway.on(MessageCreateEvent.class).subscribe(event -> {
-            User user = event.getMessage().getAuthor().get();
+            User user = event.getMessage().getAuthor().get(); /* Kак удалённый пользователь может отослать сообщение? */
             Message message = event.getMessage();
-            if(user.isBot()) return;
             MessageInfo info = new MessageInfo();
             UserInfo userInfo = UserInfoDao.getOr(user.getId(), UserInfo::new);
 
@@ -72,17 +71,17 @@ public class Listener{
 
         gateway.on(MessageUpdateEvent.class).subscribe(event -> {
             Message message = event.getMessage().block();
-            User user = message.getAuthor().get();
-            if(user.isBot()) return;
+
+            User user = message.getAuthor().orElse(null);
+            if(user == null || user.isBot()) return;
+            if(!UserInfoDao.exists(event.getMessageId())) return;
 
             EmbedCreateSpec embed = new EmbedCreateSpec();
             MessageInfo info = MessageInfoDao.get(event.getMessageId());
 
-            if(info == null) return;
-
+            int maxLength = 1024;
             String oldContent = info.getContent();
             String newContent = effectiveContent(message);
-            int maxLength = 1024;
             boolean write = newContent.length() >= maxLength || oldContent.length() >= maxLength;
 
             if(message.isPinned() || newContent.equals(oldContent)) return;
@@ -90,8 +89,10 @@ public class Listener{
             embed.setColor(messageEdit.color);
             embed.setAuthor(memberedName(user), null, user.getAvatarUrl());
             embed.setTitle(bundle.format("message.edit", event.getChannel().block().getMention()));
-            embed.setDescription(bundle.format("message.edit.description", event.getGuildId().get().asLong(),
-                                               event.getChannelId().asLong(), event.getMessageId().asLong()));
+            embed.setDescription(bundle.format(event.getGuildId().isPresent() ? "message.edit.description" : "message.edit.nullable-guild",
+                                               event.getGuildId().get().asLong(), /* Я не знаю как такое получить, но всё же обезопашусь */
+                                               event.getChannelId().asLong(),
+                                               event.getMessageId().asLong()));
 
             embed.addField(bundle.get("message.edit.old-content"),
                            MessageUtil.substringTo(oldContent, maxLength), false);
@@ -121,11 +122,11 @@ public class Listener{
             EmbedCreateSpec embed = new EmbedCreateSpec();
             MessageInfo info = MessageInfoDao.get(event.getMessageId());
 
-            User user = info.getUser().asUser(); // Nonnull
+            User user = info.getUser().asUser();
             String content = info.getContent();
             int maxLength = 1024;
-
             boolean under = content.length() >= maxLength;
+
 
             if(content.isEmpty()) return;
 
@@ -154,7 +155,8 @@ public class Listener{
             });
         }, Log::err);
 
-        gateway.on(VoiceStateUpdateEvent.class).subscribe(event -> {
+        gateway.on(VoiceStateUpdateEvent.class).subscribe(event -> { /* Может совместить с ивентом выше? */
+            if(event.getOld().isPresent()) return;
             VoiceChannel channel = event.getOld().get().getChannel().block();
             User user = event.getOld().get().getUser().block();
             if(user == null || user.isBot() || channel == null) return;
@@ -180,6 +182,7 @@ public class Listener{
         gateway.on(MemberLeaveEvent.class).subscribe(event -> {
             User user = event.getUser();
             if(user.isBot()) return;
+
             UserInfoDao.removeById(user.getId());
             log(embedBuilder -> {
                 embedBuilder.setColor(userLeave.color);
@@ -192,6 +195,7 @@ public class Listener{
         gateway.on(BanEvent.class).subscribe(event -> {
             User user = event.getUser();
             if(user.isBot()) return;
+
             UserInfoDao.removeById(user.getId());
             log(embedBuilder -> {
                 embedBuilder.setColor(userBan.color);
@@ -204,9 +208,10 @@ public class Listener{
         gateway.on(MemberUpdateEvent.class).subscribe(event -> {
             User user = gateway.getUserById(event.getMemberId()).block();
             if(user == null || user.isBot()) return;
+            if(!UserInfoDao.exists(user.getId())) return;
+
             UserInfo info = UserInfoDao.get(user.getId());
-            if(info == null) return;
-            info.setName(event.getCurrentNickname().get());
+            event.getCurrentNickname().ifPresent(info::setName); // может в холостую сработать, ну а что поделать
             UserInfoDao.update(info);
         }, Log::err);
 
@@ -247,7 +252,7 @@ public class Listener{
 
         Events.on(MessageClearEvent.class, event -> {
             log(embedBuilder -> {
-                String channel = event.history.get(0).getChannel().block().getMention();
+                String channel = event.channel.getMention();
                 embedBuilder.setTitle(bundle.format("message.clear", event.count, channel));
                 embedBuilder.setDescription(bundle.format("message.clear.text", event.user.getUsername(), event.count, channel));
                 embedBuilder.setFooter(data.zonedFormat(), null);
@@ -261,7 +266,7 @@ public class Listener{
                     builder.append(m.getContent());
                     if(!m.getAttachments().isEmpty()){
                         builder.append("\n---\n");
-                        m.getAttachments().forEach(a -> builder.append(a.getUrl()).append("\n"));
+                        m.getAttachments().forEach(a -> builder.append(a.getUrl()).append('\n'));
                     }
                     builder.append('\n');
                 });
@@ -282,10 +287,8 @@ public class Listener{
     }
 
     public void info(String title, String text, Object... args){
-        MessageCreateSpec m = new MessageCreateSpec().setEmbed(e -> e.setColor(normalColor).setTitle(title)
-                                                                     .setDescription(Strings.format(text, args)));
-
-        lastSentMessage = channel.createMessage(e -> e = m).block();
+        lastSentMessage = channel.createMessage(s -> s.setEmbed(e -> e.setColor(normalColor).setTitle(title)
+                                                                      .setDescription(Strings.format(text, args)))).block();
     }
 
     public void err(String text, Object... args){
@@ -293,19 +296,16 @@ public class Listener{
     }
 
     public void err(String title, String text, Object... args){
-        MessageCreateSpec result = new MessageCreateSpec().setEmbed(e -> e.setColor(errorColor).setTitle(title)
-                                                                          .setDescription(Strings.format(text, args)));
-
-        lastSentMessage = channel.createMessage(m -> m = result).block();
-    }
-
-    public void log(MessageCreateSpec message){
-        guild.getChannelById(logChannelID).cast(TextChannel.class).block()
-             .getRestChannel().createMessage(message.asRequest()).block();
+        lastSentMessage = channel.createMessage(s -> s.setEmbed(e -> e.setColor(errorColor).setTitle(title)
+                                                                      .setDescription(Strings.format(text, args)))).block();
     }
 
     public void log(EmbedCreateSpec embed){
         log(e -> e = embed, false);
+    }
+
+    public void log(Consumer<EmbedCreateSpec> embed){
+        log(embed, false);
     }
 
     public void log(EmbedCreateSpec embed, boolean file){
@@ -317,8 +317,9 @@ public class Listener{
         log(file ? m.addFile("message", temp.read()) : m);
     }
 
-    public void log(Consumer<EmbedCreateSpec> embed){
-        log(embed, false);
+    public void log(MessageCreateSpec message){
+        guild.getChannelById(logChannelID).cast(TextChannel.class).block()
+             .getRestChannel().createMessage(message.asRequest()).block();
     }
 
     // username / membername

@@ -7,8 +7,7 @@ import arc.util.Log;
 import arc.util.io.PropertiesUtils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClient;
-import insidebot.thread.ActiveUsers;
-import insidebot.thread.Unmuter;
+import insidebot.thread.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -42,8 +41,6 @@ public class InsideBot{
         listener.client = DiscordClient.create(settings.get("token"));
         listener.client.gateway().withGateway(gateway -> {
             listener.gateway = gateway;
-
-            Log.info("Bot up.");
 
             listener.register();
 

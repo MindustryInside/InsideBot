@@ -59,10 +59,12 @@ public class Commands{
                     listener.err(bundle.get("command.user-is-admin"));
                     return;
                 }
+
                 if(user.isBot()){
                     listener.err(bundle.get("command.user-is-bot"));
                     return;
                 }
+
                 if(listener.lastUser == user){
                     listener.err(bundle.get("command.mute.self-user"));
                     return;
@@ -110,10 +112,12 @@ public class Commands{
                     listener.err(bundle.get("command.user-is-admin"));
                     return;
                 }
+
                 if(user.isBot()){
                     listener.err(bundle.get("command.user-is-bot"));
                     return;
                 }
+
                 if(listener.lastUser == user){
                     listener.err(bundle.get("command.warn.self-user"));
                     return;
@@ -171,7 +175,6 @@ public class Commands{
             try{
                 UserInfo info = UserInfoDao.get(MessageUtil.parseUserId(args[0]));
                 Events.fire(new MemberUnmuteEvent(info));
-                Events.fire(new MemberUnmuteEvent(info));
             }catch(Exception e){
                 listener.err(bundle.get("command.incorrect-name"));
             }
@@ -179,7 +182,9 @@ public class Commands{
     }
 
     public void handle(MessageCreateEvent event){
-        if(event.getMessage().getContent().startsWith(prefix)){
+        String c = event.getMessage().getContent();
+
+        if(c.startsWith(prefix)){
             listener.channel = event.getMessage().getChannel().cast(TextChannel.class).block();
             listener.lastUser = event.getMessage().getAuthor().get();
             listener.lastMessage = event.getMessage();
