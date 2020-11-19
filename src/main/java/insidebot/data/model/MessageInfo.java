@@ -7,7 +7,7 @@ import javax.persistence.*;
 
 @Getter
 @Setter
-@Entity
+@Entity /* todo сделать таск для чистки сообщений, которым уже больше 2х недель */
 @Table(name = "message_info", schema = "public")
 public class MessageInfo extends BaseEntity{
     private static final long serialVersionUID = -7977287922184407665L;

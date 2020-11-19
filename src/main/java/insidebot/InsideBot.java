@@ -18,6 +18,7 @@ import static arc.Files.FileType.classpath;
 import static arc.util.Log.format;
 
 public class InsideBot{
+    public static final String prefix = "$";
     public static final Snowflake
     guildID = Snowflake.of(697929564210331681L),
     logChannelID = Snowflake.of(747893115980873838L),
@@ -32,8 +33,8 @@ public class InsideBot{
     public static Database data;
     public static I18NBundle bundle;
 
-    static String[] tags = {"&lc&fb[D]", "&lg&fb[I]", "&ly&fb[W]", "&lr&fb[E]", ""};
-    static DateTimeFormatter dateTime = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
+    protected static String[] tags = {"&lc&fb[D]", "&lg&fb[I]", "&ly&fb[W]", "&lr&fb[E]", ""};
+    protected static DateTimeFormatter dateTime = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
 
     public static void main(String[] args){
         init();

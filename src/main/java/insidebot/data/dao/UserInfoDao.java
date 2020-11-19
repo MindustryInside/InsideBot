@@ -39,7 +39,7 @@ public class UserInfoDao{
 
     public static List<UserInfo> getAll(){
         try(Session session = data.getSessionFactory().openSession()){
-            return session.createQuery("SELECT a FROM UserInfo a", UserInfo.class).getResultList();
+            return session.createQuery("select u from UserInfo u", UserInfo.class).getResultList();
         }
     }
 

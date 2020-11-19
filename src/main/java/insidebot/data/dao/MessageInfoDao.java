@@ -34,13 +34,13 @@ public class MessageInfoDao{
 
     public static List<MessageInfo> getAll(){
         try(Session session = data.getSessionFactory().openSession()){
-            return session.createQuery("SELECT a FROM MessageInfo a", MessageInfo.class).getResultList();
+            return session.createQuery("select m from MessageInfo m", MessageInfo.class).getResultList();
         }
     }
 
     public static Map<Long, MessageInfo> repo(){
         try(Session session = data.getSessionFactory().openSession()){
-            return session.createQuery("SELECT a FROM MessageInfo a", MessageInfo.class)
+            return session.createQuery("select m from MessageInfo m", MessageInfo.class)
                           .getResultStream()
                           .collect(Collectors.toMap(MessageInfo::getMessageId, messageInfo -> messageInfo));
         }

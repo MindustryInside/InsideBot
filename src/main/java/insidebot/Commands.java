@@ -20,7 +20,6 @@ import java.util.List;
 import static insidebot.InsideBot.*;
 
 public class Commands{
-    private final String prefix = "$";
     private final CommandHandler handler = new CommandHandler(prefix);
     private final String[] warningStrings = {bundle.get("command.first"), bundle.get("command.second"), bundle.get("command.third")};
 

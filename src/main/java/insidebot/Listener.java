@@ -10,6 +10,7 @@ import discord4j.core.event.domain.VoiceStateUpdateEvent;
 import discord4j.core.event.domain.guild.*;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.*;
+import discord4j.core.object.Embed.Field;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
 import discord4j.core.spec.*;
@@ -20,6 +21,7 @@ import insidebot.data.model.*;
 import reactor.core.publisher.*;
 import reactor.util.annotation.*;
 
+import java.time.*;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -81,10 +83,9 @@ public class Listener{
             EmbedCreateSpec embed = new EmbedCreateSpec();
             MessageInfo info = MessageInfoDao.get(event.getMessageId());
 
-            int maxLength = 1024;
             String oldContent = info.getContent();
             String newContent = effectiveContent(message);
-            boolean write = newContent.length() >= maxLength || oldContent.length() >= maxLength;
+            boolean under = newContent.length() >= Field.MAX_VALUE_LENGTH || oldContent.length() >= Field.MAX_VALUE_LENGTH;
 
             if(message.isPinned() || newContent.equals(oldContent)) return;
 
@@ -97,18 +98,19 @@ public class Listener{
                                                event.getMessageId().asLong()));
 
             embed.addField(bundle.get("message.edit.old-content"),
-                           MessageUtil.substringTo(oldContent, maxLength), false);
+                           MessageUtil.substringTo(oldContent, Field.MAX_VALUE_LENGTH), false);
             embed.addField(bundle.get("message.edit.new-content"),
-                           MessageUtil.substringTo(newContent, maxLength), true);
+                           MessageUtil.substringTo(newContent, Field.MAX_VALUE_LENGTH), true);
 
             embed.setFooter(data.zonedFormat(), null);
 
-            if(write){
-                temp.writeString(String.format("%s\n%s\n\n%s\n%s", bundle.get("message.edit.old-content"), oldContent,
+            if(under){
+                temp.writeString(String.format("%s:\n%s\n\n%s:\n%s",
+                                               bundle.get("message.edit.old-content"), oldContent,
                                                bundle.get("message.edit.new-content"), newContent));
             }
 
-            log(embed, write);
+            log(embed, under);
 
             info.setContent(newContent);
             MessageInfoDao.update(info);
@@ -126,9 +128,7 @@ public class Listener{
 
             User user = info.getUser().asUser();
             String content = info.getContent();
-            int maxLength = 1024;
-            boolean under = content.length() >= maxLength;
-
+            boolean under = content.length() >= Field.MAX_VALUE_LENGTH;
 
             if(content.isEmpty()) return;
 
@@ -137,8 +137,11 @@ public class Listener{
             embed.setTitle(bundle.format("message.delete", event.getChannel().block().getMention()));
             embed.setFooter(data.zonedFormat(), null);
 
-            embed.addField(bundle.get("message.delete.content"), under ? MessageUtil.substringTo(content, maxLength)
-                                                                       : content, true);
+            embed.addField(bundle.get("message.delete.content"), MessageUtil.substringTo(content, Field.MAX_VALUE_LENGTH), true);
+
+            if(under){
+                temp.writeString(String.format("%s:\n%s", bundle.get("message.delete.content"), content));
+            }
 
             log(embed, under);
 
@@ -268,7 +271,7 @@ public class Listener{
                 StringBuilder builder = new StringBuilder();
                 event.history.forEach(m -> {
                     buffer.add(m.getId());
-                    builder.append('[').append(m.getTimestamp()).append("] ");
+                    builder.append('[').append(dateTime.withZone(ZoneId.systemDefault()).format(m.getTimestamp())).append("] ");
                     builder.append(m.getUserData().username()).append(" = ");
                     builder.append(m.getContent());
                     if(!m.getAttachments().isEmpty()){
@@ -324,7 +327,7 @@ public class Listener{
         log(file ? m.addFile("message", temp.read()) : m);
     }
 
-    public void log(MessageCreateSpec message){
+    public void log(@NonNull MessageCreateSpec message){
         guild.getChannelById(logChannelID).cast(TextChannel.class).block()
              .getRestChannel().createMessage(message.asRequest()).block();
     }
