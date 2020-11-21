@@ -4,14 +4,11 @@ import arc.util.Strings;
 import discord4j.common.util.Snowflake;
 import reactor.util.annotation.*;
 
-import java.util.Objects;
-
 public class MessageUtil{
 
     private MessageUtil(){}
 
     public static String substringTo(@NonNull String text, int maxLength){
-        Objects.requireNonNull(text, "Message must not be null."); // на всякий, если как-то *удастся* нарушить контракт
         return text.length() >= maxLength ? (text.substring(0, maxLength - 4) + "...") : text;
     }
 

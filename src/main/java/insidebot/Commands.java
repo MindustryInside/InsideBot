@@ -180,7 +180,7 @@ public class Commands{
         });
     }
 
-    public void handle(MessageCreateEvent event){
+    public void handle(@NonNull MessageCreateEvent event){
         String c = event.getMessage().getContent();
 
         if(c.startsWith(prefix)){
@@ -204,17 +204,30 @@ public class Commands{
 
     void handleResponse(@NonNull CommandResponse response){
         if(response.type == ResponseType.unknownCommand){
-            listener.err(bundle.format("command.response.unknown", prefix));
-        }else if(response.type == ResponseType.manyArguments || response.type == ResponseType.fewArguments){
-            if(response.command.params.length == 0){
-                listener.err(bundle.get("command.response.incorrect-arguments"),
-                             bundle.format("command.response.incorrect-argument",
-                                           prefix, response.command.text));
-            }else{
-                listener.err(bundle.get("command.response.incorrect-arguments"),
-                             bundle.format("command.response.incorrect-arguments.text",
-                                           prefix, response.command.text, response.command.paramText));
+            int min = 0;
+            Command closest = null;
+
+            for(Command command : handler.getCommandList()){
+                int dst = Strings.levenshtein(command.text, response.runCommand);
+                if(dst < 3 && (closest == null || dst < min)){
+                    min = dst;
+                    closest = command;
+                }
             }
+
+            if(closest != null){
+                listener.err(bundle.format("command.response.found-closest", closest.text));
+            }else{
+                listener.err(bundle.format("command.response.unknown", prefix));
+            }
+        }else if(response.type == ResponseType.manyArguments){
+            listener.err(bundle.get("command.response.many-arguments"),
+                         bundle.format("command.response.many-arguments.text",
+                                       prefix, response.command.text, response.command.paramText));
+        }else if(response.type == ResponseType.fewArguments){
+            listener.err(bundle.get("command.response.few-arguments"),
+                         bundle.format("command.response.few-arguments.text",
+                                       prefix, response.command.text));
         }
     }
 }
