@@ -11,6 +11,7 @@ import discord4j.core.event.domain.guild.*;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.*;
 import discord4j.core.object.Embed.Field;
+import discord4j.core.object.VoiceState;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
 import discord4j.core.spec.*;
@@ -76,12 +77,11 @@ public class Listener{
 
         gateway.on(MessageUpdateEvent.class).subscribe(event -> {
             Message message = event.getMessage().block();
-
+            TextChannel c = message.getChannel().cast(TextChannel.class).block();
             User user = message.getAuthor().orElse(null);
             if(user == null || user.isBot()) return;
-            if(!UserInfoDao.exists(event.getMessageId())) return;
+            if(!MessageInfoDao.exists(event.getMessageId())) return;
 
-            EmbedCreateSpec embed = new EmbedCreateSpec();
             MessageInfo info = MessageInfoDao.get(event.getMessageId());
 
             String oldContent = info.getContent();
@@ -90,20 +90,22 @@ public class Listener{
 
             if(message.isPinned() || newContent.equals(oldContent)) return;
 
-            embed.setColor(messageEdit.color);
-            embed.setAuthor(memberedName(user), null, user.getAvatarUrl());
-            embed.setTitle(bundle.format("message.edit", event.getChannel().block().getMention()));
-            embed.setDescription(bundle.format(event.getGuildId().isPresent() ? "message.edit.description" : "message.edit.nullable-guild",
-                                               event.getGuildId().get().asLong(), /* Я не знаю как такое получить, но всё же обезопашусь */
-                                               event.getChannelId().asLong(),
-                                               event.getMessageId().asLong()));
+            Consumer<EmbedCreateSpec> e = embed -> {
+                embed.setColor(messageEdit.color);
+                embed.setAuthor(memberedName(user), null, user.getAvatarUrl());
+                embed.setTitle(bundle.format("message.edit", c.getName()));
+                embed.setDescription(bundle.format(event.getGuildId().isPresent() ? "message.edit.description" : "message.edit.nullable-guild",
+                                                   event.getGuildId().get().asString(), /* Я не знаю как такое получить, но всё же обезопашусь */
+                                                   event.getChannelId().asString(),
+                                                   event.getMessageId().asString()));
 
-            embed.addField(bundle.get("message.edit.old-content"),
-                           MessageUtil.substringTo(oldContent, Field.MAX_VALUE_LENGTH), false);
-            embed.addField(bundle.get("message.edit.new-content"),
-                           MessageUtil.substringTo(newContent, Field.MAX_VALUE_LENGTH), true);
+                embed.addField(bundle.get("message.edit.old-content"),
+                               MessageUtil.substringTo(oldContent, Field.MAX_VALUE_LENGTH), false);
+                embed.addField(bundle.get("message.edit.new-content"),
+                               MessageUtil.substringTo(newContent, Field.MAX_VALUE_LENGTH), true);
 
-            embed.setFooter(data.zonedFormat(), null);
+                embed.setFooter(data.zonedFormat(), null);
+            };
 
             if(under){
                 temp.writeString(String.format("%s:\n%s\n\n%s:\n%s",
@@ -111,7 +113,7 @@ public class Listener{
                                                bundle.get("message.edit.new-content"), newContent));
             }
 
-            log(embed, under);
+            log(e, under);
 
             info.setContent(newContent);
             MessageInfoDao.update(info);
@@ -124,27 +126,28 @@ public class Listener{
                 return;
             }
 
-            EmbedCreateSpec embed = new EmbedCreateSpec();
             MessageInfo info = MessageInfoDao.get(event.getMessageId());
 
             User user = info.getUser().asUser();
+            TextChannel c = event.getChannel().cast(TextChannel.class).block();
             String content = info.getContent();
             boolean under = content.length() >= Field.MAX_VALUE_LENGTH;
 
             if(content.isEmpty()) return;
 
-            embed.setColor(messageDelete.color);
-            embed.setAuthor(memberedName(user), null, user.getAvatarUrl());
-            embed.setTitle(bundle.format("message.delete", event.getChannel().block().getMention()));
-            embed.setFooter(data.zonedFormat(), null);
-
-            embed.addField(bundle.get("message.delete.content"), MessageUtil.substringTo(content, Field.MAX_VALUE_LENGTH), true);
+            Consumer<EmbedCreateSpec> e = embed -> {
+                embed.setColor(messageDelete.color);
+                embed.setAuthor(memberedName(user), null, user.getAvatarUrl());
+                embed.setTitle(bundle.format("message.delete", c.getName()));
+                embed.setFooter(data.zonedFormat(), null);
+                embed.addField(bundle.get("message.delete.content"), MessageUtil.substringTo(content, Field.MAX_VALUE_LENGTH), true);
+            };
 
             if(under){
                 temp.writeString(String.format("%s:\n%s", bundle.get("message.delete.content"), content));
             }
 
-            log(embed, under);
+            log(e, under);
 
             MessageInfoDao.remove(info);
         }, Log::err);
@@ -162,9 +165,9 @@ public class Listener{
         }, Log::err);
 
         gateway.on(VoiceStateUpdateEvent.class).subscribe(event -> { /* Может совместить с ивентом выше? */
-            if(event.getOld().isPresent()) return;
-            VoiceChannel channel = event.getOld().get().getChannel().block();
-            User user = event.getOld().get().getUser().block();
+            VoiceState state = event.getOld().orElse(null);
+            VoiceChannel channel = state != null ? state.getChannel().block() : null;
+            User user = state != null ? state.getUser().block() : null;
             if(user == null || user.isBot() || channel == null) return;
             log(embedBuilder -> {
                 embedBuilder.setColor(voiceLeave.color);
@@ -311,16 +314,8 @@ public class Listener{
                                                                       .setDescription(Strings.format(text, args)))).block();
     }
 
-    public void log(EmbedCreateSpec embed){
-        log(e -> e = embed, false);
-    }
-
     public void log(Consumer<EmbedCreateSpec> embed){
         log(embed, false);
-    }
-
-    public void log(EmbedCreateSpec embed, boolean file){
-        log(e -> e = embed, file);
     }
 
     public void log(Consumer<EmbedCreateSpec> embed, boolean file){
@@ -338,7 +333,7 @@ public class Listener{
         String name = user.getUsername();
         Member member = guild.getMemberById(user.getId()).block();
         if(member != null && member.getNickname().isPresent()){
-            name += " / " + member.getNickname();
+            name += " / " + member.getNickname().get();
         }
         return name;
     }
