@@ -260,7 +260,6 @@ public class Listener{
         });
 
         Events.on(MessageClearEvent.class, event -> {
-            Log.debug("Clearing event: @", event);
             Flux.fromIterable(event.history).subscribe(m -> {
                 buffer.add(m.getId());
                 m.delete().block();
