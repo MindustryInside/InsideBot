@@ -1,7 +1,7 @@
 package insidebot;
 
 import arc.files.Fi;
-import arc.struct.ObjectMap;
+import arc.struct.*;
 import arc.util.I18NBundle;
 import arc.util.Log;
 import arc.util.io.PropertiesUtils;
@@ -26,7 +26,7 @@ public class InsideBot{
     activeUserRoleID = Snowflake.of(697939241308651580L);
 
     public static ScheduledExecutorService executorService;
-    public static ObjectMap<String, String> settings = new ObjectMap<>();
+    public static StringMap settings = new StringMap();
 
     public static Listener listener;
     public static Commands commands;
@@ -63,6 +63,9 @@ public class InsideBot{
         Fi cfg = new Fi("settings.properties", classpath);
         Fi fi = new Fi("bundle", classpath);
         PropertiesUtils.load(settings, cfg.reader());
+        if(settings.getBool("debug")){
+            Log.level = Log.LogLevel.debug;
+        }
 
         bundle = I18NBundle.createBundle(fi, new Locale(settings.get("locale", "en")), "Windows-1251");
         data = new Database();
