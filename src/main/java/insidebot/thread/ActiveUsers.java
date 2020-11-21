@@ -1,5 +1,6 @@
 package insidebot.thread;
 
+import arc.util.Log;
 import discord4j.core.object.entity.Member;
 import insidebot.data.dao.UserInfoDao;
 import insidebot.data.model.UserInfo;
@@ -19,6 +20,8 @@ public class ActiveUsers implements Runnable{
                 }else{
                     member.removeRole(activeUserRoleID).block();
                 }
+            }else{
+                Log.warn("Member '@' not found", info.getName());
             }
         });
     }

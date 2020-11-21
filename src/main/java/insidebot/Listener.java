@@ -44,7 +44,7 @@ public class Listener{
 
     // Регистрируем ивентики
     protected void register(){
-        listener.guild = listener.gateway.getGuildById(guildID).block();
+        guild = gateway.getGuildById(guildID).block();
 
         gateway.on(ReadyEvent.class).subscribe(event -> {
             Log.info("Bot up.");
@@ -52,7 +52,7 @@ public class Listener{
 
         gateway.on(MessageCreateEvent.class).subscribe(event -> {
             User user = event.getMessage().getAuthor().orElse(null);
-            if(user == null) return;
+            if(user == null || user.isBot()) return;
             Message message = event.getMessage();
             MessageInfo info = new MessageInfo();
             UserInfo userInfo = UserInfoDao.getOr(user.getId(), UserInfo::new);
