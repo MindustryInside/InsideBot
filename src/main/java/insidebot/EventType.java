@@ -20,6 +20,16 @@ public class EventType{
             this.user = user;
             this.count = count;
         }
+
+        @Override
+        public String toString(){
+            return "MessageClearEvent{" +
+                   "history=" + history +
+                   ", channel=" + channel +
+                   ", user=" + user +
+                   ", count=" + count +
+                   '}';
+        }
     }
 
     public static class MemberUnmuteEvent{
@@ -27,6 +37,13 @@ public class EventType{
 
         public MemberUnmuteEvent(@NonNull UserInfo userInfo){
             this.userInfo = userInfo;
+        }
+
+        @Override
+        public String toString(){
+            return "MemberUnmuteEvent{" +
+                   "userInfo=" + userInfo +
+                   '}';
         }
     }
 
@@ -40,6 +57,15 @@ public class EventType{
             this.member = userInfo.asMember();
             this.delay = delay;
         }
+
+        @Override
+        public String toString(){
+            return "MemberMuteEvent{" +
+                   "user=" + user +
+                   ", member=" + member +
+                   ", delay=" + delay +
+                   '}';
+        }
     }
 
     public static class MemberBanEvent{
@@ -47,6 +73,13 @@ public class EventType{
 
         public MemberBanEvent(@NonNull UserInfo userInfo){
             this.userInfo = userInfo;
+        }
+
+        @Override
+        public String toString(){
+            return "MemberBanEvent{" +
+                   "userInfo=" + userInfo +
+                   '}';
         }
     }
 }

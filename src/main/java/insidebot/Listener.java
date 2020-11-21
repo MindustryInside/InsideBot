@@ -260,23 +260,23 @@ public class Listener{
         });
 
         Events.on(MessageClearEvent.class, event -> {
+            Log.debug("Clearing event: @", event);
             Flux.fromIterable(event.history).subscribe(m -> {
                 buffer.add(m.getId());
-                m.delete();
+                m.delete().block();
             });
 
-            log(embedBuilder -> {
-                String channel = event.channel.getMention();
-                embedBuilder.setTitle(bundle.format("message.clear", event.count, channel));
-                embedBuilder.setDescription(bundle.format("message.clear.text", event.user.getUsername(), event.count, channel));
-                embedBuilder.setFooter(data.zonedFormat(), null);
-                embedBuilder.setColor(messageClear.color);
+            log(embed -> {
+                embed.setTitle(bundle.format("message.clear", event.count, event.channel.getName()));
+                embed.setDescription(bundle.format("message.clear.text", event.user.getUsername(), event.count, event.channel.getName()));
+                embed.setFooter(data.zonedFormat(), null);
+                embed.setColor(messageClear.color);
 
                 StringBuilder builder = new StringBuilder();
                 event.history.forEach(m -> {
                     buffer.add(m.getId());
                     builder.append('[').append(dateTime.withZone(ZoneId.systemDefault()).format(m.getTimestamp())).append("] ");
-                    builder.append(m.getUserData().username()).append(" = ");
+                    builder.append(m.getUserData().username()).append(" > ");
                     builder.append(m.getContent());
                     if(!m.getAttachments().isEmpty()){
                         builder.append("\n---\n");
@@ -320,7 +320,7 @@ public class Listener{
 
     public void log(Consumer<EmbedCreateSpec> embed, boolean file){
         MessageCreateSpec m = new MessageCreateSpec().setEmbed(embed);
-        log(file ? m.addFile("message", temp.read()) : m);
+        log(file ? m.addFile("message.txt", temp.read()) : m);
     }
 
     public void log(@NonNull MessageCreateSpec message){

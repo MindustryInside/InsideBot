@@ -82,7 +82,7 @@ public class Commands{
                 return;
             }
 
-            int number = Integer.parseInt(args[0]) + 1;
+            int number = Integer.parseInt(args[0]);
 
             if(number >= 100){
                 listener.err(bundle.format("command.limit-number", 100));
