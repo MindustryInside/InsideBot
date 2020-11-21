@@ -6,7 +6,7 @@ import arc.struct.ObjectSet;
 import arc.util.*;
 import discord4j.common.util.Snowflake;
 import discord4j.core.*;
-import discord4j.core.event.domain.VoiceStateUpdateEvent;
+import discord4j.core.event.domain.*;
 import discord4j.core.event.domain.guild.*;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.*;
@@ -214,13 +214,13 @@ public class Listener{
             });
         }, Log::err);
 
-        gateway.on(MemberUpdateEvent.class).subscribe(event -> {
-            User user = gateway.getUserById(event.getMemberId()).block();
-            if(user == null || user.isBot()) return;
+        gateway.on(UserUpdateEvent.class).subscribe(event -> {
+            User user = event.getCurrent();
+            if(user.isBot()) return;
             if(!UserInfoDao.exists(user.getId())) return;
 
             UserInfo info = UserInfoDao.get(user.getId());
-            event.getCurrentNickname().ifPresent(info::setName); // может в холостую сработать, ну а что поделать
+            info.setName(user.getUsername());
             UserInfoDao.update(info);
         }, Log::err);
 
