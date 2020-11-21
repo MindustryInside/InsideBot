@@ -181,16 +181,17 @@ public class Commands{
     }
 
     public void handle(@NonNull MessageCreateEvent event){
-        String c = event.getMessage().getContent();
+        Message m = event.getMessage();
+        String c = m.getContent();
 
         if(c.startsWith(prefix)){
-            listener.channel = event.getMessage().getChannel().cast(TextChannel.class).block();
-            listener.lastUser = event.getMessage().getAuthor().orElse(null);
-            listener.lastMessage = event.getMessage();
+            listener.channel = m.getChannel().cast(TextChannel.class).block();
+            listener.lastUser = m.getAuthor().orElse(null);
+            listener.lastMessage = m;
         }
 
         if(isAdmin(event.getMember().orElse(null))){
-            handleResponse(handler.handleMessage(event.getMessage().getContent()));
+            handleResponse(handler.handleMessage(c));
         }
     }
 
