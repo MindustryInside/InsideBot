@@ -6,7 +6,7 @@ Go to [settings.properties](src/main/resources/settings.properties) and write yo
 Bot will require a [postgresql](https://www.postgresql.org/download/) database
 
 ## Building
-The build requires a JDK14
+The build requires a [JDK14](https://adoptopenjdk.net/)
 
 **Windows**: `gradlew dist` / `gradlew.bat dist`<br>
 **Linux**: `./gradlew dist` (If don\`t work write this command: `chmod +x ./gradlew`)

@@ -5,8 +5,9 @@ import discord4j.common.util.Snowflake;
 import insidebot.data.model.UserInfo;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import reactor.core.publisher.Flux;
+import reactor.util.annotation.NonNull;
 
-import java.util.List;
 import java.util.Objects;
 
 import static insidebot.InsideBot.data;
@@ -37,9 +38,10 @@ public class UserInfoDao{
         }
     }
 
-    public static List<UserInfo> getAll(){
+    @NonNull
+    public static Flux<UserInfo> all(){
         try(Session session = data.getSessionFactory().openSession()){
-            return session.createQuery("select u from UserInfo u", UserInfo.class).getResultList();
+            return Flux.fromIterable(session.createQuery("select u from UserInfo u", UserInfo.class).list());
         }
     }
 

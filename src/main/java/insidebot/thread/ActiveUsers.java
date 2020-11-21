@@ -9,10 +9,9 @@ import reactor.util.annotation.NonNull;
 import static insidebot.InsideBot.*;
 
 public class ActiveUsers implements Runnable{
-
     @Override
     public void run(){
-        UserInfoDao.getAll().forEach(info -> {
+        UserInfoDao.all().subscribe(info -> { // todo сделать проверку полностью на реакторе
             Member member = info.asMember();
             if(member != null){
                 if(check(info)){

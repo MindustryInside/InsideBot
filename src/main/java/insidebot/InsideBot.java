@@ -47,6 +47,7 @@ public class InsideBot{
 
             executorService.scheduleAtFixedRate(new Unmuter(), 5, 15, TimeUnit.SECONDS);
             executorService.scheduleAtFixedRate(new ActiveUsers(), 10, 60, TimeUnit.SECONDS);
+            executorService.scheduleAtFixedRate(new AuditCleaner(), 15, 12, TimeUnit.HOURS);
             return gateway.onDisconnect();
         }).block();
     }

@@ -6,9 +6,13 @@ repositories{
     maven { url 'https://www.jitpack.io' }
 }
 
-ext{
+ext{ /* Как вариант можно создать карту и туда класть */
+    arcVersion        = 'v115'
+    jobaVersion       = 'v2.10.8'
     lombokVersion     = '1.18.12'
-    discord4j         = '3.1.1'
+    discord4jVersion  = '3.1.1'
+
+    jaxbVersion       = '2.2.11'
     hibernateVersion  = '5.4.22.Final'
     postgresqlVersion = '9.0-801.jdbc4'
 }
@@ -18,13 +22,13 @@ sourceSets.main.resources.srcDirs = ["src/main/resources"]
 project.ext.mainClassName = "insidebot.InsideBot"
 
 dependencies{
-    implementation "com.discord4j:discord4j-core:$discord4j"
-    implementation "com.github.Anuken.Arc:arc-core:v112.1"
+    implementation "com.discord4j:discord4j-core:$discord4jVersion"
+    implementation "com.github.Anuken.Arc:arc-core:$arcVersion"
     implementation "org.reflections:reflections:0.9.12"
     implementation "com.github.JodaOrg:joda-time:v2.10.6"
 
     // data implements
-    implementation "javax.xml.bind:jaxb-api:2.2.11"
+    implementation "javax.xml.bind:jaxb-api:$jaxbVersion"
     implementation "org.hibernate:hibernate-core:$hibernateVersion"
     implementation "postgresql:postgresql:$postgresqlVersion"
 

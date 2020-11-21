@@ -8,14 +8,11 @@ import org.joda.time.*;
 import reactor.util.annotation.NonNull;
 
 public class Unmuter implements Runnable{
-
     @Override
     public void run(){
-        UserInfoDao.getAll().forEach(info -> {
-            if(info.asMember() != null && check(info)){
-                Events.fire(new MemberUnmuteEvent(info));
-            }
-        });
+        UserInfoDao.all()
+                   .filter(i -> i.asMember() != null && check(i))
+                   .subscribe(info -> Events.fire(new MemberUnmuteEvent(info)));
     }
 
     private boolean check(@NonNull UserInfo userInfo){

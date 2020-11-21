@@ -65,6 +65,7 @@ public class Listener{
             info.setUser(userInfo);
             info.setMessageId(message.getId().asLong());
             info.setChannelId(message.getChannelId().asLong());
+            info.setTimestamp(Calendar.getInstance());
 
             info.setContent(effectiveContent(message));
             userInfo.getMessageInfo().add(info);

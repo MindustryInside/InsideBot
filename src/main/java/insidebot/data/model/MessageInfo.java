@@ -4,10 +4,11 @@ import lombok.*;
 import reactor.util.annotation.NonNull;
 
 import javax.persistence.*;
+import java.util.Calendar;
 
 @Getter
 @Setter
-@Entity /* todo сделать таск для чистки сообщений, которым уже больше 2х недель */
+@Entity
 @Table(name = "message_info", schema = "public")
 public class MessageInfo extends BaseEntity{
     private static final long serialVersionUID = -7977287922184407665L;
@@ -22,6 +23,10 @@ public class MessageInfo extends BaseEntity{
     @NonNull
     @Column(length = 2000)
     private String content;
+
+    @NonNull
+    @Column
+    private Calendar timestamp;
 
     @NonNull
     @ManyToOne
