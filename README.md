@@ -20,6 +20,6 @@ Make sure you have [JDK 14](https://adoptopenjdk.net/releases.html?variant=openj
 * **Windows**: `gradlew dist`  
 * **Linux**: `./gradlew dist`
 
-After building, the .JAR file should be located in `build/libs/inside-bot.jar` folder.
+After building, the .JAR file should be located in `build/libs/InsideBot.jar` folder.
 
 If the terminal returns `Permission denied` or `Command not found`, run `chmod +x ./gradlew`.
