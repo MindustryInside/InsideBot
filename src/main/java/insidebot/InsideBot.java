@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.concurrent.*;
+import java.util.logging.*;
 
 import static arc.Files.FileType.classpath;
 import static arc.util.Log.format;
@@ -51,6 +52,7 @@ public class InsideBot{
     }
 
     private static void init(){
+        LogManager.getLogManager().getLogger("").setLevel(Level.SEVERE);
         // да, с миндастри взял
         Log.logger = (level, text) -> {
             String result = "[" + dateTime.format(LocalDateTime.now()) + "] " + format(tags[level.ordinal()] + " " + text + "&fr");
