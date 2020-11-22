@@ -1,5 +1,6 @@
 package insidebot.thread;
 
+import arc.util.Log;
 import insidebot.data.dao.*;
 import org.joda.time.*;
 
@@ -9,6 +10,6 @@ public class AuditCleaner implements Runnable{
         MessageInfoDao.all().filter(m -> {
             DateTime time = new DateTime(m.getTimestamp());
             return Weeks.weeksBetween(time, DateTime.now()).getWeeks() >= 4;
-        }).subscribe(MessageInfoDao::remove);
+        }).subscribe(MessageInfoDao::remove, Log::err);
     }
 }

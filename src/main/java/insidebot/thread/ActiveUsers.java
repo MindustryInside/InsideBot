@@ -23,7 +23,7 @@ public class ActiveUsers implements Runnable{
             }else{
                 Log.warn("Member '@' not found", info.getName());
             }
-        });
+        }, Log::err);
     }
 
     private boolean check(@NonNull UserInfo userInfo){

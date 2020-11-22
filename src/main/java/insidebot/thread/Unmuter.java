@@ -1,6 +1,7 @@
 package insidebot.thread;
 
 import arc.Events;
+import arc.util.Log;
 import insidebot.EventType.MemberUnmuteEvent;
 import insidebot.data.dao.UserInfoDao;
 import insidebot.data.model.UserInfo;
@@ -12,7 +13,7 @@ public class Unmuter implements Runnable{
     public void run(){
         UserInfoDao.all()
                    .filter(i -> i.asMember() != null && check(i))
-                   .subscribe(info -> Events.fire(new MemberUnmuteEvent(info)));
+                   .subscribe(info -> Events.fire(new MemberUnmuteEvent(info)), Log::err);
     }
 
     private boolean check(@NonNull UserInfo userInfo){

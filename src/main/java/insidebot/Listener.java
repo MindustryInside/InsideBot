@@ -12,6 +12,7 @@ import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.*;
 import discord4j.core.object.Embed.Field;
 import discord4j.core.object.VoiceState;
+import discord4j.core.object.audit.*;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
 import discord4j.core.spec.*;
@@ -120,6 +121,14 @@ public class Listener{
         }, Log::err);
 
         gateway.on(MessageDeleteEvent.class).subscribe(event -> {
+            Message m = event.getMessage().orElse(null);
+            if(event.getChannelId().equals(logChannelID) && (m != null && !m.getEmbeds().isEmpty())){ /* =) */
+                AuditLogEntry l = guild.getAuditLog().filter(a -> a.getActionType() == ActionType.MESSAGE_DELETE).blockFirst();
+                if(l != null){
+                    Log.warn("User '@' deleted log message", gateway.getUserById(l.getResponsibleUserId()).block().getUsername());
+                }
+                return;
+            }
             if(!MessageInfoDao.exists(event.getMessageId())) return;
             if(buffer.contains(event.getMessageId())){
                 buffer.remove(event.getMessageId());
@@ -127,7 +136,6 @@ public class Listener{
             }
 
             MessageInfo info = MessageInfoDao.get(event.getMessageId());
-
             User user = info.getUser().asUser();
             TextChannel c = event.getChannel().cast(TextChannel.class).block();
             String content = info.getContent();
