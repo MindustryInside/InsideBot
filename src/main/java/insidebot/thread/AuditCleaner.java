@@ -1,15 +1,19 @@
 package insidebot.thread;
 
 import arc.util.Log;
-import insidebot.data.dao.*;
+import insidebot.data.repository.MessageInfoRepository;
 import org.joda.time.*;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class AuditCleaner implements Runnable{
+    @Autowired
+    private MessageInfoRepository messageInfoRepository;
+
     @Override
     public void run(){
-        MessageInfoDao.all().filter(m -> {
-            DateTime time = new DateTime(m.getTimestamp());
+        messageInfoRepository.getAll().filter(m -> {
+            DateTime time = new DateTime(m.timestamp());
             return Weeks.weeksBetween(time, DateTime.now()).getWeeks() >= 4;
-        }).subscribe(MessageInfoDao::remove, Log::err);
+        }).subscribe(messageInfoRepository::delete, Log::err);
     }
 }

@@ -2,17 +2,17 @@ package insidebot;
 
 import arc.Events;
 import arc.math.Mathf;
-import arc.util.CommandHandler;
+import arc.util.*;
 import arc.util.CommandHandler.*;
-import arc.util.Strings;
-import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.rest.util.Permission;
 import insidebot.EventType.*;
-import insidebot.data.dao.UserInfoDao;
-import insidebot.data.model.*;
+import insidebot.data.entity.UserInfo;
+import insidebot.data.services.UserService;
+import insidebot.util.MessageUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import reactor.util.annotation.NonNull;
 
 import java.util.List;
@@ -22,6 +22,9 @@ import static insidebot.InsideBot.*;
 public class Commands{
     private final CommandHandler handler = new CommandHandler(prefix);
     private final String[] warningStrings = {bundle.get("command.first"), bundle.get("command.second"), bundle.get("command.third")};
+
+    @Autowired
+    private UserService userService;
 
     public Commands(){
         handler.register("help", bundle.get("command.help.description"), args -> {
@@ -52,8 +55,8 @@ public class Commands{
 
             try{
                 int delayDays = Strings.parseInt(args[1]);
-                UserInfo info = UserInfoDao.get(MessageUtil.parseUserId(args[0]));
-                User user = info.asUser();
+                UserInfo info = userService.getById(MessageUtil.parseUserId(args[0]));
+                User user = info.asUser().block();
 
                 if(isAdmin(listener.guild.getMemberById(user.getId()).block())){
                     listener.err(bundle.get("command.user-is-admin"));
@@ -104,8 +107,8 @@ public class Commands{
 
         handler.register("warn", "<@user> [reason...]", bundle.get("command.warn.description"), args -> {
             try{
-                UserInfo info = UserInfoDao.get(MessageUtil.parseUserId(args[0]));
-                User user = info.asUser();
+                UserInfo info = userService.getById(MessageUtil.parseUserId(args[0]));
+                User user = info.asUser().block();
 
                 if(isAdmin(listener.guild.getMemberById(user.getId()).block())){
                     listener.err(bundle.get("command.user-is-admin"));
@@ -128,9 +131,9 @@ public class Commands{
                                             warningStrings[Mathf.clamp(warnings - 1, 0, warningStrings.length - 1)]));
 
                 if(warnings >= 3){
-                    Events.fire(new MemberBanEvent(info));
+                    listener.guild.ban(user.getId(), b -> b.setDeleteMessageDays(0)).block();
                 }else{
-                    UserInfoDao.update(info);
+                    userService.save(info);
                 }
             }catch(Exception e){
                 listener.err(bundle.get("command.incorrect-name"));
@@ -139,10 +142,10 @@ public class Commands{
 
         handler.register("warnings", "<@user>", bundle.get("command.warnings.description"), args -> {
             try{
-                UserInfo info = UserInfoDao.get(MessageUtil.parseUserId(args[0]));
-                int warnings = info.getWarns();
+                UserInfo info = userService.getById(MessageUtil.parseUserId(args[0]));
+                int warnings = info.warns();
 
-                listener.text(bundle.format("command.warnings", info.getName(), warnings,
+                listener.text(bundle.format("command.warnings", info.name(), warnings,
                                             warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns")));
             }catch(Exception e){
                 listener.err(bundle.get("command.incorrect-name"));
@@ -158,13 +161,12 @@ public class Commands{
             int warnings = args.length > 1 ? Strings.parseInt(args[1]) : 1;
 
             try{
-                Snowflake l = MessageUtil.parseUserId(args[0]);
-                UserInfo info = UserInfoDao.get(l);
-                info.setWarns(info.getWarns() - warnings);
+                UserInfo info = userService.getById(MessageUtil.parseUserId(args[0]));
+                info.warns(info.warns() - warnings);
 
-                listener.text(bundle.format("command.unwarn", info.getName(), warnings,
+                listener.text(bundle.format("command.unwarn", info.name(), warnings,
                                             warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns")));
-                UserInfoDao.update(info);
+                userService.save(info);
             }catch(Exception e){
                 listener.err(bundle.get("command.incorrect-name"));
             }
@@ -172,7 +174,7 @@ public class Commands{
 
         handler.register("unmute", "<@user>", bundle.get("command.unmute.description"), args -> {
             try{
-                UserInfo info = UserInfoDao.get(MessageUtil.parseUserId(args[0]));
+                UserInfo info = userService.getById(MessageUtil.parseUserId(args[0]));
                 Events.fire(new MemberUnmuteEvent(info));
             }catch(Exception e){
                 listener.err(bundle.get("command.incorrect-name"));

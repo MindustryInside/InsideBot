@@ -31,7 +31,6 @@ public class InsideBot{
 
     public static Listener listener;
     public static Commands commands;
-    public static Database data;
     public static I18NBundle bundle;
 
     protected static String[] tags = {"&lc&fb[D]", "&lg&fb[I]", "&ly&fb[W]", "&lr&fb[E]", ""};
@@ -70,7 +69,6 @@ public class InsideBot{
         }
 
         bundle = I18NBundle.createBundle(fi, new Locale(settings.get("locale", "en")), "Windows-1251");
-        data = new Database();
         commands = new Commands();
     }
 }

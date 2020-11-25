@@ -2,7 +2,7 @@ package insidebot;
 
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
-import insidebot.data.model.UserInfo;
+import insidebot.data.entity.UserInfo;
 import reactor.util.annotation.*;
 
 import java.util.List;
@@ -53,8 +53,8 @@ public class EventType{
         public final int delay;
 
         public MemberMuteEvent(@NonNull UserInfo userInfo, int delay){
-            this.user = userInfo.asUser();
-            this.member = userInfo.asMember();
+            this.user = userInfo.asUser().block();
+            this.member = userInfo.asMember().block();
             this.delay = delay;
         }
 
@@ -64,21 +64,6 @@ public class EventType{
                    "user=" + user +
                    ", member=" + member +
                    ", delay=" + delay +
-                   '}';
-        }
-    }
-
-    public static class MemberBanEvent{
-        public final @NonNull UserInfo userInfo;
-
-        public MemberBanEvent(@NonNull UserInfo userInfo){
-            this.userInfo = userInfo;
-        }
-
-        @Override
-        public String toString(){
-            return "MemberBanEvent{" +
-                   "userInfo=" + userInfo +
                    '}';
         }
     }

@@ -10,6 +10,3 @@
 /out/
 
 message.txt
-# todo убрать с ресурсов
-src/main/resources/settings.properties
-settings.properties

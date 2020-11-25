@@ -18,8 +18,10 @@ import discord4j.core.object.entity.channel.*;
 import discord4j.core.spec.*;
 import discord4j.rest.util.Color;
 import insidebot.EventType.*;
-import insidebot.data.dao.*;
-import insidebot.data.model.*;
+import insidebot.data.entity.*;
+import insidebot.data.services.*;
+import insidebot.util.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.*;
 import reactor.util.annotation.*;
 
@@ -44,6 +46,12 @@ public class Listener{
     User lastUser;
     Message lastMessage, lastSentMessage;
 
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private MessageService messageService;
+
     // Регистрируем ивентики
     protected void register(){
         guild = gateway.getGuildById(guildID).block();
@@ -57,35 +65,36 @@ public class Listener{
             if(user == null || user.isBot()) return;
             Message message = event.getMessage();
             MessageInfo info = new MessageInfo();
-            UserInfo userInfo = UserInfoDao.getOr(user.getId(), UserInfo::new);
+            UserInfo userInfo = userService.getOr(user.getId(), UserInfo::new);
 
-            userInfo.setName(user.getUsername());
-            userInfo.setUserId(user.getId().asLong());
-            userInfo.setLastSentMessage(Calendar.getInstance());
+            userInfo.name(user.getUsername());
+            userInfo.userId(user.getId());
+            userInfo.lastSentMessage(Calendar.getInstance());
             userInfo.addToSeq();
 
-            info.setUser(userInfo);
-            info.setMessageId(message.getId().asLong());
-            info.setChannelId(message.getChannelId().asLong());
-            info.setTimestamp(Calendar.getInstance());
+            info.user(userInfo);
+            info.id(message.getId());
+            info.guildId(message.getGuildId().orElseThrow(RuntimeException::new)); // Не надо мне тут
+            info.channelId(message.getChannelId());
+            info.timestamp(Calendar.getInstance());
 
-            info.setContent(effectiveContent(message));
-            userInfo.getMessageInfo().add(info);
+            info.content(effectiveContent(message));
+            userInfo.messageInfo().add(info);
 
             commands.handle(event);
-            UserInfoDao.saveOrUpdate(userInfo);
+            userService.save(userInfo);
         }, Log::err);
 
         gateway.on(MessageUpdateEvent.class).subscribe(event -> {
             Message message = event.getMessage().block();
             TextChannel c = message.getChannel().cast(TextChannel.class).block();
             User user = message.getAuthor().orElse(null);
-            if(user == null || user.isBot()) return;
-            if(!MessageInfoDao.exists(event.getMessageId())) return;
+            if(DiscordUtil.isBot(user)) return;
+            if(!messageService.exists(event.getMessageId())) return;
 
-            MessageInfo info = MessageInfoDao.get(event.getMessageId());
+            MessageInfo info = messageService.getById(event.getMessageId());
 
-            String oldContent = info.getContent();
+            String oldContent = info.content();
             String newContent = effectiveContent(message);
             boolean under = newContent.length() >= Field.MAX_VALUE_LENGTH || oldContent.length() >= Field.MAX_VALUE_LENGTH;
 
@@ -105,7 +114,7 @@ public class Listener{
                 embed.addField(bundle.get("message.edit.new-content"),
                                MessageUtil.substringTo(newContent, Field.MAX_VALUE_LENGTH), true);
 
-                embed.setFooter(data.zonedFormat(), null);
+                embed.setFooter(MessageUtil.zonedFormat(), null);
             };
 
             if(under){
@@ -116,8 +125,8 @@ public class Listener{
 
             log(e, under);
 
-            info.setContent(newContent);
-            MessageInfoDao.update(info);
+            info.content(newContent);
+            messageService.save(info);
         }, Log::err);
 
         gateway.on(MessageDeleteEvent.class).subscribe(event -> {
@@ -129,25 +138,25 @@ public class Listener{
                 }
                 return;
             }
-            if(!MessageInfoDao.exists(event.getMessageId())) return;
+            if(!messageService.exists(event.getMessageId())) return;
             if(buffer.contains(event.getMessageId())){
                 buffer.remove(event.getMessageId());
                 return;
             }
 
-            MessageInfo info = MessageInfoDao.get(event.getMessageId());
-            User user = info.getUser().asUser();
+            MessageInfo info = messageService.getById(event.getMessageId());
+            User user = info.user().asUser().block();
             TextChannel c = event.getChannel().cast(TextChannel.class).block();
-            String content = info.getContent();
+            String content = info.content();
             boolean under = content.length() >= Field.MAX_VALUE_LENGTH;
 
-            if(content.isEmpty()) return;
+            if(c == null || MessageUtil.isEmpty(content)) return;
 
             Consumer<EmbedCreateSpec> e = embed -> {
                 embed.setColor(messageDelete.color);
                 embed.setAuthor(memberedName(user), null, user.getAvatarUrl());
                 embed.setTitle(bundle.format("message.delete", c.getName()));
-                embed.setFooter(data.zonedFormat(), null);
+                embed.setFooter(MessageUtil.zonedFormat(), null);
                 embed.addField(bundle.get("message.delete.content"), MessageUtil.substringTo(content, Field.MAX_VALUE_LENGTH), true);
             };
 
@@ -157,18 +166,18 @@ public class Listener{
 
             log(e, under);
 
-            MessageInfoDao.remove(info);
+            messageService.delete(info);
         }, Log::err);
 
         gateway.on(VoiceStateUpdateEvent.class).subscribe(event -> {
             VoiceChannel channel = event.getCurrent().getChannel().block();
             User user = event.getCurrent().getUser().block();
-            if(user == null || user.isBot() || channel == null) return;
+            if(DiscordUtil.isBot(user) || channel == null) return;
             log(embedBuilder -> {
                 embedBuilder.setColor(voiceJoin.color);
                 embedBuilder.setTitle(bundle.get("message.voice-join"));
                 embedBuilder.setDescription(bundle.format("message.voice-join.text", memberedName(user), channel.getName()));
-                embedBuilder.setFooter(data.zonedFormat(), null);
+                embedBuilder.setFooter(MessageUtil.zonedFormat(), null);
             });
         }, Log::err);
 
@@ -176,93 +185,93 @@ public class Listener{
             VoiceState state = event.getOld().orElse(null);
             VoiceChannel channel = state != null ? state.getChannel().block() : null;
             User user = state != null ? state.getUser().block() : null;
-            if(user == null || user.isBot() || channel == null) return;
+            if(DiscordUtil.isBot(user) || channel == null) return;
             log(embedBuilder -> {
                 embedBuilder.setColor(voiceLeave.color);
                 embedBuilder.setTitle(bundle.get("message.voice-leave"));
                 embedBuilder.setDescription(bundle.format("message.voice-leave.text", memberedName(user), channel.getName()));
-                embedBuilder.setFooter(data.zonedFormat(), null);
+                embedBuilder.setFooter(MessageUtil.zonedFormat(), null);
             });
         }, Log::err);
 
         gateway.on(MemberJoinEvent.class).subscribe(event -> {
             User user = gateway.getUserById(event.getMember().getId()).block();
-            if(user == null || user.isBot()) return;
+            if(DiscordUtil.isBot(user)) return;
             log(embedBuilder -> {
                 embedBuilder.setColor(userJoin.color);
                 embedBuilder.setTitle(bundle.get("message.user-join"));
                 embedBuilder.setDescription(bundle.format("message.user-join.text", user.getUsername()));
-                embedBuilder.setFooter(data.zonedFormat(), null);
+                embedBuilder.setFooter(MessageUtil.zonedFormat(), null);
             });
         }, Log::err);
 
         gateway.on(MemberLeaveEvent.class).subscribe(event -> {
             User user = event.getUser();
-            if(user.isBot()) return;
+            if(DiscordUtil.isBot(user)) return;
 
-            UserInfoDao.removeById(user.getId());
             log(embedBuilder -> {
                 embedBuilder.setColor(userLeave.color);
                 embedBuilder.setTitle(bundle.get("message.user-leave"));
                 embedBuilder.setDescription(bundle.format("message.user-leave.text", user.getUsername()));
-                embedBuilder.setFooter(data.zonedFormat(), null);
+                embedBuilder.setFooter(MessageUtil.zonedFormat(), null);
             });
+            userService.deleteById(user.getId());
         }, Log::err);
 
         gateway.on(BanEvent.class).subscribe(event -> {
             User user = event.getUser();
-            if(user.isBot()) return;
+            if(DiscordUtil.isBot(user)) return;
 
-            UserInfoDao.removeById(user.getId());
             log(embedBuilder -> {
                 embedBuilder.setColor(userBan.color);
                 embedBuilder.setTitle(bundle.get("message.ban"));
                 embedBuilder.setDescription(bundle.format("message.ban.text", user.getUsername()));
-                embedBuilder.setFooter(data.zonedFormat(), null);
+                embedBuilder.setFooter(MessageUtil.zonedFormat(), null);
             });
+            userService.deleteById(user.getId());
         }, Log::err);
 
         gateway.on(UserUpdateEvent.class).subscribe(event -> {
             User user = event.getCurrent();
-            if(user.isBot()) return;
-            if(!UserInfoDao.exists(user.getId())) return;
+            if(DiscordUtil.isBot(user)) return;
+            if(!messageService.exists(user.getId())) return;
 
-            UserInfo info = UserInfoDao.get(user.getId());
-            info.setName(user.getUsername());
-            UserInfoDao.update(info);
+            UserInfo info = userService.getById(user.getId());
+            info.name(user.getUsername());
+            userService.save(info);
         }, Log::err);
 
         // Внутренние ивенты
 
         Events.on(MemberUnmuteEvent.class, event -> {
-            Member member = event.userInfo.asMember();
-            if(member == null) return;
+            Member member = event.userInfo.asMember().block();
+            if(DiscordUtil.isBot(member)) return;
 
-            event.userInfo.setMuteEndDate(null);
-            UserInfoDao.update(event.userInfo);
+            event.userInfo.muteEndDate(null);
+            userService.delete(event.userInfo);
             member.removeRole(muteRoleID).block();
             log(e -> {
                 e.setTitle(bundle.get("message.unmute"));
-                e.setDescription(bundle.format("message.unmute.text", event.userInfo.getName()));
-                e.setFooter(data.zonedFormat(), null);
+                e.setDescription(bundle.format("message.unmute.text", event.userInfo.name()));
+                e.setFooter(MessageUtil.zonedFormat(), null);
                 e.setColor(userUnmute.color);
             });
         });
 
         Events.on(MemberMuteEvent.class, event -> {
             Member member = guild.getMemberById(event.user.getId()).block();
-            UserInfo userInfo = UserInfoDao.get(event.user.getId());
-            if(member == null || userInfo == null) return;
+            UserInfo userInfo = userService.getById(event.user.getId());
+            if(DiscordUtil.isBot(member) || userInfo == null) return;
 
             Calendar calendar = Calendar.getInstance();
             calendar.roll(Calendar.DAY_OF_YEAR, +event.delay);
-            userInfo.setMuteEndDate(calendar);
-            UserInfoDao.update(userInfo);
+            userInfo.muteEndDate(calendar);
+            userService.save(userInfo);
             member.addRole(muteRoleID).block();
             log(embedBuilder -> {
                 embedBuilder.setTitle(bundle.get("message.mute"));
                 embedBuilder.setDescription(bundle.format("message.mute.text", event.user.getMention(), event.delay));
-                embedBuilder.setFooter(data.zonedFormat(), null);
+                embedBuilder.setFooter(MessageUtil.zonedFormat(), null);
                 embedBuilder.setColor(userMute.color);
             });
         });
@@ -276,12 +285,11 @@ public class Listener{
             log(embed -> {
                 embed.setTitle(bundle.format("message.clear", event.count, event.channel.getName()));
                 embed.setDescription(bundle.format("message.clear.text", event.user.getUsername(), event.count, event.channel.getName()));
-                embed.setFooter(data.zonedFormat(), null);
+                embed.setFooter(MessageUtil.zonedFormat(), null);
                 embed.setColor(messageClear.color);
 
                 StringBuilder builder = new StringBuilder();
                 event.history.forEach(m -> {
-                    buffer.add(m.getId());
                     builder.append('[').append(dateTime.withZone(ZoneId.systemDefault()).format(m.getTimestamp())).append("] ");
                     builder.append(m.getUserData().username()).append(" > ");
                     builder.append(m.getContent());
@@ -293,11 +301,6 @@ public class Listener{
                 });
                 temp.writeString(builder.toString());
             }, true);
-        });
-
-        Events.on(MemberBanEvent.class, event -> { // переадресирует на ивент от d4j. oh no кандидат на чистку
-            guild.ban(Snowflake.of(event.userInfo.getUserId()), b -> b.setDeleteMessageDays(0)).block();
-            UserInfoDao.remove(event.userInfo);
         });
     }
 
