@@ -1,4 +1,8 @@
-apply plugin: 'java'
+plugins{
+    id 'org.springframework.boot' version '2.4.0'
+    id 'io.spring.dependency-management' version '1.0.10.RELEASE'
+    id 'java'
+}
 
 repositories{
     mavenCentral()
@@ -6,15 +10,14 @@ repositories{
     maven { url 'https://www.jitpack.io' }
 }
 
-ext{ /* Как вариант можно создать карту и туда класть */
+ext{
     arcVersion        = 'v115'
     jobaVersion       = 'v2.10.8'
-    lombokVersion     = '1.18.12'
     discord4jVersion  = '3.1.1'
 
-    jaxbVersion       = '2.2.11'
-    hibernateVersion  = '5.4.22.Final'
-    postgresqlVersion = '9.0-801.jdbc4'
+    jaxbVersion       = '2.3.1'
+    hibernateVersion  = '5.4.24.Final'
+    postgresqlVersion = '42.2.5'
 }
 
 sourceSets.main.java.srcDirs = ["src/main/java/"]
@@ -27,23 +30,21 @@ dependencies{
     implementation "org.reflections:reflections:0.9.12"
     implementation "com.github.JodaOrg:joda-time:v2.10.6"
 
-    // data implements
+    // data dependencies
     implementation "javax.xml.bind:jaxb-api:$jaxbVersion"
     implementation "org.hibernate:hibernate-core:$hibernateVersion"
-    implementation "postgresql:postgresql:$postgresqlVersion"
+    implementation "org.postgresql:postgresql:$postgresqlVersion"
 
-    compileOnly "org.projectlombok:lombok:$lombokVersion"
-    annotationProcessor "org.projectlombok:lombok:$lombokVersion"
+    // spring dependencies
+    implementation "org.springframework.boot:spring-boot-starter-data-jpa"
 }
 
 task dist(type: Jar){
     from files(sourceSets.main.output.classesDirs)
     from files(sourceSets.main.output.resourcesDir)
-    from (rootDir){ include "settings.properties" } // опционально
     from {configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}}
 
     archiveFileName = "${project.name}.jar"
 
     manifest { attributes 'Main-Class': project.mainClassName }
 }
-
