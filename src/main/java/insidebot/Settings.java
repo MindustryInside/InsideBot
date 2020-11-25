@@ -12,10 +12,10 @@ public class Settings{
     public String token;
 
     @Value("#{new Boolean('${spring.application.debug')}")
-    public boolean debug;
+    public boolean debug = false;
 
     @Value("#{new java.util.Locale('${spring.application.locale')}")
-    public Locale locale;
+    public Locale locale = Locale.ROOT;
 
     public String prefix = "$";
 
