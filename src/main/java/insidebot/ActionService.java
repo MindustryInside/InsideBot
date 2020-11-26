@@ -6,6 +6,7 @@ import discord4j.core.object.entity.Member;
 import insidebot.data.entity.UserInfo;
 import insidebot.data.repository.UserInfoRepository;
 import org.joda.time.*;
+import org.slf4j.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,9 @@ public class ActionService{
     @Autowired
     private UserInfoRepository userInfoRepository;
 
+    @Autowired
+    private Logger log;
+
     @Scheduled(cron = "*/2 * * * *")
     public void unmuteUsers(){
         userInfoRepository.getAll().filter(i -> i.asMember() != null && isMuteEnd(i))
@@ -32,7 +36,7 @@ public class ActionService{
     public void activeUsers(){
         userInfoRepository.getAll().filterWhen(u -> {
             return u.asMember().map(Objects::nonNull).filterWhen(b -> {
-                return b ? Mono.just(true) : Mono.fromRunnable(() -> Log.warn("Member '@' not found", u.name()));
+                return b ? Mono.just(true) : Mono.fromRunnable(() -> log.warn("Member '{}' not found", u.name()));
             });
         }).subscribe(u -> {
             Member member = u.asMember().block();

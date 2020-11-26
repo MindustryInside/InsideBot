@@ -1,9 +1,11 @@
 package insidebot.data.services.impl;
 
+import insidebot.Settings;
 import insidebot.data.entity.*;
 import insidebot.data.repository.MessageInfoRepository;
 import insidebot.data.services.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.util.annotation.NonNull;
@@ -13,10 +15,20 @@ public class MessageServiceImpl implements MessageService{
     @Autowired
     private MessageInfoRepository repository;
 
+    @Autowired
+    private ApplicationContext context;
+
+    @Autowired
+    private Settings settings;
+
     @Override
-    @Transactional(readOnly = true)
-    public MessageInfo get(@NonNull MessageInfo message) {
-        return getById(message.id());
+    public String get(@NonNull String key) {
+        return context.getMessage(key, null, settings.locale);
+    }
+
+    @Override
+    public String format(@NonNull String key, Object... args) {
+        return context.getMessage(key, args, settings.locale);
     }
 
     @Override

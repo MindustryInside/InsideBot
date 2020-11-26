@@ -1,23 +1,16 @@
 package insidebot;
 
 import arc.files.Fi;
-import arc.struct.*;
-import arc.util.I18NBundle;
-import arc.util.Log;
+import arc.struct.StringMap;
+import arc.util.*;
 import arc.util.io.PropertiesUtils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClient;
-import insidebot.thread.*;
 import org.springframework.boot.SpringApplication;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Locale;
-import java.util.concurrent.*;
-import java.util.logging.*;
 
 import static arc.Files.FileType.classpath;
-import static arc.util.Log.format;
 
 public class InsideBot{
     public static final String prefix = "$";
@@ -32,9 +25,6 @@ public class InsideBot{
     public static Listener listener;
     public static Commands commands;
     public static I18NBundle bundle;
-
-    protected static String[] tags = {"&lc&fb[D]", "&lg&fb[I]", "&ly&fb[W]", "&lr&fb[E]", ""};
-    protected static DateTimeFormatter dateTime = DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
 
     public static void main(String[] args){
         init();
@@ -51,13 +41,6 @@ public class InsideBot{
     }
 
     private static void init(){
-        LogManager.getLogManager().getLogger("").setLevel(Level.SEVERE);
-        // да, с миндастри взял
-        Log.logger = (level, text) -> {
-            String result = "[" + dateTime.format(LocalDateTime.now()) + "] " + format(tags[level.ordinal()] + " " + text + "&fr");
-            System.out.println(result);
-        };
-
         listener = new Listener();
 
         Fi cfg = new Fi("settings.properties", classpath);

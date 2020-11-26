@@ -1,5 +1,6 @@
 package insidebot;
 
+import org.slf4j.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.MessageSource;
@@ -18,6 +19,11 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 public class InsideConfiguration{
     @Autowired
     private Settings settings;
+
+    @Bean
+    public Logger log(){
+        return LoggerFactory.getLogger(getClass());
+    }
 
     @Bean
     public MessageSource messageSource(){

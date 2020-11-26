@@ -21,6 +21,7 @@ import insidebot.EventType.*;
 import insidebot.data.entity.*;
 import insidebot.data.services.*;
 import insidebot.util.*;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.*;
 import reactor.util.annotation.*;
@@ -52,6 +53,9 @@ public class Listener{
     @Autowired
     private MessageService messageService;
 
+    @Autowired
+    private Logger log;
+
     protected void register(){
         guild = gateway.getGuildById(guildID).block();
 
@@ -77,7 +81,7 @@ public class Listener{
             info.channelId(message.getChannelId());
             info.timestamp(Calendar.getInstance());
 
-            info.content(effectiveContent(message));
+            info.content(MessageUtil.effectiveContent(message));
             userInfo.messageInfo().add(info);
 
             commands.handle(event);
@@ -94,14 +98,14 @@ public class Listener{
             MessageInfo info = messageService.getById(event.getMessageId());
 
             String oldContent = info.content();
-            String newContent = effectiveContent(message);
+            String newContent = MessageUtil.effectiveContent(message);
             boolean under = newContent.length() >= Field.MAX_VALUE_LENGTH || oldContent.length() >= Field.MAX_VALUE_LENGTH;
 
             if(message.isPinned() || newContent.equals(oldContent)) return;
 
             Consumer<EmbedCreateSpec> e = embed -> {
                 embed.setColor(messageEdit.color);
-                embed.setAuthor(memberedName(user), null, user.getAvatarUrl());
+                embed.setAuthor(DiscordUtil.memberedName(user), null, user.getAvatarUrl());
                 embed.setTitle(bundle.format("message.edit", c.getName()));
                 embed.setDescription(bundle.format(event.getGuildId().isPresent() ? "message.edit.description" : "message.edit.nullable-guild",
                                                    event.getGuildId().get().asString(), /* Я не знаю как такое получить, но всё же обезопашусь */
@@ -133,7 +137,7 @@ public class Listener{
             if(event.getChannelId().equals(logChannelID) && (m != null && !m.getEmbeds().isEmpty())){ /* =) */
                 AuditLogEntry l = guild.getAuditLog().filter(a -> a.getActionType() == ActionType.MESSAGE_DELETE).blockFirst();
                 if(l != null){
-                    Log.warn("User '@' deleted log message", gateway.getUserById(l.getResponsibleUserId()).block().getUsername());
+                    log.warn("User '{}' deleted log message", gateway.getUserById(l.getResponsibleUserId()).block().getUsername());
                 }
                 return;
             }
@@ -153,7 +157,7 @@ public class Listener{
 
             Consumer<EmbedCreateSpec> e = embed -> {
                 embed.setColor(messageDelete.color);
-                embed.setAuthor(memberedName(user), null, user.getAvatarUrl());
+                embed.setAuthor(DiscordUtil.memberedName(user), null, user.getAvatarUrl());
                 embed.setTitle(bundle.format("message.delete", c.getName()));
                 embed.setFooter(MessageUtil.zonedFormat(), null);
                 embed.addField(bundle.get("message.delete.content"), MessageUtil.substringTo(content, Field.MAX_VALUE_LENGTH), true);
@@ -175,7 +179,7 @@ public class Listener{
             log(embedBuilder -> {
                 embedBuilder.setColor(voiceJoin.color);
                 embedBuilder.setTitle(bundle.get("message.voice-join"));
-                embedBuilder.setDescription(bundle.format("message.voice-join.text", memberedName(user), channel.getName()));
+                embedBuilder.setDescription(bundle.format("message.voice-join.text", DiscordUtil.memberedName(user), channel.getName()));
                 embedBuilder.setFooter(MessageUtil.zonedFormat(), null);
             });
         }, Log::err);
@@ -188,7 +192,7 @@ public class Listener{
             log(embedBuilder -> {
                 embedBuilder.setColor(voiceLeave.color);
                 embedBuilder.setTitle(bundle.get("message.voice-leave"));
-                embedBuilder.setDescription(bundle.format("message.voice-leave.text", memberedName(user), channel.getName()));
+                embedBuilder.setDescription(bundle.format("message.voice-leave.text", DiscordUtil.memberedName(user), channel.getName()));
                 embedBuilder.setFooter(MessageUtil.zonedFormat(), null);
             });
         }, Log::err);
@@ -289,7 +293,7 @@ public class Listener{
 
                 StringBuilder builder = new StringBuilder();
                 event.history.forEach(m -> {
-                    builder.append('[').append(dateTime.withZone(ZoneId.systemDefault()).format(m.getTimestamp())).append("] ");
+                    builder.append('[').append(MessageUtil.dateTime().withZone(ZoneId.systemDefault()).format(m.getTimestamp())).append("] ");
                     builder.append(m.getUserData().username()).append(" > ");
                     builder.append(m.getContent());
                     if(!m.getAttachments().isEmpty()){
@@ -335,24 +339,5 @@ public class Listener{
     public void log(@NonNull MessageCreateSpec message){
         guild.getChannelById(logChannelID).cast(TextChannel.class).block()
              .getRestChannel().createMessage(message.asRequest()).block();
-    }
-
-    // username / membername
-    public String memberedName(@NonNull User user){
-        String name = user.getUsername();
-        Member member = guild.getMemberById(user.getId()).block();
-        if(member != null && member.getNickname().isPresent()){
-            name += " / " + member.getNickname().get();
-        }
-        return name;
-    }
-
-    public String effectiveContent(@NonNull Message message){
-        StringBuilder builder = new StringBuilder(message.getContent());
-        if(!message.getAttachments().isEmpty()){
-            builder.append("\n---\n");
-            message.getAttachments().forEach(a -> builder.append(a.getUrl()).append("\n"));
-        }
-        return builder.toString();
     }
 }

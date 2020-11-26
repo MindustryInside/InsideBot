@@ -6,8 +6,12 @@ import org.springframework.lang.NonNull;
 
 public interface MessageService{
 
-    MessageInfo get(@NonNull MessageInfo message);
+    //bundle
+    String get(@NonNull String key);
 
+    String format(@NonNull String key, Object... args);
+
+    //data
     MessageInfo getById(@NonNull String messageId);
 
     boolean exists(@NonNull String messageId);
