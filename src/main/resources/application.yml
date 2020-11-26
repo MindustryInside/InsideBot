@@ -1,3 +1,6 @@
+logging:
+  pattern:
+    console: "%clr([%d{MM-dd-yyyy HH:mm:ss}]){blue} [%clr(%5p)] %clr([%15.15t]){cyan} %clr(%-40.40logger{39}){blue} %clr(:){red} %clr(%m){faint}%n"
 spring:
   application:
     token:
