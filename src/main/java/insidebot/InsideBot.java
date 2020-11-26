@@ -8,6 +8,7 @@ import arc.util.io.PropertiesUtils;
 import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClient;
 import insidebot.thread.*;
+import org.springframework.boot.SpringApplication;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -26,7 +27,6 @@ public class InsideBot{
     muteRoleID = Snowflake.of(747910443816976568L),
     activeUserRoleID = Snowflake.of(697939241308651580L);
 
-    public static ScheduledExecutorService executorService;
     public static StringMap settings = new StringMap();
 
     public static Listener listener;
@@ -43,11 +43,11 @@ public class InsideBot{
         listener.gateway = listener.client.login().block();
         listener.register();
 
-        executorService.scheduleAtFixedRate(new Unmuter(), 5, 15, TimeUnit.SECONDS);
-        executorService.scheduleAtFixedRate(new ActiveUsers(), 10, 60, TimeUnit.SECONDS);
-        executorService.scheduleAtFixedRate(new AuditCleaner(), 15, 12, TimeUnit.HOURS);
-
         listener.gateway.onDisconnect().block();
+
+        // TODO
+        // Доделать инициализацию объектов и прочего
+        SpringApplication.run(InsideBot.class, args);
     }
 
     private static void init(){
@@ -59,7 +59,6 @@ public class InsideBot{
         };
 
         listener = new Listener();
-        executorService = Executors.newScheduledThreadPool(3);
 
         Fi cfg = new Fi("settings.properties", classpath);
         Fi fi = new Fi("bundle", classpath);

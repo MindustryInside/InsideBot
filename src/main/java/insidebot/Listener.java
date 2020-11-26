@@ -29,7 +29,7 @@ import java.time.*;
 import java.util.*;
 import java.util.function.Consumer;
 
-import static insidebot.AuditEventType.*;
+import static insidebot.audit.AuditEventType.*;
 import static insidebot.InsideBot.*;
 
 public class Listener{
@@ -52,7 +52,6 @@ public class Listener{
     @Autowired
     private MessageService messageService;
 
-    // Регистрируем ивентики
     protected void register(){
         guild = gateway.getGuildById(guildID).block();
 
