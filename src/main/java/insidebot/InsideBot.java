@@ -25,7 +25,7 @@ public class InsideBot{
     guildID = Snowflake.of(697929564210331681L),
     logChannelID = Snowflake.of(747893115980873838L),
     muteRoleID = Snowflake.of(747910443816976568L),
-    activeUserRoleID = Snowflake.of(697939241308651580L);
+    activeUserRoleID = Snowflake.of(697939241308651580L); // TODO УБРАТЬ ОТСЮДА ЭТО, БУДЕТ СПЕЦ. ОБЪЕКТ ДЛЯ ЭТОГО
 
     public static StringMap settings = new StringMap();
 
