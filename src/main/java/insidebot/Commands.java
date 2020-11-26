@@ -10,7 +10,7 @@ import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.rest.util.Permission;
 import insidebot.EventType.*;
 import insidebot.data.entity.UserInfo;
-import insidebot.data.services.UserService;
+import insidebot.data.services.*;
 import insidebot.util.MessageUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.util.annotation.NonNull;
@@ -21,13 +21,17 @@ import static insidebot.InsideBot.*;
 
 public class Commands{
     private final CommandHandler handler = new CommandHandler(prefix);
-    private final String[] warningStrings = {bundle.get("command.first"), bundle.get("command.second"), bundle.get("command.third")};
+
+    @Autowired
+    private MessageService messageService;
 
     @Autowired
     private UserService userService;
 
+    private final String[] warningStrings = {messageService.get("command.first"), messageService.get("command.second"), messageService.get("command.third")};
+
     public Commands(){
-        handler.register("help", bundle.get("command.help.description"), args -> {
+        handler.register("help", messageService.get("command.help.description"), args -> {
             StringBuilder builder = new StringBuilder();
 
             handler.getCommandList().forEach(command -> {
@@ -44,12 +48,12 @@ public class Commands{
                 builder.append(command.description);
                 builder.append('\n');
             });
-            listener.info(bundle.get("command.help"), builder.toString());
+            listener.info(messageService.get("command.help"), builder.toString());
         });
 
-        handler.register("mute", "<@user> <delayDays> [reason...]", bundle.get("command.mute.description"), (args, messageInfo) -> {
+        handler.register("mute", "<@user> <delayDays> [reason...]", messageService.get("command.mute.description"), (args, messageInfo) -> {
             if(!MessageUtil.canParseInt(args[1])){
-                listener.err(bundle.get("command.incorrect-number"));
+                listener.err(messageService.get("command.incorrect-number"));
                 return;
             }
 
@@ -59,36 +63,36 @@ public class Commands{
                 User user = info.asUser().block();
 
                 if(isAdmin(listener.guild.getMemberById(user.getId()).block())){
-                    listener.err(bundle.get("command.user-is-admin"));
+                    listener.err(messageService.get("command.user-is-admin"));
                     return;
                 }
 
                 if(user.isBot()){
-                    listener.err(bundle.get("command.user-is-bot"));
+                    listener.err(messageService.get("command.user-is-bot"));
                     return;
                 }
 
                 if(listener.lastUser == user){
-                    listener.err(bundle.get("command.mute.self-user"));
+                    listener.err(messageService.get("command.mute.self-user"));
                     return;
                 }
 
                 Events.fire(new MemberMuteEvent(info, delayDays));
             }catch(Exception e){
-                listener.err(bundle.get("command.incorrect-name"));
+                listener.err(messageService.get("command.incorrect-name"));
             }
         });
 
-        handler.register("delete", "<amount>", bundle.get("command.delete.description"), args -> {
+        handler.register("delete", "<amount>", messageService.get("command.delete.description"), args -> {
             if(!MessageUtil.canParseInt(args[0])){
-                listener.err(bundle.get("command.incorrect-number"));
+                listener.err(messageService.get("command.incorrect-number"));
                 return;
             }
 
             int number = Integer.parseInt(args[0]);
 
             if(number >= 100){
-                listener.err(bundle.format("command.limit-number", 100));
+                listener.err(messageService.format("command.limit-number", 100));
                 return;
             }
 
@@ -98,36 +102,36 @@ public class Commands{
                                                     .block();
 
             if(history == null || (history.isEmpty() && number > 0)){
-                listener.err(bundle.get("command.hist-error"));
+                listener.err(messageService.get("command.hist-error"));
                 return;
             }
 
             Events.fire(new MessageClearEvent(history, listener.lastUser, listener.channel, number));
         });
 
-        handler.register("warn", "<@user> [reason...]", bundle.get("command.warn.description"), args -> {
+        handler.register("warn", "<@user> [reason...]", messageService.get("command.warn.description"), args -> {
             try{
                 UserInfo info = userService.getById(MessageUtil.parseUserId(args[0]));
                 User user = info.asUser().block();
 
                 if(isAdmin(listener.guild.getMemberById(user.getId()).block())){
-                    listener.err(bundle.get("command.user-is-admin"));
+                    listener.err(messageService.get("command.user-is-admin"));
                     return;
                 }
 
                 if(user.isBot()){
-                    listener.err(bundle.get("command.user-is-bot"));
+                    listener.err(messageService.get("command.user-is-bot"));
                     return;
                 }
 
                 if(listener.lastUser == user){
-                    listener.err(bundle.get("command.warn.self-user"));
+                    listener.err(messageService.get("command.warn.self-user"));
                     return;
                 }
 
                 int warnings = info.addWarn();
 
-                listener.text(bundle.format("message.warn", user.getUsername(),
+                listener.text(messageService.format("message.warn", user.getUsername(),
                                             warningStrings[Mathf.clamp(warnings - 1, 0, warningStrings.length - 1)]));
 
                 if(warnings >= 3){
@@ -136,25 +140,25 @@ public class Commands{
                     userService.save(info);
                 }
             }catch(Exception e){
-                listener.err(bundle.get("command.incorrect-name"));
+                listener.err(messageService.get("command.incorrect-name"));
             }
         });
 
-        handler.register("warnings", "<@user>", bundle.get("command.warnings.description"), args -> {
+        handler.register("warnings", "<@user>", messageService.get("command.warnings.description"), args -> {
             try{
                 UserInfo info = userService.getById(MessageUtil.parseUserId(args[0]));
                 int warnings = info.warns();
 
-                listener.text(bundle.format("command.warnings", info.name(), warnings,
-                                            warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns")));
+                listener.text(messageService.format("command.warnings", info.name(), warnings,
+                                            warnings == 1 ? messageService.get("command.warn") : messageService.get("command.warns")));
             }catch(Exception e){
-                listener.err(bundle.get("command.incorrect-name"));
+                listener.err(messageService.get("command.incorrect-name"));
             }
         });
 
-        handler.register("unwarn", "<@user> [count]", bundle.get("command.unwarn.description"), args -> {
+        handler.register("unwarn", "<@user> [count]", messageService.get("command.unwarn.description"), args -> {
             if(args.length > 1 && !MessageUtil.canParseInt(args[1])){
-                listener.text(bundle.get("command.incorrect-number"));
+                listener.text(messageService.get("command.incorrect-number"));
                 return;
             }
 
@@ -164,20 +168,20 @@ public class Commands{
                 UserInfo info = userService.getById(MessageUtil.parseUserId(args[0]));
                 info.warns(info.warns() - warnings);
 
-                listener.text(bundle.format("command.unwarn", info.name(), warnings,
-                                            warnings == 1 ? bundle.get("command.warn") : bundle.get("command.warns")));
+                listener.text(messageService.format("command.unwarn", info.name(), warnings,
+                                            warnings == 1 ? messageService.get("command.warn") : messageService.get("command.warns")));
                 userService.save(info);
             }catch(Exception e){
-                listener.err(bundle.get("command.incorrect-name"));
+                listener.err(messageService.get("command.incorrect-name"));
             }
         });
 
-        handler.register("unmute", "<@user>", bundle.get("command.unmute.description"), args -> {
+        handler.register("unmute", "<@user>", messageService.get("command.unmute.description"), args -> {
             try{
                 UserInfo info = userService.getById(MessageUtil.parseUserId(args[0]));
                 Events.fire(new MemberUnmuteEvent(info));
             }catch(Exception e){
-                listener.err(bundle.get("command.incorrect-name"));
+                listener.err(messageService.get("command.incorrect-name"));
             }
         });
     }
@@ -219,17 +223,17 @@ public class Commands{
             }
 
             if(closest != null){
-                listener.err(bundle.format("command.response.found-closest", closest.text));
+                listener.err(messageService.format("command.response.found-closest", closest.text));
             }else{
-                listener.err(bundle.format("command.response.unknown", prefix));
+                listener.err(messageService.format("command.response.unknown", prefix));
             }
         }else if(response.type == ResponseType.manyArguments){
-            listener.err(bundle.get("command.response.many-arguments"),
-                         bundle.format("command.response.many-arguments.text",
+            listener.err(messageService.get("command.response.many-arguments"),
+                         messageService.format("command.response.many-arguments.text",
                                        prefix, response.command.text, response.command.paramText));
         }else if(response.type == ResponseType.fewArguments){
-            listener.err(bundle.get("command.response.few-arguments"),
-                         bundle.format("command.response.few-arguments.text",
+            listener.err(messageService.get("command.response.few-arguments"),
+                         messageService.format("command.response.few-arguments.text",
                                        prefix, response.command.text));
         }
     }

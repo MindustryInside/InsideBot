@@ -106,15 +106,15 @@ public class Listener{
             Consumer<EmbedCreateSpec> e = embed -> {
                 embed.setColor(messageEdit.color);
                 embed.setAuthor(DiscordUtil.memberedName(user), null, user.getAvatarUrl());
-                embed.setTitle(bundle.format("message.edit", c.getName()));
-                embed.setDescription(bundle.format(event.getGuildId().isPresent() ? "message.edit.description" : "message.edit.nullable-guild",
+                embed.setTitle(messageService.format("message.edit", c.getName()));
+                embed.setDescription(messageService.format(event.getGuildId().isPresent() ? "message.edit.description" : "message.edit.nullable-guild",
                                                    event.getGuildId().get().asString(), /* Я не знаю как такое получить, но всё же обезопашусь */
                                                    event.getChannelId().asString(),
                                                    event.getMessageId().asString()));
 
-                embed.addField(bundle.get("message.edit.old-content"),
+                embed.addField(messageService.get("message.edit.old-content"),
                                MessageUtil.substringTo(oldContent, Field.MAX_VALUE_LENGTH), false);
-                embed.addField(bundle.get("message.edit.new-content"),
+                embed.addField(messageService.get("message.edit.new-content"),
                                MessageUtil.substringTo(newContent, Field.MAX_VALUE_LENGTH), true);
 
                 embed.setFooter(MessageUtil.zonedFormat(), null);
@@ -122,8 +122,8 @@ public class Listener{
 
             if(under){
                 temp.writeString(String.format("%s:\n%s\n\n%s:\n%s",
-                                               bundle.get("message.edit.old-content"), oldContent,
-                                               bundle.get("message.edit.new-content"), newContent));
+                                               messageService.get("message.edit.old-content"), oldContent,
+                                               messageService.get("message.edit.new-content"), newContent));
             }
 
             log(e, under);
@@ -158,13 +158,13 @@ public class Listener{
             Consumer<EmbedCreateSpec> e = embed -> {
                 embed.setColor(messageDelete.color);
                 embed.setAuthor(DiscordUtil.memberedName(user), null, user.getAvatarUrl());
-                embed.setTitle(bundle.format("message.delete", c.getName()));
+                embed.setTitle(messageService.format("message.delete", c.getName()));
                 embed.setFooter(MessageUtil.zonedFormat(), null);
-                embed.addField(bundle.get("message.delete.content"), MessageUtil.substringTo(content, Field.MAX_VALUE_LENGTH), true);
+                embed.addField(messageService.get("message.delete.content"), MessageUtil.substringTo(content, Field.MAX_VALUE_LENGTH), true);
             };
 
             if(under){
-                temp.writeString(String.format("%s:\n%s", bundle.get("message.delete.content"), content));
+                temp.writeString(String.format("%s:\n%s", messageService.get("message.delete.content"), content));
             }
 
             log(e, under);
@@ -178,8 +178,8 @@ public class Listener{
             if(DiscordUtil.isBot(user) || channel == null) return;
             log(embedBuilder -> {
                 embedBuilder.setColor(voiceJoin.color);
-                embedBuilder.setTitle(bundle.get("message.voice-join"));
-                embedBuilder.setDescription(bundle.format("message.voice-join.text", DiscordUtil.memberedName(user), channel.getName()));
+                embedBuilder.setTitle(messageService.get("message.voice-join"));
+                embedBuilder.setDescription(messageService.format("message.voice-join.text", DiscordUtil.memberedName(user), channel.getName()));
                 embedBuilder.setFooter(MessageUtil.zonedFormat(), null);
             });
         }, Log::err);
@@ -191,8 +191,8 @@ public class Listener{
             if(DiscordUtil.isBot(user) || channel == null) return;
             log(embedBuilder -> {
                 embedBuilder.setColor(voiceLeave.color);
-                embedBuilder.setTitle(bundle.get("message.voice-leave"));
-                embedBuilder.setDescription(bundle.format("message.voice-leave.text", DiscordUtil.memberedName(user), channel.getName()));
+                embedBuilder.setTitle(messageService.get("message.voice-leave"));
+                embedBuilder.setDescription(messageService.format("message.voice-leave.text", DiscordUtil.memberedName(user), channel.getName()));
                 embedBuilder.setFooter(MessageUtil.zonedFormat(), null);
             });
         }, Log::err);
@@ -202,8 +202,8 @@ public class Listener{
             if(DiscordUtil.isBot(user)) return;
             log(embedBuilder -> {
                 embedBuilder.setColor(userJoin.color);
-                embedBuilder.setTitle(bundle.get("message.user-join"));
-                embedBuilder.setDescription(bundle.format("message.user-join.text", user.getUsername()));
+                embedBuilder.setTitle(messageService.get("message.user-join"));
+                embedBuilder.setDescription(messageService.format("message.user-join.text", user.getUsername()));
                 embedBuilder.setFooter(MessageUtil.zonedFormat(), null);
             });
         }, Log::err);
@@ -214,8 +214,8 @@ public class Listener{
 
             log(embedBuilder -> {
                 embedBuilder.setColor(userLeave.color);
-                embedBuilder.setTitle(bundle.get("message.user-leave"));
-                embedBuilder.setDescription(bundle.format("message.user-leave.text", user.getUsername()));
+                embedBuilder.setTitle(messageService.get("message.user-leave"));
+                embedBuilder.setDescription(messageService.format("message.user-leave.text", user.getUsername()));
                 embedBuilder.setFooter(MessageUtil.zonedFormat(), null);
             });
             userService.deleteById(user.getId());
@@ -227,8 +227,8 @@ public class Listener{
 
             log(embedBuilder -> {
                 embedBuilder.setColor(userBan.color);
-                embedBuilder.setTitle(bundle.get("message.ban"));
-                embedBuilder.setDescription(bundle.format("message.ban.text", user.getUsername()));
+                embedBuilder.setTitle(messageService.get("message.ban"));
+                embedBuilder.setDescription(messageService.format("message.ban.text", user.getUsername()));
                 embedBuilder.setFooter(MessageUtil.zonedFormat(), null);
             });
             userService.deleteById(user.getId());
@@ -254,8 +254,8 @@ public class Listener{
             userService.delete(event.userInfo);
             member.removeRole(muteRoleID).block();
             log(e -> {
-                e.setTitle(bundle.get("message.unmute"));
-                e.setDescription(bundle.format("message.unmute.text", event.userInfo.name()));
+                e.setTitle(messageService.get("message.unmute"));
+                e.setDescription(messageService.format("message.unmute.text", event.userInfo.name()));
                 e.setFooter(MessageUtil.zonedFormat(), null);
                 e.setColor(userUnmute.color);
             });
@@ -272,8 +272,8 @@ public class Listener{
             userService.save(userInfo);
             member.addRole(muteRoleID).block();
             log(embedBuilder -> {
-                embedBuilder.setTitle(bundle.get("message.mute"));
-                embedBuilder.setDescription(bundle.format("message.mute.text", event.user.getMention(), event.delay));
+                embedBuilder.setTitle(messageService.get("message.mute"));
+                embedBuilder.setDescription(messageService.format("message.mute.text", event.user.getMention(), event.delay));
                 embedBuilder.setFooter(MessageUtil.zonedFormat(), null);
                 embedBuilder.setColor(userMute.color);
             });
@@ -286,8 +286,8 @@ public class Listener{
             });
 
             log(embed -> {
-                embed.setTitle(bundle.format("message.clear", event.count, event.channel.getName()));
-                embed.setDescription(bundle.format("message.clear.text", event.user.getUsername(), event.count, event.channel.getName()));
+                embed.setTitle(messageService.format("message.clear", event.count, event.channel.getName()));
+                embed.setDescription(messageService.format("message.clear.text", event.user.getUsername(), event.count, event.channel.getName()));
                 embed.setFooter(MessageUtil.zonedFormat(), null);
                 embed.setColor(messageClear.color);
 
@@ -319,7 +319,7 @@ public class Listener{
     }
 
     public void err(String text, Object... args){
-        err(bundle.get("error"), text, args);
+        err(messageService.get("error"), text, args);
     }
 
     public void err(String title, String text, Object... args){
