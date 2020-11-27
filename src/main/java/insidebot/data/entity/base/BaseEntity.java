@@ -1,5 +1,8 @@
 package insidebot.data.entity.base;
 
+import discord4j.common.util.Snowflake;
+import reactor.util.annotation.NonNull;
+
 import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Objects;
@@ -10,6 +13,15 @@ public abstract class BaseEntity implements Serializable{
 
     @Id
     protected String id;
+
+    @NonNull
+    public Snowflake id(){
+        return Snowflake.of(id);
+    }
+
+    public void id(@NonNull Snowflake id){
+        this.id = id.asString();
+    }
 
     @Override
     public boolean equals(Object o){

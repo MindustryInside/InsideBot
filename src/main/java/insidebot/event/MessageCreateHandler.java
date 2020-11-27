@@ -1,22 +1,29 @@
 package insidebot.event;
 
+import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.*;
+import insidebot.common.command.model.base.CommandReference;
+import insidebot.common.command.service.CommandHandler;
 import insidebot.data.entity.*;
-import insidebot.data.services.UserService;
-import insidebot.util.MessageUtil;
+import insidebot.data.service.*;
+import insidebot.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
-import java.util.Calendar;
-
-import static insidebot.InsideBot.commands;
+import java.util.*;
 
 @Component
-public class MessageCreateHandler implements EventHandled<MessageCreateEvent>{
+public class MessageCreateHandler implements EventHandler<MessageCreateEvent>{
+    @Autowired
+    private MemberService memberService;
+
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private CommandHandler commandHandler;
 
     @Override
     public Class<MessageCreateEvent> type(){
@@ -26,27 +33,43 @@ public class MessageCreateHandler implements EventHandled<MessageCreateEvent>{
     @Override
     public Mono<Void> onEvent(MessageCreateEvent event){
         User user = event.getMessage().getAuthor().orElse(null);
-        if(user == null || user.isBot()) return Mono.empty();
+        if(DiscordUtil.isBot(user)) return Mono.empty();
         Message message = event.getMessage();
+        Member member = event.getMember().orElse(null);
+        Snowflake guildId = event.getGuildId().orElse(null);
+        if(guildId == null || member == null) return Mono.empty();
         MessageInfo info = new MessageInfo();
-        UserInfo userInfo = userService.getOr(user.getId(), UserInfo::new);
+        Snowflake userId = user.getId();
+        LocalMember localMember = memberService.getOr(guildId, userId, LocalMember::new);
 
-        userInfo.name(user.getUsername());
-        userInfo.userId(user.getId());
-        userInfo.lastSentMessage(Calendar.getInstance());
-        userInfo.addToSeq();
+        if(localMember.user() == null){
+            LocalUser localUser = userService.getById(userId);
+            localUser.name(user.getUsername());
+            localUser.discriminator(user.getDiscriminator());
+            localMember.user(localUser);
+        }
 
-        info.user(userInfo);
+        localMember.effectiveName(member.getNickname().isPresent() ? member.getNickname().get() : member.getUsername());
+        localMember.id(userId);
+        localMember.lastSentMessage(Calendar.getInstance());
+        localMember.addToSeq();
+
+        info.member(localMember);
         info.id(message.getId());
-        info.guildId(message.getGuildId().orElseThrow(RuntimeException::new)); // Не надо мне тут
+        info.guildId(guildId);
         info.channelId(message.getChannelId());
         info.timestamp(Calendar.getInstance());
 
         info.content(MessageUtil.effectiveContent(message));
-        userInfo.messageInfo().add(info);
 
-        commands.handle(event);
-        userService.save(userInfo);
+        CommandReference reference = new CommandReference()
+                .localMember(localMember)
+                .localUser(localMember.user())
+                .member(member)
+                .user(user);
+
+        commandHandler.handleMessage(message.getContent(), reference, event);
+        memberService.save(localMember);
         return Mono.empty();
     }
 }

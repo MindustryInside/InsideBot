@@ -5,9 +5,10 @@ import discord4j.core.object.Embed;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.spec.*;
+import insidebot.audit.AuditEventHandler;
 import insidebot.common.services.DiscordService;
 import insidebot.data.entity.MessageInfo;
-import insidebot.data.services.MessageService;
+import insidebot.data.service.MessageService;
 import insidebot.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -49,7 +50,7 @@ public class MessageUpdateHandler extends AuditEventHandler<MessageUpdateEvent>{
 
         Consumer<EmbedCreateSpec> e = embed -> {
             embed.setColor(messageEdit.color);
-            embed.setAuthor(DiscordUtil.memberedName(user), null, user.getAvatarUrl());
+            embed.setAuthor(user.getUsername(), null, user.getAvatarUrl());
             embed.setTitle(messageService.format("message.edit", c.getName()));
             embed.setDescription(messageService.format(event.getGuildId().isPresent() ? "message.edit.description" : "message.edit.nullable-guild",
                                                        event.getGuildId().get().asString(), /* Я не знаю как такое получить, но всё же обезопашусь */

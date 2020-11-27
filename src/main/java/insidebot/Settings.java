@@ -25,7 +25,7 @@ public class Settings{
 
     public Executor executor = new Executor();
 
-    public static class Executor{
+    protected static class Executor{
         public int schedulerPoolSize = 3;
         // Пока тут пусто...
         // Возможно позже будет ещё что-то

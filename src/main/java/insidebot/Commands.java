@@ -1,196 +1,191 @@
 package insidebot;
 
-import arc.Events;
-import arc.math.Mathf;
 import arc.util.*;
 import arc.util.CommandHandler.*;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.rest.util.Permission;
-import insidebot.EventType.*;
-import insidebot.data.entity.UserInfo;
-import insidebot.data.services.*;
-import insidebot.util.MessageUtil;
+import insidebot.data.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.util.annotation.NonNull;
 
-import java.util.List;
-
-import static insidebot.InsideBot.*;
+import static insidebot.InsideBot.listener;
 
 public class Commands{
-    private final CommandHandler handler = new CommandHandler(prefix);
+    @Autowired
+    private Settings settings;
 
     @Autowired
     private MessageService messageService;
 
     @Autowired
-    private UserService userService;
+    private MemberService memberService;
 
+    private final CommandHandler handler = new CommandHandler(settings.prefix);
     private final String[] warningStrings = {messageService.get("command.first"), messageService.get("command.second"), messageService.get("command.third")};
 
     public Commands(){
-        handler.register("help", messageService.get("command.help.description"), args -> {
-            StringBuilder builder = new StringBuilder();
+        // handler.register("help", messageService.get("command.help.description"), args -> {
+        //     StringBuilder builder = new StringBuilder();
+        //
+        //     handler.getCommandList().forEach(command -> {
+        //         builder.append(settings.prefix);
+        //         builder.append("**");
+        //         builder.append(command.text);
+        //         builder.append("**");
+        //         if(command.params.length > 0){
+        //             builder.append(" *");
+        //             builder.append(command.paramText);
+        //             builder.append('*');
+        //         }
+        //         builder.append(" - ");
+        //         builder.append(command.description);
+        //         builder.append('\n');
+        //     });
+        //     listener.info(messageService.get("command.help"), builder.toString());
+        // });
 
-            handler.getCommandList().forEach(command -> {
-                builder.append(prefix);
-                builder.append("**");
-                builder.append(command.text);
-                builder.append("**");
-                if(command.params.length > 0){
-                    builder.append(" *");
-                    builder.append(command.paramText);
-                    builder.append('*');
-                }
-                builder.append(" - ");
-                builder.append(command.description);
-                builder.append('\n');
-            });
-            listener.info(messageService.get("command.help"), builder.toString());
-        });
+        // handler.register("mute", "<@user> <delayDays> [reason...]", messageService.get("command.mute.description"), args -> {
+        //     if(!MessageUtil.canParseInt(args[1])){
+        //         listener.err(messageService.get("command.incorrect-number"));
+        //         return;
+        //     }
+        //
+        //     try{
+        //         int delayDays = Strings.parseInt(args[1]);
+        //         LocalMember info = memberService.get(MessageUtil.parseUserId(args[0]));
+        //         User user = info.asUser().block();
+        //
+        //         if(isAdmin(listener.guild.getMemberById(user.getId()).block())){
+        //             listener.err(messageService.get("command.user-is-admin"));
+        //             return;
+        //         }
+        //
+        //         if(user.isBot()){
+        //             listener.err(messageService.get("command.user-is-bot"));
+        //             return;
+        //         }
+        //
+        //         if(listener.lastUser == user){
+        //             listener.err(messageService.get("command.mute.self-user"));
+        //             return;
+        //         }
+        //
+        //         Events.fire(new MemberMuteEvent(info, delayDays));
+        //     }catch(Exception e){
+        //         listener.err(messageService.get("command.incorrect-name"));
+        //     }
+        // });
 
-        handler.register("mute", "<@user> <delayDays> [reason...]", messageService.get("command.mute.description"), (args, messageInfo) -> {
-            if(!MessageUtil.canParseInt(args[1])){
-                listener.err(messageService.get("command.incorrect-number"));
-                return;
-            }
+        // handler.register("delete", "<amount>", messageService.get("command.delete.description"), args -> {
+        //     if(!MessageUtil.canParseInt(args[0])){
+        //         listener.err(messageService.get("command.incorrect-number"));
+        //         return;
+        //     }
+        //
+        //     int number = Integer.parseInt(args[0]);
+        //
+        //     if(number >= 100){
+        //         listener.err(messageService.format("command.limit-number", 100));
+        //         return;
+        //     }
+        //
+        //     List<Message> history = listener.channel.getMessagesBefore(listener.lastMessage.getId())
+        //                                             .limitRequest(number)
+        //                                             .collectList()
+        //                                             .block();
+        //
+        //     if(history == null || (history.isEmpty() && number > 0)){
+        //         listener.err(messageService.get("command.hist-error"));
+        //         return;
+        //     }
+        //
+        //     Events.fire(new MessageClearEvent(history, listener.lastUser, listener.channel, number));
+        // });
 
-            try{
-                int delayDays = Strings.parseInt(args[1]);
-                UserInfo info = userService.getById(MessageUtil.parseUserId(args[0]));
-                User user = info.asUser().block();
+        // handler.register("warn", "<@user> [reason...]", messageService.get("command.warn.description"), args -> {
+        //     try{
+        //         LocalMember info = userService.getById(MessageUtil.parseUserId(args[0]));
+        //         User user = info.asUser().block();
+        //
+        //         if(isAdmin(listener.guild.getMemberById(user.getId()).block())){
+        //             listener.err(messageService.get("command.user-is-admin"));
+        //             return;
+        //         }
+        //
+        //         if(user.isBot()){
+        //             listener.err(messageService.get("command.user-is-bot"));
+        //             return;
+        //         }
+        //
+        //         if(listener.lastUser == user){
+        //             listener.err(messageService.get("command.warn.self-user"));
+        //             return;
+        //         }
+        //
+        //         int warnings = info.addWarn();
+        //
+        //         listener.text(messageService.format("message.warn", user.getUsername(),
+        //                                             warningStrings[Mathf.clamp(warnings - 1, 0, warningStrings.length - 1)]));
+        //
+        //         if(warnings >= 3){
+        //             listener.guild.ban(user.getId(), b -> b.setDeleteMessageDays(0)).block();
+        //         }else{
+        //             userService.save(info);
+        //         }
+        //     }catch(Exception e){
+        //         listener.err(messageService.get("command.incorrect-name"));
+        //     }
+        // });
 
-                if(isAdmin(listener.guild.getMemberById(user.getId()).block())){
-                    listener.err(messageService.get("command.user-is-admin"));
-                    return;
-                }
+        // handler.register("warnings", "<@user>", messageService.get("command.warnings.description"), args -> {
+        //     try{
+        //         LocalMember info = userService.getById(MessageUtil.parseUserId(args[0]));
+        //         int warnings = info.warns();
+        //
+        //         listener.text(messageService.format("command.warnings", info.name(), warnings,
+        //                                             warnings == 1 ? messageService.get("command.warn") : messageService.get("command.warns")));
+        //     }catch(Exception e){
+        //         listener.err(messageService.get("command.incorrect-name"));
+        //     }
+        // });
 
-                if(user.isBot()){
-                    listener.err(messageService.get("command.user-is-bot"));
-                    return;
-                }
+        // handler.register("unwarn", "<@user> [count]", messageService.get("command.unwarn.description"), args -> {
+        //     if(args.length > 1 && !MessageUtil.canParseInt(args[1])){
+        //         listener.text(messageService.get("command.incorrect-number"));
+        //         return;
+        //     }
+        //
+        //     int warnings = args.length > 1 ? Strings.parseInt(args[1]) : 1;
+        //
+        //     try{
+        //         LocalMember info = userService.getById(MessageUtil.parseUserId(args[0]));
+        //         info.warns(info.warns() - warnings);
+        //
+        //         listener.text(messageService.format("command.unwarn", info.name(), warnings,
+        //                                             warnings == 1 ? messageService.get("command.warn") : messageService.get("command.warns")));
+        //         userService.save(info);
+        //     }catch(Exception e){
+        //         listener.err(messageService.get("command.incorrect-name"));
+        //     }
+        // });
 
-                if(listener.lastUser == user){
-                    listener.err(messageService.get("command.mute.self-user"));
-                    return;
-                }
-
-                Events.fire(new MemberMuteEvent(info, delayDays));
-            }catch(Exception e){
-                listener.err(messageService.get("command.incorrect-name"));
-            }
-        });
-
-        handler.register("delete", "<amount>", messageService.get("command.delete.description"), args -> {
-            if(!MessageUtil.canParseInt(args[0])){
-                listener.err(messageService.get("command.incorrect-number"));
-                return;
-            }
-
-            int number = Integer.parseInt(args[0]);
-
-            if(number >= 100){
-                listener.err(messageService.format("command.limit-number", 100));
-                return;
-            }
-
-            List<Message> history = listener.channel.getMessagesBefore(listener.lastMessage.getId())
-                                                    .limitRequest(number)
-                                                    .collectList()
-                                                    .block();
-
-            if(history == null || (history.isEmpty() && number > 0)){
-                listener.err(messageService.get("command.hist-error"));
-                return;
-            }
-
-            Events.fire(new MessageClearEvent(history, listener.lastUser, listener.channel, number));
-        });
-
-        handler.register("warn", "<@user> [reason...]", messageService.get("command.warn.description"), args -> {
-            try{
-                UserInfo info = userService.getById(MessageUtil.parseUserId(args[0]));
-                User user = info.asUser().block();
-
-                if(isAdmin(listener.guild.getMemberById(user.getId()).block())){
-                    listener.err(messageService.get("command.user-is-admin"));
-                    return;
-                }
-
-                if(user.isBot()){
-                    listener.err(messageService.get("command.user-is-bot"));
-                    return;
-                }
-
-                if(listener.lastUser == user){
-                    listener.err(messageService.get("command.warn.self-user"));
-                    return;
-                }
-
-                int warnings = info.addWarn();
-
-                listener.text(messageService.format("message.warn", user.getUsername(),
-                                            warningStrings[Mathf.clamp(warnings - 1, 0, warningStrings.length - 1)]));
-
-                if(warnings >= 3){
-                    listener.guild.ban(user.getId(), b -> b.setDeleteMessageDays(0)).block();
-                }else{
-                    userService.save(info);
-                }
-            }catch(Exception e){
-                listener.err(messageService.get("command.incorrect-name"));
-            }
-        });
-
-        handler.register("warnings", "<@user>", messageService.get("command.warnings.description"), args -> {
-            try{
-                UserInfo info = userService.getById(MessageUtil.parseUserId(args[0]));
-                int warnings = info.warns();
-
-                listener.text(messageService.format("command.warnings", info.name(), warnings,
-                                            warnings == 1 ? messageService.get("command.warn") : messageService.get("command.warns")));
-            }catch(Exception e){
-                listener.err(messageService.get("command.incorrect-name"));
-            }
-        });
-
-        handler.register("unwarn", "<@user> [count]", messageService.get("command.unwarn.description"), args -> {
-            if(args.length > 1 && !MessageUtil.canParseInt(args[1])){
-                listener.text(messageService.get("command.incorrect-number"));
-                return;
-            }
-
-            int warnings = args.length > 1 ? Strings.parseInt(args[1]) : 1;
-
-            try{
-                UserInfo info = userService.getById(MessageUtil.parseUserId(args[0]));
-                info.warns(info.warns() - warnings);
-
-                listener.text(messageService.format("command.unwarn", info.name(), warnings,
-                                            warnings == 1 ? messageService.get("command.warn") : messageService.get("command.warns")));
-                userService.save(info);
-            }catch(Exception e){
-                listener.err(messageService.get("command.incorrect-name"));
-            }
-        });
-
-        handler.register("unmute", "<@user>", messageService.get("command.unmute.description"), args -> {
-            try{
-                UserInfo info = userService.getById(MessageUtil.parseUserId(args[0]));
-                Events.fire(new MemberUnmuteEvent(info));
-            }catch(Exception e){
-                listener.err(messageService.get("command.incorrect-name"));
-            }
-        });
+        // handler.register("unmute", "<@user>", messageService.get("command.unmute.description"), args -> {
+        //     try{
+        //         LocalMember info = userService.getById(MessageUtil.parseUserId(args[0]));
+        //         Events.fire(new MemberUnmuteEvent(info));
+        //     }catch(Exception e){
+        //         listener.err(messageService.get("command.incorrect-name"));
+        //     }
+        // });
     }
 
     public void handle(@NonNull MessageCreateEvent event){
         Message m = event.getMessage();
         String c = m.getContent();
 
-        if(c.startsWith(prefix)){
+        if(c.startsWith(settings.prefix)){
             listener.channel = m.getChannel().cast(TextChannel.class).block();
             listener.lastUser = m.getAuthor().orElse(null);
             listener.lastMessage = m;
@@ -202,11 +197,8 @@ public class Commands{
     }
 
     public boolean isAdmin(Member member){
-        try{
-            return member != null && member.getRoles().map(Role::getPermissions).any(r -> r.contains(Permission.ADMINISTRATOR)).block();
-        }catch(Throwable t){
-            return false;
-        }
+        return member != null && member.getRoles().map(Role::getPermissions).any(r -> r.contains(Permission.ADMINISTRATOR))
+                                       .blockOptional().orElse(false);
     }
 
     void handleResponse(@NonNull CommandResponse response){
@@ -225,16 +217,16 @@ public class Commands{
             if(closest != null){
                 listener.err(messageService.format("command.response.found-closest", closest.text));
             }else{
-                listener.err(messageService.format("command.response.unknown", prefix));
+                listener.err(messageService.format("command.response.unknown", settings.prefix));
             }
         }else if(response.type == ResponseType.manyArguments){
             listener.err(messageService.get("command.response.many-arguments"),
                          messageService.format("command.response.many-arguments.text",
-                                       prefix, response.command.text, response.command.paramText));
+                                               settings.prefix, response.command.text, response.command.paramText));
         }else if(response.type == ResponseType.fewArguments){
             listener.err(messageService.get("command.response.few-arguments"),
                          messageService.format("command.response.few-arguments.text",
-                                       prefix, response.command.text));
+                                               settings.prefix, response.command.text));
         }
     }
 }

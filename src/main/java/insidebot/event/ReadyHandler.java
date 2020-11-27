@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 @Component
-public class ReadyHandler implements EventHandled<ReadyEvent>{
+public class ReadyHandler implements EventHandler<ReadyEvent>{
     @Autowired
     private Logger log;
 

@@ -1,7 +1,7 @@
-package insidebot.audit.services.impl;
+package insidebot.audit.service.impl;
 
 import arc.util.Log;
-import insidebot.audit.services.AuditService;
+import insidebot.audit.service.AuditService;
 import insidebot.data.repository.MessageInfoRepository;
 import org.joda.time.*;
 import org.slf4j.Logger;

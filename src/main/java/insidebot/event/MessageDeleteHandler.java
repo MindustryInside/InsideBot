@@ -8,9 +8,10 @@ import discord4j.core.object.audit.*;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.spec.*;
+import insidebot.audit.AuditEventHandler;
 import insidebot.common.services.DiscordService;
 import insidebot.data.entity.MessageInfo;
-import insidebot.data.services.MessageService;
+import insidebot.data.service.MessageService;
 import insidebot.util.*;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,13 +51,14 @@ public class MessageDeleteHandler extends AuditEventHandler<MessageDeleteEvent>{
                 log.warn("User '{}' deleted log message", discordService.gateway().getUserById(a.getResponsibleUserId()).block().getUsername());
             }).then();
         }
+        if(m == null) return Mono.empty();
         if(!messageService.exists(event.getMessageId())) return Mono.empty();
         if(buffer.contains(event.getMessageId())){
             return Mono.fromRunnable(() -> buffer.remove(event.getMessageId()));
         }
 
         MessageInfo info = messageService.getById(event.getMessageId());
-        User user = info.user().asUser().block();
+        User user = m.getAuthor().orElse(null);
         TextChannel c =  event.getChannel().cast(TextChannel.class).block();
         String content = info.content();
         boolean under = content.length() >= Field.MAX_VALUE_LENGTH;
@@ -65,7 +67,7 @@ public class MessageDeleteHandler extends AuditEventHandler<MessageDeleteEvent>{
 
         Consumer<EmbedCreateSpec> e = embed -> {
             embed.setColor(messageDelete.color);
-            embed.setAuthor(DiscordUtil.memberedName(user), null, user.getAvatarUrl());
+            embed.setAuthor(user.getUsername(), null, user.getAvatarUrl());
             embed.setTitle(messageService.format("message.delete", c.getName()));
             embed.setFooter(MessageUtil.zonedFormat(), null);
             embed.addField(messageService.get("message.delete.content"), MessageUtil.substringTo(content, Field.MAX_VALUE_LENGTH), true);

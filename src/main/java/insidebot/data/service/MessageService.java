@@ -1,8 +1,10 @@
-package insidebot.data.services;
+package insidebot.data.service;
 
 import discord4j.common.util.Snowflake;
-import insidebot.data.entity.*;
+import discord4j.core.object.entity.channel.*;
+import insidebot.data.entity.MessageInfo;
 import org.springframework.lang.NonNull;
+import reactor.core.publisher.Mono;
 
 public interface MessageService{
 
@@ -12,13 +14,13 @@ public interface MessageService{
     String format(@NonNull String key, Object... args);
 
     //send
-    void text(String text, Object... args);
+    Mono<Void> text(MessageChannel channel, String text, Object... args);
 
-    void info(String title, String text, Object... args);
+    Mono<Void> info(MessageChannel channel, String title, String text, Object... args);
 
-    void err(String text, Object... args);
+    Mono<Void> err(MessageChannel channel, String text, Object... args);
 
-    void err(String title, String text, Object... args);
+    Mono<Void> err(MessageChannel channel, String title, String text, Object... args);
 
     //data
     MessageInfo getById(@NonNull String messageId);

@@ -1,6 +1,10 @@
 package insidebot.data.entity.base;
 
+import discord4j.common.util.Snowflake;
+import reactor.util.annotation.NonNull;
+
 import javax.persistence.*;
+import java.util.Objects;
 
 @MappedSuperclass
 public abstract class GuildEntity extends BaseEntity{
@@ -8,6 +12,29 @@ public abstract class GuildEntity extends BaseEntity{
 
     @Column(name = "guild_id")
     protected String guildId;
+
+    @NonNull
+    public Snowflake guildId(){
+        return Snowflake.of(guildId);
+    }
+
+    public void guildId(@NonNull Snowflake guildId){
+        this.id = guildId.asString();
+    }
+
+    @Override
+    public boolean equals(Object o){
+        if(this == o) return true;
+        if(o == null || getClass() != o.getClass()) return false;
+        if(!super.equals(o)) return false;
+        GuildEntity that = (GuildEntity)o;
+        return Objects.equals(guildId, that.guildId);
+    }
+
+    @Override
+    public int hashCode(){
+        return Objects.hash(super.hashCode(), guildId);
+    }
 
     @Override
     public String toString(){

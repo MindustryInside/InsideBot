@@ -1,14 +1,15 @@
-package insidebot.event;
+package insidebot.audit;
 
 import discord4j.core.event.domain.Event;
 import discord4j.core.spec.*;
+import insidebot.event.EventHandler;
 import insidebot.util.StringInputStream;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.NonNull;
 
 import java.util.function.Consumer;
 
-public abstract class AuditEventHandler<T extends Event> implements EventHandled<T>{
+public abstract class AuditEventHandler<T extends Event> implements EventHandler<T>{
     protected StringInputStream stringInputStream = new StringInputStream();
 
     public abstract Mono<Void> log(@NonNull MessageCreateSpec message);

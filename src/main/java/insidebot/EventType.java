@@ -2,7 +2,7 @@ package insidebot;
 
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
-import insidebot.data.entity.UserInfo;
+import insidebot.data.entity.LocalMember;
 import reactor.util.annotation.*;
 
 import java.util.*;
@@ -33,9 +33,9 @@ public class EventType{
     }
 
     public static class MemberUnmuteEvent{
-        public final @NonNull UserInfo userInfo;
+        public final @NonNull LocalMember userInfo;
 
-        public MemberUnmuteEvent(@NonNull UserInfo userInfo){
+        public MemberUnmuteEvent(@NonNull LocalMember userInfo){
             this.userInfo = userInfo;
         }
 
@@ -52,9 +52,9 @@ public class EventType{
         public final @Nullable Member member;
         public final int delay;
 
-        public MemberMuteEvent(@NonNull UserInfo userInfo, int delay){
-            this.user = userInfo.asUser().block();
-            this.member = userInfo.asMember().block();
+        public MemberMuteEvent(@NonNull LocalMember userInfo, int delay){
+            this.user = /*userInfo.asUser().block()*/null; //todo
+            this.member = /*userInfo.asMember().block()*/null;
             this.delay = delay;
         }
 

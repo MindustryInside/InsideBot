@@ -5,8 +5,9 @@ import discord4j.core.object.VoiceState;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.VoiceChannel;
 import discord4j.core.spec.MessageCreateSpec;
+import insidebot.audit.AuditEventHandler;
 import insidebot.common.services.DiscordService;
-import insidebot.data.services.MessageService;
+import insidebot.data.service.MessageService;
 import insidebot.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -30,15 +31,15 @@ public class VoiceStateUpdateHandler extends AuditEventHandler<VoiceStateUpdateE
 
     @Override
     public Mono<Void> onEvent(VoiceStateUpdateEvent event){
-        if(event.getOld().orElse(null) != null){
-            VoiceState state = event.getOld().orElse(null);
-            VoiceChannel channel = state != null ? state.getChannel().block() : null;
-            User user = state != null ? state.getUser().block() : null;
+        VoiceState state = event.getOld().orElse(null);
+        if(state != null){
+            VoiceChannel channel = state.getChannel().block();
+            User user = state.getUser().block();
             if(DiscordUtil.isBot(user) || channel == null) return Mono.empty();
             return log(embedBuilder -> {
                 embedBuilder.setColor(voiceLeave.color);
                 embedBuilder.setTitle(messageService.get("message.voice-leave"));
-                embedBuilder.setDescription(messageService.format("message.voice-leave.text", DiscordUtil.memberedName(user), channel.getName()));
+                embedBuilder.setDescription(messageService.format("message.voice-leave.text", user.getUsername(), channel.getName()));
                 embedBuilder.setFooter(MessageUtil.zonedFormat(), null);
             });
         }else{
@@ -48,7 +49,7 @@ public class VoiceStateUpdateHandler extends AuditEventHandler<VoiceStateUpdateE
             return log(embedBuilder -> {
                 embedBuilder.setColor(voiceJoin.color);
                 embedBuilder.setTitle(messageService.get("message.voice-join"));
-                embedBuilder.setDescription(messageService.format("message.voice-join.text", DiscordUtil.memberedName(user), channel.getName()));
+                embedBuilder.setDescription(messageService.format("message.voice-join.text", user, channel.getName()));
                 embedBuilder.setFooter(MessageUtil.zonedFormat(), null);
             });
         }

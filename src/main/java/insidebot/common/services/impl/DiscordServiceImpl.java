@@ -9,7 +9,7 @@ import discord4j.core.shard.MemberRequestFilter;
 import discord4j.gateway.intent.*;
 import insidebot.Settings;
 import insidebot.common.services.DiscordService;
-import insidebot.event.EventHandled;
+import insidebot.event.EventHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
@@ -24,7 +24,7 @@ public class DiscordServiceImpl implements DiscordService{
     private Settings settings;
 
     @Autowired
-    private List<EventHandled<? super Event>> handlers;
+    private List<EventHandler<? super Event>> handlers;
 
     protected GatewayDiscordClient gateway;
 

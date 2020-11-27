@@ -1,16 +1,18 @@
-package insidebot.data.services.impl;
+package insidebot.data.service.impl;
 
 import arc.util.Strings;
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.entity.channel.TextChannel;
-import insidebot.*;
-import insidebot.data.entity.*;
+import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.channel.*;
+import insidebot.Settings;
+import insidebot.data.entity.MessageInfo;
 import insidebot.data.repository.MessageInfoRepository;
-import insidebot.data.services.MessageService;
+import insidebot.data.service.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Mono;
 import reactor.util.annotation.NonNull;
 
 @Service
@@ -35,23 +37,25 @@ public class MessageServiceImpl implements MessageService{
     }
 
     @Override
-    public void text(String text, Object... args){
-
+    public Mono<Void> text(MessageChannel channel, String text, Object... args){
+        return channel.createMessage(Strings.format(text, args)).then();
     }
 
     @Override
-    public void info(String title, String text, Object... args){
-
+    public Mono<Void> info(MessageChannel channel, String title, String text, Object... args){
+        return channel.createMessage(s -> s.setEmbed(e -> e.setColor(settings.normalColor).setTitle(title)
+                                                           .setDescription(Strings.format(text, args)))).then();
     }
 
     @Override
-    public void err(String text, Object... args){
-
+    public Mono<Void> err(MessageChannel channel, String text, Object... args){
+        return err(channel, get("error"), text, args);
     }
 
     @Override
-    public void err(String title, String text, Object... args){
-
+    public Mono<Void> err(MessageChannel channel, String title, String text, Object... args){
+        return channel.createMessage(s -> s.setEmbed(e -> e.setColor(settings.errorColor).setTitle(title)
+                                                           .setDescription(Strings.format(text, args)))).then();
     }
 
     @Override
@@ -62,8 +66,8 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     @Transactional(readOnly = true)
-    public MessageInfo getById(@NonNull String messageId) {
-        return repository.findByMessageId(messageId);
+    public MessageInfo getById(@NonNull String messageId){
+        return repository.findById(messageId).orElse(null);
     }
 
     @Override

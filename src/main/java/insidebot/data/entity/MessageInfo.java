@@ -8,7 +8,7 @@ import javax.persistence.*;
 import java.util.Calendar;
 
 @Entity
-@Table(name = "message_info", schema = "public")
+@Table(name = "message_info")
 public class MessageInfo extends GuildEntity{
     private static final long serialVersionUID = -7977287922184407665L;
 
@@ -25,26 +25,8 @@ public class MessageInfo extends GuildEntity{
 
     @NonNull
     @ManyToOne
-    @JoinColumn(name = "user_id")
-    private UserInfo user;
-
-    @NonNull
-    public Snowflake id(){
-        return Snowflake.of(id);
-    }
-
-    public void id(@NonNull Snowflake id){
-        this.id = id.asString();
-    }
-
-    @NonNull
-    public Snowflake guildId(){
-        return Snowflake.of(guildId);
-    }
-
-    public void guildId(@NonNull Snowflake guildId){
-        this.id = guildId.asString();
-    }
+    @JoinColumn(name = "member_id")
+    private LocalMember member;
 
     @NonNull
     public Snowflake channelId(){
@@ -74,12 +56,12 @@ public class MessageInfo extends GuildEntity{
     }
 
     @NonNull
-    public UserInfo user(){
-        return user;
+    public LocalMember member(){
+        return member;
     }
 
-    public void user(@NonNull UserInfo user){
-        this.user = user;
+    public void member(@NonNull LocalMember member){
+        this.member = member;
     }
 
     @Override
@@ -88,7 +70,7 @@ public class MessageInfo extends GuildEntity{
                "channelId='" + channelId + '\'' +
                ", content='" + content + '\'' +
                ", timestamp=" + timestamp +
-               ", user=" + user +
+               ", member=" + member +
                ", guildId='" + guildId + '\'' +
                ", id='" + id + '\'' +
                '}';

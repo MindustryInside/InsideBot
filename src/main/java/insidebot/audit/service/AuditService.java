@@ -1,4 +1,4 @@
-package insidebot.audit.services;
+package insidebot.audit.service;
 
 public interface AuditService{
     void cleanUp();
