@@ -11,6 +11,15 @@ public interface MessageService{
 
     String format(@NonNull String key, Object... args);
 
+    //send
+    void text(String text, Object... args);
+
+    void info(String title, String text, Object... args);
+
+    void err(String text, Object... args);
+
+    void err(String title, String text, Object... args);
+
     //data
     MessageInfo getById(@NonNull String messageId);
 

@@ -36,4 +36,8 @@ public interface UserService{
     default void deleteById(@NonNull Snowflake userId){
         deleteById(userId.asString());
     }
+
+    void activeUsers();
+
+    void unmuteUsers();
 }

@@ -1,6 +1,9 @@
 package insidebot.data.services.impl;
 
-import insidebot.Settings;
+import arc.util.Strings;
+import discord4j.common.util.Snowflake;
+import discord4j.core.object.entity.channel.TextChannel;
+import insidebot.*;
 import insidebot.data.entity.*;
 import insidebot.data.repository.MessageInfoRepository;
 import insidebot.data.services.MessageService;
@@ -29,6 +32,26 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public String format(@NonNull String key, Object... args) {
         return context.getMessage(key, args, settings.locale);
+    }
+
+    @Override
+    public void text(String text, Object... args){
+
+    }
+
+    @Override
+    public void info(String title, String text, Object... args){
+
+    }
+
+    @Override
+    public void err(String text, Object... args){
+
+    }
+
+    @Override
+    public void err(String title, String text, Object... args){
+
     }
 
     @Override

@@ -2,8 +2,8 @@ package insidebot.audit;
 
 import discord4j.rest.util.Color;
 
-// юзается пока только ради цвета емебеда
-// позже будет привязка к ивенту или нет
+// TODO
+// Ужасный класс, его надо убрать
 public enum AuditEventType{
     messageEdit(0x33CC33),
     messageClear(0xFF2400),

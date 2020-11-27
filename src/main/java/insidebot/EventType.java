@@ -5,7 +5,7 @@ import discord4j.core.object.entity.channel.TextChannel;
 import insidebot.data.entity.UserInfo;
 import reactor.util.annotation.*;
 
-import java.util.List;
+import java.util.*;
 
 public class EventType{
     public static class MessageClearEvent{

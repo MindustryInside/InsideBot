@@ -27,7 +27,6 @@ project.ext.mainClassName = "insidebot.InsideBot"
 dependencies{
     implementation "com.discord4j:discord4j-core:$discord4jVersion"
     implementation "com.github.Anuken.Arc:arc-core:$arcVersion"
-    implementation "org.reflections:reflections:0.9.12"
     implementation "com.github.JodaOrg:joda-time:v2.10.6"
 
     // data dependencies
