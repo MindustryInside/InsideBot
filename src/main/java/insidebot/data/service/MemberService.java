@@ -23,4 +23,6 @@ public interface MemberService{
     LocalMember save(LocalMember member);
 
     boolean exists(Snowflake guildId, Snowflake userId);
+
+    boolean isAdmin(Member member);
 }

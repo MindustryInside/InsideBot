@@ -24,6 +24,10 @@ public abstract class BaseCommandHandler{
         return commands;
     }
 
+    public List<Command> commandList(){
+        return commandFlux().map(CommandRunner::compile).collectList().block();
+    }
+
     public Flux<CommandRunner> commandFlux(){
         return Flux.fromIterable(orderedCommands);
     }

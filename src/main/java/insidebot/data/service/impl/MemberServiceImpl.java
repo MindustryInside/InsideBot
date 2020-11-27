@@ -4,6 +4,7 @@ import arc.Events;
 import arc.util.Log;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
+import discord4j.rest.util.Permission;
 import insidebot.EventType;
 import insidebot.common.services.DiscordService;
 import insidebot.data.entity.*;
@@ -93,6 +94,12 @@ public class MemberServiceImpl implements MemberService{
                 member.removeRole(activeUserRoleID).block();
             }
         }, Log::err);
+    }
+
+    @Override
+    public boolean isAdmin(Member member){
+        return member != null && member.getRoles().map(Role::getPermissions).any(r -> r.contains(Permission.ADMINISTRATOR))
+                                       .blockOptional().orElse(false);
     }
 
     protected boolean isMuteEnd(@NonNull LocalMember member){
