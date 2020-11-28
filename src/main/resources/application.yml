@@ -4,7 +4,6 @@ logging:
 spring:
   application:
     token:
-    debug:
     locale:
   jpa:
     generate-ddl: "true"
