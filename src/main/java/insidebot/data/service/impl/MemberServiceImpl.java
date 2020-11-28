@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.NonNull;
 
@@ -35,41 +36,49 @@ public class MemberServiceImpl implements MemberService{
     private LocalMemberRepository repository;
 
     @Override
+    @Transactional(readOnly = true)
     public LocalMember get(Member member){
         return get(member.getGuildId(), member.getId());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public LocalMember get(Guild guild, User user){
         return get(guild.getId(), user.getId());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public LocalMember get(Snowflake guildId, Snowflake userId){
         return repository.findByGuildIdAndUserId(guildId, userId);
     }
 
     @Override
+    @Transactional
     public LocalMember getOr(Member member, Supplier<LocalMember> prov){
         return get(member) != null ? get(member) : prov.get();
     }
 
     @Override
+    @Transactional
     public LocalMember getOr(Guild guild, User user, Supplier<LocalMember> prov){
         return get(guild, user) != null ? get(guild, user) : prov.get();
     }
 
     @Override
+    @Transactional
     public LocalMember getOr(Snowflake guildId, Snowflake userId, Supplier<LocalMember> prov){
         return get(guildId, userId) != null ? get(guildId, userId) : prov.get();
     }
 
     @Override
+    @Transactional
     public LocalMember save(LocalMember member){
         return repository.save(member);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public boolean exists(Snowflake guildId, Snowflake userId){
         return get(guildId, userId) != null;
     }

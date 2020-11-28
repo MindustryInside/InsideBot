@@ -23,7 +23,7 @@ public class DiscordServiceImpl implements DiscordService{
     @Autowired
     private Settings settings;
 
-    @Autowired
+    @Autowired(required = false)
     private List<EventHandler<? super Event>> handlers;
 
     protected GatewayDiscordClient gateway;
