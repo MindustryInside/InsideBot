@@ -7,7 +7,8 @@ import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
 import insidebot.*;
-import insidebot.EventType.MemberUnmuteEvent;
+import insidebot.event.dispatcher.EventType;
+import insidebot.event.dispatcher.EventType.*;
 import insidebot.common.command.model.base.*;
 import insidebot.common.command.service.CommandHandler;
 import insidebot.common.services.DiscordService;
@@ -98,7 +99,7 @@ public final class Commands{
                     return Mono.empty();
                 }
 
-                Events.fire(new EventType.MemberMuteEvent(info, delayDays));
+                discordService.eventListener().publish(new MemberMuteEvent(event.getGuild().block(), info, delayDays));
             }catch(Exception e){
                 messageService.err(channel, messageService.get("command.incorrect-name"));
             }
@@ -133,7 +134,7 @@ public final class Commands{
                 return Mono.empty();
             }
 
-            Events.fire(new EventType.MessageClearEvent(history, reference.user(), channel, number));
+            discordService.eventListener().publish(new MessageClearEvent(event.getGuild().block(), history, reference.user(), channel, number));
             return Mono.empty();
         }
     }
@@ -227,7 +228,7 @@ public final class Commands{
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
             try{
                 LocalMember info = memberService.get(event.getGuildId().orElseThrow(RuntimeException::new), MessageUtil.parseUserId(args[0]));
-                Events.fire(new MemberUnmuteEvent(info));
+                discordService.eventListener().publish(new MemberUnmuteEvent(event.getGuild().block(), info));
             }catch(Exception e){
                 messageService.err(event.getMessage().getChannel().block(), messageService.get("command.incorrect-name"));
             }

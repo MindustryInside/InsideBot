@@ -34,7 +34,7 @@ public class MessageDeleteHandler extends AuditEventHandler<MessageDeleteEvent>{
     @Autowired
     private Logger log;
 
-    protected static ObjectSet<Snowflake> buffer = new ObjectSet<>();
+    public ObjectSet<Snowflake> buffer = new ObjectSet<>();
 
     @Override
     public Class<MessageDeleteEvent> type(){

@@ -5,7 +5,7 @@ import arc.util.Log;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import discord4j.rest.util.Permission;
-import insidebot.EventType;
+import insidebot.event.dispatcher.EventType;
 import insidebot.common.services.DiscordService;
 import insidebot.data.entity.*;
 import insidebot.data.repository.LocalMemberRepository;
@@ -96,7 +96,7 @@ public class MemberServiceImpl implements MemberService{
                 return b ? Mono.just(true) : Mono.fromRunnable(() -> log.warn("User '{}' not found", u.effectiveName()));
             });
         }).subscribe(u -> {
-            Member member = discordService.gateway().getMemberById(u.guildId(), u.id()).block(); // todo
+            Member member = discordService.gateway().getMemberById(u.guildId(), u.id()).block();
             if(isActiveUser(u)){
                 member.addRole(activeUserRoleID).block();
             }else{

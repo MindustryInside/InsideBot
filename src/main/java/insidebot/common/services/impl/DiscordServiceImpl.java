@@ -10,6 +10,8 @@ import discord4j.gateway.intent.*;
 import insidebot.Settings;
 import insidebot.common.services.DiscordService;
 import insidebot.event.EventHandler;
+import insidebot.event.dispatcher.*;
+import insidebot.event.dispatcher.EventListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
@@ -24,9 +26,13 @@ public class DiscordServiceImpl implements DiscordService{
     private Settings settings;
 
     @Autowired(required = false)
-    private List<EventHandler<? super Event>> handlers;
+    private List<EventHandler<? super Event>> handlers = new ArrayList<>();
+
+    @Autowired
+    private List<Events> events;
 
     protected GatewayDiscordClient gateway;
+    protected EventListener eventListener;
 
     @PostConstruct
     public void init(){
@@ -47,6 +53,12 @@ public class DiscordServiceImpl implements DiscordService{
                                .login()
                                .block();
 
+        eventListener = EventListener.buffering();
+
+        Flux.fromIterable(events)
+            .filter(Objects::nonNull)
+            .subscribe(e -> eventListener.on(e).subscribe(), Log::err);
+
         Flux.fromIterable(handlers)
             .filter(Objects::nonNull)
             .subscribe(e -> {
@@ -66,6 +78,11 @@ public class DiscordServiceImpl implements DiscordService{
     @Override
     public GatewayDiscordClient gateway(){
         return gateway;
+    }
+
+    @Override
+    public EventListener eventListener(){
+        return eventListener;
     }
 
     @Override
