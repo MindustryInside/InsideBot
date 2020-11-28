@@ -40,7 +40,7 @@ public class LocalMember extends GuildEntity{
 
     @Transient
     public void addToSeq(){
-        messageSeq += 1;
+        messageSeq++;
     }
 
     public LocalUser user(){

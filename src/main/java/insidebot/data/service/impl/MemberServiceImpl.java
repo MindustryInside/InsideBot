@@ -1,5 +1,6 @@
 package insidebot.data.service.impl;
 
+import arc.util.Log;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import discord4j.rest.util.Permission;
@@ -7,15 +8,21 @@ import insidebot.common.services.DiscordService;
 import insidebot.data.entity.LocalMember;
 import insidebot.data.repository.LocalMemberRepository;
 import insidebot.data.service.MemberService;
+import insidebot.event.dispatcher.EventType;
+import insidebot.event.dispatcher.EventType.MemberUnmuteEvent;
 import org.joda.time.*;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.*;
 import reactor.util.annotation.NonNull;
 
+import java.util.Objects;
 import java.util.function.Supplier;
+
+import static insidebot.InsideBot.activeUserRoleID;
 
 @Service
 public class MemberServiceImpl implements MemberService{
@@ -76,34 +83,36 @@ public class MemberServiceImpl implements MemberService{
         return get(guildId, userId) != null;
     }
 
-    @Scheduled(cron = "* */2 * * * *")
+    @Scheduled(cron = "0 */2 * * * *")
     public void unmuteUsers(){
-        // Flux.fromIterable(repository.findAll()).filter(i -> i != null && isMuteEnd(i))
-        //           .subscribe(l -> {
-        //               discordService.eventListener().publish(new MemberUnmuteEvent(discordService.gateway().getGuildById(l.guildId()).block(), l));
-        //           }, Log::err);
+        Flux.fromIterable(repository.findAll()).filter(i -> i != null && isMuteEnd(i))
+            .subscribe(l -> {
+                discordService.eventListener().publish(new MemberUnmuteEvent(discordService.gateway().getGuildById(l.guildId()).block(), l));
+            }, Log::err);
     }
 
     @Scheduled(cron = "0 * * * * *")
     public void activeUsers(){
-        // Flux.fromIterable(repository.findAll()).filterWhen(u -> {
-        //     return discordService.gateway().getMemberById(u.guildId(), u.id()).map(Objects::nonNull).filterWhen(b -> {
-        //         return b ? Mono.just(true) : Mono.fromRunnable(() -> log.warn("User '{}' not found", u.effectiveName()));
-        //     });
-        // }).subscribe(u -> {
-        //     Member member = discordService.gateway().getMemberById(u.guildId(), u.id()).block();
-        //     if(isActiveUser(u)){
-        //         member.addRole(activeUserRoleID).block();
-        //     }else{
-        //         member.removeRole(activeUserRoleID).block();
-        //     }
-        // }, Log::err);
+        Flux.fromIterable(repository.findAll()).filterWhen(u -> {
+            return discordService.gateway().getMemberById(u.guildId(), u.id()).map(Objects::nonNull).filterWhen(b -> {
+                return b ? Mono.just(true) : Mono.fromRunnable(() -> log.warn("User '{}' not found", u.effectiveName()));
+            });
+        }).subscribe(u -> {
+            Member member = discordService.gateway().getMemberById(u.guildId(), u.id()).block();
+            if(isActiveUser(u)){
+                member.addRole(activeUserRoleID).block();
+            }else{
+                member.removeRole(activeUserRoleID).block();
+            }
+        }, Log::err);
     }
 
     @Override
     public boolean isAdmin(Member member){
-        return member != null && member.getRoles().map(Role::getPermissions).any(r -> r.contains(Permission.ADMINISTRATOR))
-                                       .blockOptional().orElse(false);
+        return member != null && (member.getGuild().map(Guild::getOwnerId).map(s -> member.getId().equals(s))
+                                        .blockOptional().orElse(false) ||
+                                  member.getRoles().map(Role::getPermissions).any(r -> r.contains(Permission.ADMINISTRATOR))
+                                        .blockOptional().orElse(false));
     }
 
     protected boolean isMuteEnd(@NonNull LocalMember member){
