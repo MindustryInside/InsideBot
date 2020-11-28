@@ -33,6 +33,9 @@ public class MessageCreateHandler implements EventHandler<MessageCreateEvent>{
     private CommandHandler commandHandler;
 
     @Autowired
+    private GuildService guildService;
+
+    @Autowired
     private Settings settings;
 
     @Override
@@ -51,6 +54,8 @@ public class MessageCreateHandler implements EventHandler<MessageCreateEvent>{
         MessageInfo info = new MessageInfo();
         Snowflake userId = user.getId();
         LocalMember localMember = memberService.getOr(guildId, userId, LocalMember::new);
+
+        GuildConfig guildConfig = guildService.getOr(guildId, () -> new GuildConfig(guildId, settings.locale, settings.prefix));
 
         if(localMember.user() == null){
             LocalUser localUser = userService.getOr(userId, LocalUser::new);
@@ -81,6 +86,7 @@ public class MessageCreateHandler implements EventHandler<MessageCreateEvent>{
         if(memberService.isAdmin(member)){
             handleResponse(commandHandler.handleMessage(message.getContent(), reference, event), message.getChannel().block());
         }
+        guildService.save(guildConfig);
         memberService.save(localMember);
         return Mono.empty();
     }

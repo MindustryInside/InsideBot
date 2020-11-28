@@ -30,15 +30,14 @@ public class MemberJoinHandler extends AuditEventHandler<MemberJoinEvent>{
     @Override
     public Mono<Void> onEvent(MemberJoinEvent event){
         User user = discordService.gateway().getUserById(event.getMember().getId()).block();
+        if(DiscordUtil.isBot(user)) return Mono.empty();
 
-        Mono<Void> publishLog = log(embedBuilder -> {
+        return log(embedBuilder -> {
             embedBuilder.setColor(userJoin.color);
             embedBuilder.setTitle(messageService.get("message.user-join"));
             embedBuilder.setDescription(messageService.format("message.user-join.text", user.getUsername()));
             embedBuilder.setFooter(MessageUtil.zonedFormat(), null);
         });
-
-        return Mono.justOrEmpty(user).flatMap(u -> !DiscordUtil.isBot(u) ? publishLog : Mono.empty());
     }
 
     @Override
