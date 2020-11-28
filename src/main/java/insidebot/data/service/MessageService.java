@@ -6,12 +6,18 @@ import insidebot.data.entity.MessageInfo;
 import org.springframework.lang.NonNull;
 import reactor.core.publisher.Mono;
 
+import java.util.Locale;
+
 public interface MessageService{
 
     //bundle
     String get(@NonNull String key);
 
+    String get(@NonNull String key, Locale locale);
+
     String format(@NonNull String key, Object... args);
+
+    String format(@NonNull String key, Locale locale, Object... args);
 
     //send
     Mono<Void> text(MessageChannel channel, String text, Object... args);

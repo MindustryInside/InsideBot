@@ -19,7 +19,7 @@ public abstract class GuildEntity extends BaseEntity{
     }
 
     public void guildId(@NonNull Snowflake guildId){
-        this.id = guildId.asString();
+        this.guildId = guildId.asString();
     }
 
     @Override

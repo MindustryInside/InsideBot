@@ -5,8 +5,10 @@ import insidebot.data.entity.LocalMember;
 import insidebot.data.service.MemberService;
 import insidebot.util.DiscordUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
+@Component
 public class MemberUpdateHandler implements EventHandler<MemberUpdateEvent>{
     @Autowired
     private MemberService memberService;

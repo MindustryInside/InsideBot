@@ -11,10 +11,10 @@ import reactor.util.annotation.NonNull;
 @Repository
 public interface LocalMemberRepository extends GuildRepository<LocalMember>{
 
-    @Query("select m from LocalMember m where m.guildId = :guildId and m.user.userId = :userId")
-    LocalMember findByGuildIdAndUserId(@Param("guildId") String guildId, @Param("userId") String userId);
+    @Query("select m from LocalMember m where m.guildId = :guildId and m.id = :userId")
+    LocalMember findByGuildIdAndId(@Param("guildId") String guildId, @Param("userId") String userId);
 
-    default LocalMember findByGuildIdAndUserId(@NonNull Snowflake guildId, @NonNull Snowflake userId){
-        return findByGuildIdAndUserId(guildId.asString(), userId.asString());
+    default LocalMember findByGuildIdAndId(@NonNull Snowflake guildId, @NonNull Snowflake userId){
+        return findByGuildIdAndId(guildId.asString(), userId.asString());
     }
 }

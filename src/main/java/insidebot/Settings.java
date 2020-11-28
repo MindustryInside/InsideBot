@@ -11,7 +11,6 @@ public class Settings{
     @Value("${spring.application.token}")
     public String token;
 
-    @Value("#{new java.util.Locale('${spring.application.locale')}")
     public Locale locale = Locale.ROOT;
 
     public String prefix = "$";

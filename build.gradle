@@ -13,11 +13,20 @@ repositories{
 ext{
     arcVersion        = 'v115'
     jobaVersion       = 'v2.10.8'
-    discord4jVersion  = '3.1.1'
+    discord4jVersion  = '3.1.2'
 
     jaxbVersion       = '2.3.1'
     hibernateVersion  = '5.4.24.Final'
     postgresqlVersion = '42.2.5'
+}
+
+tasks.withType(JavaCompile){
+    options.encoding = "UTF-8"
+    options.compilerArgs += ["--enable-preview"]
+}
+
+tasks.withType(JavaExec) {
+    jvmArgs += "--enable-preview"
 }
 
 sourceSets.main.java.srcDirs = ["src/main/java/"]

@@ -1,19 +1,27 @@
 package insidebot.common.command.service;
 
 import arc.struct.Seq;
+import arc.util.Log;
+import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.MessageCreateEvent;
-import insidebot.common.command.model.base.CommandReference;
+import insidebot.common.command.model.base.*;
+import org.springframework.beans.factory.annotation.*;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class CommandHandler extends BaseCommandHandler{
 
-    public CommandHandler(String prefix){
-        super(prefix);
-    }
-
     @Override
     public CommandResponse handleMessage(String message, CommandReference reference, MessageCreateEvent event){
+        Snowflake guildId = event.getGuildId().orElse(null);
+        if(guildId == null){
+            return new CommandResponse(ResponseType.noCommand, null, null);
+        }
+
+        String prefix = guildService.prefix(guildId);
+
         if(message == null || (!message.startsWith(prefix))){
             return new CommandResponse(ResponseType.noCommand, null, null);
         }

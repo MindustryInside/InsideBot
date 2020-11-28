@@ -2,13 +2,14 @@ package insidebot.data.repository.base;
 
 import discord4j.common.util.Snowflake;
 import insidebot.data.entity.base.GuildEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.NoRepositoryBean;
 import reactor.util.annotation.NonNull;
 
 import java.util.List;
 
 @NoRepositoryBean
-public interface GuildRepository<T extends GuildEntity> extends BaseRepository<T, String>{
+public interface GuildRepository<T extends GuildEntity> extends JpaRepository<T, String>{
 
     T findByGuildId(@NonNull String guildId);
 

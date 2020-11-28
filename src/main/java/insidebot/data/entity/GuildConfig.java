@@ -1,7 +1,7 @@
 package insidebot.data.entity;
 
 import discord4j.common.util.Snowflake;
-import insidebot.data.entity.base.GuildEntity;
+import insidebot.data.entity.base.*;
 import reactor.util.annotation.NonNull;
 
 import javax.persistence.*;
@@ -9,7 +9,7 @@ import java.util.Locale;
 
 @Entity
 @Table(name = "guild_config")
-public class GuildConfig extends GuildEntity{
+public class GuildConfig extends BaseEntity{
 
     @NonNull
     @Column
@@ -22,18 +22,22 @@ public class GuildConfig extends GuildEntity{
     public GuildConfig(){}
 
     public GuildConfig(@NonNull Snowflake guildId, @NonNull Locale locale, @NonNull String prefix){
-        guildId(guildId);
+        id(guildId);
         locale(locale);
         this.prefix = prefix;
     }
 
     @NonNull
-    public String locale(){
-        return locale;
+    public Locale locale(){
+        return new Locale(locale);
     }
 
     public void locale(@NonNull Locale locale){
-        this.locale = locale.toString();
+        locale(locale.toString());
+    }
+
+    public void locale(@NonNull String locale){
+        this.locale = locale;
     }
 
     @NonNull

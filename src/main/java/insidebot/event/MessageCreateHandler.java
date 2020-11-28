@@ -53,19 +53,25 @@ public class MessageCreateHandler implements EventHandler<MessageCreateEvent>{
         if(guildId == null || member == null) return Mono.empty();
         MessageInfo info = new MessageInfo();
         Snowflake userId = user.getId();
-        LocalMember localMember = memberService.getOr(guildId, userId, LocalMember::new);
+        LocalMember localMember = memberService.getOr(member, LocalMember::new);
 
-        GuildConfig guildConfig = guildService.getOr(guildId, () -> new GuildConfig(guildId, settings.locale, settings.prefix));
+        if(!guildService.exists(guildId)){
+            GuildConfig guildConfig = new GuildConfig(guildId, settings.locale, settings.prefix);
+            guildService.save(guildConfig);
+        }
 
         if(localMember.user() == null){
             LocalUser localUser = userService.getOr(userId, LocalUser::new);
+            localUser.userId(userId);
             localUser.name(user.getUsername());
             localUser.discriminator(user.getDiscriminator());
             localMember.user(localUser);
+            userService.save(localUser);
         }
 
         localMember.effectiveName(member.getNickname().isPresent() ? member.getNickname().get() : member.getUsername());
         localMember.id(userId);
+        localMember.guildId(guildId);
         localMember.lastSentMessage(Calendar.getInstance());
         localMember.addToSeq();
 
@@ -83,11 +89,11 @@ public class MessageCreateHandler implements EventHandler<MessageCreateEvent>{
                 .member(member)
                 .user(user);
 
-        if(memberService.isAdmin(member)){
+        /*if(memberService.isAdmin(member)){*/
             handleResponse(commandHandler.handleMessage(message.getContent(), reference, event), message.getChannel().block());
-        }
-        guildService.save(guildConfig);
+        /*}*/
         memberService.save(localMember);
+        messageService.save(info);
         return Mono.empty();
     }
 

@@ -30,7 +30,7 @@ public class GuildServiceImpl implements GuildService{
     @Override
     @Transactional(readOnly = true)
     public GuildConfig get(Snowflake guildId){
-        return repository.findByGuildId(guildId);
+        return repository.findById(guildId.asString()).orElse(null);
     }
 
     @Override
@@ -48,7 +48,7 @@ public class GuildServiceImpl implements GuildService{
     @Override
     @Transactional(readOnly = true)
     public boolean exists(Snowflake guildId){
-        return repository.existsByGuildId(guildId);
+        return repository.existsById(guildId.asString());
     }
 
     @Override

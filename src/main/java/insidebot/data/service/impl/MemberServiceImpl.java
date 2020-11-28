@@ -1,29 +1,21 @@
 package insidebot.data.service.impl;
 
-import arc.Events;
-import arc.util.Log;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import discord4j.rest.util.Permission;
-import insidebot.event.dispatcher.EventType;
 import insidebot.common.services.DiscordService;
-import insidebot.data.entity.*;
+import insidebot.data.entity.LocalMember;
 import insidebot.data.repository.LocalMemberRepository;
 import insidebot.data.service.MemberService;
-import insidebot.event.dispatcher.EventType.MemberUnmuteEvent;
 import org.joda.time.*;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Mono;
 import reactor.util.annotation.NonNull;
 
-import java.util.Objects;
 import java.util.function.Supplier;
-
-import static insidebot.InsideBot.activeUserRoleID;
 
 @Service
 public class MemberServiceImpl implements MemberService{
@@ -51,25 +43,25 @@ public class MemberServiceImpl implements MemberService{
     @Override
     @Transactional(readOnly = true)
     public LocalMember get(Snowflake guildId, Snowflake userId){
-        return repository.findByGuildIdAndUserId(guildId, userId);
+        return repository.findByGuildIdAndId(guildId, userId);
     }
 
     @Override
     @Transactional
     public LocalMember getOr(Member member, Supplier<LocalMember> prov){
-        return get(member) != null ? get(member) : prov.get();
+        return exists(member.getGuildId(), member.getId()) ? get(member) : prov.get();
     }
 
     @Override
     @Transactional
     public LocalMember getOr(Guild guild, User user, Supplier<LocalMember> prov){
-        return get(guild, user) != null ? get(guild, user) : prov.get();
+        return exists(guild.getId(), user.getId()) ? get(guild, user) : prov.get();
     }
 
     @Override
     @Transactional
     public LocalMember getOr(Snowflake guildId, Snowflake userId, Supplier<LocalMember> prov){
-        return get(guildId, userId) != null ? get(guildId, userId) : prov.get();
+        return exists(guildId, userId) ? get(guildId, userId) : prov.get();
     }
 
     @Override
@@ -84,28 +76,28 @@ public class MemberServiceImpl implements MemberService{
         return get(guildId, userId) != null;
     }
 
-    @Scheduled(cron = "*/2 * * * *")
+    @Scheduled(cron = "* */2 * * * *")
     public void unmuteUsers(){
-        repository.getAll().filter(i -> i != null && isMuteEnd(i))
-                  .subscribe(l -> {
-                      discordService.eventListener().publish(new MemberUnmuteEvent(discordService.gateway().getGuildById(l.guildId()).block(), l));
-                  }, Log::err);
+        // Flux.fromIterable(repository.findAll()).filter(i -> i != null && isMuteEnd(i))
+        //           .subscribe(l -> {
+        //               discordService.eventListener().publish(new MemberUnmuteEvent(discordService.gateway().getGuildById(l.guildId()).block(), l));
+        //           }, Log::err);
     }
 
-    @Scheduled(cron = "* * * * *")
+    @Scheduled(cron = "0 * * * * *")
     public void activeUsers(){
-        repository.getAll().filterWhen(u -> {
-            return discordService.gateway().getMemberById(u.guildId(), u.id()).map(Objects::nonNull).filterWhen(b -> {
-                return b ? Mono.just(true) : Mono.fromRunnable(() -> log.warn("User '{}' not found", u.effectiveName()));
-            });
-        }).subscribe(u -> {
-            Member member = discordService.gateway().getMemberById(u.guildId(), u.id()).block();
-            if(isActiveUser(u)){
-                member.addRole(activeUserRoleID).block();
-            }else{
-                member.removeRole(activeUserRoleID).block();
-            }
-        }, Log::err);
+        // Flux.fromIterable(repository.findAll()).filterWhen(u -> {
+        //     return discordService.gateway().getMemberById(u.guildId(), u.id()).map(Objects::nonNull).filterWhen(b -> {
+        //         return b ? Mono.just(true) : Mono.fromRunnable(() -> log.warn("User '{}' not found", u.effectiveName()));
+        //     });
+        // }).subscribe(u -> {
+        //     Member member = discordService.gateway().getMemberById(u.guildId(), u.id()).block();
+        //     if(isActiveUser(u)){
+        //         member.addRole(activeUserRoleID).block();
+        //     }else{
+        //         member.removeRole(activeUserRoleID).block();
+        //     }
+        // }, Log::err);
     }
 
     @Override

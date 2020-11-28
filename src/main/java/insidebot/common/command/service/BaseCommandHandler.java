@@ -1,23 +1,30 @@
 package insidebot.common.command.service;
 
-import arc.struct.*;
+import arc.struct.ObjectMap;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import insidebot.common.command.model.base.*;
-import insidebot.data.service.MessageService;
+import insidebot.data.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Flux;
 
-import java.util.List;
+import javax.annotation.PostConstruct;
+import java.util.*;
 
 public abstract class BaseCommandHandler{
     protected ObjectMap<String, Command> commands = new ObjectMap<>();
-    protected String prefix;
 
     @Autowired
-    protected List<CommandRunner> orderedCommands;
+    protected GuildService guildService;
 
-    public BaseCommandHandler(String prefix){
-        this.prefix = prefix;
+    @Autowired(required = false)
+    protected List<CommandRunner> orderedCommands = new ArrayList<>();
+
+    @PostConstruct
+    public void init(){
+        orderedCommands.forEach(c -> {
+            Command command = c.compile();
+            commands.put(command.text, command);
+        });
     }
 
     public ObjectMap<String, Command> commands(){
@@ -32,41 +39,20 @@ public abstract class BaseCommandHandler{
         return Flux.fromIterable(orderedCommands);
     }
 
-    public void setPrefix(String prefix){
-        this.prefix = prefix;
-    }
-
     public abstract CommandResponse handleMessage(String message, CommandReference reference, MessageCreateEvent event);
-
-    public void removeCommand(String text){
-        Command c = commands.get(text);
-        if(c == null) return;
-        commands.remove(text);
-        orderedCommands.remove(c);
-    }
-
-    public Command register(CommandRunner runner){
-        Command cmd = runner.compile();
-        commands.put(cmd.text.toLowerCase(), cmd);
-        orderedCommands.add(runner);
-        return cmd;
-    }
 
     public static class Command{
         public final String text;
         public final String paramText;
-        public final String description;
         public final CommandParam[] params;
-        final CommandRunner runner;
-
-        @Autowired
-        private MessageService messageService;
+        protected final CommandRunner runner;
+        public String description;
 
         public Command(String text, String paramText, String description, CommandRunner runner){
             this.text = text;
             this.paramText = paramText;
             this.runner = runner;
-            this.description = messageService.get(description);
+            this.description = description;
 
             String[] psplit = paramText.split(" ");
             if(paramText.length() == 0){
