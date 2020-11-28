@@ -10,6 +10,7 @@ import insidebot.common.services.DiscordService;
 import insidebot.data.entity.*;
 import insidebot.data.repository.LocalMemberRepository;
 import insidebot.data.service.MemberService;
+import insidebot.event.dispatcher.EventType.MemberUnmuteEvent;
 import org.joda.time.*;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,7 +87,9 @@ public class MemberServiceImpl implements MemberService{
     @Scheduled(cron = "*/2 * * * *")
     public void unmuteUsers(){
         repository.getAll().filter(i -> i != null && isMuteEnd(i))
-                  .subscribe(info -> Events.fire(new EventType.MemberUnmuteEvent(info)), Log::err);
+                  .subscribe(l -> {
+                      discordService.eventListener().publish(new MemberUnmuteEvent(discordService.gateway().getGuildById(l.guildId()).block(), l));
+                  }, Log::err);
     }
 
     @Scheduled(cron = "* * * * *")
