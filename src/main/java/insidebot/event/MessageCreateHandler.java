@@ -89,9 +89,9 @@ public class MessageCreateHandler implements EventHandler<MessageCreateEvent>{
                 .member(member)
                 .user(user);
 
-        /*if(memberService.isAdmin(member)){*/
+        if(memberService.isAdmin(member)){
             handleResponse(commandHandler.handleMessage(message.getContent(), reference, event), message.getChannel().block());
-        /*}*/
+        }
         memberService.save(localMember);
         messageService.save(info);
         return Mono.empty();
