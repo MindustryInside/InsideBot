@@ -11,9 +11,6 @@ public class Settings{
     @Value("${spring.application.token}")
     public String token;
 
-    @Value("#{new Boolean('${spring.application.debug')}")
-    public boolean debug = false;
-
     @Value("#{new java.util.Locale('${spring.application.locale')}")
     public Locale locale = Locale.ROOT;
 

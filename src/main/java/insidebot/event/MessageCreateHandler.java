@@ -53,7 +53,7 @@ public class MessageCreateHandler implements EventHandler<MessageCreateEvent>{
         LocalMember localMember = memberService.getOr(guildId, userId, LocalMember::new);
 
         if(localMember.user() == null){
-            LocalUser localUser = userService.getById(userId);
+            LocalUser localUser = userService.getOr(userId, LocalUser::new);
             localUser.name(user.getUsername());
             localUser.discriminator(user.getDiscriminator());
             localMember.user(localUser);

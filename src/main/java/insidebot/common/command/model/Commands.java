@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.time.Duration;
 import java.util.List;
 
 @Service
@@ -168,7 +167,7 @@ public final class Commands{
                 messageService.text(channel, messageService.format("message.warn", m.getUsername(), warningStrings[Mathf.clamp(warnings - 1, 0, warningStrings.length - 1)]));
 
                 if(warnings >= 3){
-                    event.getGuild().block().ban(m.getId(), b -> b.setDeleteMessageDays(0)).block();
+                    event.getGuild().flatMap(g -> g.ban(m.getId(), b -> b.setDeleteMessageDays(0))).block();
                 }else{
                     memberService.save(info);
                 }
@@ -184,7 +183,16 @@ public final class Commands{
     public class WarningsCommand implements CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
-            return null;
+            MessageChannel channel = event.getMessage().getChannel().block();
+            try{
+                LocalMember info = memberService.get(event.getGuildId().orElseThrow(RuntimeException::new), MessageUtil.parseUserId(args[0]));
+                int warnings = info.warns();
+                messageService.text(channel, messageService.format("command.warnings", info.effectiveName(), warnings, warnings == 1 ? messageService.get("command.warn") : messageService.get("command.warns")));
+            }catch(Exception e){
+                messageService.err(channel, messageService.get("command.incorrect-name"));
+            }
+
+            return Mono.empty();
         }
     }
 
@@ -192,7 +200,24 @@ public final class Commands{
     public class UnwarnCommand implements CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
-            return null;
+            MessageChannel channel = event.getMessage().getChannel().block();
+            if(args.length > 1 && !MessageUtil.canParseInt(args[1])){
+                messageService.text(channel, messageService.get("command.incorrect-number"));
+                return Mono.empty();
+            }
+
+            int warnings = args.length > 1 ? Strings.parseInt(args[1]) : 1;
+
+            try{
+                LocalMember info = memberService.get(event.getGuildId().orElseThrow(RuntimeException::new), MessageUtil.parseUserId(args[0]));
+                info.warns(info.warns() - warnings);
+                messageService.text(channel, messageService.format("command.unwarn", info.effectiveName(), warnings, warnings == 1 ? messageService.get("command.warn") : messageService.get("command.warns")));
+                memberService.save(info);
+            }catch(Exception e){
+                messageService.err(channel, messageService.get("command.incorrect-name"));
+            }
+
+            return Mono.empty();
         }
     }
 
@@ -206,6 +231,7 @@ public final class Commands{
             }catch(Exception e){
                 messageService.err(event.getMessage().getChannel().block(), messageService.get("command.incorrect-name"));
             }
+
             return Mono.empty();
         }
     }
