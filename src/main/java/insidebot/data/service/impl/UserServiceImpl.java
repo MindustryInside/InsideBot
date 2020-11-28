@@ -1,5 +1,6 @@
 package insidebot.data.service.impl;
 
+import discord4j.common.util.Snowflake;
 import insidebot.data.entity.LocalUser;
 import insidebot.data.repository.LocalUserRepository;
 import insidebot.data.service.UserService;
@@ -23,19 +24,19 @@ public class UserServiceImpl implements UserService{
 
     @Override
     @Transactional
-    public LocalUser getOr(String userId, Supplier<LocalUser> prov){
+    public LocalUser getOr(Snowflake userId, Supplier<LocalUser> prov){
         return exists(userId) ? getById(userId) : prov.get();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public boolean exists(String userId){
-        return repository.existsById(userId);
+    public boolean exists(Snowflake userId){
+        return repository.existsById(userId.asString());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public LocalUser getById(@NonNull String userId){
+    public LocalUser getById(@NonNull Snowflake userId){
         return repository.findByUserId(userId);
     }
 
@@ -53,7 +54,7 @@ public class UserServiceImpl implements UserService{
 
     @Override
     @Transactional
-    public void deleteById(@NonNull String userId){
-        repository.deleteById(userId);
+    public void deleteById(@NonNull Snowflake userId){
+        repository.deleteById(userId.asString());
     }
 }

@@ -29,25 +29,13 @@ public interface MessageService{
     Mono<Void> err(MessageChannel channel, String title, String text, Object... args);
 
     //data
-    MessageInfo getById(@NonNull String messageId);
+    MessageInfo getById(@NonNull Snowflake messageId);
 
-    boolean exists(@NonNull String messageId);
-
-    default boolean exists(@NonNull Snowflake messageId){
-        return exists(messageId.asString());
-    }
-
-    default MessageInfo getById(@NonNull Snowflake messageId){
-        return getById(messageId.asString());
-    }
+    boolean exists(@NonNull Snowflake messageId);
 
     MessageInfo save(@NonNull MessageInfo message);
 
     void delete(@NonNull MessageInfo message);
 
-    void deleteById(@NonNull String memberId);
-
-    default void deleteById(@NonNull Snowflake memberId){
-        deleteById(memberId.asString());
-    }
+    void deleteById(@NonNull Snowflake memberId);
 }

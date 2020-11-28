@@ -10,31 +10,15 @@ public interface UserService{
 
     LocalUser get(@NonNull LocalUser user);
 
-    LocalUser getOr(@NonNull String userId, Supplier<LocalUser> prov);
+    LocalUser getOr(@NonNull Snowflake userId, Supplier<LocalUser> prov);
 
-    default LocalUser getOr(@NonNull Snowflake userId, Supplier<LocalUser> prov){
-        return getOr(userId.asString(), prov);
-    }
+    boolean exists(@NonNull Snowflake userId);
 
-    boolean exists(@NonNull String userId);
-
-    default boolean exists(@NonNull Snowflake userId){
-        return exists(userId.asString());
-    }
-
-    LocalUser getById(@NonNull String userId);
-
-    default LocalUser getById(@NonNull Snowflake userId){
-        return getById(userId.asString());
-    }
+    LocalUser getById(@NonNull Snowflake userId);
 
     LocalUser save(@NonNull LocalUser user);
 
     void delete(@NonNull LocalUser user);
 
-    void deleteById(@NonNull String userId);
-
-    default void deleteById(@NonNull Snowflake userId){
-        deleteById(userId.asString());
-    }
+    void deleteById(@NonNull Snowflake userId);
 }

@@ -8,7 +8,6 @@ import insidebot.common.services.DiscordService;
 import insidebot.data.entity.LocalMember;
 import insidebot.data.repository.LocalMemberRepository;
 import insidebot.data.service.MemberService;
-import insidebot.event.dispatcher.EventType;
 import insidebot.event.dispatcher.EventType.MemberUnmuteEvent;
 import org.joda.time.*;
 import org.slf4j.Logger;

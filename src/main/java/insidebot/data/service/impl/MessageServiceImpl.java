@@ -1,6 +1,7 @@
 package insidebot.data.service.impl;
 
 import arc.util.Strings;
+import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.channel.MessageChannel;
 import insidebot.Settings;
 import insidebot.data.entity.MessageInfo;
@@ -73,13 +74,13 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     @Transactional(readOnly = true)
-    public boolean exists(String messageId){
-        return repository.existsById(messageId);
+    public boolean exists(Snowflake messageId){
+        return repository.existsById(messageId.asString());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public MessageInfo getById(@NonNull String messageId){
+    public MessageInfo getById(@NonNull Snowflake messageId){
         return repository.findById(messageId).orElse(null);
     }
 
@@ -97,7 +98,7 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     @Transactional
-    public void deleteById(@NonNull String memberId){
-        repository.deleteById(memberId);
+    public void deleteById(@NonNull Snowflake memberId){
+        repository.deleteById(memberId.asString());
     }
 }
