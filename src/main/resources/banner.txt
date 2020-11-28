@@ -4,4 +4,4 @@ ${AnsiStyle.BOLD}${Ansi.CYAN}   | || '_ \/ __| |/ _` |/ _ \
 ${AnsiStyle.BOLD}${Ansi.CYAN}   | || | | \__ \ | (_| |  __/
 ${AnsiStyle.BOLD}${Ansi.CYAN}  |___|_| |_|___/_|\__,_|\___|
 ${AnsiStyle.BOLD}${Ansi.CYAN}
-${Ansi.RED} :: Spring Boot${spring-boot.formatted-version} :: ${Ansi.DEFAULT}
+${Ansi.RED} :: Spring Boot${spring-boot.formatted-version} :: ${Ansi.DEFAULT}${AnsiStyle.NORMAL}
