@@ -18,10 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.*;
 import reactor.util.annotation.NonNull;
 
-import java.util.Objects;
 import java.util.function.Supplier;
-
-import static insidebot.InsideBot.activeUserRoleID;
 
 @Service
 public class MemberServiceImpl implements MemberService{
@@ -111,10 +108,12 @@ public class MemberServiceImpl implements MemberService{
             }))
             .subscribe(l -> {
                 Member member = discordService.gateway().getMemberById(l.guildId(), l.id()).block();
+                if(member == null) return; // нереально
+                Snowflake roleId = guildService.activeUserRoleId(member.getGuildId());
                 if(isActiveUser(l)){
-                    member.addRole(activeUserRoleID).block();
+                    member.addRole(roleId).block();
                 }else{
-                    member.removeRole(activeUserRoleID).block();
+                    member.removeRole(roleId).block();
                 }
         }, Log::err);
     }
