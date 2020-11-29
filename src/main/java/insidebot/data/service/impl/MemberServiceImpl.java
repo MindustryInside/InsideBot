@@ -146,4 +146,18 @@ public class MemberServiceImpl implements MemberService{
             return false;
         }else return member.messageSeq() >= 75;
     }
+
+    @Override
+    public String detailName(Member member){
+        String name = member.getUsername();
+        if(member.getNickname().isPresent()){
+            name += String.format(" (%s)", member.getNickname().get());
+        }
+        return name;
+    }
+
+    @Override
+    public String effectiveName(Member member){
+        return member.getNickname().isPresent() ? member.getNickname().get() : member.getUsername();
+    }
 }

@@ -1,14 +1,14 @@
 package insidebot.event.dispatcher.impl;
 
+import discord4j.core.object.Embed;
 import discord4j.core.object.entity.Member;
-import discord4j.discordjson.json.UserData;
 import insidebot.common.services.DiscordService;
 import insidebot.data.entity.LocalMember;
 import insidebot.data.service.*;
 import insidebot.event.MessageEventHandler;
 import insidebot.event.dispatcher.EventType.*;
 import insidebot.event.dispatcher.Events;
-import insidebot.util.MessageUtil;
+import insidebot.util.*;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,13 +53,20 @@ public class EventsImpl extends Events{
 
             StringBuilder builder = new StringBuilder();
             event.history.forEach(m -> {
-                UserData data =  m.getUserData();
+                Member member = m.getAuthorAsMember().block();
                 builder.append('[').append(MessageUtil.dateTime().withZone(ZoneId.systemDefault()).format(m.getTimestamp())).append("] ");
-                if(!data.bot().isAbsent()){
+                if(!DiscordUtil.isBot(member)){
                     builder.append("[BOT] ");
                 }
-                builder.append(data.username()).append(" > ");
-                builder.append(MessageUtil.effectiveContent(m));
+                builder.append(memberService.detailName(member)).append(" > ");
+                if(!MessageUtil.isEmpty(m.getContent())) builder.append(MessageUtil.effectiveContent(m));
+                for(int i = 0; i < m.getEmbeds().size(); i++){
+                    Embed e = m.getEmbeds().get(i);
+                    builder.append("\n[embed-").append(i).append(']');
+                    if(e.getDescription().isPresent()){
+                        builder.append('\n').append(e.getDescription().get());
+                    }
+                }
                 builder.append('\n');
             });
 
