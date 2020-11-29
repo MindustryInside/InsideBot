@@ -1,7 +1,6 @@
 package insidebot.common.services;
 
 import discord4j.common.util.Snowflake;
-import discord4j.rest.util.Color;
 
 import java.util.Locale;
 
@@ -13,13 +12,9 @@ public interface ContextService{
 
     void locale(Locale locale);
 
-    Color color();
+    Locale localeOrDefault(String locale);
 
-    void color(Color color);
-
-    Locale locale(String locale);
-
-    Locale locale(Snowflake guildId);
+    Locale localeOrDefault(Snowflake guildId);
 
     void reset();
 }

@@ -11,8 +11,6 @@ public class Settings{
     @Value("${spring.application.token}")
     public String token;
 
-    public Locale locale = Locale.ROOT;
-
     public String prefix = "$";
 
     public Color normalColor = Color.of(0xC4F5B7);

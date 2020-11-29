@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
-import java.util.function.Function;
 
 @Service
 public class Commands{
@@ -112,9 +111,9 @@ public class Commands{
                 }
 
                 if(args[0] != null){
-                    c.locale(context.locale(args[0]));
+                    c.locale(context.localeOrDefault(args[0]));
                     guildService.save(c);
-                    context.locale(context.locale(args[0]));
+                    context.locale(context.localeOrDefault(args[0]));
                     return messageService.text(channel, messageService.format("command.config.locale-updated", r.get()));
                 }
             }

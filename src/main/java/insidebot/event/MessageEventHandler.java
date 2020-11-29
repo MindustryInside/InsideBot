@@ -5,7 +5,7 @@ import arc.util.Strings;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.*;
-import discord4j.core.object.Embed;
+import discord4j.core.object.*;
 import discord4j.core.object.audit.*;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
@@ -68,12 +68,14 @@ public class MessageEventHandler extends AuditEventHandler{
         Snowflake userId = user.getId();
         LocalMember localMember = memberService.getOr(member, LocalMember::new);
 
-        context.init(guildId);
 
         if(!guildService.exists(guildId)){
-            GuildConfig guildConfig = new GuildConfig(guildId, settings.locale, settings.prefix);
+            Region region = event.getGuild().flatMap(Guild::getRegion).block();
+            GuildConfig guildConfig = new GuildConfig(guildId, LocaleUtil.get(region), settings.prefix);
             guildService.save(guildConfig);
         }
+
+        context.init(guildId);
 
         if(localMember.user() == null){
             LocalUser localUser = userService.getOr(userId, LocalUser::new);

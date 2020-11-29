@@ -1,6 +1,8 @@
 package insidebot.util;
 
 import arc.struct.ObjectMap;
+import arc.struct.ObjectMap.Entry;
+import discord4j.core.object.Region;
 
 import java.util.*;
 
@@ -18,6 +20,13 @@ public class LocaleUtil{
             enLocale, Locale.US,
             defaultLocale, Locale.ROOT
         );
+    }
+
+    public static Locale get(Region region) {
+        for(Entry<String, Locale> e : locales){
+            if(e.key.equalsIgnoreCase(region.getName().substring(0, 2))) return e.value;
+        }
+        return getDefaultLocale();
     }
 
     public static Locale get(String tag) {
