@@ -11,13 +11,9 @@ import java.util.Locale;
 public interface MessageService{
 
     //bundle
-    String get(@NonNull String key);
+    String get(String key);
 
-    String get(@NonNull String key, Locale locale);
-
-    String format(@NonNull String key, Object... args);
-
-    String format(@NonNull String key, Locale locale, Object... args);
+    String format(String key, Object... args);
 
     //send
     Mono<Void> text(MessageChannel channel, String text, Object... args);
@@ -29,13 +25,13 @@ public interface MessageService{
     Mono<Void> err(MessageChannel channel, String title, String text, Object... args);
 
     //data
-    MessageInfo getById(@NonNull Snowflake messageId);
+    MessageInfo getById( Snowflake messageId);
 
-    boolean exists(@NonNull Snowflake messageId);
+    boolean exists(Snowflake messageId);
 
-    MessageInfo save(@NonNull MessageInfo message);
+    MessageInfo save(MessageInfo message);
 
-    void delete(@NonNull MessageInfo message);
+    void delete(MessageInfo message);
 
-    void deleteById(@NonNull Snowflake memberId);
+    void deleteById(Snowflake memberId);
 }

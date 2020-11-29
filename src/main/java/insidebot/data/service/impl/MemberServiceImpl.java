@@ -7,7 +7,7 @@ import discord4j.rest.util.Permission;
 import insidebot.common.services.DiscordService;
 import insidebot.data.entity.LocalMember;
 import insidebot.data.repository.LocalMemberRepository;
-import insidebot.data.service.MemberService;
+import insidebot.data.service.*;
 import insidebot.event.dispatcher.EventType.MemberUnmuteEvent;
 import org.joda.time.*;
 import org.slf4j.Logger;
@@ -27,6 +27,9 @@ import static insidebot.InsideBot.activeUserRoleID;
 public class MemberServiceImpl implements MemberService{
     @Autowired
     private DiscordService discordService;
+
+    @Autowired
+    private GuildService guildService;
 
     @Autowired
     private Logger log;
@@ -82,9 +85,17 @@ public class MemberServiceImpl implements MemberService{
         return get(guildId, userId) != null;
     }
 
+    @Override
+    @Transactional
+    public void delete(LocalMember member){
+        repository.delete(member);
+    }
+
     @Scheduled(cron = "0 */2 * * * *")
     public void unmuteUsers(){
-        Flux.fromIterable(repository.findAll()).filter(i -> i != null && isMuteEnd(i))
+        Flux.fromIterable(repository.findAll())
+            .filter(m -> !guildService.muteDisabled(m.guildId()))
+            .filter(m -> m != null && isMuteEnd(m))
             .subscribe(l -> {
                 discordService.eventListener().publish(new MemberUnmuteEvent(discordService.gateway().getGuildById(l.guildId()).block(), l));
             }, Log::err);
@@ -92,26 +103,33 @@ public class MemberServiceImpl implements MemberService{
 
     @Scheduled(cron = "0 * * * * *")
     public void activeUsers(){
-        Flux.fromIterable(repository.findAll()).filterWhen(u -> {
-            return discordService.gateway().getMemberById(u.guildId(), u.id()).map(Objects::nonNull).filterWhen(b -> {
-                return b ? Mono.just(true) : Mono.fromRunnable(() -> log.warn("User '{}' not found", u.effectiveName()));
-            });
-        }).subscribe(u -> {
-            Member member = discordService.gateway().getMemberById(u.guildId(), u.id()).block();
-            if(isActiveUser(u)){
-                member.addRole(activeUserRoleID).block();
-            }else{
-                member.removeRole(activeUserRoleID).block();
-            }
+        Flux.fromIterable(repository.findAll())
+            .filter(m -> !guildService.activeUserDisabled(m.guildId()))
+            .filterWhen(l -> discordService.exists(l.guildId(), l.id()) ? Mono.just(true) : Mono.fromRunnable(() -> {
+                log.warn("User '{}' not found. Deleting...", l.effectiveName());
+                delete(l);
+            }))
+            .subscribe(l -> {
+                Member member = discordService.gateway().getMemberById(l.guildId(), l.id()).block();
+                if(isActiveUser(l)){
+                    member.addRole(activeUserRoleID).block();
+                }else{
+                    member.removeRole(activeUserRoleID).block();
+                }
         }, Log::err);
     }
 
     @Override
     public boolean isAdmin(Member member){
-        return member != null && (member.getGuild().map(Guild::getOwnerId).map(s -> member.getId().equals(s))
-                                        .blockOptional().orElse(false) ||
-                                  member.getRoles().map(Role::getPermissions).any(r -> r.contains(Permission.ADMINISTRATOR))
-                                        .blockOptional().orElse(false));
+        return member != null && (isOwner(member) || member.getRoles().map(Role::getPermissions)
+                                                           .any(r -> r.contains(Permission.ADMINISTRATOR))
+                                                           .blockOptional().orElse(false));
+    }
+
+    @Override
+    public boolean isOwner(Member member){
+        return member != null && member.getGuild().map(Guild::getOwnerId).map(s -> member.getId().equals(s))
+                                       .blockOptional().orElse(false);
     }
 
     protected boolean isMuteEnd(@NonNull LocalMember member){

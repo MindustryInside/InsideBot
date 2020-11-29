@@ -60,8 +60,43 @@ public class GuildServiceImpl implements GuildService{
 
     @Override
     @Transactional(readOnly = true)
-    public Locale locale(Snowflake guildId){
-        String locale = repository.findLocaleByGuildId(guildId.asString());
-        return locale != null ? new Locale(locale) : settings.locale;
+    public String locale(Snowflake guildId){
+        return repository.findLocaleByGuildId(guildId.asString());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Snowflake logChannelId(Snowflake guildId){
+        String roleId = repository.findLogChannelIdByGuildId(guildId.asString());
+        return roleId != null ? Snowflake.of(roleId) : null;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Snowflake muteRoleId(Snowflake guildId){
+        String roleId = repository.findMuteRoleIdIdByGuildId(guildId.asString());
+        return roleId != null ? Snowflake.of(roleId) : null;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Snowflake activeUserRoleId(Snowflake guildId){
+        String roleId = repository.findActiveUserIdByGuildId(guildId.asString());
+        return roleId != null ? Snowflake.of(roleId) : null;
+    }
+
+    @Override
+    public boolean auditDisabled(Snowflake guildId){
+        return logChannelId(guildId) == null;
+    }
+
+    @Override
+    public boolean muteDisabled(Snowflake guildId){
+        return muteRoleId(guildId) == null;
+    }
+
+    @Override
+    public boolean activeUserDisabled(Snowflake guildId){
+        return activeUserRoleId(guildId) == null;
     }
 }

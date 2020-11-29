@@ -2,6 +2,7 @@ package insidebot.common.services;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
+import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.*;
 import insidebot.event.dispatcher.EventListener;
 import reactor.core.publisher.Mono;
@@ -13,7 +14,11 @@ public interface DiscordService{
 
     EventListener eventListener();
 
-    Mono<TextChannel> getTextChannelById(@NonNull Snowflake guildId);
+    Mono<TextChannel> getTextChannelById(Snowflake channelId);
 
-    Mono<VoiceChannel> getVoiceChannelById(@NonNull Snowflake guildId);
+    Mono<TextChannel> getLogChannel(Snowflake guildId);
+
+    Mono<VoiceChannel> getVoiceChannelById(Snowflake channelId);
+
+    boolean exists(Snowflake guildId, Snowflake userId);
 }

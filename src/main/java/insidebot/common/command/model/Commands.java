@@ -6,7 +6,6 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
-import insidebot.Settings;
 import insidebot.common.command.model.base.*;
 import insidebot.common.command.service.CommandHandler;
 import insidebot.common.services.DiscordService;
@@ -14,14 +13,14 @@ import insidebot.data.entity.*;
 import insidebot.data.service.*;
 import insidebot.event.dispatcher.EventType.*;
 import insidebot.util.*;
+import org.apache.logging.log4j.util.Supplier;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 @Service
 public class Commands{
@@ -41,26 +40,15 @@ public class Commands{
     private CommandHandler handler;
 
     @Autowired
-    private Settings settings;
-
-    @Autowired
-    private ApplicationContext context;
-
-    @Autowired
     private Logger log;
 
     @DiscordCommand(key = "help", description = "command.help.description")
-    public class HelpCommand implements CommandRunner{
+    public class HelpCommand extends CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
             StringBuilder builder = new StringBuilder();
-            Snowflake guildId = event.getGuildId().orElse(null);
-            if(guildId == null){
-                return messageService.err(event.getMessage().getChannel().block(), messageService.get("command.unsupported"));
-            }
-            GuildConfig g = guildService.get(guildId);
-            Locale locale = g.locale();
-            String prefix = g.prefix();
+            Snowflake guildId = event.getGuildId().orElseThrow(RuntimeException::new);
+            String prefix = guildService.prefix(guildId);
 
             handler.commandList().forEach(command -> {
                 builder.append(prefix);
@@ -73,34 +61,33 @@ public class Commands{
                     builder.append('*');
                 }
                 builder.append(" - ");
-                builder.append(messageService.get(command.description, locale));
+                builder.append(messageService.get(command.description));
                 builder.append('\n');
             });
 
-            return messageService.info(event.getMessage().getChannel().block(), messageService.get("command.help", locale), builder.toString());
+            return messageService.info(event.getMessage().getChannel().block(), messageService.get("command.help"), builder.toString());
         }
     }
 
     @DiscordCommand(key = "prefix", params = "[prefix]", description = "command.config.prefix.description")
-    public class PrefixCommand implements CommandRunner{
+    public class PrefixCommand extends CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
             Guild guild = event.getGuild().block();
             MessageChannel channel = event.getMessage().getChannel().block();
-            Locale locale = guildService.locale(guild.getId());
 
             GuildConfig c = guildService.get(guild);
             if(args.length == 0){
-                return messageService.text(channel, messageService.format("command.config.prefix", locale, c.prefix()));
+                return messageService.text(channel, messageService.format("command.config.prefix", c.prefix()));
             }else{
-                if(!guild.getOwnerId().equals(reference.user().getId())){
-                    return messageService.err(channel, messageService.get("command.owner-only", locale));
+                if(!memberService.isOwner(reference.member())){
+                    return messageService.err(channel, messageService.get("command.owner-only"));
                 }
 
                 if(args[0] != null){
                     c.prefix(args[0]);
                     guildService.save(c);
-                    return messageService.text(channel, messageService.format("command.config.prefix-updated", locale, c.prefix()));
+                    return messageService.text(channel, messageService.format("command.config.prefix-updated", c.prefix()));
                 }
             }
 
@@ -109,26 +96,26 @@ public class Commands{
     }
 
     @DiscordCommand(key = "locale", params = "[locale]", description = "command.config.locale.description")
-    public class LocaleCommand implements CommandRunner{
+    public class LocaleCommand extends CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
             Guild guild = event.getGuild().block();
             MessageChannel channel = event.getMessage().getChannel().block();
-            Locale locale = guildService.locale(guild.getId());
 
             GuildConfig c = guildService.get(guild);
-            Supplier<String> r = () -> c.locale().equals(Locale.ROOT) ? "en" : c.locale().toString();
+            Supplier<String> r = () -> context.locale().equals(Locale.ROOT) ? messageService.get("command.config.locale.default") : context.locale().toString();
             if(args.length == 0){
-                return messageService.text(channel, messageService.format("command.config.locale", locale, r.get()));
+                return messageService.text(channel, messageService.format("command.config.locale", r.get()));
             }else{
-                if(!guild.getOwnerId().equals(reference.user().getId())){
-                    return messageService.err(channel, messageService.get("command.owner-only", locale));
+                if(!memberService.isOwner(reference.member())){
+                    return messageService.err(channel, messageService.get("command.owner-only"));
                 }
 
                 if(args[0] != null){
-                    c.locale(args[0].equalsIgnoreCase("en") ? "" : args[0]);
+                    c.locale(context.locale(args[0]));
                     guildService.save(c);
-                    return messageService.text(channel, messageService.format("command.config.locale-updated", locale, r.get()));
+                    context.locale(context.locale(args[0]));
+                    return messageService.text(channel, messageService.format("command.config.locale-updated", r.get()));
                 }
             }
 
@@ -137,7 +124,7 @@ public class Commands{
     }
 
     @DiscordCommand(key = "mute", params = "<@user> <delayDays> [reason...]", description = "command.mute.description")
-    public class MuteCommand implements CommandRunner{
+    public class MuteCommand extends CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
             MessageChannel channel = event.getMessage().getChannel().block();
@@ -176,7 +163,7 @@ public class Commands{
     }
 
     @DiscordCommand(key = "delete", params = "<amount>", description = "command.delete.description")
-    public class DeleteCommand implements CommandRunner{
+    public class DeleteCommand extends CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
             TextChannel channel = event.getMessage().getChannel().cast(TextChannel.class).block();
@@ -207,7 +194,7 @@ public class Commands{
     }
 
     @DiscordCommand(key = "warn", params = "<@user> [reason...]", description = "command.warn.description")
-    public class WarnCommand implements CommandRunner{
+    public class WarnCommand extends CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
             String[] warningStrings = {messageService.get("command.first"), messageService.get("command.second"), messageService.get("command.third")};
@@ -249,7 +236,7 @@ public class Commands{
     }
 
     @DiscordCommand(key = "warnings", params = "<@user>", description = "command.warnings.description")
-    public class WarningsCommand implements CommandRunner{
+    public class WarningsCommand extends CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
             MessageChannel channel = event.getMessage().getChannel().block();
@@ -266,7 +253,7 @@ public class Commands{
     }
 
     @DiscordCommand(key = "unwarn", params = "<@user> [count]", description = "command.unwarn.description")
-    public class UnwarnCommand implements CommandRunner{
+    public class UnwarnCommand extends CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
             MessageChannel channel = event.getMessage().getChannel().block();
@@ -291,7 +278,7 @@ public class Commands{
     }
 
     @DiscordCommand(key = "unmute", params = "<@user>", description = "command.unmute.description")
-    public class UnmuteCommand implements CommandRunner{
+    public class UnmuteCommand extends CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
             try{

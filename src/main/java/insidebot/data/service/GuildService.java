@@ -4,7 +4,6 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Guild;
 import insidebot.data.entity.GuildConfig;
 
-import java.util.Locale;
 import java.util.function.Supplier;
 
 public interface GuildService{
@@ -20,5 +19,17 @@ public interface GuildService{
 
     String prefix(Snowflake guildId);
 
-    Locale locale(Snowflake guildId);
+    String locale(Snowflake guildId);
+
+    Snowflake logChannelId(Snowflake guildId);
+
+    Snowflake muteRoleId(Snowflake guildId);
+
+    Snowflake activeUserRoleId(Snowflake guildId);
+
+    boolean auditDisabled(Snowflake guildId);
+
+    boolean muteDisabled(Snowflake guildId);
+
+    boolean activeUserDisabled(Snowflake guildId);
 }

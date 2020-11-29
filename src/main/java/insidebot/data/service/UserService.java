@@ -2,23 +2,22 @@ package insidebot.data.service;
 
 import discord4j.common.util.Snowflake;
 import insidebot.data.entity.LocalUser;
-import org.springframework.lang.NonNull;
 
 import java.util.function.Supplier;
 
 public interface UserService{
 
-    LocalUser get(@NonNull LocalUser user);
+    LocalUser get(LocalUser user);
 
-    LocalUser getOr(@NonNull Snowflake userId, Supplier<LocalUser> prov);
+    LocalUser getOr(Snowflake userId, Supplier<LocalUser> prov);
 
-    boolean exists(@NonNull Snowflake userId);
+    boolean exists(Snowflake userId);
 
-    LocalUser getById(@NonNull Snowflake userId);
+    LocalUser getById(Snowflake userId);
 
-    LocalUser save(@NonNull LocalUser user);
+    LocalUser save(LocalUser user);
 
-    void delete(@NonNull LocalUser user);
+    void delete(LocalUser user);
 
-    void deleteById(@NonNull Snowflake userId);
+    void deleteById(Snowflake userId);
 }

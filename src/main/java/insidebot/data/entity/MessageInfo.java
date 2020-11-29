@@ -29,6 +29,7 @@ public class MessageInfo extends GuildEntity{
     private LocalMember member;
 
     @NonNull
+    @Transient
     public Snowflake channelId(){
         return Snowflake.of(channelId);
     }

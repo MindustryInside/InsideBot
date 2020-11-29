@@ -1,0 +1,243 @@
+package insidebot.event;
+
+import arc.struct.ObjectSet;
+import arc.util.Strings;
+import discord4j.common.util.Snowflake;
+import discord4j.core.event.domain.lifecycle.ReadyEvent;
+import discord4j.core.event.domain.message.*;
+import discord4j.core.object.Embed;
+import discord4j.core.object.audit.*;
+import discord4j.core.object.entity.*;
+import discord4j.core.object.entity.channel.*;
+import discord4j.core.spec.*;
+import discord4j.discordjson.json.MessageData;
+import insidebot.Settings;
+import insidebot.audit.AuditEventHandler;
+import insidebot.common.command.model.base.CommandReference;
+import insidebot.common.command.service.*;
+import insidebot.data.entity.*;
+import insidebot.data.service.*;
+import insidebot.util.*;
+import org.reactivestreams.Publisher;
+import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.*;
+import reactor.core.publisher.Mono;
+
+import java.util.Calendar;
+import java.util.function.Consumer;
+
+import static insidebot.audit.AuditEventType.*;
+
+@Component
+public class MessageEventHandler extends AuditEventHandler{
+    @Autowired
+    private MemberService memberService;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private CommandHandler commandHandler;
+
+    @Autowired
+    private GuildService guildService;
+
+    @Autowired
+    private Settings settings;
+
+    @Autowired
+    private Logger log;
+
+    public final ObjectSet<Snowflake> buffer = new ObjectSet<>();
+
+    @Override
+    public Publisher<?> onReady(ReadyEvent event){
+        return Mono.fromRunnable(() -> log.info("Bot up."));
+    }
+
+    @Override
+    public Publisher<?> onMessageCreate(MessageCreateEvent event){
+        User user = event.getMessage().getAuthor().orElse(null);
+        if(DiscordUtil.isBot(user)) return Mono.empty();
+        Message message = event.getMessage();
+        Member member = event.getMember().orElse(null);
+        Snowflake guildId = event.getGuildId().orElse(null);
+        if(guildId == null || member == null) return Mono.empty();
+        MessageInfo info = new MessageInfo();
+        Snowflake userId = user.getId();
+        LocalMember localMember = memberService.getOr(member, LocalMember::new);
+
+        context.init(guildId);
+
+        if(!guildService.exists(guildId)){
+            GuildConfig guildConfig = new GuildConfig(guildId, settings.locale, settings.prefix);
+            guildService.save(guildConfig);
+        }
+
+        if(localMember.user() == null){
+            LocalUser localUser = userService.getOr(userId, LocalUser::new);
+            localUser.userId(userId);
+            localUser.name(user.getUsername());
+            localUser.discriminator(user.getDiscriminator());
+            localMember.user(localUser);
+            userService.save(localUser);
+        }
+
+        localMember.effectiveName(member.getNickname().isPresent() ? member.getNickname().get() : member.getUsername());
+        localMember.id(userId);
+        localMember.guildId(guildId);
+        localMember.lastSentMessage(Calendar.getInstance());
+        localMember.addToSeq();
+
+        info.member(localMember);
+        info.id(message.getId());
+        info.guildId(guildId);
+        info.channelId(message.getChannelId());
+        info.timestamp(Calendar.getInstance());
+
+        info.content(MessageUtil.effectiveContent(message));
+
+        CommandReference reference = new CommandReference()
+                .localMember(localMember)
+                .localUser(localMember.user())
+                .member(member)
+                .user(user);
+
+        if(memberService.isAdmin(member)){
+            handleResponse(commandHandler.handleMessage(message.getContent(), reference, event), message.getChannel().block());
+        }
+        memberService.save(localMember);
+        messageService.save(info);
+        return Mono.empty();
+    }
+
+    @Override
+    public Publisher<?> onMessageUpdate(MessageUpdateEvent event){
+        Message message = event.getMessage().block();
+        TextChannel c = message.getChannel().cast(TextChannel.class).block();
+        User user = message.getAuthor().orElse(null);
+        if(DiscordUtil.isBot(user) || c == null) return Mono.empty();
+        if(!messageService.exists(event.getMessageId())) return Mono.empty();
+
+        MessageInfo info = messageService.getById(event.getMessageId());
+
+        String oldContent = info.content();
+        String newContent = MessageUtil.effectiveContent(message);
+        boolean under = newContent.length() >= Embed.Field.MAX_VALUE_LENGTH || oldContent.length() >= Embed.Field.MAX_VALUE_LENGTH;
+
+        if(message.isPinned() || newContent.equals(oldContent)) return Mono.empty();
+
+        context.init(info.guildId());
+
+        Consumer<EmbedCreateSpec> e = embed -> {
+            embed.setColor(messageEdit.color);
+            embed.setAuthor(user.getUsername(), null, user.getAvatarUrl());
+            embed.setTitle(messageService.format("message.edit", c.getName()));
+            embed.setDescription(messageService.format(event.getGuildId().isPresent() ? "message.edit.description" : "message.edit.nullable-guild",
+                                                       event.getGuildId().get().asString(), /* Я не знаю как такое получить, но всё же обезопашусь */
+                                                       event.getChannelId().asString(),
+                                                       event.getMessageId().asString()));
+
+            embed.addField(messageService.get("message.edit.old-content"),
+                           MessageUtil.substringTo(oldContent, Embed.Field.MAX_VALUE_LENGTH), false);
+            embed.addField(messageService.get("message.edit.new-content"),
+                           MessageUtil.substringTo(newContent, Embed.Field.MAX_VALUE_LENGTH), true);
+
+            embed.setFooter(MessageUtil.zonedFormat(), null);
+        };
+
+        if(under){
+            stringInputStream.writeString(String.format("%s:\n%s\n\n%s:\n%s",
+                                                        messageService.get("message.edit.old-content"), oldContent,
+                                                        messageService.get("message.edit.new-content"), newContent));
+        }
+
+        log(c.getGuildId(), e, under);
+
+        info.content(newContent);
+        messageService.save(info);
+        return Mono.empty();
+    }
+
+    @Override
+    public Publisher<?> onMessageDelete(MessageDeleteEvent event){
+        Message m = event.getMessage().orElse(null);
+        Guild guild = event.getGuild().block();
+        TextChannel c =  event.getChannel().cast(TextChannel.class).block();
+        if(m == null || guild == null || c == null) return Mono.empty();
+        if(c.getId().equals(guildService.logChannelId(guild.getId())) && !m.getEmbeds().isEmpty()){ /* =) */
+            AuditLogEntry l = guild.getAuditLog().filter(a -> a.getActionType() == ActionType.MESSAGE_DELETE).blockFirst();
+            return Mono.justOrEmpty(l).doOnNext(a -> {
+                log.warn("User '{}' deleted log message", guild.getMemberById(a.getResponsibleUserId()).block().getUsername());
+            }).then();
+        }
+        if(!messageService.exists(event.getMessageId())) return Mono.empty();
+        if(buffer.contains(event.getMessageId())){
+            return Mono.fromRunnable(() -> buffer.remove(event.getMessageId()));
+        }
+
+        MessageInfo info = messageService.getById(m.getId());
+        User user = m.getAuthor().orElse(null);
+        String content = info.content();
+        boolean under = content.length() >= Embed.Field.MAX_VALUE_LENGTH;
+
+        if(DiscordUtil.isBot(user) || MessageUtil.isEmpty(content)) return Mono.empty();
+
+        context.init(guild.getId());
+
+        Consumer<EmbedCreateSpec> e = embed -> {
+            embed.setColor(messageDelete.color);
+            embed.setAuthor(user.getUsername(), null, user.getAvatarUrl());
+            embed.setTitle(messageService.format("message.delete", c.getName()));
+            embed.setFooter(MessageUtil.zonedFormat(), null);
+            embed.addField(messageService.get("message.delete.content"), MessageUtil.substringTo(content, Embed.Field.MAX_VALUE_LENGTH), true);
+        };
+
+        if(under){
+            stringInputStream.writeString(String.format("%s:\n%s", messageService.get("message.delete.content"), content));
+        }
+
+        log(guild.getId(), e, under);
+
+        messageService.delete(info);
+        return Mono.empty();
+    }
+
+    @Override
+    public Mono<Void> log(Snowflake guildId, MessageCreateSpec message){
+        MessageData data = discordService.getLogChannel(guildId)
+                                         .flatMap(c -> c.getRestChannel().createMessage(message.asRequest()))
+                                         .block();
+        return Mono.justOrEmpty(data).flatMap(__ -> Mono.fromRunnable(() -> context.reset()));
+    }
+
+    protected void handleResponse(BaseCommandHandler.CommandResponse response, MessageChannel channel){
+        if(response.type == BaseCommandHandler.ResponseType.unknownCommand){
+            int min = 0;
+            BaseCommandHandler.Command closest = null;
+
+            for(BaseCommandHandler.Command command : commandHandler.commandList()){
+                int dst = Strings.levenshtein(command.text, response.runCommand);
+                if(dst < 3 && (closest == null || dst < min)){
+                    min = dst;
+                    closest = command;
+                }
+            }
+
+            if(closest != null){
+                messageService.err(channel, messageService.format("command.response.found-closest", closest.text));
+            }else{
+                messageService.err(channel, messageService.format("command.response.unknown", settings.prefix));
+            }
+        }else if(response.type == BaseCommandHandler.ResponseType.manyArguments){
+            messageService.err(channel, messageService.get("command.response.many-arguments"),
+                               messageService.format("command.response.many-arguments.text",
+                                                     settings.prefix, response.command.text, response.command.paramText));
+        }else if(response.type == BaseCommandHandler.ResponseType.fewArguments){
+            messageService.err(channel, messageService.get("command.response.few-arguments"),
+                               messageService.format("command.response.few-arguments.text",
+                                                     settings.prefix, response.command.text));
+        }
+    }
+}

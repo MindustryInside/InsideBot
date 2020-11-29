@@ -11,7 +11,6 @@ import java.util.Locale;
 @Table(name = "guild_config")
 public class GuildConfig extends BaseEntity{
 
-    @NonNull
     @Column
     private String locale;
 
@@ -19,12 +18,21 @@ public class GuildConfig extends BaseEntity{
     @Column
     private String prefix;
 
+    @Column(name = "log_channel_id")
+    private String logChannelId;
+
+    @Column(name = "mute_role_id")
+    private String muteRoleID;
+
+    @Column(name = "active_user_role_id")
+    private String activeUserRoleID;
+
     public GuildConfig(){}
 
     public GuildConfig(@NonNull Snowflake guildId, @NonNull Locale locale, @NonNull String prefix){
         id(guildId);
         locale(locale);
-        this.prefix = prefix;
+        prefix(prefix);
     }
 
     @NonNull
@@ -47,5 +55,29 @@ public class GuildConfig extends BaseEntity{
 
     public void prefix(@NonNull String prefix){
         this.prefix = prefix;
+    }
+
+    public Snowflake logChannelId(){
+        return Snowflake.of(logChannelId);
+    }
+
+    public void logChannelId(Snowflake logChannelId){
+        this.logChannelId = logChannelId.asString();
+    }
+
+    public Snowflake muteRoleID(){
+        return Snowflake.of(muteRoleID);
+    }
+
+    public void muteRoleID(Snowflake muteRoleID){
+        this.muteRoleID = muteRoleID.asString();
+    }
+
+    public Snowflake activeUserRoleID(){
+        return Snowflake.of(activeUserRoleID);
+    }
+
+    public void activeUserRoleID(Snowflake activeUserRoleID){
+        this.activeUserRoleID = activeUserRoleID.asString();
     }
 }

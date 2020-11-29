@@ -24,5 +24,9 @@ public interface MemberService{
 
     boolean exists(Snowflake guildId, Snowflake userId);
 
+    void delete(LocalMember member);
+
     boolean isAdmin(Member member);
+
+    boolean isOwner(Member member);
 }

@@ -4,6 +4,7 @@ import arc.util.Strings;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.channel.MessageChannel;
 import insidebot.Settings;
+import insidebot.common.services.ContextService;
 import insidebot.data.entity.MessageInfo;
 import insidebot.data.repository.MessageInfoRepository;
 import insidebot.data.service.MessageService;
@@ -14,8 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.NonNull;
 
-import java.util.Locale;
-
 @Service
 public class MessageServiceImpl implements MessageService{
     @Autowired
@@ -25,26 +24,19 @@ public class MessageServiceImpl implements MessageService{
     private ApplicationContext context;
 
     @Autowired
+    private ContextService contextService;
+
+    @Autowired
     private Settings settings;
 
     @Override
-    public String get(@NonNull String key) {
-        return context.getMessage(key, null, settings.locale);
-    }
-
-    @Override
-    public String get(String key, Locale locale){
-        return context.getMessage(key, null, locale);
+    public String get(String key){
+        return context.getMessage(key, null, contextService.locale());
     }
 
     @Override
     public String format(@NonNull String key, Object... args) {
-        return context.getMessage(key, args, settings.locale);
-    }
-
-    @Override
-    public String format(String key, Locale locale, Object... args){
-        return context.getMessage(key, args, locale);
+        return context.getMessage(key, args, contextService.locale());
     }
 
     @Override

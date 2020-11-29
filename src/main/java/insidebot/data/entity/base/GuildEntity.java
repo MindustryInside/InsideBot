@@ -14,8 +14,14 @@ public abstract class GuildEntity extends BaseEntity{
     protected String guildId;
 
     @NonNull
+    @Transient
     public Snowflake guildId(){
         return Snowflake.of(guildId);
+    }
+
+    @NonNull
+    public String getGuildId(){
+        return guildId;
     }
 
     public void guildId(@NonNull Snowflake guildId){

@@ -3,13 +3,13 @@ package insidebot.common.services.impl;
 import arc.util.Log;
 import discord4j.common.util.Snowflake;
 import discord4j.core.*;
-import discord4j.core.event.domain.Event;
+import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.object.entity.channel.*;
 import discord4j.core.shard.MemberRequestFilter;
 import discord4j.gateway.intent.*;
 import insidebot.Settings;
-import insidebot.common.services.DiscordService;
-import insidebot.event.EventHandler;
+import insidebot.common.services.*;
+import insidebot.data.service.GuildService;
 import insidebot.event.dispatcher.EventListener;
 import insidebot.event.dispatcher.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,13 +26,16 @@ public class DiscordServiceImpl implements DiscordService{
     private Settings settings;
 
     @Autowired
+    private GuildService guildService;
+
+    @Autowired
     private List<Events> events;
 
     protected GatewayDiscordClient gateway;
     protected EventListener eventListener;
 
     @Autowired(required = false)
-    public <T extends Event> void init(List<EventHandler<T>> handlers){
+    public void init(List<ReactiveEventAdapter> handlers){
         String token = settings.token;
         Objects.requireNonNull(token, "Discord token not provided");
 
@@ -58,7 +61,7 @@ public class DiscordServiceImpl implements DiscordService{
 
         Flux.fromIterable(handlers)
             .filter(Objects::nonNull)
-            .subscribe(e -> gateway.on(e.type()).flatMap(e::onEvent).subscribe(), Log::err);
+            .subscribe(e -> gateway.on(e).subscribe(), Log::err);
     }
 
     @PreDestroy
@@ -77,12 +80,22 @@ public class DiscordServiceImpl implements DiscordService{
     }
 
     @Override
-    public Mono<TextChannel> getTextChannelById(@NonNull Snowflake guildId){
-        return gateway.getChannelById(guildId).cast(TextChannel.class);
+    public Mono<TextChannel> getTextChannelById(@NonNull Snowflake channelId){
+        return gateway.getChannelById(channelId).cast(TextChannel.class);
     }
 
     @Override
-    public Mono<VoiceChannel> getVoiceChannelById(@NonNull Snowflake guildId){
-        return gateway.getChannelById(guildId).cast(VoiceChannel.class);
+    public Mono<TextChannel> getLogChannel(Snowflake guildId){
+        return getTextChannelById(guildService.logChannelId(guildId));
+    }
+
+    @Override
+    public Mono<VoiceChannel> getVoiceChannelById(@NonNull Snowflake channelId){
+        return gateway.getChannelById(channelId).cast(VoiceChannel.class);
+    }
+
+    @Override
+    public boolean exists(Snowflake guildId, Snowflake userId){
+        return gateway.getMemberById(guildId, userId).map(Objects::nonNull).blockOptional().orElse(false);
     }
 }
