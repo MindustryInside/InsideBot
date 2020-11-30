@@ -79,13 +79,17 @@ public class MemberEventHandler extends AuditEventHandler{
                                .filter(a -> a.getActionType() == ActionType.MEMBER_KICK)
                                .filter(a -> user.getId().equals(a.getTargetId().orElse(null))).blockFirst();
         return Mono.justOrEmpty(l).flatMap(a -> {
-            if(a != null && l.getId().getTimestamp().isAfter(Instant.now().minusMillis(2500))){
+            if(a != null && a.getId().getTimestamp().isAfter(Instant.now().minusMillis(2500))){
                 Member moderator = event.getGuild().flatMap(g -> g.getMemberById(a.getResponsibleUserId())).block();
                 if(moderator == null) return Mono.empty();
                 return log(event.getGuildId(), embed -> {
                     embed.setColor(userKick.color);
                     embed.setTitle(messageService.get("message.user-kick"));
-                    embed.setDescription(messageService.format("message.user-kick.text", user.getUsername(), moderator.getUsername()));
+                    String desc = messageService.format("message.user-kick.text", user.getUsername(), moderator.getUsername());
+                    if(a.getReason().isPresent() && !a.getReason().get().isBlank()){
+                        desc += messageService.format("message.user-kick.reason", a.getReason().get().trim());
+                    }
+                    embed.setDescription(desc);
                     embed.setFooter(MessageUtil.zonedFormat(), null);
                 });
             }else{
