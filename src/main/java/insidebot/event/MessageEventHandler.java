@@ -15,6 +15,7 @@ import insidebot.Settings;
 import insidebot.audit.AuditEventHandler;
 import insidebot.common.command.model.base.CommandReference;
 import insidebot.common.command.service.*;
+import insidebot.common.command.service.BaseCommandHandler.*;
 import insidebot.data.entity.*;
 import insidebot.data.service.*;
 import insidebot.util.*;
@@ -58,12 +59,13 @@ public class MessageEventHandler extends AuditEventHandler{
 
     @Override
     public Publisher<?> onMessageCreate(MessageCreateEvent event){
-        User user = event.getMessage().getAuthor().orElse(null);
-        if(DiscordUtil.isBot(user)) return Mono.empty();
         Message message = event.getMessage();
         Member member = event.getMember().orElse(null);
+        if(member == null) return Mono.empty();
+        TextChannel channel = message.getChannel().cast(TextChannel.class).block();
+        User user = message.getAuthor().orElse(null);
         Snowflake guildId = event.getGuildId().orElse(null);
-        if(guildId == null || member == null) return Mono.empty();
+        if(DiscordUtil.isBot(user) || guildId == null || channel == null) return Mono.empty();
         Snowflake userId = user.getId();
         LocalMember localMember = memberService.getOr(member, LocalMember::new);
 
@@ -108,7 +110,7 @@ public class MessageEventHandler extends AuditEventHandler{
                 .user(user);
 
         if(memberService.isAdmin(member)){
-            handleResponse(commandHandler.handleMessage(message.getContent(), reference, event), message.getChannel().block());
+            handleResponse(commandHandler.handleMessage(message.getContent(), reference, event), channel);
         }
         memberService.save(localMember);
         return Mono.empty();
@@ -117,8 +119,9 @@ public class MessageEventHandler extends AuditEventHandler{
     @Override
     public Publisher<?> onMessageUpdate(MessageUpdateEvent event){
         Message message = event.getMessage().block();
-        TextChannel c = message.getChannel().cast(TextChannel.class).block();
+        if(message == null) return Mono.empty();
         User user = message.getAuthor().orElse(null);
+        TextChannel c = message.getChannel().cast(TextChannel.class).block();
         if(DiscordUtil.isBot(user) || c == null) return Mono.empty();
         if(!messageService.exists(event.getMessageId())) return Mono.empty();
 
@@ -165,9 +168,10 @@ public class MessageEventHandler extends AuditEventHandler{
     @Override
     public Publisher<?> onMessageDelete(MessageDeleteEvent event){
         Message m = event.getMessage().orElse(null);
-        Guild guild = event.getGuild().block();
+        if(m == null) return Mono.empty();
+        Guild guild = m.getGuild().block();
         TextChannel c =  event.getChannel().cast(TextChannel.class).block();
-        if(m == null || guild == null || c == null) return Mono.empty();
+        if(guild == null || c == null) return Mono.empty();
         if(c.getId().equals(guildService.logChannelId(guild.getId())) && !m.getEmbeds().isEmpty()){ /* =) */
             AuditLogEntry l = guild.getAuditLog().filter(a -> a.getActionType() == ActionType.MESSAGE_DELETE).blockFirst();
             return Mono.justOrEmpty(l).doOnNext(a -> {
@@ -214,12 +218,13 @@ public class MessageEventHandler extends AuditEventHandler{
         return Mono.justOrEmpty(data).flatMap(__ -> Mono.fromRunnable(() -> context.reset()));
     }
 
-    protected void handleResponse(BaseCommandHandler.CommandResponse response, MessageChannel channel){
+    protected void handleResponse(CommandResponse response, TextChannel channel){
+        String prefix = guildService.prefix(channel.getGuildId());
         if(response.type == BaseCommandHandler.ResponseType.unknownCommand){
             int min = 0;
-            BaseCommandHandler.Command closest = null;
+            Command closest = null;
 
-            for(BaseCommandHandler.Command command : commandHandler.commandList()){
+            for(Command command : commandHandler.commandList()){
                 int dst = Strings.levenshtein(command.text, response.runCommand);
                 if(dst < 3 && (closest == null || dst < min)){
                     min = dst;
@@ -235,11 +240,11 @@ public class MessageEventHandler extends AuditEventHandler{
         }else if(response.type == BaseCommandHandler.ResponseType.manyArguments){
             messageService.err(channel, messageService.get("command.response.many-arguments"),
                                messageService.format("command.response.many-arguments.text",
-                                                     settings.prefix, response.command.text, response.command.paramText));
+                                                     prefix, response.command.text, response.command.paramText));
         }else if(response.type == BaseCommandHandler.ResponseType.fewArguments){
             messageService.err(channel, messageService.get("command.response.few-arguments"),
                                messageService.format("command.response.few-arguments.text",
-                                                     settings.prefix, response.command.text));
+                                                     prefix, response.command.text));
         }
     }
 }
