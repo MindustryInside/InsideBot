@@ -88,6 +88,12 @@ public class MemberServiceImpl implements MemberService{
         repository.delete(member);
     }
 
+    @Override
+    @Transactional
+    public void deleteById(Snowflake userId){
+        repository.deleteById(userId.asString());
+    }
+
     @Scheduled(cron = "0 */2 * * * *")
     public void unmuteUsers(){
         Flux.fromIterable(repository.findAll())
@@ -154,10 +160,5 @@ public class MemberServiceImpl implements MemberService{
             name += String.format(" (%s)", member.getNickname().get());
         }
         return name;
-    }
-
-    @Override
-    public String effectiveName(Member member){
-        return member.getNickname().isPresent() ? member.getNickname().get() : member.getUsername();
     }
 }

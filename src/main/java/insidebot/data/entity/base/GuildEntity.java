@@ -44,9 +44,8 @@ public abstract class GuildEntity extends BaseEntity{
 
     @Override
     public String toString(){
-        return this.getClass().getSimpleName() + "{" +
+        return "GuildEntity{" +
                "guildId='" + guildId + '\'' +
-               ", id='" + id + '\'' +
-               '}';
+               "} " + super.toString();
     }
 }

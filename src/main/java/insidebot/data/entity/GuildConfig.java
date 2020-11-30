@@ -79,4 +79,15 @@ public class GuildConfig extends BaseEntity{
     public void activeUserRoleID(Snowflake activeUserRoleID){
         this.activeUserRoleID = activeUserRoleID.asString();
     }
+
+    @Override
+    public String toString(){
+        return "GuildConfig{" +
+               "locale='" + locale + '\'' +
+               ", prefix='" + prefix + '\'' +
+               ", logChannelId='" + logChannelId + '\'' +
+               ", muteRoleID='" + muteRoleID + '\'' +
+               ", activeUserRoleID='" + activeUserRoleID + '\'' +
+               "} " + super.toString();
+    }
 }

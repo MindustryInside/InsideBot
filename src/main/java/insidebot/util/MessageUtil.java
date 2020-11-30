@@ -16,6 +16,10 @@ public class MessageUtil{
         return cs == null || cs.length() == 0;
     }
 
+    public static boolean isEmpty(Message message) {
+        return message == null || effectiveContent(message).isEmpty();
+    }
+
     public static String substringTo(@NonNull String text, int maxLength){
         return text.length() >= maxLength ? (text.substring(0, maxLength - 4) + "...") : text;
     }

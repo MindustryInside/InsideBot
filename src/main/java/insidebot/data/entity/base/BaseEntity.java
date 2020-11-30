@@ -44,7 +44,7 @@ public abstract class BaseEntity implements Serializable{
 
     @Override
     public String toString(){
-        return this.getClass().getSimpleName() + "{" +
+        return "BaseEntity{" +
                "id='" + id + '\'' +
                '}';
     }

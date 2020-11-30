@@ -2,12 +2,10 @@ package insidebot.event.dispatcher;
 
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
-import insidebot.common.services.DiscordService;
 import insidebot.data.entity.LocalMember;
-import org.springframework.beans.factory.annotation.Autowired;
-import reactor.util.annotation.*;
+import reactor.util.annotation.NonNull;
 
-import java.util.*;
+import java.util.List;
 
 /**
  * Все внутренние ивенты
@@ -60,9 +58,6 @@ public final class EventType{
     public static class MemberMuteEvent extends BaseEvent{
         public final @NonNull LocalMember localMember;
         public final int delay;
-
-        @Autowired
-        private DiscordService discordService;
 
         public MemberMuteEvent(Guild guild, @NonNull LocalMember localMember, int delay){
             super(guild);

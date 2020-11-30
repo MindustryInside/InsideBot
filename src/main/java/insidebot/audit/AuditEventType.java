@@ -14,6 +14,7 @@ public enum AuditEventType{
 
     userJoin(0x6666CC),
     userLeave(0x6633CC),
+    userKick(0xFFD37F),
     userMute(0xFFCA59),
     userUnmute(0x85EA88),
     userBan(0xFFCC00);

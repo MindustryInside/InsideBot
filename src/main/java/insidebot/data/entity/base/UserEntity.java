@@ -39,7 +39,7 @@ public abstract class UserEntity implements Serializable{
 
     @Override
     public String toString(){
-        return this.getClass().getSimpleName() + "{" +
+        return "UserEntity{" +
                "userId='" + userId + '\'' +
                '}';
     }

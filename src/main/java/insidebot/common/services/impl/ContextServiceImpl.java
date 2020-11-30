@@ -1,8 +1,7 @@
 package insidebot.common.services.impl;
 
 import discord4j.common.util.Snowflake;
-import insidebot.Settings;
-import insidebot.common.services.ContextService;
+ import insidebot.common.services.ContextService;
 import insidebot.data.service.GuildService;
 import insidebot.util.LocaleUtil;
 import org.springframework.beans.factory.annotation.Autowired;

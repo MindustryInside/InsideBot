@@ -15,7 +15,6 @@ public class LocalMember extends GuildEntity{
     @JoinColumn(name = "user_id")
     private LocalUser user;
 
-    @Nullable
     @Column(name = "effective_name", length = 32)
     private String effectiveName;
 
@@ -25,11 +24,9 @@ public class LocalMember extends GuildEntity{
     @Column(name = "message_seq")
     private long messageSeq;
 
-    @Nullable
     @Column(name = "last_sent_message")
     private Calendar lastSentMessage;
 
-    @Nullable
     @Column(name = "mute_end_date")
     private Calendar muteEndDate;
 
@@ -92,5 +89,17 @@ public class LocalMember extends GuildEntity{
 
     public void muteEndDate(@Nullable Calendar muteEndDate){
         this.muteEndDate = muteEndDate;
+    }
+
+    @Override
+    public String toString(){
+        return "LocalMember{" +
+               "user=" + user +
+               ", effectiveName='" + effectiveName + '\'' +
+               ", warns=" + warns +
+               ", messageSeq=" + messageSeq +
+               ", lastSentMessage=" + lastSentMessage +
+               ", muteEndDate=" + muteEndDate +
+               "} " + super.toString();
     }
 }

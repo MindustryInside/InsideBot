@@ -10,11 +10,9 @@ import javax.persistence.*;
 public class LocalUser extends UserEntity{
     private static final long serialVersionUID = -6983332268522094510L;
 
-    @NonNull
     @Column(length = 32)
     public String name;
 
-    @NonNull
     @Column(length = 4)
     public String discriminator;
 
@@ -41,7 +39,6 @@ public class LocalUser extends UserEntity{
         return "LocalUser{" +
                "name='" + name + '\'' +
                ", discriminator='" + discriminator + '\'' +
-               ", userId='" + userId + '\'' +
-               '}';
+               "} " + super.toString();
     }
 }

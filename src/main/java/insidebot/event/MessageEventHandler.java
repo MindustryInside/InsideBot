@@ -64,10 +64,8 @@ public class MessageEventHandler extends AuditEventHandler{
         Member member = event.getMember().orElse(null);
         Snowflake guildId = event.getGuildId().orElse(null);
         if(guildId == null || member == null) return Mono.empty();
-        MessageInfo info = new MessageInfo();
         Snowflake userId = user.getId();
         LocalMember localMember = memberService.getOr(member, LocalMember::new);
-
 
         if(!guildService.exists(guildId)){
             Region region = event.getGuild().flatMap(Guild::getRegion).block();
@@ -86,19 +84,22 @@ public class MessageEventHandler extends AuditEventHandler{
             userService.save(localUser);
         }
 
-        localMember.effectiveName(member.getNickname().isPresent() ? member.getNickname().get() : member.getUsername());
+        localMember.effectiveName(member.getDisplayName());
         localMember.id(userId);
         localMember.guildId(guildId);
         localMember.lastSentMessage(Calendar.getInstance());
         localMember.addToSeq();
 
-        info.member(localMember);
-        info.id(message.getId());
-        info.guildId(guildId);
-        info.channelId(message.getChannelId());
-        info.timestamp(Calendar.getInstance());
-
-        info.content(MessageUtil.effectiveContent(message));
+        if(!MessageUtil.isEmpty(message) && !message.isTts() && message.getEmbeds().isEmpty()){
+            MessageInfo info = new MessageInfo();
+            info.userId(userId);
+            info.id(message.getId());
+            info.guildId(guildId);
+            info.channelId(message.getChannelId());
+            info.timestamp(Calendar.getInstance());
+            info.content(MessageUtil.effectiveContent(message));
+            messageService.save(info);
+        }
 
         CommandReference reference = new CommandReference()
                 .localMember(localMember)
@@ -110,7 +111,6 @@ public class MessageEventHandler extends AuditEventHandler{
             handleResponse(commandHandler.handleMessage(message.getContent(), reference, event), message.getChannel().block());
         }
         memberService.save(localMember);
-        messageService.save(info);
         return Mono.empty();
     }
 

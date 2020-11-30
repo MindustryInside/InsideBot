@@ -15,27 +15,31 @@ public class MessageInfo extends GuildEntity{
     @Column(name = "channel_id")
     private String channelId;
 
-    @NonNull
+    @Column(name = "user_id")
+    private String userId;
+
     @Column(length = 2000)
     private String content;
 
-    @NonNull
     @Column
     private Calendar timestamp;
 
     @NonNull
-    @ManyToOne
-    @JoinColumn(name = "member_id")
-    private LocalMember member;
-
-    @NonNull
-    @Transient
     public Snowflake channelId(){
         return Snowflake.of(channelId);
     }
 
     public void channelId(@NonNull Snowflake channelId){
         this.channelId = channelId.asString();
+    }
+
+    @NonNull
+    public Snowflake userId(){
+        return Snowflake.of(userId);
+    }
+
+    public void userId(@NonNull Snowflake userId){
+        this.userId = userId.asString();
     }
 
     @NonNull
@@ -56,24 +60,12 @@ public class MessageInfo extends GuildEntity{
         this.timestamp = timestamp;
     }
 
-    @NonNull
-    public LocalMember member(){
-        return member;
-    }
-
-    public void member(@NonNull LocalMember member){
-        this.member = member;
-    }
-
     @Override
     public String toString(){
         return "MessageInfo{" +
                "channelId='" + channelId + '\'' +
                ", content='" + content + '\'' +
                ", timestamp=" + timestamp +
-               ", member=" + member +
-               ", guildId='" + guildId + '\'' +
-               ", id='" + id + '\'' +
-               '}';
+               "} " + super.toString();
     }
 }
