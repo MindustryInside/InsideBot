@@ -108,7 +108,7 @@ public class MemberEventHandler extends AuditEventHandler{
     public Publisher<?> onMemberUpdate(MemberUpdateEvent event){
         context.init(event.getGuildId());
         return event.getMember()
-                    .filter(m -> !DiscordUtil.isBot(m))
+                    .filter(DiscordUtil::isNotBot)
                     .filter(m -> memberService.exists(m.getGuildId(), m.getId()))
                     .doOnNext(m -> {
                         LocalMember info = memberService.get(event.getGuildId(), m.getId());

@@ -53,7 +53,7 @@ public class MessageEventHandler extends AuditEventHandler{
     public final ObjectSet<Snowflake> buffer = new ObjectSet<>();
 
     @Override
-    public Publisher<?> onReady(ReadyEvent event){
+    public Publisher<?> onReady(ReadyEvent event){ // не триггерится, баг текущей версии d4j
         return Mono.fromRunnable(() -> log.info("Bot up."));
     }
 
@@ -235,7 +235,7 @@ public class MessageEventHandler extends AuditEventHandler{
             if(closest != null){
                 messageService.err(channel, messageService.format("command.response.found-closest", closest.text));
             }else{
-                messageService.err(channel, messageService.format("command.response.unknown", settings.prefix));
+                messageService.err(channel, messageService.format("command.response.unknown", prefix));
             }
         }else if(response.type == BaseCommandHandler.ResponseType.manyArguments){
             messageService.err(channel, messageService.get("command.response.many-arguments"),

@@ -11,7 +11,7 @@ public class DiscordUtil{
         return user == null || user.isBot();
     }
 
-    public static boolean isBot(@Nullable Member member){
-        return member == null || member.isBot();
+    public static boolean isNotBot(@Nullable User user){
+        return !isBot(user);
     }
 }
