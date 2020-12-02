@@ -11,7 +11,7 @@ import java.util.List;
 
 @Repository
 public interface AdminActionRepository extends GuildRepository<AdminAction>{
-    @Query("select a from AdminAction a where a.guildId = :guildId and a.target.id = :targetId")
+    @Query("select a from AdminAction a where a.guildId = :guildId and a.target.user.userId = :targetId")
     List<AdminAction> findAdminActionsByTargetId(@Param("guildId") String guildId, @Param("targetId") String targetId);
 
     @Query("select a from AdminAction a where a.guildId = :guildId and a.target.user.userId = :targetId and a.type = :type")

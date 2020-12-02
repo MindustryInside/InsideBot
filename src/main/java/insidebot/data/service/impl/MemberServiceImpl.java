@@ -3,14 +3,12 @@ package insidebot.data.service.impl;
 import arc.util.Log;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
-import discord4j.rest.util.Permission;
 import insidebot.common.services.DiscordService;
 import insidebot.data.entity.*;
 import insidebot.data.repository.LocalMemberRepository;
 import insidebot.data.service.*;
 import insidebot.data.service.AdminService.AdminActionType;
 import insidebot.event.dispatcher.EventType.MemberUnmuteEvent;
-import org.joda.time.*;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -19,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.*;
 import reactor.util.annotation.NonNull;
 
-import java.util.Optional;
 import java.util.function.Supplier;
 
 @Service
@@ -95,8 +92,8 @@ public class MemberServiceImpl implements MemberService{
 
     @Override
     @Transactional
-    public void deleteById(Snowflake userId){
-        repository.deleteById(userId.asString());
+    public void deleteById(Snowflake guildId, Snowflake userId){
+        repository.delete(get(guildId, userId));
     }
 
     @Scheduled(cron = "0 */2 * * * *")

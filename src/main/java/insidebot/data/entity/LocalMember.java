@@ -29,7 +29,6 @@ public class LocalMember extends GuildEntity{
     public LocalMember(){}
 
     public LocalMember(Member member){
-        id(member.getId());
         guildId(member.getGuildId());
         effectiveName(member.getDisplayName());
     }

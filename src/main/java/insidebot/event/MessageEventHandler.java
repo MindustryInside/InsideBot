@@ -95,7 +95,7 @@ public class MessageEventHandler extends AuditEventHandler{
         if(!MessageUtil.isEmpty(message) && !message.isTts() && message.getEmbeds().isEmpty()){
             MessageInfo info = new MessageInfo();
             info.userId(userId);
-            info.id(message.getId());
+            info.messageId(message.getId());
             info.guildId(guildId);
             info.timestamp(Calendar.getInstance());
             info.content(MessageUtil.effectiveContent(message));

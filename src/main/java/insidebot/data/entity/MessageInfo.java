@@ -12,6 +12,9 @@ import java.util.Calendar;
 public class MessageInfo extends GuildEntity{
     private static final long serialVersionUID = -7977287922184407665L;
 
+    @Column(name = "message_id")
+    private String messageId;
+
     @Column(name = "user_id")
     private String userId;
 
@@ -20,6 +23,15 @@ public class MessageInfo extends GuildEntity{
 
     @Column
     private Calendar timestamp;
+
+    @NonNull
+    public Snowflake messageId(){
+        return Snowflake.of(messageId);
+    }
+
+    public void messageId(@NonNull Snowflake messageId){
+        this.messageId = messageId.asString();
+    }
 
     @NonNull
     public Snowflake userId(){

@@ -40,12 +40,9 @@ public class AdminAction extends GuildEntity{
     @Column(name = "end_timestamp")
     private Calendar endTimestamp;
 
-    public AdminAction(){
-        id(Snowflake.of(Instant.now())); // типа автогенерируемое айди
-    }
+    public AdminAction(){}
 
     public AdminAction(Snowflake guildId){
-        this();
         guildId(guildId);
     }
 

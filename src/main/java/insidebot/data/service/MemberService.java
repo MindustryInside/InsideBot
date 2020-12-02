@@ -26,7 +26,7 @@ public interface MemberService{
 
     void delete(LocalMember member);
 
-    void deleteById(Snowflake userId);
+    void deleteById(Snowflake guildId, Snowflake userId);
 
     String detailName(Member member);
 }

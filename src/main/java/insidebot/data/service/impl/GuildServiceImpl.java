@@ -6,6 +6,7 @@ import insidebot.Settings;
 import insidebot.data.entity.GuildConfig;
 import insidebot.data.repository.GuildConfigRepository;
 import insidebot.data.service.GuildService;
+import insidebot.util.LocaleUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +30,7 @@ public class GuildServiceImpl implements GuildService{
     @Override
     @Transactional(readOnly = true)
     public GuildConfig get(Snowflake guildId){
-        return repository.findById(guildId.asString()).orElse(null);
+        return repository.findByGuildId(guildId.asString());
     }
 
     @Override
@@ -47,7 +48,7 @@ public class GuildServiceImpl implements GuildService{
     @Override
     @Transactional(readOnly = true)
     public boolean exists(Snowflake guildId){
-        return repository.existsById(guildId.asString());
+        return repository.existsByGuildId(guildId.asString());
     }
 
     @Override
@@ -60,7 +61,8 @@ public class GuildServiceImpl implements GuildService{
     @Override
     @Transactional(readOnly = true)
     public String locale(Snowflake guildId){
-        return repository.findLocaleByGuildId(guildId.asString());
+        String locale = repository.findLocaleByGuildId(guildId.asString());
+        return locale != null ? locale : LocaleUtil.enLocale;
     }
 
     @Override

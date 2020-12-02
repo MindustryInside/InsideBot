@@ -12,7 +12,7 @@ public class LocaleUtil{
 
     public static ObjectMap<String, Locale> locales;
 
-    public static final String ruLocale = "ru", enLocale = "en", defaultLocale = "";
+    public static final String ruLocale = "ru", enLocale = "en", defaultLocale = "en";
 
     static{
         locales = ObjectMap.of(

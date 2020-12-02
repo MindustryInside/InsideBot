@@ -36,7 +36,7 @@ public class MemberEventHandler extends AuditEventHandler{
             embed.setDescription(messageService.format("message.ban.text", user.getUsername()));
             embed.setFooter(MessageUtil.zonedFormat(), null);
         })
-        .thenEmpty(Mono.fromRunnable(() -> memberService.deleteById(user.getId())));
+        .thenEmpty(Mono.fromRunnable(() -> memberService.deleteById(event.getGuildId(), user.getId())));
     }
 
     @Override
@@ -46,7 +46,6 @@ public class MemberEventHandler extends AuditEventHandler{
         context.init(event.getGuildId());
 
         LocalMember member = new LocalMember();
-        member.id(user.getId());
         member.guildId(event.getGuildId());
         member.effectiveName(event.getMember().getDisplayName());
         if(member.user() == null){
@@ -97,7 +96,7 @@ public class MemberEventHandler extends AuditEventHandler{
                 });
             }
         })
-        .thenEmpty(Mono.fromRunnable(() -> memberService.deleteById(user.getId())));
+        .thenEmpty(Mono.fromRunnable(() -> memberService.deleteById(event.getGuildId(), user.getId())));
     }
 
     @Override
@@ -108,6 +107,13 @@ public class MemberEventHandler extends AuditEventHandler{
                     .doOnNext(m -> {
                         LocalMember info = memberService.getOr(m, () -> new LocalMember(m));
                         info.effectiveName(m.getDisplayName());
+                        if(info.user() == null){
+                            LocalUser user = new LocalUser();
+                            user.userId(m.getId());
+                            user.name(m.getUsername());
+                            info.user(user);
+                            userService.save(user);
+                        }
                         memberService.save(info);
                     })
                     .then();

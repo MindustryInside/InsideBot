@@ -32,7 +32,6 @@ public abstract class GuildEntity extends BaseEntity{
     public boolean equals(Object o){
         if(this == o) return true;
         if(o == null || getClass() != o.getClass()) return false;
-        if(!super.equals(o)) return false;
         GuildEntity that = (GuildEntity)o;
         return Objects.equals(guildId, that.guildId);
     }
@@ -44,8 +43,6 @@ public abstract class GuildEntity extends BaseEntity{
 
     @Override
     public String toString(){
-        return "GuildEntity{" +
-               "guildId='" + guildId + '\'' +
-               "} " + super.toString();
+        return "GuildEntity{guildId='" + guildId + "'} " + super.toString();
     }
 }

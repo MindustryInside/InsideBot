@@ -91,7 +91,7 @@ public class MessageServiceImpl implements MessageService{
     @Override
     @Transactional(readOnly = true)
     public MessageInfo getById(@NonNull Snowflake messageId){
-        return repository.findById(messageId).orElse(null);
+        return repository.findByMessageId(messageId);
     }
 
     @Override
