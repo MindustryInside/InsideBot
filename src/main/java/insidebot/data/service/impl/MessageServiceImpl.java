@@ -116,10 +116,9 @@ public class MessageServiceImpl implements MessageService{
     @Scheduled(cron = "0 0 */12 * * *") // каждые 12 часов
     public void cleanUp(){
         log.info("Audit cleanup started...");
-        Flux.fromIterable(repository.findAll()).filter(m -> {
-            DateTime time = new DateTime(m.timestamp());
-            return Weeks.weeksBetween(time, DateTime.now()).getWeeks() >= 4;
-        }).subscribe(repository::delete, Log::err);
+        Flux.fromIterable(repository.findAll())
+            .filter(m -> Weeks.weeksBetween(new DateTime(m.timestamp()), DateTime.now()).getWeeks() >= 4)
+            .subscribe(repository::delete, Log::err);
         log.info("Audit cleanup finished");
     }
 }

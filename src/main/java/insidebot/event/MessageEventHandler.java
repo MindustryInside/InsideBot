@@ -9,7 +9,8 @@ import discord4j.core.object.Embed.Field;
 import discord4j.core.object.Region;
 import discord4j.core.object.audit.*;
 import discord4j.core.object.entity.*;
-import discord4j.core.object.entity.channel.TextChannel;
+import discord4j.core.object.entity.channel.*;
+import discord4j.core.object.entity.channel.Channel.Type;
 import discord4j.core.spec.EmbedCreateSpec;
 import insidebot.Settings;
 import insidebot.event.audit.*;
@@ -64,7 +65,7 @@ public class MessageEventHandler extends AuditEventHandler{
     public Publisher<?> onMessageCreate(MessageCreateEvent event){
         Message message = event.getMessage();
         Member member = event.getMember().orElse(null);
-        if(member == null) return Mono.empty();
+        if(member == null || message.getChannel().map(Channel::getType).block() != Type.GUILD_TEXT) return Mono.empty();
         TextChannel channel = message.getChannel().cast(TextChannel.class).block();
         User user = message.getAuthor().orElse(null);
         Snowflake guildId = event.getGuildId().orElse(null);
@@ -117,7 +118,7 @@ public class MessageEventHandler extends AuditEventHandler{
     @Override
     public Publisher<?> onMessageUpdate(MessageUpdateEvent event){
         Message message = event.getMessage().block();
-        if(message == null) return Mono.empty();
+        if(message == null || message.getChannel().map(Channel::getType).block() != Type.GUILD_TEXT) return Mono.empty();
         User user = message.getAuthor().orElse(null);
         TextChannel c = message.getChannel().cast(TextChannel.class).block();
         if(DiscordUtil.isBot(user) || c == null) return Mono.empty();
@@ -166,7 +167,7 @@ public class MessageEventHandler extends AuditEventHandler{
     @Override
     public Publisher<?> onMessageDelete(MessageDeleteEvent event){
         Message m = event.getMessage().orElse(null);
-        if(m == null) return Mono.empty();
+        if(m == null || m.getChannel().map(Channel::getType).block() != Type.GUILD_TEXT) return Mono.empty();
         Guild guild = m.getGuild().block();
         TextChannel c =  event.getChannel().cast(TextChannel.class).block();
         if(guild == null || c == null) return Mono.empty();
