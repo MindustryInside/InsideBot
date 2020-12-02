@@ -110,7 +110,6 @@ public abstract class BaseCommandHandler{
             this.optional = optional;
             this.variadic = variadic;
         }
-
     }
 
     public static class CommandResponse{

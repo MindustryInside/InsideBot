@@ -1,11 +1,13 @@
 package insidebot.common.command.model;
 
 import arc.math.Mathf;
-import arc.util.Strings;
+import arc.util.*;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
+import discord4j.core.spec.EmbedCreateSpec;
+import insidebot.Settings;
 import insidebot.common.command.model.base.*;
 import insidebot.common.command.service.CommandHandler;
 import insidebot.common.services.DiscordService;
@@ -14,12 +16,14 @@ import insidebot.data.service.*;
 import insidebot.event.dispatcher.EventType.*;
 import insidebot.util.*;
 import org.apache.logging.log4j.util.Supplier;
-import org.slf4j.Logger;
+import org.joda.time.DateTime;
+import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 @Service
 public class Commands{
@@ -36,17 +40,20 @@ public class Commands{
     private MemberService memberService;
 
     @Autowired
+    private AdminService adminService;
+
+    @Autowired
     private CommandHandler handler;
 
     @Autowired
-    private Logger log;
+    private Settings settings;
 
     @DiscordCommand(key = "help", description = "command.help.description")
     public class HelpCommand extends CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
             StringBuilder builder = new StringBuilder();
-            Snowflake guildId = event.getGuildId().orElseThrow(RuntimeException::new);
+            Snowflake guildId = reference.member().getGuildId();
             String prefix = guildService.prefix(guildId);
 
             handler.commandList().forEach(command -> {
@@ -79,7 +86,7 @@ public class Commands{
             if(args.length == 0){
                 return messageService.text(channel, messageService.format("command.config.prefix", c.prefix()));
             }else{
-                if(!memberService.isOwner(reference.member())){
+                if(!adminService.isOwner(reference.member())){
                     return messageService.err(channel, messageService.get("command.owner-only"));
                 }
 
@@ -106,7 +113,7 @@ public class Commands{
             if(args.length == 0){
                 return messageService.text(channel, messageService.format("command.config.locale", r.get()));
             }else{
-                if(!memberService.isOwner(reference.member())){
+                if(!adminService.isOwner(reference.member())){
                     return messageService.err(channel, messageService.get("command.owner-only"));
                 }
 
@@ -128,31 +135,32 @@ public class Commands{
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
             MessageChannel channel = event.getMessage().getChannel().block();
             if(!MessageUtil.canParseInt(args[1])){
-                messageService.err(channel, messageService.get("command.incorrect-number"));
-                return Mono.empty();
+                return messageService.err(channel, messageService.get("command.incorrect-number"));
             }
 
             try{
                 int delayDays = Strings.parseInt(args[1]);
-                LocalMember info = memberService.get(event.getGuildId().orElseThrow(RuntimeException::new), MessageUtil.parseUserId(args[0]));
+                LocalMember info = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
                 Member m = discordService.gateway().getMemberById(info.guildId(), info.id()).block();
+                String reason = args.length > 2 ? args[2] : null;
 
                 if(DiscordUtil.isBot(m)){
-                    messageService.err(channel, messageService.get("command.user-is-bot"));
-                    return Mono.empty();
+                    return messageService.err(channel, messageService.get("command.user-is-bot"));
                 }
 
-                if(memberService.isAdmin(m)){
-                    messageService.err(channel, messageService.get("command.user-is-admin"));
-                    return Mono.empty();
+                if(adminService.isAdmin(m)){
+                    return messageService.err(channel, messageService.get("command.user-is-admin"));
                 }
 
                 if(reference.member().equals(m)){
-                    messageService.err(channel, messageService.get("command.mute.self-user"));
-                    return Mono.empty();
+                    return messageService.err(channel, messageService.get("command.mute.self-user"));
                 }
 
-                discordService.eventListener().publish(new MemberMuteEvent(event.getGuild().block(), info, delayDays));
+                if(reason != null && reason.length() > 1000){
+                    return messageService.err(channel, messageService.format("command.string-limit", 1000));
+                }
+
+                discordService.eventListener().publish(new MemberMuteEvent(m.getGuild().block(), reference.localMember(), info, reason, delayDays));
             }catch(Exception e){
                 messageService.err(channel, messageService.get("command.incorrect-name"));
             }
@@ -167,14 +175,12 @@ public class Commands{
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
             TextChannel channel = event.getMessage().getChannel().cast(TextChannel.class).block();
             if(!MessageUtil.canParseInt(args[0])){
-                messageService.err(channel, messageService.get("command.incorrect-number"));
-                return Mono.empty();
+                return messageService.err(channel, messageService.get("command.incorrect-number"));
             }
 
             int number = Integer.parseInt(args[0]);
             if(number >= 100){
-                messageService.err(channel, messageService.format("command.limit-number", 100));
-                return Mono.empty();
+                return messageService.err(channel, messageService.format("command.limit-number", 100));
             }
 
             List<Message> history = channel.getMessagesBefore(event.getMessage().getId())
@@ -183,8 +189,7 @@ public class Commands{
                                            .block();
 
             if(history == null || (history.isEmpty() && number > 0)){
-                messageService.err(channel, messageService.get("command.hist-error"));
-                return Mono.empty();
+                return messageService.err(channel, messageService.get("command.hist-error"));
             }
 
             discordService.eventListener().publish(new MessageClearEvent(event.getGuild().block(), history, reference.user(), channel, number));
@@ -199,32 +204,33 @@ public class Commands{
             String[] warningStrings = {messageService.get("command.first"), messageService.get("command.second"), messageService.get("command.third")};
             MessageChannel channel = event.getMessage().getChannel().block();
             try{
-                LocalMember info = memberService.get(event.getGuildId().orElseThrow(RuntimeException::new), MessageUtil.parseUserId(args[0]));
+                LocalMember info = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
                 Member m = discordService.gateway().getMemberById(info.guildId(), info.id()).block();
+                String reason = args.length > 1 ? args[1] : null;
 
                 if(DiscordUtil.isBot(m)){
-                    messageService.err(channel, messageService.get("command.user-is-bot"));
-                    return Mono.empty();
+                    return messageService.err(channel, messageService.get("command.user-is-bot"));
                 }
 
-                if(memberService.isAdmin(reference.member())){
-                    messageService.err(channel, messageService.get("command.user-is-admin"));
-                    return Mono.empty();
+                if(adminService.isAdmin(m)){
+                    return messageService.err(channel, messageService.get("command.user-is-admin"));
                 }
 
                 if(reference.member().equals(m)){
-                    messageService.err(channel, messageService.get("command.warn.self-user"));
-                    return Mono.empty();
+                    return messageService.err(channel, messageService.get("command.warn.self-user"));
                 }
 
-                int warnings = info.addWarn();
+                if(reason != null && reason.length() > 1000){
+                    return messageService.err(channel, messageService.format("command.string-limit", 1000));
+                }
 
-                messageService.text(channel, messageService.format("message.warn", m.getUsername(), warningStrings[Mathf.clamp(warnings - 1, 0, warningStrings.length - 1)]));
+                adminService.warn(reference.localMember(), info, reason).block();
+                long warnings = adminService.warnings(m.getGuildId(), info.id()).count().blockOptional().orElse(0L);
+
+                messageService.text(channel, messageService.format("message.warn", m.getUsername(), warningStrings[(int)Mathf.clamp(warnings - 1, 0, warningStrings.length - 1)]));
 
                 if(warnings >= 3){
                     event.getGuild().flatMap(g -> g.ban(m.getId(), b -> b.setDeleteMessageDays(0))).block();
-                }else{
-                    memberService.save(info);
                 }
             }catch(Exception e){
                 messageService.err(channel, messageService.get("command.incorrect-name"));
@@ -240,9 +246,28 @@ public class Commands{
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
             MessageChannel channel = event.getMessage().getChannel().block();
             try{
-                LocalMember info = memberService.get(event.getGuildId().orElseThrow(RuntimeException::new), MessageUtil.parseUserId(args[0]));
-                int warnings = info.warns();
-                messageService.text(channel, messageService.format("command.warnings", info.effectiveName(), warnings, warnings == 1 ? messageService.get("command.warn") : messageService.get("command.warns")));
+                LocalMember info = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
+                List<AdminAction> warns = adminService.warnings(info.guildId(), info.id()).limitRequest(21)
+                                                      .collectList().blockOptional().orElse(Collections.emptyList());
+                if(warns.isEmpty()){
+                    messageService.text(channel, messageService.get("command.warnings.empty")).block();
+                }else{
+                    DateTimeFormatter formatter = DateTimeFormat.shortDateTime();
+                    Consumer<EmbedCreateSpec> spec = e -> {
+                        e.setColor(settings.normalColor);
+                        e.setTitle(messageService.format("command.warnings.title", info.effectiveName()));
+                        for(int i = 0; i < warns.size(); i++){
+                            AdminAction w = warns.get(i);
+                            String title = String.format("%2s. %s", i + 1, formatter.print(new DateTime(w.timestamp())));
+
+                            StringBuilder description = new StringBuilder();
+                            description.append(messageService.format("message.admin", w.admin().effectiveName())).append('\n');
+                            description.append(messageService.format("message.reason", w.reason().orElse(messageService.get("message.reason.not-defined"))));
+                            e.addField(title, description.toString(), true);
+                        }
+                    };
+                    messageService.info(channel, spec).block();
+                }
             }catch(Exception e){
                 messageService.err(channel, messageService.get("command.incorrect-name"));
             }
@@ -257,19 +282,21 @@ public class Commands{
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
             MessageChannel channel = event.getMessage().getChannel().block();
             if(args.length > 1 && !MessageUtil.canParseInt(args[1])){
-                messageService.text(channel, messageService.get("command.incorrect-number"));
-                return Mono.empty();
+                return messageService.text(channel, messageService.get("command.incorrect-number"));
             }
 
-            int warnings = args.length > 1 ? Strings.parseInt(args[1]) : 1;
+            int warnings = args.length > 1 ? Strings.parseInt(args[1]) + 1 : 0;
 
             try{
-                LocalMember info = memberService.get(event.getGuildId().orElseThrow(RuntimeException::new), MessageUtil.parseUserId(args[0]));
-                info.warns(info.warns() - warnings);
-                messageService.text(channel, messageService.format("command.unwarn", info.effectiveName(), warnings, warnings == 1 ? messageService.get("command.warn") : messageService.get("command.warns")));
-                memberService.save(info);
-            }catch(Exception e){
-                messageService.err(channel, messageService.get("command.incorrect-name"));
+                LocalMember info = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
+                adminService.unwarn(info.guildId(), info.id(), warnings).block();
+                messageService.text(channel, messageService.format("command.unwarn", info.effectiveName(), warnings + 1, warnings == 1 ? messageService.get("command.warn") : messageService.get("command.warns")));
+            }catch(Throwable t){
+                if(t instanceof IndexOutOfBoundsException){
+                    messageService.err(channel, messageService.get("command.incorrect-number"));
+                }else{
+                    messageService.err(channel, messageService.get("command.incorrect-name"));
+                }
             }
 
             return Mono.empty();
@@ -281,7 +308,7 @@ public class Commands{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
             try{
-                LocalMember info = memberService.get(event.getGuildId().orElseThrow(RuntimeException::new), MessageUtil.parseUserId(args[0]));
+                LocalMember info = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
                 discordService.eventListener().publish(new MemberUnmuteEvent(event.getGuild().block(), info));
             }catch(Exception e){
                 messageService.err(event.getMessage().getChannel().block(), messageService.get("command.incorrect-name"));

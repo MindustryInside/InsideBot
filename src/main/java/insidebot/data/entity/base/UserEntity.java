@@ -39,8 +39,6 @@ public abstract class UserEntity implements Serializable{
 
     @Override
     public String toString(){
-        return "UserEntity{" +
-               "userId='" + userId + '\'' +
-               '}';
+        return "UserEntity{userId='" + userId + "'}";
     }
 }

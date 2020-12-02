@@ -2,7 +2,6 @@ package insidebot.event.dispatcher.impl;
 
 import discord4j.core.object.Embed;
 import discord4j.core.object.entity.Member;
-import insidebot.common.services.DiscordService;
 import insidebot.data.entity.LocalMember;
 import insidebot.data.service.*;
 import insidebot.event.MessageEventHandler;
@@ -23,7 +22,7 @@ import static insidebot.audit.AuditEventType.*;
 @Service
 public class EventsImpl extends Events{
     @Autowired
-    private DiscordService discordService;
+    private AdminService adminService;
 
     @Autowired
     private MessageService messageService;
@@ -81,9 +80,8 @@ public class EventsImpl extends Events{
         Member member = event.guild().getMemberById(l.id()).block();
         if(member == null) return Mono.empty();
 
-        l.muteEndDate(null);
+        adminService.unmute(l.guildId(), l.id()).block();
         member.removeRole(guildService.muteRoleId(member.getGuildId())).block();
-        memberService.save(l);
         return log(member.getGuildId(), e -> {
             e.setTitle(messageService.get("message.unmute"));
             e.setDescription(messageService.format("message.unmute.text", member.getUsername()));
@@ -95,21 +93,22 @@ public class EventsImpl extends Events{
     @Override
     public Publisher<?> onMemberMute(MemberMuteEvent event){
         context.init(event.guild().getId());
-        LocalMember l = event.localMember;
+        LocalMember l = event.target;
         Member member = event.guild().getMemberById(l.id()).block();
         if(member == null) return Mono.empty();
 
-        Calendar calendar = Calendar.getInstance();
-        calendar.roll(Calendar.DAY_OF_YEAR, +event.delay);
-        l.muteEndDate(calendar);
-        memberService.save(l);
+        Calendar end = Calendar.getInstance();
+        end.roll(Calendar.DAY_OF_YEAR, +event.delay);
+        adminService.mute(event.admin, l, end, event.reason().orElse(null));
         member.addRole(guildService.muteRoleId(member.getGuildId())).block();
 
-        return log(member.getGuildId(), embedBuilder -> {
-            embedBuilder.setTitle(messageService.get("message.mute"));
-            embedBuilder.setDescription(messageService.format("message.mute.text", member.getUsername(), event.delay));
-            embedBuilder.setFooter(MessageUtil.zonedFormat(), null);
-            embedBuilder.setColor(userMute.color);
+        return log(member.getGuildId(), e -> {
+            e.setTitle(messageService.get("message.mute"));
+            e.setDescription(String.format("%s%n%s",
+                                           messageService.format("message.mute.text", member.getUsername(), event.delay, event.admin.username()),
+                                           messageService.format("message.reason", event.reason().orElse(messageService.get("message.reason.not-defined")))));
+            e.setFooter(MessageUtil.zonedFormat(), null);
+            e.setColor(userMute.color);
         });
     }
 }

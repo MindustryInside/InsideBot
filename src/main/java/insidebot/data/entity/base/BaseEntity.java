@@ -44,8 +44,6 @@ public abstract class BaseEntity implements Serializable{
 
     @Override
     public String toString(){
-        return "BaseEntity{" +
-               "id='" + id + '\'' +
-               '}';
+        return "BaseEntity{id='" + id + "'}";
     }
 }

@@ -15,7 +15,7 @@ public class CommandHandler extends BaseCommandHandler{
 
     @Override
     public CommandResponse handleMessage(String message, CommandReference reference, MessageCreateEvent event){
-        Snowflake guildId = event.getGuildId().orElse(null);
+        Snowflake guildId = event.getGuildId().orElse(null); //todo сделать поддержку лс команд
         if(guildId == null){
             return new CommandResponse(ResponseType.noCommand, null, null);
         }

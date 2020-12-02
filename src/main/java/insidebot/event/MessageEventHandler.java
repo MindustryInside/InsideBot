@@ -6,6 +6,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.*;
 import discord4j.core.object.*;
+import discord4j.core.object.Embed.Field;
 import discord4j.core.object.audit.*;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
@@ -43,6 +44,9 @@ public class MessageEventHandler extends AuditEventHandler{
 
     @Autowired
     private GuildService guildService;
+
+    @Autowired
+    private AdminService adminService;
 
     @Autowired
     private Settings settings;
@@ -97,7 +101,6 @@ public class MessageEventHandler extends AuditEventHandler{
             info.userId(userId);
             info.id(message.getId());
             info.guildId(guildId);
-            info.channelId(message.getChannelId());
             info.timestamp(Calendar.getInstance());
             info.content(MessageUtil.effectiveContent(message));
             messageService.save(info);
@@ -109,7 +112,7 @@ public class MessageEventHandler extends AuditEventHandler{
                 .member(member)
                 .user(user);
 
-        if(memberService.isAdmin(member)){
+        if(adminService.isAdmin(member)){
             handleResponse(commandHandler.handleMessage(message.getContent(), reference, event), channel);
         }
         memberService.save(localMember);
@@ -129,7 +132,7 @@ public class MessageEventHandler extends AuditEventHandler{
 
         String oldContent = info.content();
         String newContent = MessageUtil.effectiveContent(message);
-        boolean under = newContent.length() >= Embed.Field.MAX_VALUE_LENGTH || oldContent.length() >= Embed.Field.MAX_VALUE_LENGTH;
+        boolean under = newContent.length() >= Field.MAX_VALUE_LENGTH || oldContent.length() >= Field.MAX_VALUE_LENGTH;
 
         if(message.isPinned() || newContent.equals(oldContent)) return Mono.empty();
 
@@ -145,9 +148,9 @@ public class MessageEventHandler extends AuditEventHandler{
                                                        event.getMessageId().asString()));
 
             embed.addField(messageService.get("message.edit.old-content"),
-                           MessageUtil.substringTo(oldContent, Embed.Field.MAX_VALUE_LENGTH), false);
+                           MessageUtil.substringTo(oldContent, Field.MAX_VALUE_LENGTH), false);
             embed.addField(messageService.get("message.edit.new-content"),
-                           MessageUtil.substringTo(newContent, Embed.Field.MAX_VALUE_LENGTH), true);
+                           MessageUtil.substringTo(newContent, Field.MAX_VALUE_LENGTH), true);
 
             embed.setFooter(MessageUtil.zonedFormat(), null);
         };
@@ -186,7 +189,7 @@ public class MessageEventHandler extends AuditEventHandler{
         MessageInfo info = messageService.getById(m.getId());
         User user = m.getAuthor().orElse(null);
         String content = info.content();
-        boolean under = content.length() >= Embed.Field.MAX_VALUE_LENGTH;
+        boolean under = content.length() >= Field.MAX_VALUE_LENGTH;
 
         if(DiscordUtil.isBot(user) || MessageUtil.isEmpty(content)) return Mono.empty();
 
@@ -197,7 +200,7 @@ public class MessageEventHandler extends AuditEventHandler{
             embed.setAuthor(user.getUsername(), null, user.getAvatarUrl());
             embed.setTitle(messageService.format("message.delete", c.getName()));
             embed.setFooter(MessageUtil.zonedFormat(), null);
-            embed.addField(messageService.get("message.delete.content"), MessageUtil.substringTo(content, Embed.Field.MAX_VALUE_LENGTH), true);
+            embed.addField(messageService.get("message.delete.content"), MessageUtil.substringTo(content, Field.MAX_VALUE_LENGTH), true);
         };
 
         if(under){

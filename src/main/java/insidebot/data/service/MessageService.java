@@ -2,11 +2,13 @@ package insidebot.data.service;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.channel.*;
+import discord4j.core.spec.EmbedCreateSpec;
 import insidebot.data.entity.MessageInfo;
 import org.springframework.lang.NonNull;
 import reactor.core.publisher.Mono;
 
 import java.util.Locale;
+import java.util.function.Consumer;
 
 public interface MessageService{
 
@@ -19,6 +21,8 @@ public interface MessageService{
     Mono<Void> text(MessageChannel channel, String text, Object... args);
 
     Mono<Void> info(MessageChannel channel, String title, String text, Object... args);
+
+    Mono<Void> info(MessageChannel channel, Consumer<EmbedCreateSpec> embed);
 
     Mono<Void> err(MessageChannel channel, String text, Object... args);
 

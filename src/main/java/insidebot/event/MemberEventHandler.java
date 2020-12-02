@@ -87,7 +87,7 @@ public class MemberEventHandler extends AuditEventHandler{
                     embed.setTitle(messageService.get("message.user-kick"));
                     String desc = messageService.format("message.user-kick.text", user.getUsername(), moderator.getUsername());
                     if(a.getReason().isPresent() && !a.getReason().get().isBlank()){
-                        desc += messageService.format("message.user-kick.reason", a.getReason().get().trim());
+                        desc += "\n" + messageService.format("message.reason", a.getReason().get().trim());
                     }
                     embed.setDescription(desc);
                     embed.setFooter(MessageUtil.zonedFormat(), null);

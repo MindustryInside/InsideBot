@@ -8,6 +8,7 @@ import insidebot.common.services.DiscordService;
 import insidebot.data.entity.LocalMember;
 import insidebot.data.repository.LocalMemberRepository;
 import insidebot.data.service.*;
+import insidebot.data.service.AdminService.AdminActionType;
 import insidebot.event.dispatcher.EventType.MemberUnmuteEvent;
 import org.joda.time.*;
 import org.slf4j.Logger;
@@ -27,6 +28,9 @@ public class MemberServiceImpl implements MemberService{
 
     @Autowired
     private GuildService guildService;
+
+    @Autowired
+    private AdminService adminService;
 
     @Autowired
     private Logger log;
@@ -98,7 +102,7 @@ public class MemberServiceImpl implements MemberService{
     public void unmuteUsers(){
         Flux.fromIterable(repository.findAll())
             .filter(m -> !guildService.muteDisabled(m.guildId()))
-            .filter(m -> m != null && isMuteEnd(m))
+            .filter(this::isMuteEnd)
             .subscribe(l -> {
                 discordService.eventListener().publish(new MemberUnmuteEvent(discordService.gateway().getGuildById(l.guildId()).block(), l));
             }, Log::err);
@@ -116,41 +120,18 @@ public class MemberServiceImpl implements MemberService{
                 Member member = discordService.gateway().getMemberById(l.guildId(), l.id()).block();
                 if(member == null) return; // нереально
                 Snowflake roleId = guildService.activeUserRoleId(member.getGuildId());
-                if(isActiveUser(l)){
+                if(l.isActiveUser()){
                     member.addRole(roleId).block();
                 }else{
                     member.removeRole(roleId).block();
+                    l.messageSeq(0);
+                    save(l);
                 }
         }, Log::err);
     }
 
-    @Override
-    public boolean isAdmin(Member member){
-        return member != null && (isOwner(member) || member.getRoles().map(Role::getPermissions)
-                                                           .any(r -> r.contains(Permission.ADMINISTRATOR))
-                                                           .blockOptional().orElse(false));
-    }
-
-    @Override
-    public boolean isOwner(Member member){
-        return member != null && member.getGuild().map(Guild::getOwnerId).map(s -> member.getId().equals(s))
-                                       .blockOptional().orElse(false);
-    }
-
     protected boolean isMuteEnd(@NonNull LocalMember member){
-        return member.muteEndDate() != null && DateTime.now().isAfter(new DateTime(member.muteEndDate()));
-    }
-
-    protected boolean isActiveUser(@NonNull LocalMember member){
-        if(member.lastSentMessage() == null) return false;
-        DateTime last = new DateTime(member.lastSentMessage());
-        int diff = Weeks.weeksBetween(last, DateTime.now()).getWeeks();
-
-        if(diff >= 3){
-            member.messageSeq(0);
-            save(member);
-            return false;
-        }else return member.messageSeq() >= 75;
+        return adminService.get(AdminActionType.mute, member.guildId(), member.id()).blockFirst().isEnd();
     }
 
     @Override

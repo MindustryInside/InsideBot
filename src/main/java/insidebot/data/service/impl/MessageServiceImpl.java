@@ -3,6 +3,7 @@ package insidebot.data.service.impl;
 import arc.util.Strings;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.channel.MessageChannel;
+import discord4j.core.spec.EmbedCreateSpec;
 import insidebot.Settings;
 import insidebot.common.services.ContextService;
 import insidebot.data.entity.MessageInfo;
@@ -14,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.NonNull;
+
+import java.util.function.Consumer;
 
 @Service
 public class MessageServiceImpl implements MessageService{
@@ -31,7 +34,11 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     public String get(String key){
-        return context.getMessage(key, null, contextService.locale());
+        try{
+            return context.getMessage(key, null, contextService.locale());
+        }catch(Throwable t){
+            return "???" + key + "???";
+        }
     }
 
     @Override
@@ -47,8 +54,13 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     public Mono<Void> info(MessageChannel channel, String title, String text, Object... args){
-        channel.createMessage(s -> s.setEmbed(e -> e.setColor(settings.normalColor).setTitle(title)
-                                                    .setDescription(Strings.format(text, args)))).block();
+        return info(channel, e -> e.setColor(settings.normalColor).setTitle(title)
+                                   .setDescription(Strings.format(text, args)));
+    }
+
+    @Override
+    public Mono<Void> info(MessageChannel channel, Consumer<EmbedCreateSpec> embed){
+        channel.createMessage(s -> s.setEmbed(embed)).block();
         return Mono.empty();
     }
 

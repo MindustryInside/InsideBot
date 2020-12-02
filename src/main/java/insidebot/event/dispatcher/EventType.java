@@ -3,9 +3,9 @@ package insidebot.event.dispatcher;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
 import insidebot.data.entity.LocalMember;
-import reactor.util.annotation.NonNull;
+import reactor.util.annotation.*;
 
-import java.util.List;
+import java.util.*;
 
 /**
  * Все внутренние ивенты
@@ -56,21 +56,30 @@ public final class EventType{
     }
 
     public static class MemberMuteEvent extends BaseEvent{
-        public final @NonNull LocalMember localMember;
+        public final @NonNull LocalMember admin;
+        public final @NonNull LocalMember target;
+        private final @Nullable String reason;
         public final int delay;
 
-        public MemberMuteEvent(Guild guild, @NonNull LocalMember localMember, int delay){
+        public MemberMuteEvent(Guild guild, @NonNull LocalMember admin, @NonNull LocalMember target, @Nullable String reason, int delay){
             super(guild);
-            this.localMember = localMember;
+            this.admin = admin;
+            this.target = target;
+            this.reason = reason;
             this.delay = delay;
+        }
+
+        public Optional<String> reason(){
+            return Optional.ofNullable(reason);
         }
 
         @Override
         public String toString(){
             return "MemberMuteEvent{" +
-                   "localMember=" + localMember +
+                   "admin=" + admin +
+                   ", target=" + target +
+                   ", reason='" + reason + '\'' +
                    ", delay=" + delay +
-                   ", guild=" + guild +
                    '}';
         }
     }

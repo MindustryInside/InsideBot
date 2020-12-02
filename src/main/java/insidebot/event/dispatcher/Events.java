@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
  */
 public abstract class Events extends AuditEventHandler{
 
-    public Publisher<?> onMessageClear(MessageClearEvent event) {
+    public Publisher<?> onMessageClear(MessageClearEvent event){
         return Mono.empty();
     }
 
@@ -21,7 +21,7 @@ public abstract class Events extends AuditEventHandler{
         return Mono.empty();
     }
 
-    public Publisher<?> onMemberMute(MemberMuteEvent event) {
+    public Publisher<?> onMemberMute(MemberMuteEvent event){
         return Mono.empty();
     }
 

@@ -28,9 +28,5 @@ public interface MemberService{
 
     void deleteById(Snowflake userId);
 
-    boolean isAdmin(Member member);
-
-    boolean isOwner(Member member);
-
     String detailName(Member member);
 }
