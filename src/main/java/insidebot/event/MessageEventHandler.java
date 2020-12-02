@@ -84,7 +84,6 @@ public class MessageEventHandler extends AuditEventHandler{
             LocalUser localUser = userService.getOr(userId, LocalUser::new);
             localUser.userId(userId);
             localUser.name(user.getUsername());
-            localUser.discriminator(user.getDiscriminator());
             localMember.user(localUser);
             userService.save(localUser);
         }

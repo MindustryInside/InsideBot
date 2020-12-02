@@ -45,11 +45,7 @@ public class LocalMember extends GuildEntity{
         DateTime last = new DateTime(lastSentMessage());
         int diff = Weeks.weeksBetween(last, DateTime.now()).getWeeks();
 
-        if(diff >= 3){
-            return false;
-        }else{
-            return messageSeq() >= 75;
-        }
+        return diff < 3 && messageSeq() >= 75;
     }
 
     public LocalUser user(){

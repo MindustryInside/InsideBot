@@ -27,7 +27,7 @@ public interface MessageService{
     Mono<Void> err(MessageChannel channel, String title, String text, Object... args);
 
     //data
-    MessageInfo getById( Snowflake messageId);
+    MessageInfo getById(Snowflake messageId);
 
     boolean exists(Snowflake messageId);
 

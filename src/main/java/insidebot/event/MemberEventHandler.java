@@ -51,7 +51,6 @@ public class MemberEventHandler extends AuditEventHandler{
         member.effectiveName(event.getMember().getDisplayName());
         if(member.user() == null){
             LocalUser localUser = new LocalUser();
-            localUser.discriminator(user.getDiscriminator());
             localUser.name(user.getUsername());
             localUser.userId(user.getId());
             member.user(localUser);
