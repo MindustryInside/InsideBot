@@ -17,7 +17,7 @@ import reactor.core.publisher.*;
 import java.time.ZoneId;
 import java.util.*;
 
-import static insidebot.audit.AuditEventType.*;
+import static insidebot.event.audit.AuditEventType.*;
 
 @Service
 public class EventsImpl extends Events{

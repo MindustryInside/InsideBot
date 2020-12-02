@@ -1,8 +1,10 @@
-package insidebot.audit;
+package insidebot.event.audit;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.ReactiveEventAdapter;
+import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.spec.*;
+import discord4j.discordjson.json.MessageData;
 import insidebot.common.services.*;
 import insidebot.data.service.*;
 import insidebot.util.StringInputStream;
@@ -26,7 +28,13 @@ public abstract class AuditEventHandler extends ReactiveEventAdapter{
 
     protected StringInputStream stringInputStream = new StringInputStream();
 
-    public abstract Mono<Void> log(Snowflake guildId, MessageCreateSpec message);
+    public Mono<Void> log(Snowflake guildId, MessageCreateSpec message){
+        MessageData data = discordService.getLogChannel(guildId)
+                                         .map(TextChannel::getRestChannel)
+                                         .flatMap(c -> c.createMessage(message.asRequest()))
+                                         .block();
+        return Mono.justOrEmpty(data).flatMap(__ -> Mono.fromRunnable(() -> context.reset()));
+    }
 
     public Mono<Void> log(Snowflake guildId, Consumer<EmbedCreateSpec> embed){
         return log(guildId, embed, false);

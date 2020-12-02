@@ -22,31 +22,31 @@ public interface EventListener{
     }
 
     static EventListener withEarliestEvents(int bufferSize){
-        return builder()
-                .eventProcessor(EmitterProcessor.create(bufferSize, false))
-                .overflowStrategy(FluxSink.OverflowStrategy.DROP)
-                .build();
+        return builder().eventProcessor(EmitterProcessor.create(bufferSize, false))
+                        .overflowStrategy(FluxSink.OverflowStrategy.DROP)
+                        .build();
     }
 
     static EventListener withLatestEvents(int bufferSize){
-        return builder()
-                .eventProcessor(EmitterProcessor.create(bufferSize, false))
-                .overflowStrategy(FluxSink.OverflowStrategy.LATEST)
-                .build();
+        return builder().eventProcessor(EmitterProcessor.create(bufferSize, false))
+                        .overflowStrategy(FluxSink.OverflowStrategy.LATEST)
+                        .build();
     }
 
     static EventListener replayingWithTimeout(Duration maxAge){
         return new DefaultEventListener(
                 ReplayProcessor.createTimeout(maxAge),
                 FluxSink.OverflowStrategy.IGNORE,
-                DEFAULT_EVENT_SCHEDULER.get());
+                DEFAULT_EVENT_SCHEDULER.get()
+        );
     }
 
     static EventListener replayingWithSize(int historySize){
         return new DefaultEventListener(
                 ReplayProcessor.create(historySize),
                 FluxSink.OverflowStrategy.IGNORE,
-                DEFAULT_EVENT_SCHEDULER.get());
+                DEFAULT_EVENT_SCHEDULER.get()
+        );
     }
 
     <E extends BaseEvent> Flux<E> on(Class<E> eventClass);
@@ -57,8 +57,8 @@ public interface EventListener{
 
     default Flux<BaseEvent> on(Events adapter){
         return on(BaseEvent.class).flatMap(event -> Flux.defer(() -> adapter.hookOnEvent(event))
-                                      .onErrorResume(t -> Mono.empty())
-                                      .then(Mono.just(event)));
+                                  .onErrorResume(t -> Mono.empty())
+                                  .then(Mono.just(event)));
     }
 
     void publish(BaseEvent event);

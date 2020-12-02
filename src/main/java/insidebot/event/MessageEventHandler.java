@@ -5,15 +5,14 @@ import arc.util.Strings;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.*;
-import discord4j.core.object.*;
 import discord4j.core.object.Embed.Field;
+import discord4j.core.object.Region;
 import discord4j.core.object.audit.*;
 import discord4j.core.object.entity.*;
-import discord4j.core.object.entity.channel.*;
-import discord4j.core.spec.*;
-import discord4j.discordjson.json.MessageData;
+import discord4j.core.object.entity.channel.TextChannel;
+import discord4j.core.spec.EmbedCreateSpec;
 import insidebot.Settings;
-import insidebot.audit.AuditEventHandler;
+import insidebot.event.audit.*;
 import insidebot.common.command.model.base.CommandReference;
 import insidebot.common.command.service.*;
 import insidebot.common.command.service.BaseCommandHandler.*;
@@ -23,13 +22,13 @@ import insidebot.util.*;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.*;
+import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.util.Calendar;
 import java.util.function.Consumer;
 
-import static insidebot.audit.AuditEventType.*;
+import static insidebot.event.audit.AuditEventType.*;
 
 @Component
 public class MessageEventHandler extends AuditEventHandler{
@@ -208,14 +207,6 @@ public class MessageEventHandler extends AuditEventHandler{
 
         messageService.delete(info);
         return Mono.empty();
-    }
-
-    @Override
-    public Mono<Void> log(Snowflake guildId, MessageCreateSpec message){
-        MessageData data = discordService.getLogChannel(guildId)
-                                         .flatMap(c -> c.getRestChannel().createMessage(message.asRequest()))
-                                         .block();
-        return Mono.justOrEmpty(data).flatMap(__ -> Mono.fromRunnable(() -> context.reset()));
     }
 
     protected void handleResponse(CommandResponse response, TextChannel channel){

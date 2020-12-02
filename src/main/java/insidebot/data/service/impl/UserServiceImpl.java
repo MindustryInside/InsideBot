@@ -23,7 +23,7 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public LocalUser getOr(Snowflake userId, Supplier<LocalUser> prov){
         return exists(userId) ? get(userId) : prov.get();
     }

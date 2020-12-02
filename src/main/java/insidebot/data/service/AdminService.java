@@ -12,6 +12,12 @@ public interface AdminService{
 
     Flux<AdminAction> get(AdminActionType type, Snowflake guildId, Snowflake targetId);
 
+    Mono<Void> kick(LocalMember admin, LocalMember target, @Nullable String reason);
+
+    Mono<Void> ban(LocalMember admin, LocalMember target, @Nullable String reason);
+
+    Mono<Void> unban(Snowflake guildId, Snowflake targetId);
+
     Mono<Void> mute(LocalMember admin, LocalMember target, Calendar end, @Nullable String reason);
 
     Mono<Void> unmute(Snowflake guildId, Snowflake targetId);

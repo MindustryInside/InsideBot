@@ -37,7 +37,7 @@ public class AdminAction extends GuildEntity{
     @Column
     private Calendar timestamp;
 
-    @Column
+    @Column(name = "end_timestamp")
     private Calendar endTimestamp;
 
     public AdminAction(){

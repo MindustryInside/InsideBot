@@ -1,6 +1,5 @@
 package insidebot.data.service.impl;
 
-import arc.util.Log;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import discord4j.rest.util.Permission;
@@ -22,6 +21,35 @@ public class AdminServiceImpl implements AdminService{
     @Override
     public Flux<AdminAction> get(AdminActionType type, Snowflake guildId, Snowflake targetId){
         return Flux.fromIterable(repository.findAdminActionsByTypeAndTargetId(type, guildId.asString(), targetId.asString()));
+    }
+
+    @Override
+    public Mono<Void> kick(LocalMember admin, LocalMember target, String reason){
+        AdminAction action = new AdminAction(target.guildId())
+                .type(AdminActionType.kick)
+                .admin(admin)
+                .target(target)
+                .timestamp(Calendar.getInstance())
+                .reason(reason);
+        return Mono.just(action).doOnNext(repository::save).then();
+    }
+
+    @Override
+    public Mono<Void> ban(LocalMember admin, LocalMember target, String reason){
+        AdminAction action = new AdminAction(target.guildId())
+                .type(AdminActionType.ban)
+                .admin(admin)
+                .target(target)
+                .timestamp(Calendar.getInstance())
+                //может сделать авторазбан?
+                .reason(reason);
+        return Mono.just(action).doOnNext(repository::save).then();
+    }
+
+    @Override
+    public Mono<Void> unban(Snowflake guildId, Snowflake targetId){
+        AdminAction action = repository.findAdminActionsByTypeAndTargetId(AdminActionType.ban, guildId.asString(), targetId.asString()).get(0);
+        return Mono.just(action).doOnNext(repository::delete).then();
     }
 
     @Override

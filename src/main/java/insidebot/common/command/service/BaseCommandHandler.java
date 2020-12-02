@@ -3,6 +3,7 @@ package insidebot.common.command.service;
 import arc.struct.ObjectMap;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import insidebot.common.command.model.base.*;
+import insidebot.common.services.DiscordService;
 import insidebot.data.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Flux;
@@ -15,6 +16,9 @@ public abstract class BaseCommandHandler{
 
     @Autowired
     protected GuildService guildService;
+
+    @Autowired
+    protected DiscordService discordService;
 
     @Autowired(required = false)
     protected List<CommandRunner> orderedCommands = new ArrayList<>();

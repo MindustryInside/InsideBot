@@ -28,7 +28,7 @@ public class MessageUtil{
         StringBuilder builder = new StringBuilder(message.getContent());
         if(!message.getAttachments().isEmpty()){
             builder.append("\n---\n");
-            message.getAttachments().forEach(a -> builder.append(a.getUrl()).append("\n"));
+            message.getAttachments().forEach(a -> builder.append(a.getUrl()).append('\n'));
         }
         return builder.toString();
     }

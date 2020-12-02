@@ -22,7 +22,7 @@ public class LocaleUtil{
         );
     }
 
-    public static Locale get(Region region) {
+    public static Locale get(Region region){
         for(Entry<String, Locale> e : locales){
             if(e.key.equalsIgnoreCase(region.getName().substring(0, 2))) return e.value;
         }
@@ -33,15 +33,15 @@ public class LocaleUtil{
         return locales.get(tag);
     }
 
-    public static Locale getOrDefault(String tag) {
+    public static Locale getOrDefault(String tag){
         return locales.get(tag, getDefaultLocale());
     }
 
-    public static boolean isSupported(String tag) {
+    public static boolean isSupported(String tag){
         return locales.containsKey(tag);
     }
 
-    public static Locale getDefaultLocale() {
+    public static Locale getDefaultLocale(){
         return get(defaultLocale);
     }
 }

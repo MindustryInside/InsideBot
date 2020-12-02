@@ -1,12 +1,9 @@
 package insidebot.event;
 
-import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.guild.*;
 import discord4j.core.object.audit.*;
 import discord4j.core.object.entity.*;
-import discord4j.core.spec.MessageCreateSpec;
-import discord4j.discordjson.json.MessageData;
-import insidebot.audit.AuditEventHandler;
+import insidebot.event.audit.*;
 import insidebot.data.entity.*;
 import insidebot.data.service.*;
 import insidebot.util.*;
@@ -17,7 +14,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 
-import static insidebot.audit.AuditEventType.*;
+import static insidebot.event.audit.AuditEventType.*;
 
 @Component
 public class MemberEventHandler extends AuditEventHandler{
@@ -115,13 +112,5 @@ public class MemberEventHandler extends AuditEventHandler{
                         memberService.save(info);
                     })
                     .then();
-    }
-
-    @Override
-    public Mono<Void> log(Snowflake guildId, MessageCreateSpec message){
-        MessageData data = discordService.getLogChannel(guildId)
-                                         .flatMap(c -> c.getRestChannel().createMessage(message.asRequest()))
-                                         .block();
-        return Mono.justOrEmpty(data).flatMap(__ -> Mono.fromRunnable(() -> context.reset()));
     }
 }

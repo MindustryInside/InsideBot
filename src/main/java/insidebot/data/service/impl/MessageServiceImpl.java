@@ -1,6 +1,6 @@
 package insidebot.data.service.impl;
 
-import arc.util.Strings;
+import arc.util.*;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.EmbedCreateSpec;
@@ -9,11 +9,14 @@ import insidebot.common.services.ContextService;
 import insidebot.data.entity.MessageInfo;
 import insidebot.data.repository.MessageInfoRepository;
 import insidebot.data.service.MessageService;
+import org.joda.time.*;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.*;
 import reactor.util.annotation.NonNull;
 
 import java.util.function.Consumer;
@@ -31,6 +34,9 @@ public class MessageServiceImpl implements MessageService{
 
     @Autowired
     private Settings settings;
+
+    @Autowired
+    private Logger log;
 
     @Override
     public String get(String key){
@@ -104,5 +110,16 @@ public class MessageServiceImpl implements MessageService{
     @Transactional
     public void deleteById(@NonNull Snowflake memberId){
         repository.deleteById(memberId.asString());
+    }
+
+    @Override
+    @Scheduled(cron = "0 0 */12 * * *") // каждые 12 часов
+    public void cleanUp(){
+        log.info("Audit cleanup started...");
+        Flux.fromIterable(repository.findAll()).filter(m -> {
+            DateTime time = new DateTime(m.timestamp());
+            return Weeks.weeksBetween(time, DateTime.now()).getWeeks() >= 4;
+        }).subscribe(repository::delete, Log::err);
+        log.info("Audit cleanup finished");
     }
 }

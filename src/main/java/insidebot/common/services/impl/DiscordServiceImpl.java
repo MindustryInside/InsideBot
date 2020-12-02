@@ -8,7 +8,7 @@ import discord4j.core.object.entity.channel.*;
 import discord4j.core.shard.MemberRequestFilter;
 import discord4j.gateway.intent.*;
 import insidebot.Settings;
-import insidebot.common.services.*;
+import insidebot.common.services.DiscordService;
 import insidebot.data.service.GuildService;
 import insidebot.event.dispatcher.EventListener;
 import insidebot.event.dispatcher.*;

@@ -1,4 +1,4 @@
-package insidebot.audit;
+package insidebot.event.audit;
 
 import discord4j.rest.util.Color;
 

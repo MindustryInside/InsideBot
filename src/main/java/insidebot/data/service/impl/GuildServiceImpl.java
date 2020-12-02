@@ -33,7 +33,7 @@ public class GuildServiceImpl implements GuildService{
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public GuildConfig getOr(Snowflake guildId, Supplier<GuildConfig> prov){
         return exists(guildId) ? get(guildId) : prov.get();
     }

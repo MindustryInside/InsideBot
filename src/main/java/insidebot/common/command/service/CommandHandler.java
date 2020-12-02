@@ -1,14 +1,11 @@
 package insidebot.common.command.service;
 
 import arc.struct.Seq;
-import arc.util.Log;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.MessageCreateEvent;
+import discord4j.core.object.entity.*;
 import insidebot.common.command.model.base.*;
-import org.springframework.beans.factory.annotation.*;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class CommandHandler extends BaseCommandHandler{
@@ -22,7 +19,12 @@ public class CommandHandler extends BaseCommandHandler{
 
         String prefix = guildService.prefix(guildId);
 
-        if(message == null || (!message.startsWith(prefix))){
+        if(event.getMessage().getUserMentions().map(User::getId).any(u -> u.equals(discordService.gateway().getSelfId())).blockOptional().orElse(false)){
+            prefix = String.format("<@!%s> ", event.getClient().getSelf().map(User::getId).map(Snowflake::asString).blockOptional().orElse(""));
+                                  /* Меня этот восклицательный знак доконал */
+        }
+
+        if(message == null || !message.startsWith(prefix)){
             return new CommandResponse(ResponseType.noCommand, null, null);
         }
 

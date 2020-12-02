@@ -6,15 +6,13 @@ import discord4j.core.event.domain.VoiceStateUpdateEvent;
 import discord4j.core.object.VoiceState;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.VoiceChannel;
-import discord4j.core.spec.MessageCreateSpec;
-import discord4j.discordjson.json.MessageData;
-import insidebot.audit.AuditEventHandler;
+import insidebot.event.audit.AuditEventHandler;
 import insidebot.util.*;
 import org.reactivestreams.Publisher;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
-import static insidebot.audit.AuditEventType.*;
+import static insidebot.event.audit.AuditEventType.*;
 
 @Component
 public class VoiceEventHandler extends AuditEventHandler{
@@ -48,13 +46,5 @@ public class VoiceEventHandler extends AuditEventHandler{
                 embedBuilder.setFooter(MessageUtil.zonedFormat(), null);
             });
         }
-    }
-
-    @Override
-    public Mono<Void> log(Snowflake guildId, MessageCreateSpec message){
-        MessageData data = discordService.getLogChannel(guildId)
-                                         .flatMap(c -> c.getRestChannel().createMessage(message.asRequest()))
-                                         .block();
-        return Mono.justOrEmpty(data).flatMap(__ -> Mono.fromRunnable(() -> context.reset()));
     }
 }
