@@ -54,7 +54,7 @@ public class EventsImpl extends Events{
             event.history.forEach(m -> {
                 Member member = m.getAuthorAsMember().block();
                 builder.append('[').append(MessageUtil.dateTime().withZone(ZoneId.systemDefault()).format(m.getTimestamp())).append("] ");
-                if(!DiscordUtil.isBot(member)){
+                if(DiscordUtil.isBot(member)){
                     builder.append("[BOT] ");
                 }
                 builder.append(memberService.detailName(member)).append(" > ");
@@ -79,6 +79,7 @@ public class EventsImpl extends Events{
         LocalMember l = event.localMember;
         Member member = event.guild().getMemberById(l.user().userId()).block();
         if(member == null) return Mono.empty();
+        if(guildService.muteDisabled(member.getGuildId())) return Mono.empty();
 
         adminService.unmute(l.guildId(), l.user().userId()).block();
         member.removeRole(guildService.muteRoleId(member.getGuildId())).block();
@@ -96,6 +97,7 @@ public class EventsImpl extends Events{
         LocalMember l = event.target;
         Member member = event.guild().getMemberById(l.user().userId()).block();
         if(member == null) return Mono.empty();
+        if(guildService.muteDisabled(member.getGuildId())) return Mono.empty();
 
         Calendar end = Calendar.getInstance();
         end.roll(Calendar.DAY_OF_YEAR, +event.delay);
