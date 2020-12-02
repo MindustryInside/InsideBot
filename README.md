@@ -17,8 +17,8 @@ Note: Bot requires [PostgreSQL](https://www.postgresql.org/download/) database.
 
 Make sure you have [JDK 14](https://adoptopenjdk.net/releases.html?variant=openjdk14) installed, then run the following commands:
 
-* **Windows**: `gradlew dist`  
-* **Linux**: `./gradlew dist`
+* **Windows**: `gradlew bootJar`  
+* **Linux**: `./gradlew bootJar`
 
 After building, the .JAR file should be located in `build/libs/InsideBot.jar` folder.
 

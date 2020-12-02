@@ -46,13 +46,3 @@ dependencies{
     // spring dependencies
     implementation "org.springframework.boot:spring-boot-starter-data-jpa"
 }
-
-task dist(type: Jar){
-    from files(sourceSets.main.output.classesDirs)
-    from files(sourceSets.main.output.resourcesDir)
-    from {configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}}
-
-    archiveFileName = "${project.name}.jar"
-
-    manifest { attributes 'Main-Class': project.mainClassName }
-}

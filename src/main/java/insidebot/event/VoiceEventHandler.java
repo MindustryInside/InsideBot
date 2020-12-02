@@ -27,11 +27,11 @@ public class VoiceEventHandler extends AuditEventHandler{
             VoiceChannel channel = state.getChannel().block();
             User user = state.getUser().block();
             if(DiscordUtil.isBot(user) || channel == null) return Mono.empty();
-            return log(guildId, embedBuilder -> {
-                embedBuilder.setColor(voiceLeave.color);
-                embedBuilder.setTitle(messageService.get("message.voice-leave"));
-                embedBuilder.setDescription(messageService.format("message.voice-leave.text", user.getUsername(), channel.getName()));
-                embedBuilder.setFooter(MessageUtil.zonedFormat(), null);
+            return log(guildId, embed -> {
+                embed.setColor(voiceLeave.color);
+                embed.setTitle(messageService.get("message.voice-leave"));
+                embed.setDescription(messageService.format("message.voice-leave.text", user.getUsername(), channel.getName()));
+                embed.setFooter(MessageUtil.zonedFormat(), null);
             });
         }else{
             VoiceState current = event.getCurrent();
@@ -39,11 +39,11 @@ public class VoiceEventHandler extends AuditEventHandler{
             VoiceChannel channel = current.getChannel().block();
             User user = current.getUser().block();
             if(DiscordUtil.isBot(user) || channel == null) return Mono.empty();
-            return log(guildId, embedBuilder -> {
-                embedBuilder.setColor(voiceJoin.color);
-                embedBuilder.setTitle(messageService.get("message.voice-join"));
-                embedBuilder.setDescription(messageService.format("message.voice-join.text", user, channel.getName()));
-                embedBuilder.setFooter(MessageUtil.zonedFormat(), null);
+            return log(guildId, embed -> {
+                embed.setColor(voiceJoin.color);
+                embed.setTitle(messageService.get("message.voice-join"));
+                embed.setDescription(messageService.format("message.voice-join.text", user.getUsername(), channel.getName()));
+                embed.setFooter(MessageUtil.zonedFormat(), null);
             });
         }
     }

@@ -43,9 +43,10 @@ public class DiscordServiceImpl implements DiscordService{
                                .gateway()
                                .setMemberRequestFilter(MemberRequestFilter.all())
                                .setEnabledIntents(IntentSet.of(
-                                       Intent.GUILD_MEMBERS,
                                        Intent.GUILDS,
+                                       Intent.GUILD_MEMBERS,
                                        Intent.GUILD_MESSAGES,
+                                       Intent.GUILD_VOICE_STATES,
                                        Intent.GUILD_MESSAGE_REACTIONS,
                                        Intent.DIRECT_MESSAGES,
                                        Intent.DIRECT_MESSAGE_REACTIONS
