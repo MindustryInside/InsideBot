@@ -6,7 +6,7 @@ Administration & log bot.
 
 ## Configuration
 
-Setup [settings.properties](https://github.com/MindustryINSIDE/InsideBot/blob/master/src/main/resources/settings.properties):
+Setup [application.yml](https://github.com/MindustryINSIDE/InsideBot/blob/master/src/main/resources/application.yml):
 
 * Write Discord bot token.
 * Set PostgreSQL database url, username and password.
