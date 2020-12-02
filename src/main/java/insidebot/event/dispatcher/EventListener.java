@@ -9,6 +9,7 @@ import reactor.scheduler.forkjoin.ForkJoinPoolScheduler;
 import java.time.Duration;
 import java.util.function.*;
 
+@SuppressWarnings("deprecation")
 public interface EventListener{
     Logger log = LoggerFactory.getLogger(EventListener.class);
     Supplier<Scheduler> DEFAULT_EVENT_SCHEDULER = () -> ForkJoinPoolScheduler.create("inside-events");

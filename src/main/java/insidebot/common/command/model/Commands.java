@@ -75,6 +75,16 @@ public class Commands{
         }
     }
 
+    @DiscordCommand(key = "ping", description = "command.ping.description")
+    public class PingCommand extends CommandRunner{
+        @Override
+        public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
+            long now = System.currentTimeMillis();
+            MessageChannel channel = event.getMessage().getChannel().block();
+            return messageService.text(channel, messageService.format("command.ping", System.currentTimeMillis() - now));
+        }
+    }
+
     @DiscordCommand(key = "prefix", params = "[prefix]", description = "command.config.prefix.description")
     public class PrefixCommand extends CommandRunner{
         @Override
