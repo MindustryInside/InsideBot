@@ -4,7 +4,6 @@ logging:
 spring:
   application:
     token:
-    locale:
   jpa:
     generate-ddl: "true"
     open-in-view: "false"
