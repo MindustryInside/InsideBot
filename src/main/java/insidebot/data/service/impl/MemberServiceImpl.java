@@ -5,7 +5,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import discord4j.rest.util.Permission;
 import insidebot.common.services.DiscordService;
-import insidebot.data.entity.LocalMember;
+import insidebot.data.entity.*;
 import insidebot.data.repository.LocalMemberRepository;
 import insidebot.data.service.*;
 import insidebot.data.service.AdminService.AdminActionType;
@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.*;
 import reactor.util.annotation.NonNull;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 
 @Service
@@ -131,7 +132,8 @@ public class MemberServiceImpl implements MemberService{
     }
 
     protected boolean isMuteEnd(@NonNull LocalMember member){
-        return adminService.get(AdminActionType.mute, member.guildId(), member.id()).blockFirst().isEnd();
+        AdminAction action = adminService.get(AdminActionType.mute, member.guildId(), member.id()).blockFirst();
+        return action != null && action.isEnd();
     }
 
     @Override

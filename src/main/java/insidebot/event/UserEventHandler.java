@@ -23,9 +23,8 @@ public class UserEventHandler extends AuditEventHandler{
     public Publisher<?> onUserUpdate(UserUpdateEvent event){
         User user = event.getCurrent();
         if(DiscordUtil.isBot(user)) return Mono.empty();
-        if(!userService.exists(user.getId())) return Mono.empty();
 
-        LocalUser info = userService.getById(user.getId());
+        LocalUser info = userService.getOr(user.getId(), () -> new LocalUser(user));
         info.name(user.getUsername());
         userService.save(info);
         return Mono.empty();

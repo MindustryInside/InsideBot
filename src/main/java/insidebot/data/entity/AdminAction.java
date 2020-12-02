@@ -112,4 +112,16 @@ public class AdminAction extends GuildEntity{
     public boolean isEnd(){
         return end() != null && DateTime.now().isAfter(new DateTime(end()));
     }
+
+    @Override
+    public String toString(){
+        return "AdminAction{" +
+               "type=" + type +
+               ", admin=" + admin +
+               ", target=" + target +
+               ", reason='" + reason + '\'' +
+               ", timestamp=" + timestamp +
+               ", endTimestamp=" + endTimestamp +
+               "} " + super.toString();
+    }
 }

@@ -1,5 +1,6 @@
 package insidebot.data.entity;
 
+import discord4j.core.object.entity.Member;
 import insidebot.data.entity.base.GuildEntity;
 import org.joda.time.*;
 import reactor.util.annotation.*;
@@ -24,6 +25,14 @@ public class LocalMember extends GuildEntity{
 
     @Column(name = "last_sent_message")
     private Calendar lastSentMessage;
+
+    public LocalMember(){}
+
+    public LocalMember(Member member){
+        id(member.getId());
+        guildId(member.getGuildId());
+        effectiveName(member.getDisplayName());
+    }
 
     @Transient
     public void addToSeq(){

@@ -99,7 +99,7 @@ public class EventsImpl extends Events{
 
         Calendar end = Calendar.getInstance();
         end.roll(Calendar.DAY_OF_YEAR, +event.delay);
-        adminService.mute(event.admin, l, end, event.reason().orElse(null));
+        adminService.mute(event.admin, l, end, event.reason().orElse(null)).block();
         member.addRole(guildService.muteRoleId(member.getGuildId())).block();
 
         return log(member.getGuildId(), e -> {

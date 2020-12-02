@@ -109,9 +109,8 @@ public class MemberEventHandler extends AuditEventHandler{
         context.init(event.getGuildId());
         return event.getMember()
                     .filter(DiscordUtil::isNotBot)
-                    .filter(m -> memberService.exists(m.getGuildId(), m.getId()))
                     .doOnNext(m -> {
-                        LocalMember info = memberService.get(event.getGuildId(), m.getId());
+                        LocalMember info = memberService.getOr(m, () -> new LocalMember(m));
                         info.effectiveName(m.getDisplayName());
                         memberService.save(info);
                     })

@@ -1,5 +1,7 @@
 package insidebot.data.entity;
 
+import discord4j.common.util.Snowflake;
+import discord4j.core.object.entity.User;
 import insidebot.data.entity.base.UserEntity;
 import reactor.util.annotation.NonNull;
 
@@ -32,6 +34,13 @@ public class LocalUser extends UserEntity{
 
     public void discriminator(@NonNull String discriminator){
         this.discriminator = discriminator;
+    }
+
+    public LocalUser(){}
+
+    public LocalUser(User user){
+        userId(user.getId());
+        discriminator(user.getDiscriminator());
     }
 
     @Override

@@ -18,26 +18,20 @@ public class UserServiceImpl implements UserService{
 
     @Override
     @Transactional(readOnly = true)
-    public LocalUser get(@NonNull LocalUser user){
-        return getById(user.userId());
+    public LocalUser get(@NonNull Snowflake userId){
+        return repository.findByUserId(userId);
     }
 
     @Override
     @Transactional
     public LocalUser getOr(Snowflake userId, Supplier<LocalUser> prov){
-        return exists(userId) ? getById(userId) : prov.get();
+        return exists(userId) ? get(userId) : prov.get();
     }
 
     @Override
     @Transactional(readOnly = true)
     public boolean exists(Snowflake userId){
         return repository.existsById(userId.asString());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public LocalUser getById(@NonNull Snowflake userId){
-        return repository.findByUserId(userId);
     }
 
     @Override

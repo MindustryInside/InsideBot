@@ -7,13 +7,11 @@ import java.util.function.Supplier;
 
 public interface UserService{
 
-    LocalUser get(LocalUser user);
+    LocalUser get(Snowflake userId);
 
     LocalUser getOr(Snowflake userId, Supplier<LocalUser> prov);
 
     boolean exists(Snowflake userId);
-
-    LocalUser getById(Snowflake userId);
 
     LocalUser save(LocalUser user);
 

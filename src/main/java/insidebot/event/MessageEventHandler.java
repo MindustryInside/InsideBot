@@ -71,7 +71,7 @@ public class MessageEventHandler extends AuditEventHandler{
         Snowflake guildId = event.getGuildId().orElse(null);
         if(DiscordUtil.isBot(user) || guildId == null || channel == null) return Mono.empty();
         Snowflake userId = user.getId();
-        LocalMember localMember = memberService.getOr(member, LocalMember::new);
+        LocalMember localMember = memberService.getOr(member, () -> new LocalMember(member));
 
         if(!guildService.exists(guildId)){
             Region region = event.getGuild().flatMap(Guild::getRegion).block();
@@ -90,11 +90,9 @@ public class MessageEventHandler extends AuditEventHandler{
             userService.save(localUser);
         }
 
-        localMember.effectiveName(member.getDisplayName());
-        localMember.id(userId);
-        localMember.guildId(guildId);
         localMember.lastSentMessage(Calendar.getInstance());
         localMember.addToSeq();
+        memberService.save(localMember);
 
         if(!MessageUtil.isEmpty(message) && !message.isTts() && message.getEmbeds().isEmpty()){
             MessageInfo info = new MessageInfo();
@@ -115,7 +113,6 @@ public class MessageEventHandler extends AuditEventHandler{
         if(adminService.isAdmin(member)){
             handleResponse(commandHandler.handleMessage(message.getContent(), reference, event), channel);
         }
-        memberService.save(localMember);
         return Mono.empty();
     }
 
@@ -143,7 +140,7 @@ public class MessageEventHandler extends AuditEventHandler{
             embed.setAuthor(user.getUsername(), null, user.getAvatarUrl());
             embed.setTitle(messageService.format("message.edit", c.getName()));
             embed.setDescription(messageService.format(event.getGuildId().isPresent() ? "message.edit.description" : "message.edit.nullable-guild",
-                                                       event.getGuildId().get().asString(), /* Я не знаю как такое получить, но всё же обезопашусь */
+                                                       event.getGuildId().map(Snowflake::asString).orElse(null), /* Я не знаю как такое получить, но всё же обезопашусь */
                                                        event.getChannelId().asString(),
                                                        event.getMessageId().asString()));
 

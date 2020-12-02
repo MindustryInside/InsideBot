@@ -1,5 +1,6 @@
 package insidebot.event;
 
+import arc.func.*;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.VoiceStateUpdateEvent;
 import discord4j.core.object.VoiceState;
@@ -21,7 +22,10 @@ public class VoiceEventHandler extends AuditEventHandler{
     public Publisher<?> onVoiceStateUpdate(VoiceStateUpdateEvent event){
         VoiceState state = event.getOld().orElse(null);
         Snowflake guildId = event.getCurrent().getGuildId();
+        Boolf<VoiceState> ignore = s -> s.isSelfDeaf() || s.isDeaf() || s.isMuted() || s.isSelfMuted() ||
+                                        s.isSelfStreaming() || s.isSelfVideoEnabled() || s.isSuppressed();
         if(state != null){
+            if(ignore.get(state)) return Mono.empty();
             VoiceChannel channel = state.getChannel().block();
             User user = state.getUser().block();
             if(DiscordUtil.isBot(user) || channel == null) return Mono.empty();
@@ -33,6 +37,7 @@ public class VoiceEventHandler extends AuditEventHandler{
             });
         }else{
             VoiceState current = event.getCurrent();
+            if(ignore.get(current)) return Mono.empty();
             VoiceChannel channel = current.getChannel().block();
             User user = current.getUser().block();
             if(DiscordUtil.isBot(user) || channel == null) return Mono.empty();
