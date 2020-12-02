@@ -8,6 +8,12 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface MessageInfoRepository extends JpaRepository<MessageInfo, String>{
 
+    boolean existsByMessageId(String messageId);
+
+    default boolean existsByMessageId(Snowflake messageId){
+        return existsById(messageId.asString());
+    }
+
     MessageInfo findByMessageId(String messageId);
 
     default MessageInfo findByMessageId(Snowflake messageId){

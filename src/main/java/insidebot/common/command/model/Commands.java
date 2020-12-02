@@ -141,7 +141,7 @@ public class Commands{
             try{
                 int delayDays = Strings.parseInt(args[1]);
                 LocalMember info = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
-                Member m = discordService.gateway().getMemberById(info.guildId(), info.id()).block();
+                Member m = discordService.gateway().getMemberById(info.guildId(), info.user().userId()).block();
                 String reason = args.length > 2 ? args[2] : null;
 
                 if(DiscordUtil.isBot(m)){
@@ -205,7 +205,7 @@ public class Commands{
             MessageChannel channel = event.getMessage().getChannel().block();
             try{
                 LocalMember info = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
-                Member m = discordService.gateway().getMemberById(info.guildId(), info.id()).block();
+                Member m = discordService.gateway().getMemberById(info.guildId(), info.user().userId()).block();
                 String reason = args.length > 1 ? args[1] : null;
 
                 if(DiscordUtil.isBot(m)){
@@ -225,7 +225,7 @@ public class Commands{
                 }
 
                 adminService.warn(reference.localMember(), info, reason).block();
-                long warnings = adminService.warnings(m.getGuildId(), info.id()).count().blockOptional().orElse(0L);
+                long warnings = adminService.warnings(m.getGuildId(), info.user().userId()).count().blockOptional().orElse(0L);
 
                 messageService.text(channel, messageService.format("message.warn", m.getUsername(), warningStrings[(int)Mathf.clamp(warnings - 1, 0, warningStrings.length - 1)]));
 
@@ -247,7 +247,7 @@ public class Commands{
             MessageChannel channel = event.getMessage().getChannel().block();
             try{
                 LocalMember info = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
-                List<AdminAction> warns = adminService.warnings(info.guildId(), info.id()).limitRequest(21)
+                List<AdminAction> warns = adminService.warnings(info.guildId(), info.user().userId()).limitRequest(21)
                                                       .collectList().blockOptional().orElse(Collections.emptyList());
                 if(warns.isEmpty()){
                     messageService.text(channel, messageService.get("command.warnings.empty")).block();
@@ -289,7 +289,7 @@ public class Commands{
 
             try{
                 LocalMember info = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
-                adminService.unwarn(info.guildId(), info.id(), warnings).block();
+                adminService.unwarn(info.guildId(), info.user().userId(), warnings).block();
                 messageService.text(channel, messageService.format("command.unwarn", info.effectiveName(), warnings + 1, warnings == 1 ? messageService.get("command.warn") : messageService.get("command.warns")));
             }catch(Throwable t){
                 if(t instanceof IndexOutOfBoundsException){

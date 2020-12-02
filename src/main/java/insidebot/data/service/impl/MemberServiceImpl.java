@@ -110,12 +110,12 @@ public class MemberServiceImpl implements MemberService{
     public void activeUsers(){
         Flux.fromIterable(repository.findAll())
             .filter(m -> !guildService.activeUserDisabled(m.guildId()))
-            .filterWhen(l -> discordService.exists(l.guildId(), l.id()) ? Mono.just(true) : Mono.fromRunnable(() -> {
+            .filterWhen(l -> discordService.exists(l.guildId(), l.user().userId()) ? Mono.just(true) : Mono.fromRunnable(() -> {
                 log.warn("User '{}' not found. Deleting...", l.effectiveName());
                 delete(l);
             }))
             .subscribe(l -> {
-                Member member = discordService.gateway().getMemberById(l.guildId(), l.id()).block();
+                Member member = discordService.gateway().getMemberById(l.guildId(), l.user().userId()).block();
                 if(member == null) return; // нереально
                 Snowflake roleId = guildService.activeUserRoleId(member.getGuildId());
                 if(l.isActiveUser()){
@@ -129,7 +129,7 @@ public class MemberServiceImpl implements MemberService{
     }
 
     protected boolean isMuteEnd(@NonNull LocalMember member){
-        AdminAction action = adminService.get(AdminActionType.mute, member.guildId(), member.id()).blockFirst();
+        AdminAction action = adminService.get(AdminActionType.mute, member.guildId(), member.user().userId()).blockFirst();
         return action != null && action.isEnd();
     }
 

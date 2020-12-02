@@ -77,10 +77,10 @@ public class EventsImpl extends Events{
     public Publisher<?> onMemberUnmute(MemberUnmuteEvent event){
         context.init(event.guild().getId());
         LocalMember l = event.localMember;
-        Member member = event.guild().getMemberById(l.id()).block();
+        Member member = event.guild().getMemberById(l.user().userId()).block();
         if(member == null) return Mono.empty();
 
-        adminService.unmute(l.guildId(), l.id()).block();
+        adminService.unmute(l.guildId(), l.user().userId()).block();
         member.removeRole(guildService.muteRoleId(member.getGuildId())).block();
         return log(member.getGuildId(), e -> {
             e.setTitle(messageService.get("message.unmute"));
@@ -94,7 +94,7 @@ public class EventsImpl extends Events{
     public Publisher<?> onMemberMute(MemberMuteEvent event){
         context.init(event.guild().getId());
         LocalMember l = event.target;
-        Member member = event.guild().getMemberById(l.id()).block();
+        Member member = event.guild().getMemberById(l.user().userId()).block();
         if(member == null) return Mono.empty();
 
         Calendar end = Calendar.getInstance();
