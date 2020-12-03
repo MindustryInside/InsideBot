@@ -20,18 +20,14 @@ public abstract class BaseEntity implements Serializable{
     protected String id;
 
     @NonNull
-    @Transient
-    public Snowflake id(){
-        return Snowflake.of(id);
-    }
-
-    @NonNull
     public String getId(){
         return id;
     }
 
-    public void id(@NonNull Snowflake id){
-        this.id = id.asString();
+    @NonNull
+    @Transient
+    public Snowflake id(){
+        return Snowflake.of(id);
     }
 
     @Override

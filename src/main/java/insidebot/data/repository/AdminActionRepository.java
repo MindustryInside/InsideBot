@@ -1,5 +1,6 @@
 package insidebot.data.repository;
 
+import discord4j.common.util.Snowflake;
 import insidebot.data.entity.AdminAction;
 import insidebot.data.repository.base.GuildRepository;
 import insidebot.data.service.AdminService.AdminActionType;
@@ -11,9 +12,9 @@ import java.util.List;
 
 @Repository
 public interface AdminActionRepository extends GuildRepository<AdminAction>{
-    @Query("select a from AdminAction a where a.guildId = :guildId and a.target.user.userId = :targetId")
-    List<AdminAction> findAdminActionsByTargetId(@Param("guildId") String guildId, @Param("targetId") String targetId);
+    @Query("select a from AdminAction a where a.guildId = :#{#guildId.asString()} and a.target.user.userId = :#{#targetId.asString()}")
+    List<AdminAction> findAdminActionsByTargetId(@Param("guildId") Snowflake guildId, @Param("targetId") Snowflake targetId);
 
-    @Query("select a from AdminAction a where a.guildId = :guildId and a.target.user.userId = :targetId and a.type = :type")
-    List<AdminAction> findAdminActionsByTypeAndTargetId(@Param("type") AdminActionType type, @Param("guildId") String guildId, @Param("targetId") String targetId);
+    @Query("select a from AdminAction a where a.guildId = :#{#guildId.asString()} and a.target.user.userId = :#{#targetId.asString()} and a.type = :type")
+    List<AdminAction> findAdminActionsByTypeAndTargetId(@Param("type") AdminActionType type, @Param("guildId") Snowflake guildId, @Param("targetId") Snowflake targetId);
 }

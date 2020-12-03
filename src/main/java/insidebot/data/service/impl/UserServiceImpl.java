@@ -18,7 +18,7 @@ public class UserServiceImpl implements UserService{
 
     @Override
     @Transactional(readOnly = true)
-    public LocalUser get(@NonNull Snowflake userId){
+    public LocalUser get(Snowflake userId){
         return repository.findByUserId(userId);
     }
 
@@ -36,19 +36,19 @@ public class UserServiceImpl implements UserService{
 
     @Override
     @Transactional
-    public LocalUser save(@NonNull LocalUser user){
+    public LocalUser save(LocalUser user){
         return repository.save(user);
     }
 
     @Override
     @Transactional
-    public void delete(@NonNull LocalUser user){
+    public void delete(LocalUser user){
         repository.delete(user);
     }
 
     @Override
     @Transactional
-    public void deleteById(@NonNull Snowflake userId){
+    public void deleteById(Snowflake userId){
         repository.deleteById(userId.asString());
     }
 }

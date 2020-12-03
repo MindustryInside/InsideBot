@@ -20,7 +20,7 @@ public class AdminServiceImpl implements AdminService{
 
     @Override
     public Flux<AdminAction> get(AdminActionType type, Snowflake guildId, Snowflake targetId){
-        return Flux.fromIterable(repository.findAdminActionsByTypeAndTargetId(type, guildId.asString(), targetId.asString()));
+        return Flux.fromIterable(repository.findAdminActionsByTypeAndTargetId(type, guildId, targetId));
     }
 
     @Override
@@ -48,7 +48,7 @@ public class AdminServiceImpl implements AdminService{
 
     @Override
     public Mono<Void> unban(Snowflake guildId, Snowflake targetId){
-        AdminAction action = repository.findAdminActionsByTypeAndTargetId(AdminActionType.ban, guildId.asString(), targetId.asString()).get(0);
+        AdminAction action = repository.findAdminActionsByTypeAndTargetId(AdminActionType.ban, guildId, targetId).get(0);
         return Mono.just(action).doOnNext(repository::delete).then();
     }
 
@@ -67,7 +67,7 @@ public class AdminServiceImpl implements AdminService{
 
     @Override
     public Mono<Void> unmute(Snowflake guildId, Snowflake targetId){
-        AdminAction action = repository.findAdminActionsByTypeAndTargetId(AdminActionType.mute, guildId.asString(), targetId.asString()).get(0);
+        AdminAction action = repository.findAdminActionsByTypeAndTargetId(AdminActionType.mute, guildId, targetId).get(0);
         return Mono.just(action).doOnNext(repository::delete).then();
     }
 
@@ -87,14 +87,14 @@ public class AdminServiceImpl implements AdminService{
     @Override
     @Transactional
     public Mono<Void> unwarn(Snowflake guildId, Snowflake targetId, int index){
-        AdminAction action = repository.findAdminActionsByTypeAndTargetId(AdminActionType.warn, guildId.asString(), targetId.asString()).get(index);
+        AdminAction action = repository.findAdminActionsByTypeAndTargetId(AdminActionType.warn, guildId, targetId).get(index);
         return Mono.fromRunnable(() -> repository.delete(action));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Flux<AdminAction> warnings(Snowflake guildId, Snowflake targetId){
-        return Flux.fromIterable(repository.findAdminActionsByTypeAndTargetId(AdminActionType.warn, guildId.asString(), targetId.asString()));
+        return Flux.fromIterable(repository.findAdminActionsByTypeAndTargetId(AdminActionType.warn, guildId, targetId));
     }
 
     @Override

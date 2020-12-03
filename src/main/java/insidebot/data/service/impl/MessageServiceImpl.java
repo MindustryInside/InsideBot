@@ -85,7 +85,7 @@ public class MessageServiceImpl implements MessageService{
     @Override
     @Transactional(readOnly = true)
     public boolean exists(Snowflake messageId){
-        return repository.existsByMessageId(messageId.asString());
+        return repository.existsByMessageId(messageId);
     }
 
     @Override

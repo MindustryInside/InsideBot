@@ -30,7 +30,7 @@ public class GuildServiceImpl implements GuildService{
     @Override
     @Transactional(readOnly = true)
     public GuildConfig get(Snowflake guildId){
-        return repository.findByGuildId(guildId.asString());
+        return repository.findByGuildId(guildId);
     }
 
     @Override
@@ -48,42 +48,37 @@ public class GuildServiceImpl implements GuildService{
     @Override
     @Transactional(readOnly = true)
     public boolean exists(Snowflake guildId){
-        return repository.existsByGuildId(guildId.asString());
+        return repository.existsByGuildId(guildId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public String prefix(Snowflake guildId){
-        String prefix = repository.findPrefixByGuildId(guildId.asString());
-        return prefix != null ? prefix : settings.prefix;
+        return repository.findPrefixByGuildId(guildId).orElse(settings.prefix);
     }
 
     @Override
     @Transactional(readOnly = true)
     public String locale(Snowflake guildId){
-        String locale = repository.findLocaleByGuildId(guildId.asString());
-        return locale != null ? locale : LocaleUtil.enLocale;
+        return repository.findLocaleByGuildId(guildId).orElse(LocaleUtil.enLocale);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Snowflake logChannelId(Snowflake guildId){
-        String roleId = repository.findLogChannelIdByGuildId(guildId.asString());
-        return roleId != null ? Snowflake.of(roleId) : null;
+        return repository.findLogChannelIdByGuildId(guildId).map(Snowflake::of).orElse(null);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Snowflake muteRoleId(Snowflake guildId){
-        String roleId = repository.findMuteRoleIdIdByGuildId(guildId.asString());
-        return roleId != null ? Snowflake.of(roleId) : null;
+        return repository.findMuteRoleIdIdByGuildId(guildId).map(Snowflake::of).orElse(null);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Snowflake activeUserRoleId(Snowflake guildId){
-        String roleId = repository.findActiveUserIdByGuildId(guildId.asString());
-        return roleId != null ? Snowflake.of(roleId) : null;
+        return repository.findActiveUserIdByGuildId(guildId).map(Snowflake::of).orElse(null);
     }
 
     @Override

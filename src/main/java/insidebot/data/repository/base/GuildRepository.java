@@ -2,30 +2,21 @@ package insidebot.data.repository.base;
 
 import discord4j.common.util.Snowflake;
 import insidebot.data.entity.base.GuildEntity;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.NoRepositoryBean;
-import reactor.util.annotation.NonNull;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
 @NoRepositoryBean
 public interface GuildRepository<T extends GuildEntity> extends JpaRepository<T, String>{
 
-    T findByGuildId(@NonNull String guildId);
+    @Query("select g from #{#entityName} g where g.guildId = :#{#guildId.asString()}")
+    List<T> findAllByGuildId(@Param("guildId") Snowflake guildId);
 
-    default T findByGuildId(@NonNull Snowflake guildId){
-        return findByGuildId(guildId.asString());
+    default T findByGuildId(Snowflake guildId){
+        return findAllByGuildId(guildId).get(0);
     }
 
-    List<T> findAllByGuildId(@NonNull String guildId);
-
-    default List<T> findAllByGuildId(@NonNull Snowflake guildId){
-        return findAllByGuildId(guildId.asString());
-    }
-
-    boolean existsByGuildId(@NonNull String guildId);
-
-    default boolean existsByGuildId(@NonNull Snowflake guildId){
-        return existsByGuildId(guildId.asString());
-    }
+    boolean existsByGuildId(String guildId);
 }

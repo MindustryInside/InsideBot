@@ -2,7 +2,8 @@ package insidebot.data.repository;
 
 import discord4j.common.util.Snowflake;
 import insidebot.data.entity.MessageInfo;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.*;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -14,9 +15,6 @@ public interface MessageInfoRepository extends JpaRepository<MessageInfo, String
         return existsById(messageId.asString());
     }
 
-    MessageInfo findByMessageId(String messageId);
-
-    default MessageInfo findByMessageId(Snowflake messageId){
-        return findByMessageId(messageId.asString());
-    }
+    @Query("select m from MessageInfo m where m.messageId = #{#messageId.asString()}")
+    MessageInfo findByMessageId(@Param("messageId") Snowflake messageId);
 }
