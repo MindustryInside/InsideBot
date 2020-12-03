@@ -93,7 +93,12 @@ public class MemberServiceImpl implements MemberService{
     @Override
     @Transactional
     public void deleteById(Snowflake guildId, Snowflake userId){
-        repository.delete(get(guildId, userId));
+        LocalMember member = get(guildId, userId);
+        if(member != null){
+            repository.delete(get(guildId, userId));
+        }else{
+            log.warn("Member '{}' ({}) not found", userId.asString(), guildId.asString());
+        }
     }
 
     @Scheduled(cron = "0 */2 * * * *")

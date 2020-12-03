@@ -108,8 +108,13 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     @Transactional
-    public void deleteById(@NonNull Snowflake memberId){
-        repository.deleteById(memberId.asString());
+    public void deleteById(@NonNull Snowflake messageId){
+        MessageInfo message = getById(messageId);
+        if(message != null){
+            repository.delete(message);
+        }else{
+            log.warn("Message with id '{}' not found", messageId.asString());
+        }
     }
 
     @Override
