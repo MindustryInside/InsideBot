@@ -155,7 +155,7 @@ public class Commands{
                 String reason = args.length > 2 ? args[2] : null;
 
                 if(DiscordUtil.isBot(m)){
-                    return messageService.err(channel, messageService.get("command.user-is-bot"));
+                    return messageService.err(channel, messageService.get("command.admin.user-is-bot"));
                 }
 
                 if(adminService.isMuted(m.getGuildId(), m.getId()).block()){
@@ -163,7 +163,7 @@ public class Commands{
                 }
 
                 if(adminService.isAdmin(m)){
-                    return messageService.err(channel, messageService.get("command.user-is-admin"));
+                    return messageService.err(channel, messageService.get("command.admin.user-is-admin"));
                 }
 
                 if(reference.member().equals(m)){
@@ -171,7 +171,7 @@ public class Commands{
                 }
 
                 if(reason != null && reason.length() > 1000){
-                    return messageService.err(channel, messageService.format("command.string-limit", 1000));
+                    return messageService.err(channel, messageService.format("common.string-limit", 1000));
                 }
 
                 discordService.eventListener().publish(new MemberMuteEvent(m.getGuild().block(), reference.localMember(), info, reason, delayDays));
@@ -194,7 +194,7 @@ public class Commands{
 
             int number = Integer.parseInt(args[0]);
             if(number >= 100){
-                return messageService.err(channel, messageService.format("command.limit-number", 100));
+                return messageService.err(channel, messageService.format("common.limit-number", 100));
             }
 
             List<Message> history = channel.getMessagesBefore(event.getMessage().getId())
@@ -223,19 +223,19 @@ public class Commands{
                 String reason = args.length > 1 ? args[1] : null;
 
                 if(DiscordUtil.isBot(m)){
-                    return messageService.err(channel, messageService.get("command.user-is-bot"));
+                    return messageService.err(channel, messageService.get("command.admin.user-is-bot"));
                 }
 
                 if(adminService.isAdmin(m)){
-                    return messageService.err(channel, messageService.get("command.user-is-admin"));
+                    return messageService.err(channel, messageService.get("command.admin.user-is-admin"));
                 }
 
                 if(reference.member().equals(m)){
-                    return messageService.err(channel, messageService.get("command.warn.self-user"));
+                    return messageService.err(channel, messageService.get("command.admin.warn.self-user"));
                 }
 
                 if(reason != null && reason.length() > 1000){
-                    return messageService.err(channel, messageService.format("command.string-limit", 1000));
+                    return messageService.err(channel, messageService.format("common.string-limit", 1000));
                 }
 
                 adminService.warn(reference.localMember(), info, reason).block();
@@ -304,7 +304,7 @@ public class Commands{
             try{
                 LocalMember info = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
                 adminService.unwarn(info.guildId(), info.user().userId(), warnings).block();
-                messageService.text(channel, messageService.format("command.unwarn", info.effectiveName(), warnings + 1, warnings == 1 ? messageService.get("command.warn") : messageService.get("command.warns")));
+                messageService.text(channel, messageService.format("command.unwarn", info.effectiveName(), warnings + 1, warnings == 1 ? messageService.get("command.admin.warn") : messageService.get("command.warns")));
             }catch(Throwable t){
                 if(t instanceof IndexOutOfBoundsException){
                     messageService.err(channel, messageService.get("command.incorrect-number"));
