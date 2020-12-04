@@ -119,7 +119,7 @@ public class Commands{
             MessageChannel channel = event.getMessage().getChannel().block();
 
             GuildConfig c = guildService.get(guild);
-            Supplier<String> r = () -> context.locale().equals(Locale.ROOT) ? messageService.get("command.config.locale.default") : context.locale().toString();
+            Supplier<String> r = () -> context.locale().equals(Locale.ROOT) ? messageService.get("common.default") : context.locale().toString();
             if(args.length == 0){
                 return messageService.text(channel, messageService.format("command.config.locale", r.get()));
             }else{
@@ -139,7 +139,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "mute", params = "<@user> <delayDays> [reason...]", description = "command.mute.description")
+    @DiscordCommand(key = "mute", params = "<@user> <delayDays> [reason...]", description = "command.admin.mute.description")
     public class MuteCommand extends CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
@@ -183,7 +183,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "delete", params = "<amount>", description = "command.delete.description")
+    @DiscordCommand(key = "delete", params = "<amount>", description = "command.admin.delete.description")
     public class DeleteCommand extends CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
@@ -203,7 +203,7 @@ public class Commands{
                                            .block();
 
             if(history == null || (history.isEmpty() && number > 0)){
-                return messageService.err(channel, messageService.get("command.hist-error"));
+                return messageService.err(channel, messageService.get("message.error.history-retrieve"));
             }
 
             discordService.eventListener().publish(new MessageClearEvent(event.getGuild().block(), history, reference.user(), channel, number));
@@ -211,10 +211,10 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "warn", params = "<@user> [reason...]", description = "command.warn.description")
+    @DiscordCommand(key = "warn", params = "<@user> [reason...]", description = "command.admin.warn.description")
     public class WarnCommand extends CommandRunner{
         @Override
-        public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
+        public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){ //todo переделать предложение
             String[] warningStrings = {messageService.get("command.first"), messageService.get("command.second"), messageService.get("command.third")};
             MessageChannel channel = event.getMessage().getChannel().block();
             try{
@@ -254,7 +254,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "warnings", params = "<@user>", description = "command.warnings.description")
+    @DiscordCommand(key = "warnings", params = "<@user>", description = "command.admin.warnings.description")
     public class WarningsCommand extends CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
@@ -264,19 +264,19 @@ public class Commands{
                 List<AdminAction> warns = adminService.warnings(info.guildId(), info.user().userId()).limitRequest(21)
                                                       .collectList().blockOptional().orElse(Collections.emptyList());
                 if(warns.isEmpty()){
-                    messageService.text(channel, messageService.get("command.warnings.empty")).block();
+                    messageService.text(channel, messageService.get("command.admin.warnings.empty")).block();
                 }else{
                     DateTimeFormatter formatter = DateTimeFormat.shortDateTime();
                     Consumer<EmbedCreateSpec> spec = e -> {
                         e.setColor(settings.normalColor);
-                        e.setTitle(messageService.format("command.warnings.title", info.effectiveName()));
+                        e.setTitle(messageService.format("command.admin.warnings.title", info.effectiveName()));
                         for(int i = 0; i < warns.size(); i++){
                             AdminAction w = warns.get(i);
                             String title = String.format("%2s. %s", i + 1, formatter.print(new DateTime(w.timestamp())));
 
                             StringBuilder description = new StringBuilder();
                             description.append(messageService.format("common.admin", w.admin().effectiveName())).append('\n');
-                            description.append(messageService.format("common.reason", w.reason().orElse(messageService.get("common.reason.not-defined"))));
+                            description.append(messageService.format("common.reason", w.reason().orElse(messageService.get("common.not-defined"))));
                             e.addField(title, description.toString(), true);
                         }
                     };
@@ -290,7 +290,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "unwarn", params = "<@user> [number]", description = "command.unwarn.description")
+    @DiscordCommand(key = "unwarn", params = "<@user> [number]", description = "command.admin.unwarn.description")
     public class UnwarnCommand extends CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
@@ -317,15 +317,19 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "unmute", params = "<@user>", description = "command.unmute.description")
+    @DiscordCommand(key = "unmute", params = "<@user>", description = "command.admin.unmute.description")
     public class UnmuteCommand extends CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
+            MessageChannel channel = event.getMessage().getChannel().block();
             try{
-                LocalMember info = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
-                discordService.eventListener().publish(new MemberUnmuteEvent(event.getGuild().block(), info));
+                LocalMember member = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
+                if(!adminService.isMuted(member.guildId(), member.id()).block()){
+                    return messageService.text(channel, messageService.format("audit.member.unmute.is-not-muted", member.username()));
+                }
+                discordService.eventListener().publish(new MemberUnmuteEvent(event.getGuild().block(), member));
             }catch(Exception e){
-                messageService.err(event.getMessage().getChannel().block(), messageService.get("command.incorrect-name"));
+                messageService.err(channel, messageService.get("command.incorrect-name"));
             }
 
             return Mono.empty();

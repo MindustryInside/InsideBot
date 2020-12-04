@@ -65,7 +65,7 @@ public class MessageEventHandler extends AuditEventHandler{
     @Override
     public Publisher<?> onMessageCreate(MessageCreateEvent event){
         Message message = event.getMessage();
-        String text = message.getContent();
+        String text = message.getContent().trim();
         if(text.toLowerCase().contains("egg")){ /* egg */
             message.addReaction(ReactionEmoji.unicode("\uD83E\uDD5A")).block();
         }
@@ -232,12 +232,12 @@ public class MessageEventHandler extends AuditEventHandler{
                 messageService.err(channel, messageService.format("command.response.unknown", prefix));
             }
         }else if(response.type == BaseCommandHandler.ResponseType.manyArguments){
-            messageService.err(channel, messageService.get("command.response.many-arguments"),
-                               messageService.format("command.response.many-arguments.text",
+            messageService.err(channel, messageService.get("command.response.many-arguments.title"),
+                               messageService.format("command.response.many-arguments.description",
                                                      prefix, response.command.text, response.command.paramText));
         }else if(response.type == BaseCommandHandler.ResponseType.fewArguments){
-            messageService.err(channel, messageService.get("command.response.few-arguments"),
-                               messageService.format("command.response.few-arguments.text",
+            messageService.err(channel, messageService.get("command.response.few-arguments.title"),
+                               messageService.format("command.response.few-arguments.description",
                                                      prefix, response.command.text));
         }
     }

@@ -110,7 +110,7 @@ public class EventsImpl extends Events{
             e.setTitle(messageService.get("audit.member.mute.title"));
             e.setDescription(String.format("%s%n%s",
                                            messageService.format("audit.member.mute.description", member.getUsername(), event.delay, event.admin.username()),
-                                           messageService.format("common.reason", event.reason().orElse(messageService.get("common.reason.not-defined")))));
+                                           messageService.format("common.reason", event.reason().orElse(messageService.get("common.not-defined")))));
             e.setFooter(MessageUtil.zonedFormat(), null);
             e.setColor(userMute.color);
         });
