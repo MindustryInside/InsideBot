@@ -53,7 +53,7 @@ public class AdminServiceImpl implements AdminService{
     @Transactional
     public Mono<Void> unban(Snowflake guildId, Snowflake targetId){
         AdminAction action = repository.findAdminActionsByTypeAndTargetId(AdminActionType.ban, guildId, targetId).get(0);
-        return Mono.just(action).doOnNext(repository::delete).then();
+        return Mono.justOrEmpty(action).doOnNext(repository::delete).then();
     }
 
     @Override
@@ -74,7 +74,7 @@ public class AdminServiceImpl implements AdminService{
     @Transactional
     public Mono<Void> unmute(Snowflake guildId, Snowflake targetId){
         AdminAction action = repository.findAdminActionsByTypeAndTargetId(AdminActionType.mute, guildId, targetId).get(0);
-        return Mono.just(action).doOnNext(repository::delete).then();
+        return Mono.justOrEmpty(action).doOnNext(repository::delete).then();
     }
 
     @Override
@@ -94,7 +94,7 @@ public class AdminServiceImpl implements AdminService{
     @Transactional
     public Mono<Void> unwarn(Snowflake guildId, Snowflake targetId, int index){
         AdminAction action = repository.findAdminActionsByTypeAndTargetId(AdminActionType.warn, guildId, targetId).get(index);
-        return Mono.fromRunnable(() -> repository.delete(action));
+        return Mono.justOrEmpty(action).doOnNext(repository::delete).then();
     }
 
     @Override

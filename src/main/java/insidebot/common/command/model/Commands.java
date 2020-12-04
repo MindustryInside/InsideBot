@@ -292,7 +292,7 @@ public class Commands{
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
             MessageChannel channel = event.getMessage().getChannel().block();
             if(args.length > 1 && !MessageUtil.canParseInt(args[1])){
-                return messageService.text(channel, messageService.get("command.incorrect-number"));
+                return messageService.err(channel, messageService.get("command.incorrect-number"));
             }
 
             int warnings = args.length > 1 ? Strings.parseInt(args[1]) + 1 : 0;
