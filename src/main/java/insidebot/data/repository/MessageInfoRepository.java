@@ -12,7 +12,7 @@ public interface MessageInfoRepository extends GuildRepository<MessageInfo>{
     boolean existsByMessageId(String messageId);
 
     default boolean existsByMessageId(Snowflake messageId){
-        return existsById(messageId.asString());
+        return existsByMessageId(messageId.asString());
     }
 
     @Query("select m from MessageInfo m where m.messageId = :#{#messageId?.asString()}")

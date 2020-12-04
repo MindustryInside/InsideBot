@@ -122,7 +122,7 @@ public class MessageEventHandler extends AuditEventHandler{
         User user = message.getAuthor().orElse(null);
         TextChannel c = message.getChannel().cast(TextChannel.class).block();
         if(DiscordUtil.isBot(user) || c == null) return Mono.empty();
-        if(!messageService.exists(event.getMessageId())) return Mono.empty();
+        if(!messageService.exists(message.getId())) return Mono.empty();
 
         MessageInfo info = messageService.getById(event.getMessageId());
 
@@ -177,8 +177,8 @@ public class MessageEventHandler extends AuditEventHandler{
                 log.warn("User '{}' deleted log message", guild.getMemberById(a.getResponsibleUserId()).block().getUsername());
             }).then();
         }
-        if(!messageService.exists(event.getMessageId())) return Mono.empty();
-        if(buffer.contains(event.getMessageId())){
+        if(!messageService.exists(m.getId())) return Mono.empty();
+        if(buffer.contains(m.getId())){
             return Mono.fromRunnable(() -> buffer.remove(event.getMessageId()));
         }
 
