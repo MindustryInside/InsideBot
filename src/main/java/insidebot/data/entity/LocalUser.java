@@ -27,6 +27,7 @@ public class LocalUser extends UserEntity{
 
     public LocalUser(User user){
         userId(user.getId());
+        name(user.getUsername());
     }
 
     @Override

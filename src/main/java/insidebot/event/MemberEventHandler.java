@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
+import java.util.Objects;
 
 import static insidebot.event.audit.AuditEventType.*;
 
@@ -49,9 +50,7 @@ public class MemberEventHandler extends AuditEventHandler{
         member.guildId(event.getGuildId());
         member.effectiveName(event.getMember().getDisplayName());
         if(member.user() == null){
-            LocalUser localUser = new LocalUser();
-            localUser.name(user.getUsername());
-            localUser.userId(user.getId());
+            LocalUser localUser = new LocalUser(user);
             member.user(localUser);
             userService.save(localUser);
         }
@@ -108,11 +107,10 @@ public class MemberEventHandler extends AuditEventHandler{
                         LocalMember info = memberService.getOr(m, () -> new LocalMember(m));
                         info.effectiveName(m.getDisplayName());
                         if(info.user() == null){
-                            LocalUser user = new LocalUser();
-                            user.userId(m.getId());
-                            user.name(m.getUsername());
-                            info.user(user);
-                            userService.save(user);
+                            User user = discordService.gateway().getUserById(m.getId()).block();
+                            LocalUser local = new LocalUser(Objects.requireNonNull(user));
+                            info.user(local);
+                            userService.save(local);
                         }
                         memberService.save(info);
                     })

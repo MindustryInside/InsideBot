@@ -11,6 +11,7 @@ import discord4j.core.object.audit.*;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
 import discord4j.core.object.entity.channel.Channel.Type;
+import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.EmbedCreateSpec;
 import insidebot.Settings;
 import insidebot.event.audit.*;
@@ -64,6 +65,10 @@ public class MessageEventHandler extends AuditEventHandler{
     @Override
     public Publisher<?> onMessageCreate(MessageCreateEvent event){
         Message message = event.getMessage();
+        String text = message.getContent();
+        if(text.toLowerCase().contains("egg")){ /* egg */
+            message.addReaction(ReactionEmoji.unicode("\uD83E\uDD5A")).block();
+        }
         Member member = event.getMember().orElse(null);
         if(member == null || message.getChannel().map(Channel::getType).block() != Type.GUILD_TEXT) return Mono.empty();
         TextChannel channel = message.getChannel().cast(TextChannel.class).block();
@@ -82,9 +87,7 @@ public class MessageEventHandler extends AuditEventHandler{
         context.init(guildId);
 
         if(localMember.user() == null){
-            LocalUser localUser = userService.getOr(userId, LocalUser::new);
-            localUser.userId(userId);
-            localUser.name(user.getUsername());
+            LocalUser localUser = userService.getOr(userId, () -> new LocalUser(user));
             localMember.user(localUser);
             userService.save(localUser);
         }
@@ -110,7 +113,7 @@ public class MessageEventHandler extends AuditEventHandler{
                 .user(user);
 
         if(adminService.isAdmin(member)){
-            handleResponse(commandHandler.handleMessage(message.getContent(), reference, event), channel);
+            handleResponse(commandHandler.handleMessage(text, reference, event), channel);
         }
         return Mono.empty();
     }

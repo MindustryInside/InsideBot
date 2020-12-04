@@ -9,6 +9,7 @@ import insidebot.common.services.ContextService;
 import insidebot.data.entity.MessageInfo;
 import insidebot.data.repository.MessageInfoRepository;
 import insidebot.data.service.MessageService;
+import insidebot.util.LocaleUtil;
 import org.joda.time.*;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +18,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.*;
-import reactor.util.annotation.NonNull;
 
 import java.util.function.Consumer;
 
@@ -48,7 +48,13 @@ public class MessageServiceImpl implements MessageService{
     }
 
     @Override
-    public String format(@NonNull String key, Object... args) {
+    public String getCount(String key, long count){
+        String code = LocaleUtil.getCount(count, contextService.locale());
+        return get(String.format("%s.%s", key, code));
+    }
+
+    @Override
+    public String format(String key, Object... args) {
         return context.getMessage(key, args, contextService.locale());
     }
 

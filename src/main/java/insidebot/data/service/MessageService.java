@@ -13,6 +13,8 @@ public interface MessageService{
     //bundle
     String get(String key);
 
+    String getCount(String key, long count);
+
     String format(String key, Object... args);
 
     //send

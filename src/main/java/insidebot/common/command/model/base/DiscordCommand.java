@@ -1,5 +1,6 @@
 package insidebot.common.command.model.base;
 
+import discord4j.rest.util.Permission;
 import org.springframework.stereotype.Component;
 
 import java.lang.annotation.*;
@@ -15,4 +16,6 @@ public @interface DiscordCommand{
     String params() default "";
 
     String description();
+
+    Permission[] permissions() default {};
 }

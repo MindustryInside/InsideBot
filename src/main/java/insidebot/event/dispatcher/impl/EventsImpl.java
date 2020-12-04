@@ -64,6 +64,8 @@ public class EventsImpl extends Events{
                     builder.append("\n[embed-").append(i).append(']');
                     if(e.getDescription().isPresent()){
                         builder.append('\n').append(e.getDescription().get());
+                    }else{
+                        builder.append("<empty>");
                     }
                 }
                 builder.append('\n');
