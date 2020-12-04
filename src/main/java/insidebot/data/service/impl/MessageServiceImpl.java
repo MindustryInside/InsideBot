@@ -90,25 +90,25 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     @Transactional(readOnly = true)
-    public MessageInfo getById(@NonNull Snowflake messageId){
+    public MessageInfo getById(Snowflake messageId){
         return repository.findByMessageId(messageId);
     }
 
     @Override
     @Transactional
-    public MessageInfo save(@NonNull MessageInfo user) {
+    public MessageInfo save(MessageInfo user) {
         return repository.save(user);
     }
 
     @Override
     @Transactional
-    public void delete(@NonNull MessageInfo message){
+    public void delete(MessageInfo message){
         repository.delete(message);
     }
 
     @Override
     @Transactional
-    public void deleteById(@NonNull Snowflake messageId){
+    public void deleteById(Snowflake messageId){
         MessageInfo message = getById(messageId);
         if(message != null){
             repository.delete(message);

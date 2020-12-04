@@ -286,7 +286,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "unwarn", params = "<@user> [count]", description = "command.unwarn.description")
+    @DiscordCommand(key = "unwarn", params = "<@user> [number]", description = "command.unwarn.description")
     public class UnwarnCommand extends CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){

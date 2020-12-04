@@ -19,11 +19,13 @@ public class AdminServiceImpl implements AdminService{
     private AdminActionRepository repository;
 
     @Override
+    @Transactional(readOnly = true)
     public Flux<AdminAction> get(AdminActionType type, Snowflake guildId, Snowflake targetId){
         return Flux.fromIterable(repository.findAdminActionsByTypeAndTargetId(type, guildId, targetId));
     }
 
     @Override
+    @Transactional
     public Mono<Void> kick(LocalMember admin, LocalMember target, String reason){
         AdminAction action = new AdminAction(target.guildId())
                 .type(AdminActionType.kick)
@@ -35,6 +37,7 @@ public class AdminServiceImpl implements AdminService{
     }
 
     @Override
+    @Transactional
     public Mono<Void> ban(LocalMember admin, LocalMember target, String reason){
         AdminAction action = new AdminAction(target.guildId())
                 .type(AdminActionType.ban)
@@ -47,12 +50,14 @@ public class AdminServiceImpl implements AdminService{
     }
 
     @Override
+    @Transactional
     public Mono<Void> unban(Snowflake guildId, Snowflake targetId){
         AdminAction action = repository.findAdminActionsByTypeAndTargetId(AdminActionType.ban, guildId, targetId).get(0);
         return Mono.just(action).doOnNext(repository::delete).then();
     }
 
     @Override
+    @Transactional
     public Mono<Void> mute(LocalMember admin, LocalMember target, Calendar end, String reason){
         AdminAction action = new AdminAction(target.guildId())
                 .type(AdminActionType.mute)
@@ -66,6 +71,7 @@ public class AdminServiceImpl implements AdminService{
     }
 
     @Override
+    @Transactional
     public Mono<Void> unmute(Snowflake guildId, Snowflake targetId){
         AdminAction action = repository.findAdminActionsByTypeAndTargetId(AdminActionType.mute, guildId, targetId).get(0);
         return Mono.just(action).doOnNext(repository::delete).then();
