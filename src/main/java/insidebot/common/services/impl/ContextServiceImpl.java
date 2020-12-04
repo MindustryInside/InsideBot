@@ -15,7 +15,7 @@ public class ContextServiceImpl implements ContextService{
 
     private final ThreadLocal<Locale> localeHolder = new NamedThreadLocal<>("ContextServiceImpl.Locale");
 
-    private final ThreadLocal<Snowflake> guildHolder = new NamedThreadLocal<>("ContextServiceImpl.GuildIds");
+    private final ThreadLocal<Snowflake> guildHolder = new NamedThreadLocal<>("ContextServiceImpl.GuildId");
 
     @Autowired
     private GuildService guildService;

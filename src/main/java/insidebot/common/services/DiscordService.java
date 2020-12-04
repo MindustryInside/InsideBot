@@ -13,6 +13,8 @@ public interface DiscordService{
 
     EventListener eventListener();
 
+    Mono<PrivateChannel> getPrivateChannelById(Snowflake userId);
+
     Mono<TextChannel> getTextChannelById(Snowflake channelId);
 
     Mono<TextChannel> getLogChannel(Snowflake guildId);

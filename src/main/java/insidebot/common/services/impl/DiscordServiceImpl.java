@@ -4,6 +4,7 @@ import arc.util.Log;
 import discord4j.common.util.Snowflake;
 import discord4j.core.*;
 import discord4j.core.event.ReactiveEventAdapter;
+import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.*;
 import discord4j.core.shard.MemberRequestFilter;
 import discord4j.gateway.intent.*;
@@ -15,7 +16,6 @@ import insidebot.event.dispatcher.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
-import reactor.util.annotation.NonNull;
 
 import javax.annotation.PreDestroy;
 import java.util.*;
@@ -78,6 +78,11 @@ public class DiscordServiceImpl implements DiscordService{
     @Override
     public EventListener eventListener(){
         return eventListener;
+    }
+
+    @Override
+    public Mono<PrivateChannel> getPrivateChannelById(Snowflake userId){
+        return gateway.getUserById(userId).flatMap(User::getPrivateChannel);
     }
 
     @Override

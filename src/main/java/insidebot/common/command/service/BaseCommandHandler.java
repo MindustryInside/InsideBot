@@ -2,6 +2,7 @@ package insidebot.common.command.service;
 
 import arc.struct.ObjectMap;
 import discord4j.core.event.domain.message.MessageCreateEvent;
+import discord4j.rest.util.*;
 import insidebot.common.command.model.base.*;
 import insidebot.common.services.DiscordService;
 import insidebot.data.service.*;
@@ -50,13 +51,15 @@ public abstract class BaseCommandHandler{
         public final String paramText;
         public final CommandParam[] params;
         protected final CommandRunner runner;
+        public PermissionSet permissions;
         public String description;
 
-        public Command(String text, String paramText, String description, CommandRunner runner){
+        public Command(String text, String paramText, String description, CommandRunner runner, Permission[] permissions){
             this.text = text;
             this.paramText = paramText;
             this.runner = runner;
             this.description = description;
+            this.permissions = PermissionSet.of(permissions);
 
             String[] psplit = paramText.split(" ");
             if(paramText.length() == 0){
@@ -97,8 +100,7 @@ public abstract class BaseCommandHandler{
                         variadic = true;
                     }
 
-                    params[i] = new BaseCommandHandler.CommandParam(fname, optional, variadic);
-
+                    params[i] = new CommandParam(fname, optional, variadic);
                 }
             }
         }
@@ -121,7 +123,7 @@ public abstract class BaseCommandHandler{
         public final Command command;
         public final String runCommand;
 
-        public CommandResponse(BaseCommandHandler.ResponseType type, Command command, String runCommand){
+        public CommandResponse(ResponseType type, Command command, String runCommand){
             this.type = type;
             this.command = command;
             this.runCommand = runCommand;

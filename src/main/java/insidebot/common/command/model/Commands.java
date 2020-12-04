@@ -158,12 +158,16 @@ public class Commands{
                     return messageService.err(channel, messageService.get("command.user-is-bot"));
                 }
 
+                if(adminService.isMuted(m.getGuildId(), m.getId()).block()){
+                    return messageService.err(channel, messageService.get("command.admin.mute.already-muted"));
+                }
+
                 if(adminService.isAdmin(m)){
                     return messageService.err(channel, messageService.get("command.user-is-admin"));
                 }
 
                 if(reference.member().equals(m)){
-                    return messageService.err(channel, messageService.get("command.mute.self-user"));
+                    return messageService.err(channel, messageService.get("command.admin.mute.self-user"));
                 }
 
                 if(reason != null && reason.length() > 1000){
@@ -271,8 +275,8 @@ public class Commands{
                             String title = String.format("%2s. %s", i + 1, formatter.print(new DateTime(w.timestamp())));
 
                             StringBuilder description = new StringBuilder();
-                            description.append(messageService.format("message.admin", w.admin().effectiveName())).append('\n');
-                            description.append(messageService.format("message.reason", w.reason().orElse(messageService.get("message.reason.not-defined"))));
+                            description.append(messageService.format("common.admin", w.admin().effectiveName())).append('\n');
+                            description.append(messageService.format("common.reason", w.reason().orElse(messageService.get("common.reason.not-defined"))));
                             e.addField(title, description.toString(), true);
                         }
                     };

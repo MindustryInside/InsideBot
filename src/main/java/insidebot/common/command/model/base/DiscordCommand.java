@@ -17,5 +17,5 @@ public @interface DiscordCommand{
 
     String description();
 
-    Permission[] permissions() default {};
+    Permission[] permissions() default {Permission.SEND_MESSAGES, Permission.EMBED_LINKS};
 }

@@ -1,7 +1,6 @@
 package insidebot.event;
 
 import arc.func.*;
-import arc.util.Log;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.VoiceStateUpdateEvent;
 import discord4j.core.object.VoiceState;
@@ -31,8 +30,8 @@ public class VoiceEventHandler extends AuditEventHandler{
             if(DiscordUtil.isBot(user) || channel == null) return Mono.empty();
             return log(guildId, embed -> {
                 embed.setColor(voiceLeave.color);
-                embed.setTitle(messageService.get("message.voice-leave"));
-                embed.setDescription(messageService.format("message.voice-leave.text", user.getUsername(), channel.getName()));
+                embed.setTitle(messageService.get("audit.voice.leave.title"));
+                embed.setDescription(messageService.format("audit.voice.leave.description", user.getUsername(), channel.getName()));
                 embed.setFooter(MessageUtil.zonedFormat(), null);
             });
         }else{
@@ -43,8 +42,8 @@ public class VoiceEventHandler extends AuditEventHandler{
             if(DiscordUtil.isBot(user) || channel == null) return Mono.empty();
             return log(guildId, embed -> {
                 embed.setColor(voiceJoin.color);
-                embed.setTitle(messageService.get("message.voice-join"));
-                embed.setDescription(messageService.format("message.voice-join.text", user.getUsername(), channel.getName()));
+                embed.setTitle(messageService.get("audit.voice.join.title"));
+                embed.setDescription(messageService.format("audit.voice.join.description", user.getUsername(), channel.getName()));
                 embed.setFooter(MessageUtil.zonedFormat(), null);
             });
         }

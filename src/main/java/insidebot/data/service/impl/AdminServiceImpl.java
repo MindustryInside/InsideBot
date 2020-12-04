@@ -71,6 +71,11 @@ public class AdminServiceImpl implements AdminService{
     }
 
     @Override
+    public Mono<Boolean> isMuted(Snowflake guildId, Snowflake targetId){
+        return get(AdminActionType.mute, guildId, targetId).count().map(c -> c > 0);
+    }
+
+    @Override
     @Transactional
     public Mono<Void> unmute(Snowflake guildId, Snowflake targetId){
         AdminAction action = repository.findAdminActionsByTypeAndTargetId(AdminActionType.mute, guildId, targetId).get(0);

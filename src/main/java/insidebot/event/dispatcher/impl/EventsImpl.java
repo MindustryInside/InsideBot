@@ -45,8 +45,8 @@ public class EventsImpl extends Events{
         }, e -> log.warn("An exception was thrown in the MessageClear event, error: {}", e.getMessage()));
 
         return log(event.guild().getId(), embed -> {
-            embed.setTitle(messageService.format("message.clear", event.count, event.channel.getName()));
-            embed.setDescription(messageService.format("message.clear.text", event.user.getUsername(), event.count, event.channel.getName()));
+            embed.setTitle(messageService.format("audit.message.clear.title", event.count, event.channel.getName()));
+            embed.setDescription(messageService.format("audit.message.clear.description", event.user.getUsername(), event.count, event.channel.getName()));
             embed.setFooter(MessageUtil.zonedFormat(), null);
             embed.setColor(messageClear.color);
 
@@ -86,8 +86,8 @@ public class EventsImpl extends Events{
         adminService.unmute(l.guildId(), l.user().userId()).block();
         member.removeRole(guildService.muteRoleId(member.getGuildId())).block();
         return log(member.getGuildId(), e -> {
-            e.setTitle(messageService.get("message.unmute"));
-            e.setDescription(messageService.format("message.unmute.text", member.getUsername()));
+            e.setTitle(messageService.get("audit.member.unmute.title"));
+            e.setDescription(messageService.format("audit.member.unmute.description", member.getUsername()));
             e.setFooter(MessageUtil.zonedFormat(), null);
             e.setColor(userUnmute.color);
         });
@@ -107,10 +107,10 @@ public class EventsImpl extends Events{
         member.addRole(guildService.muteRoleId(member.getGuildId())).block();
 
         return log(member.getGuildId(), e -> {
-            e.setTitle(messageService.get("message.mute"));
+            e.setTitle(messageService.get("audit.member.mute.title"));
             e.setDescription(String.format("%s%n%s",
-                                           messageService.format("message.mute.text", member.getUsername(), event.delay, event.admin.username()),
-                                           messageService.format("message.reason", event.reason().orElse(messageService.get("message.reason.not-defined")))));
+                                           messageService.format("audit.member.mute.description", member.getUsername(), event.delay, event.admin.username()),
+                                           messageService.format("common.reason", event.reason().orElse(messageService.get("common.reason.not-defined")))));
             e.setFooter(MessageUtil.zonedFormat(), null);
             e.setColor(userMute.color);
         });

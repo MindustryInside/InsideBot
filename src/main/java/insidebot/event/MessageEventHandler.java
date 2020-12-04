@@ -140,15 +140,15 @@ public class MessageEventHandler extends AuditEventHandler{
         Consumer<EmbedCreateSpec> e = embed -> {
             embed.setColor(messageEdit.color);
             embed.setAuthor(user.getUsername(), null, user.getAvatarUrl());
-            embed.setTitle(messageService.format("message.edit", c.getName()));
-            embed.setDescription(messageService.format(event.getGuildId().isPresent() ? "message.edit.description" : "message.edit.nullable-guild",
-                                                       event.getGuildId().map(Snowflake::asString).orElse(null), /* Я не знаю как такое получить, но всё же обезопашусь */
-                                                       event.getChannelId().asString(),
-                                                       event.getMessageId().asString()));
+            embed.setTitle(messageService.format("audit.message.edit.title", c.getName()));
+            embed.setDescription(messageService.format("audit.message.edit.description",
+                                                       c.getGuildId().asString(),
+                                                       c.getId().asString(),
+                                                       message.getId().asString()));
 
-            embed.addField(messageService.get("message.edit.old-content"),
+            embed.addField(messageService.get("audit.message.old-content.title"),
                            MessageUtil.substringTo(oldContent, Field.MAX_VALUE_LENGTH), false);
-            embed.addField(messageService.get("message.edit.new-content"),
+            embed.addField(messageService.get("audit.message.new-content.title"),
                            MessageUtil.substringTo(newContent, Field.MAX_VALUE_LENGTH), true);
 
             embed.setFooter(MessageUtil.zonedFormat(), null);
@@ -156,8 +156,8 @@ public class MessageEventHandler extends AuditEventHandler{
 
         if(under){
             stringInputStream.writeString(String.format("%s:\n%s\n\n%s:\n%s",
-                                                        messageService.get("message.edit.old-content"), oldContent,
-                                                        messageService.get("message.edit.new-content"), newContent));
+                                                        messageService.get("audit.message.old-content.title"), oldContent,
+                                                        messageService.get("audit.message.new-content.title"), newContent));
         }
 
         log(c.getGuildId(), e, under);
@@ -197,13 +197,13 @@ public class MessageEventHandler extends AuditEventHandler{
         Consumer<EmbedCreateSpec> e = embed -> {
             embed.setColor(messageDelete.color);
             embed.setAuthor(user.getUsername(), null, user.getAvatarUrl());
-            embed.setTitle(messageService.format("message.delete", c.getName()));
+            embed.setTitle(messageService.format("audit.message.delete.title", c.getName()));
             embed.setFooter(MessageUtil.zonedFormat(), null);
-            embed.addField(messageService.get("message.delete.content"), MessageUtil.substringTo(content, Field.MAX_VALUE_LENGTH), true);
+            embed.addField(messageService.get("audit.message.deleted-content.title"), MessageUtil.substringTo(content, Field.MAX_VALUE_LENGTH), true);
         };
 
         if(under){
-            stringInputStream.writeString(String.format("%s:\n%s", messageService.get("message.delete.content"), content));
+            stringInputStream.writeString(String.format("%s:\n%s", messageService.get("audit.message.deleted-content.title"), content));
         }
 
         log(guild.getId(), e, under);

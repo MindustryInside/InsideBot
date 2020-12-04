@@ -33,8 +33,8 @@ public class MemberEventHandler extends AuditEventHandler{
 
         return log(event.getGuildId(), embed -> {
             embed.setColor(userBan.color);
-            embed.setTitle(messageService.get("message.ban"));
-            embed.setDescription(messageService.format("message.ban.text", user.getUsername()));
+            embed.setTitle(messageService.get("audit.member.ban.title"));
+            embed.setDescription(messageService.format("audit.member.ban.description", user.getUsername()));
             embed.setFooter(MessageUtil.zonedFormat(), null);
         })
         .thenEmpty(Mono.fromRunnable(() -> memberService.deleteById(event.getGuildId(), user.getId())));
@@ -57,8 +57,8 @@ public class MemberEventHandler extends AuditEventHandler{
 
         return log(event.getGuildId(), embed -> {
             embed.setColor(userJoin.color);
-            embed.setTitle(messageService.get("message.user-join"));
-            embed.setDescription(messageService.format("message.user-join.text", user.getUsername()));
+            embed.setTitle(messageService.get("audit.member.join.title"));
+            embed.setDescription(messageService.format("audit.member.join.description", user.getUsername()));
             embed.setFooter(MessageUtil.zonedFormat(), null);
         })
         .thenEmpty(Mono.fromRunnable(() -> memberService.save(member)));
@@ -78,10 +78,10 @@ public class MemberEventHandler extends AuditEventHandler{
                 if(moderator == null) return Mono.empty();
                 return log(event.getGuildId(), embed -> {
                     embed.setColor(userKick.color);
-                    embed.setTitle(messageService.get("message.user-kick"));
-                    String desc = messageService.format("message.user-kick.text", user.getUsername(), moderator.getUsername());
+                    embed.setTitle(messageService.get("audit.member.kick.title"));
+                    String desc = messageService.format("audit.member.kick.description", user.getUsername(), moderator.getUsername());
                     if(a.getReason().isPresent() && !a.getReason().get().isBlank()){
-                        desc += "\n" + messageService.format("message.reason", a.getReason().get().trim());
+                        desc += "\n" + messageService.format("common.reason", a.getReason().get().trim());
                     }
                     embed.setDescription(desc);
                     embed.setFooter(MessageUtil.zonedFormat(), null);
@@ -89,8 +89,8 @@ public class MemberEventHandler extends AuditEventHandler{
             }else{
                 return log(event.getGuildId(), embed -> {
                     embed.setColor(userLeave.color);
-                    embed.setTitle(messageService.get("message.user-leave"));
-                    embed.setDescription(messageService.format("message.user-leave.text", user.getUsername()));
+                    embed.setTitle(messageService.get("audit.member.leave.title"));
+                    embed.setDescription(messageService.format("audit.member.leave.description", user.getUsername()));
                     embed.setFooter(MessageUtil.zonedFormat(), null);
                 });
             }

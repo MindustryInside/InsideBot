@@ -14,6 +14,6 @@ public abstract class CommandRunner{
 
     public Command compile(){
         DiscordCommand a = getClass().getDeclaredAnnotation(DiscordCommand.class);
-        return new Command(a.key(), a.params(), a.description(), this);
+        return new Command(a.key(), a.params(), a.description(), this, a.permissions());
     }
 }
