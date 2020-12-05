@@ -15,6 +15,8 @@ public interface MessageService{
 
     String getCount(String key, long count);
 
+    String getEnum(Enum<?> type);
+
     String format(String key, Object... args);
 
     //send

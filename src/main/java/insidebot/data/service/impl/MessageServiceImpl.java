@@ -54,6 +54,11 @@ public class MessageServiceImpl implements MessageService{
     }
 
     @Override
+    public String getEnum(Enum<?> type){
+        return get(String.format("%s.%s", type.getClass().getName(), type.name()));
+    }
+
+    @Override
     public String format(String key, Object... args) {
         return context.getMessage(key, args, contextService.locale());
     }

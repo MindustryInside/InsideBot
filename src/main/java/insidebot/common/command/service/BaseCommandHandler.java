@@ -3,6 +3,7 @@ package insidebot.common.command.service;
 import arc.struct.ObjectMap;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.rest.util.*;
+import insidebot.Settings;
 import insidebot.common.command.model.base.*;
 import insidebot.common.services.DiscordService;
 import insidebot.data.service.*;
@@ -20,6 +21,12 @@ public abstract class BaseCommandHandler{
 
     @Autowired
     protected DiscordService discordService;
+
+    @Autowired
+    protected MessageService messageService;
+
+    @Autowired
+    protected Settings settings;
 
     @Autowired(required = false)
     protected List<CommandRunner> orderedCommands = new ArrayList<>();
@@ -131,6 +138,6 @@ public abstract class BaseCommandHandler{
     }
 
     public enum ResponseType{
-        noCommand, unknownCommand, fewArguments, manyArguments, valid;
+        noCommand, unknownCommand, fewArguments, manyArguments, permissionDenied, valid
     }
 }

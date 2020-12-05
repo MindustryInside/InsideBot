@@ -214,7 +214,7 @@ public class MessageEventHandler extends AuditEventHandler{
 
     protected void handleResponse(CommandResponse response, TextChannel channel){
         String prefix = guildService.prefix(channel.getGuildId());
-        if(response.type == BaseCommandHandler.ResponseType.unknownCommand){
+        if(response.type == ResponseType.unknownCommand){
             int min = 0;
             Command closest = null;
 
@@ -231,11 +231,11 @@ public class MessageEventHandler extends AuditEventHandler{
             }else{
                 messageService.err(channel, messageService.format("command.response.unknown", prefix));
             }
-        }else if(response.type == BaseCommandHandler.ResponseType.manyArguments){
+        }else if(response.type == ResponseType.manyArguments){
             messageService.err(channel, messageService.get("command.response.many-arguments.title"),
                                messageService.format("command.response.many-arguments.description",
                                                      prefix, response.command.text, response.command.paramText));
-        }else if(response.type == BaseCommandHandler.ResponseType.fewArguments){
+        }else if(response.type == ResponseType.fewArguments){
             messageService.err(channel, messageService.get("command.response.few-arguments.title"),
                                messageService.format("command.response.few-arguments.description",
                                                      prefix, response.command.text));
