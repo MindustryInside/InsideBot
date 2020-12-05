@@ -101,6 +101,16 @@ public class DiscordServiceImpl implements DiscordService{
     }
 
     @Override
+    public boolean exists(Snowflake userId){
+        try{
+            gateway.getUserById(userId);
+            return true;
+        }catch(Throwable t){
+            return true;
+        }
+    }
+
+    @Override
     public boolean exists(Snowflake guildId, Snowflake userId){
         try{
             gateway.getMemberById(guildId, userId).block();

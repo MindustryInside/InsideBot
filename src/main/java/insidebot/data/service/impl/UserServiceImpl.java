@@ -15,6 +15,8 @@ public class UserServiceImpl implements UserService{
     @Autowired
     private LocalUserRepository repository;
 
+    private final Object $lock = new Object[0];
+
     @Override
     @Transactional(readOnly = true)
     public LocalUser get(Snowflake userId){
@@ -24,7 +26,16 @@ public class UserServiceImpl implements UserService{
     @Override
     @Transactional(readOnly = true)
     public LocalUser getOr(Snowflake userId, Supplier<LocalUser> prov){
-        return exists(userId) ? get(userId) : prov.get();
+        LocalUser localUser = get(userId);
+        if(localUser == null){
+            synchronized($lock){
+                localUser = get(userId);
+                if(localUser == null){
+                    localUser = prov.get();
+                }
+            }
+        }
+        return localUser;
     }
 
     @Override

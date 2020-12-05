@@ -21,5 +21,7 @@ public interface DiscordService{
 
     Mono<VoiceChannel> getVoiceChannelById(Snowflake channelId);
 
+    boolean exists(Snowflake userId);
+
     boolean exists(Snowflake guildId, Snowflake userId);
 }

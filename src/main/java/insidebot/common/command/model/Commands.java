@@ -100,7 +100,7 @@ public class Commands{
                     return messageService.err(channel, messageService.get("command.owner-only"));
                 }
 
-                if(args[0] != null){
+                if(!MessageUtil.isEmpty(args[0])){
                     c.prefix(args[0]);
                     guildService.save(c);
                     return messageService.text(channel, messageService.format("command.config.prefix-updated", c.prefix()));
@@ -243,7 +243,7 @@ public class Commands{
                 adminService.warn(reference.localMember(), info, reason).block();
                 long warnings = adminService.warnings(m.getGuildId(), info.user().userId()).count().blockOptional().orElse(0L);
 
-                messageService.text(channel, messageService.format("message.warn", m.getUsername(), warnings));
+                messageService.text(channel, messageService.format("message.admin.warn", m.getUsername(), warnings));
 
                 if(warnings >= 3){
                     event.getGuild().flatMap(g -> g.ban(m.getId(), b -> b.setDeleteMessageDays(0))).block();
@@ -306,7 +306,7 @@ public class Commands{
             try{
                 LocalMember info = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
                 adminService.unwarn(info.guildId(), info.user().userId(), warnings).block();
-                messageService.text(channel, messageService.format("command.unwarn", info.effectiveName(), warnings + 1));
+                messageService.text(channel, messageService.format("command.admin.unwarn", info.effectiveName(), warnings + 1));
             }catch(Throwable t){
                 if(t instanceof IndexOutOfBoundsException){
                     messageService.err(channel, messageService.get("command.incorrect-number"));
@@ -328,7 +328,7 @@ public class Commands{
             try{
                 LocalMember member = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
                 if(!adminService.isMuted(member.guildId(), member.userId()).blockOptional().orElse(false)){
-                    return messageService.text(channel, messageService.format("audit.member.unmute.is-not-muted", member.username()));
+                    return messageService.err(channel, messageService.format("audit.member.unmute.is-not-muted", member.username()));
                 }
                 discordService.eventListener().publish(new MemberUnmuteEvent(event.getGuild().block(), member));
             }catch(Exception e){

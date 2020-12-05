@@ -10,13 +10,9 @@ public interface MemberService{
 
     LocalMember get(Member member);
 
-    LocalMember get(Guild guild, User user);
-
     LocalMember get(Snowflake guildId, Snowflake userId);
 
     LocalMember getOr(Member member, Supplier<LocalMember> prov);
-
-    LocalMember getOr(Guild guild, User user, Supplier<LocalMember> prov);
 
     LocalMember getOr(Snowflake guildId, Snowflake userId, Supplier<LocalMember> prov);
 

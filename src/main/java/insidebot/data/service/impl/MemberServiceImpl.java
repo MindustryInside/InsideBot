@@ -36,16 +36,12 @@ public class MemberServiceImpl implements MemberService{
     @Autowired
     private LocalMemberRepository repository;
 
+    private final Object $lock = new Object[0];
+
     @Override
     @Transactional(readOnly = true)
     public LocalMember get(Member member){
         return get(member.getGuildId(), member.getId());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public LocalMember get(Guild guild, User user){
-        return get(guild.getId(), user.getId());
     }
 
     @Override
@@ -57,19 +53,22 @@ public class MemberServiceImpl implements MemberService{
     @Override
     @Transactional
     public LocalMember getOr(Member member, Supplier<LocalMember> prov){
-        return exists(member.getGuildId(), member.getId()) ? get(member) : prov.get();
-    }
-
-    @Override
-    @Transactional
-    public LocalMember getOr(Guild guild, User user, Supplier<LocalMember> prov){
-        return exists(guild.getId(), user.getId()) ? get(guild, user) : prov.get();
+        return getOr(member.getGuildId(), member.getId(), prov);
     }
 
     @Override
     @Transactional
     public LocalMember getOr(Snowflake guildId, Snowflake userId, Supplier<LocalMember> prov){
-        return exists(guildId, userId) ? get(guildId, userId) : prov.get();
+        LocalMember localMember = get(guildId, userId);
+        if(localMember == null){
+            synchronized($lock){
+                localMember = get(guildId, userId);
+                if(localMember == null){
+                    localMember = prov.get();
+                }
+            }
+        }
+        return localMember;
     }
 
     @Override
@@ -95,7 +94,7 @@ public class MemberServiceImpl implements MemberService{
     public void deleteById(Snowflake guildId, Snowflake userId){
         LocalMember member = get(guildId, userId);
         if(member != null){
-            repository.delete(get(guildId, userId));
+            repository.delete(member);
         }else{
             log.warn("Member '{}' ({}) not found", userId.asString(), guildId.asString());
         }

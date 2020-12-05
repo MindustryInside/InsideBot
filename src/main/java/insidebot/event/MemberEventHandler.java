@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
-import java.util.Objects;
+import java.util.*;
 
 import static insidebot.event.audit.AuditEventType.*;
 
@@ -42,26 +42,24 @@ public class MemberEventHandler extends AuditEventHandler{
 
     @Override
     public Publisher<?> onMemberJoin(MemberJoinEvent event){
-        User user = discordService.gateway().getUserById(event.getMember().getId()).block();
-        if(DiscordUtil.isBot(user)) return Mono.empty();
-        context.init(event.getGuildId());
+        Member member = event.getMember();
+        if(DiscordUtil.isBot(member)) return Mono.empty();
+        context.init(member.getGuildId());
 
-        LocalMember member = new LocalMember();
-        member.guildId(event.getGuildId());
-        member.effectiveName(event.getMember().getDisplayName());
-        if(member.user() == null){
-            LocalUser localUser = new LocalUser(user);
-            member.user(localUser);
+        LocalMember localMember = memberService.getOr(member, () -> new LocalMember(member));
+        if(localMember.user() == null){
+            LocalUser localUser = new LocalUser(member);
+            localMember.user(localUser);
             userService.save(localUser);
         }
 
+        memberService.save(localMember);
         return log(event.getGuildId(), embed -> {
             embed.setColor(userJoin.color);
             embed.setTitle(messageService.get("audit.member.join.title"));
-            embed.setDescription(messageService.format("audit.member.join.description", user.getUsername()));
+            embed.setDescription(messageService.format("audit.member.join.description", member.getUsername()));
             embed.setFooter(MessageUtil.zonedFormat(), null);
-        })
-        .thenEmpty(Mono.fromRunnable(() -> memberService.save(member)));
+        });
     }
 
     @Override
@@ -69,33 +67,29 @@ public class MemberEventHandler extends AuditEventHandler{
         User user = event.getUser();
         if(DiscordUtil.isBot(user)) return Mono.empty();
         context.init(event.getGuildId());
-        AuditLogEntry l = event.getGuild().flatMapMany(Guild::getAuditLog)
-                               .filter(a -> a.getActionType() == ActionType.MEMBER_KICK)
-                               .filter(a -> user.getId().equals(a.getTargetId().orElse(null))).blockFirst();
-        return Mono.justOrEmpty(l).flatMap(a -> {
-            if(a != null && a.getId().getTimestamp().isAfter(Instant.now().minusMillis(2500))){
-                Member moderator = event.getGuild().flatMap(g -> g.getMemberById(a.getResponsibleUserId())).block();
-                if(moderator == null) return Mono.empty();
-                return log(event.getGuildId(), embed -> {
-                    embed.setColor(userKick.color);
-                    embed.setTitle(messageService.get("audit.member.kick.title"));
-                    String desc = messageService.format("audit.member.kick.description", user.getUsername(), moderator.getUsername());
-                    if(a.getReason().isPresent() && !a.getReason().get().isBlank()){
-                        desc += "\n" + messageService.format("common.reason", a.getReason().get().trim());
-                    }
-                    embed.setDescription(desc);
-                    embed.setFooter(MessageUtil.zonedFormat(), null);
-                });
-            }else{
-                return log(event.getGuildId(), embed -> {
-                    embed.setColor(userLeave.color);
-                    embed.setTitle(messageService.get("audit.member.leave.title"));
-                    embed.setDescription(messageService.format("audit.member.leave.description", user.getUsername()));
-                    embed.setFooter(MessageUtil.zonedFormat(), null);
-                });
-            }
-        })
-        .thenEmpty(Mono.fromRunnable(() -> memberService.deleteById(event.getGuildId(), user.getId())));
+        AuditLogEntry l = event.getGuild().flatMapMany(g -> g.getAuditLog(q -> q.setActionType(ActionType.MEMBER_KICK))).blockFirst();
+        memberService.deleteById(event.getGuildId(), user.getId());
+        if(l != null && l.getId().getTimestamp().isAfter(Instant.now().minusMillis(2500))){
+            Member moderator = event.getGuild().flatMap(g -> g.getMemberById(l.getResponsibleUserId())).block();
+            if(moderator == null) return Mono.empty();
+            return log(event.getGuildId(), embed -> {
+                embed.setColor(userKick.color);
+                embed.setTitle(messageService.get("audit.member.kick.title"));
+                StringBuilder desc = new StringBuilder();
+                desc.append(messageService.format("audit.member.kick.description", user.getUsername(), moderator.getUsername()));
+                Optional<String> reason = l.getReason();
+                desc.append('\n').append(messageService.format("common.reason", reason.filter(r -> !r.trim().isBlank()).isPresent() ? reason.map(String::trim).get() : messageService.get("common.not-defined")));
+                embed.setDescription(desc.toString());
+                embed.setFooter(MessageUtil.zonedFormat(), null);
+            });
+        }else{
+            return log(event.getGuildId(), embed -> {
+                embed.setColor(userLeave.color);
+                embed.setTitle(messageService.get("audit.member.leave.title"));
+                embed.setDescription(messageService.format("audit.member.leave.description", user.getUsername()));
+                embed.setFooter(MessageUtil.zonedFormat(), null);
+            });
+        }
     }
 
     @Override
