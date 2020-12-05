@@ -1,12 +1,12 @@
 package insidebot.common.command.model;
 
-import arc.math.Mathf;
-import arc.util.*;
+import arc.util.Strings;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
 import discord4j.core.spec.EmbedCreateSpec;
+import discord4j.rest.util.Permission;
 import insidebot.Settings;
 import insidebot.common.command.model.base.*;
 import insidebot.common.command.service.CommandHandler;
@@ -139,7 +139,8 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "mute", params = "<@user> <delay> [reason...]", description = "command.admin.mute.description")
+    @DiscordCommand(key = "mute", params = "<@user> <delay> [reason...]", description = "command.admin.mute.description",
+                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_ROLES})
     public class MuteCommand extends CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
@@ -170,7 +171,7 @@ public class Commands{
                     return messageService.err(channel, messageService.get("command.admin.mute.self-user"));
                 }
 
-                if(reason != null && reason.length() > 1000){
+                if(reason != null && !reason.isBlank() && reason.length() > 1000){
                     return messageService.err(channel, messageService.format("common.string-limit", 1000));
                 }
 
@@ -183,7 +184,8 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "delete", params = "<amount>", description = "command.admin.delete.description")
+    @DiscordCommand(key = "delete", params = "<amount>", description = "command.admin.delete.description",
+                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_MESSAGES, Permission.READ_MESSAGE_HISTORY})
     public class DeleteCommand extends CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
@@ -211,7 +213,8 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "warn", params = "<@user> [reason...]", description = "command.admin.warn.description")
+    @DiscordCommand(key = "warn", params = "<@user> [reason...]", description = "command.admin.warn.description",
+                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.BAN_MEMBERS})
     public class WarnCommand extends CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){ //todo переделать предложение
@@ -233,7 +236,7 @@ public class Commands{
                     return messageService.err(channel, messageService.get("command.admin.warn.self-user"));
                 }
 
-                if(reason != null && reason.length() > 1000){
+                if(reason != null && !reason.isBlank() && reason.length() > 1000){
                     return messageService.err(channel, messageService.format("common.string-limit", 1000));
                 }
 
@@ -316,7 +319,8 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "unmute", params = "<@user>", description = "command.admin.unmute.description")
+    @DiscordCommand(key = "unmute", params = "<@user>", description = "command.admin.unmute.description",
+                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_ROLES})
     public class UnmuteCommand extends CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){

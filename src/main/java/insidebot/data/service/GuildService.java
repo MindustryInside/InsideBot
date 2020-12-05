@@ -3,6 +3,7 @@ package insidebot.data.service;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Guild;
 import insidebot.data.entity.GuildConfig;
+import reactor.core.publisher.Flux;
 
 import java.util.function.Supplier;
 
@@ -16,6 +17,8 @@ public interface GuildService{
     GuildConfig save(GuildConfig entity);
 
     boolean exists(Snowflake guildId);
+
+    Flux<Snowflake> adminRolesIds(Snowflake guildId);
 
     String prefix(Snowflake guildId);
 

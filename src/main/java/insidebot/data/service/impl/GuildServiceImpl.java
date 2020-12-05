@@ -10,6 +10,7 @@ import insidebot.util.LocaleUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Flux;
 
 import java.util.function.Supplier;
 
@@ -43,6 +44,12 @@ public class GuildServiceImpl implements GuildService{
     @Transactional
     public GuildConfig save(GuildConfig entity){
         return repository.save(entity);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Flux<Snowflake> adminRolesIds(Snowflake guildId){
+        return get(guildId).adminRoleIDs();
     }
 
     @Override

@@ -5,7 +5,7 @@ import discord4j.core.object.entity.*;
 import discord4j.rest.util.Permission;
 import insidebot.data.entity.*;
 import insidebot.data.repository.AdminActionRepository;
-import insidebot.data.service.AdminService;
+import insidebot.data.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +17,9 @@ import java.util.Calendar;
 public class AdminServiceImpl implements AdminService{
     @Autowired
     private AdminActionRepository repository;
+
+    @Autowired
+    private GuildService guildService;
 
     @Override
     @Transactional(readOnly = true)
@@ -110,9 +113,20 @@ public class AdminServiceImpl implements AdminService{
 
     @Override
     public boolean isAdmin(Member member){
-        return member != null && (isOwner(member) || member.getRoles().map(Role::getPermissions)
-                                                           .any(r -> r.contains(Permission.ADMINISTRATOR))
-                                                           .blockOptional().orElse(false));
+        if(member == null) return false;
+        GuildConfig config = guildService.get(member.getGuildId());
+
+        boolean permissed = !config.adminRoleIdsAsList().isEmpty() &&
+                            member.getRoles().map(Role::getId)
+                                  .any(r -> config.adminRoleIdsAsList().contains(r))
+                                  .blockOptional()
+                                  .orElse(false);
+
+        boolean admin =  member.getRoles().map(Role::getPermissions)
+                               .any(r -> r.contains(Permission.ADMINISTRATOR))
+                               .blockOptional().orElse(false);
+
+        return isOwner(member) || admin || permissed;
     }
 
     @Override

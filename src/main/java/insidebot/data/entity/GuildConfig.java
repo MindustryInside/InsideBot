@@ -2,10 +2,12 @@ package insidebot.data.entity;
 
 import discord4j.common.util.Snowflake;
 import insidebot.data.entity.base.*;
+import org.hibernate.annotations.Type;
+import reactor.core.publisher.Flux;
 import reactor.util.annotation.NonNull;
 
 import javax.persistence.*;
-import java.util.Locale;
+import java.util.*;
 
 @Entity
 @Table(name = "guild_config")
@@ -25,6 +27,10 @@ public class GuildConfig extends GuildEntity{
 
     @Column(name = "active_user_role_id")
     private String activeUserRoleID;
+
+    @Type(type = "jsonb")
+    @Column(name = "admin_role_ids", columnDefinition = "json")
+    private List<String> adminRoleIDs;
 
     public GuildConfig(){}
 
@@ -80,6 +86,28 @@ public class GuildConfig extends GuildEntity{
         this.activeUserRoleID = activeUserRoleID.asString();
     }
 
+    public Flux<Snowflake> adminRoleIDs(){
+        if(adminRoleIDs == null){
+            adminRoleIDs = new ArrayList<>();
+        }
+        return Flux.fromIterable(adminRoleIDs).map(Snowflake::of);
+    }
+
+    public List<Snowflake> adminRoleIdsAsList(){
+        return adminRoleIDs().collectList().block();
+    }
+
+    public void addAdminRole(Snowflake roleId){
+        if(adminRoleIDs == null){
+            adminRoleIDs = new ArrayList<>();
+        }
+        adminRoleIDs.add(roleId.asString());
+    }
+
+    public void adminRoleIDs(List<String> adminRoleIDs){
+        this.adminRoleIDs = adminRoleIDs;
+    }
+
     @Override
     public String toString(){
         return "GuildConfig{" +
@@ -88,6 +116,7 @@ public class GuildConfig extends GuildEntity{
                ", logChannelId='" + logChannelId + '\'' +
                ", muteRoleID='" + muteRoleID + '\'' +
                ", activeUserRoleID='" + activeUserRoleID + '\'' +
+               ", adminRoleIDs=" + adminRoleIDs +
                "} " + super.toString();
     }
 }
