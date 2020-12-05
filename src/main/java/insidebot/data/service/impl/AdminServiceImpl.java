@@ -108,7 +108,7 @@ public class AdminServiceImpl implements AdminService{
     @Override
     @Transactional(readOnly = true)
     public Flux<AdminAction> warnings(Snowflake guildId, Snowflake targetId){
-        return Flux.fromIterable(repository.findAdminActionsByTypeAndTargetId(AdminActionType.warn, guildId, targetId));
+        return get(AdminActionType.warn, guildId, targetId);
     }
 
     @Override

@@ -159,7 +159,7 @@ public class Commands{
                     return messageService.err(channel, messageService.get("command.admin.user-is-bot"));
                 }
 
-                if(adminService.isMuted(m.getGuildId(), m.getId()).block()){
+                if(adminService.isMuted(m.getGuildId(), m.getId()).blockOptional().orElse(false)){
                     return messageService.err(channel, messageService.get("command.admin.mute.already-muted"));
                 }
 
@@ -327,7 +327,7 @@ public class Commands{
             MessageChannel channel = event.getMessage().getChannel().block();
             try{
                 LocalMember member = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
-                if(!adminService.isMuted(member.guildId(), member.id()).block()){
+                if(!adminService.isMuted(member.guildId(), member.userId()).blockOptional().orElse(false)){
                     return messageService.text(channel, messageService.format("audit.member.unmute.is-not-muted", member.username()));
                 }
                 discordService.eventListener().publish(new MemberUnmuteEvent(event.getGuild().block(), member));

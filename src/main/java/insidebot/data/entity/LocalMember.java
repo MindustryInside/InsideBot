@@ -1,5 +1,6 @@
 package insidebot.data.entity;
 
+import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
 import insidebot.data.entity.base.GuildEntity;
 import org.joda.time.*;
@@ -53,6 +54,12 @@ public class LocalMember extends GuildEntity{
 
     public void user(@NonNull LocalUser user){
         this.user = user;
+    }
+
+    @NonNull
+    @Transient
+    public Snowflake userId(){
+        return user.userId();
     }
 
     @NonNull
