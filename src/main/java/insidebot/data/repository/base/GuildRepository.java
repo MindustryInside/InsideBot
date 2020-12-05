@@ -10,11 +10,16 @@ import java.util.List;
 @NoRepositoryBean
 public interface GuildRepository<T extends GuildEntity> extends JpaRepository<T, String>{
 
-    @Query(value = "select g from #{#entityName} g where g.guildId = :#{#guildId?.asString()}", nativeQuery = true)
-    List<T> findAllByGuildId(Snowflake guildId);
+    List<T> findAllByGuildId(String guildId);
+
+    default List<T> findAllByGuildId(Snowflake guildId){
+        return findAllByGuildId(guildId.asString());
+    }
+
+    T findByGuildId(String guildId);
 
     default T findByGuildId(Snowflake guildId){
-        return findAllByGuildId(guildId).get(0);
+        return findByGuildId(guildId.asString());
     }
 
     boolean existsByGuildId(String guildId);

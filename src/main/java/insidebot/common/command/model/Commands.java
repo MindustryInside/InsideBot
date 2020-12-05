@@ -139,7 +139,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "mute", params = "<@user> <delayDays> [reason...]", description = "command.admin.mute.description")
+    @DiscordCommand(key = "mute", params = "<@user> <delay> [reason...]", description = "command.admin.mute.description")
     public class MuteCommand extends CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
@@ -215,7 +215,6 @@ public class Commands{
     public class WarnCommand extends CommandRunner{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){ //todo переделать предложение
-            String[] warningStrings = {messageService.get("command.first"), messageService.get("command.second"), messageService.get("command.third")};
             MessageChannel channel = event.getMessage().getChannel().block();
             try{
                 LocalMember info = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
@@ -241,7 +240,7 @@ public class Commands{
                 adminService.warn(reference.localMember(), info, reason).block();
                 long warnings = adminService.warnings(m.getGuildId(), info.user().userId()).count().blockOptional().orElse(0L);
 
-                messageService.text(channel, messageService.format("message.warn", m.getUsername(), warningStrings[(int)Mathf.clamp(warnings - 1, 0, warningStrings.length - 1)]));
+                messageService.text(channel, messageService.format("message.warn", m.getUsername(), warnings));
 
                 if(warnings >= 3){
                     event.getGuild().flatMap(g -> g.ban(m.getId(), b -> b.setDeleteMessageDays(0))).block();
@@ -304,7 +303,7 @@ public class Commands{
             try{
                 LocalMember info = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
                 adminService.unwarn(info.guildId(), info.user().userId(), warnings).block();
-                messageService.text(channel, messageService.format("command.unwarn", info.effectiveName(), warnings + 1, warnings == 1 ? messageService.get("command.admin.warn") : messageService.get("command.warns")));
+                messageService.text(channel, messageService.format("command.unwarn", info.effectiveName(), warnings + 1));
             }catch(Throwable t){
                 if(t instanceof IndexOutOfBoundsException){
                     messageService.err(channel, messageService.get("command.incorrect-number"));
