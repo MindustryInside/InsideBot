@@ -31,7 +31,7 @@ public class InsideConfiguration{
     public MessageSource messageSource(){
         ResourceBundleMessageSource b = new ResourceBundleMessageSource();
         b.setBasename("bundle");
-        b.setDefaultEncoding("Windows-1251");
+        b.setDefaultEncoding("utf-8");
         return b;
     }
 
