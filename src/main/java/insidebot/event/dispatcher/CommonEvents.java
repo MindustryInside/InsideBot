@@ -10,7 +10,6 @@ import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
-import reactor.core.scheduler.Schedulers;
 
 import java.time.ZoneId;
 import java.util.*;
@@ -53,25 +52,23 @@ public class CommonEvents extends Events{
             builder.append('\n');
         };
 
-        Publisher<?> clear = Flux.fromIterable(event.history)
-                .filter(Objects::nonNull)
-                .publishOn(Schedulers.boundedElastic())
-                .flatMap(m -> Mono.fromRunnable(() -> {
-                    messageService.putMessage(m.getId());
-                    appendInfo.accept(m);
-                    m.delete().block();
-                }));
+        Flux.fromIterable(event.history)
+            .filter(Objects::nonNull)
+            .subscribe(m -> {
+                messageService.putMessage(m.getId());
+                appendInfo.accept(m);
+                m.delete().block();
+            }, e -> {});
 
+        stringInputStream.writeString(builder.toString());
         context.init(event.guild().getId());
-        return Mono.when(clear, log(event.guild().getId(), embed -> {
+
+        return log(event.guild().getId(), embed -> {
             embed.setTitle(messageService.format("audit.message.clear.title", event.count, event.channel.getName()));
             embed.setDescription(messageService.format("audit.message.clear.description", event.user.getUsername(), event.count, event.channel.getName()));
             embed.setFooter(MessageUtil.zonedFormat(), null);
             embed.setColor(messageClear.color);
-
-            stringInputStream.writeString(builder.toString());
-            }, true)
-        );
+        }, true);
     }
 
     @Override

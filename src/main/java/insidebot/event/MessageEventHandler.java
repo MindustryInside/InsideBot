@@ -1,6 +1,5 @@
 package insidebot.event;
 
-import arc.struct.ObjectSet;
 import arc.util.Strings;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
@@ -14,12 +13,12 @@ import discord4j.core.object.entity.channel.Channel.Type;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.EmbedCreateSpec;
 import insidebot.Settings;
-import insidebot.event.audit.*;
 import insidebot.common.command.model.base.CommandReference;
-import insidebot.common.command.service.*;
 import insidebot.common.command.service.BaseCommandHandler.*;
+import insidebot.common.command.service.CommandHandler;
 import insidebot.data.entity.*;
 import insidebot.data.service.*;
+import insidebot.event.audit.AuditEventHandler;
 import insidebot.util.*;
 import org.reactivestreams.Publisher;
 import org.slf4j.*;
@@ -169,11 +168,13 @@ public class MessageEventHandler extends AuditEventHandler{
         Guild guild = message.getGuild().block();
         User user = message.getAuthor().orElse(null);
         TextChannel channel =  event.getChannel().cast(TextChannel.class).block();
-        if((guild == null || channel == null) || DiscordUtil.isBot(user)) return Mono.empty();
+        if(guild == null || channel == null || user == null) return Mono.empty();
         if(channel.getId().equals(guildService.logChannelId(guild.getId())) && !message.getEmbeds().isEmpty()){ /* =) */
             AuditLogEntry l = guild.getAuditLog(a -> a.setActionType(ActionType.MESSAGE_DELETE)).blockFirst();
             return Mono.justOrEmpty(l).doOnNext(a -> {
-                log.warn("User '{}' deleted log message", guild.getMemberById(a.getResponsibleUserId()).map(Member::getUsername).block());
+                log.warn("Member '{}' deleted log message in guild {}",
+                         guild.getMemberById(a.getResponsibleUserId()).map(Member::getUsername).block(),
+                         guild.getName());
             }).then();
         }
         if(!messageService.exists(message.getId()) || messageService.isCleared(message.getId())) return Mono.empty();
