@@ -24,7 +24,7 @@ public class CommandHandler extends BaseCommandHandler{
         String prefix = guildService.prefix(guildId);
 
         if(event.getMessage().getUserMentions().map(User::getId).any(u -> u.equals(discordService.gateway().getSelfId())).blockOptional().orElse(false)){
-            prefix = String.format("<@!%s> ", event.getClient().getSelf().map(User::getId).map(Snowflake::asString).blockOptional().orElse(""));
+            prefix = event.getClient().getSelf().map(User::getMention).blockOptional().orElse(prefix);
         }
 
         if(message == null || !message.startsWith(prefix)){

@@ -46,12 +46,11 @@ public class MemberEventHandler extends AuditEventHandler{
         if(DiscordUtil.isBot(member)) return Mono.empty();
         context.init(member.getGuildId());
 
-        LocalMember localMember = memberService.getOr(member, () -> {
+        memberService.getOr(member, () -> {
             LocalMember l = new LocalMember(member);
             l.user(userService.getOr(member.getId(), () -> new LocalUser(member)));
             return l;
         });
-        memberService.save(localMember);
 
         return log(event.getGuildId(), embed -> {
             embed.setColor(userJoin.color);
