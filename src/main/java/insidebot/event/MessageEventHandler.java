@@ -77,6 +77,13 @@ public class MessageEventHandler extends AuditEventHandler{
 
         localMember.addToSeq();
         localMember.lastSentMessage(Calendar.getInstance());
+
+        if(localMember.user() == null){
+            LocalUser localUser = userService.getOr(userId, () -> new LocalUser(user));
+            localMember.user(localUser);
+            userService.save(localUser);
+        }
+
         memberService.save(localMember);
 
         if(!guildService.exists(guildId)){
@@ -86,12 +93,6 @@ public class MessageEventHandler extends AuditEventHandler{
         }
 
         context.init(guildId);
-
-        if(localMember.user() == null){
-            LocalUser localUser = userService.getOr(userId, () -> new LocalUser(user));
-            localMember.user(localUser);
-            userService.save(localUser);
-        }
 
         if(!MessageUtil.isEmpty(message) && !message.isTts() && message.getEmbeds().isEmpty()){
             MessageInfo info = new MessageInfo();

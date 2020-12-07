@@ -31,8 +31,7 @@ public class UserServiceImpl implements UserService{
             synchronized($lock){
                 localUser = get(userId);
                 if(localUser == null){
-                    localUser = prov.get();
-                    repository.saveAndFlush(localUser);
+                    localUser = repository.saveAndFlush(prov.get());
                 }
             }
         }

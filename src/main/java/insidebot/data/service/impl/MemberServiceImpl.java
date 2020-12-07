@@ -63,8 +63,7 @@ public class MemberServiceImpl implements MemberService{
             synchronized($lock){
                 localMember = get(guildId, userId);
                 if(localMember == null){
-                    localMember = prov.get();
-                    repository.saveAndFlush(localMember);
+                    repository.saveAndFlush(prov.get());
                 }
             }
         }
