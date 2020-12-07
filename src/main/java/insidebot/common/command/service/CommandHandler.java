@@ -1,7 +1,6 @@
 package insidebot.common.command.service;
 
 import arc.struct.Seq;
-import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
@@ -18,13 +17,13 @@ public class CommandHandler extends BaseCommandHandler{
 
     @Override
     public CommandResponse handleMessage(String message, CommandReference reference, MessageCreateEvent event){
-        Member member = reference.member();
-        Snowflake guildId = member.getGuildId();
+        Mono<Guild> guild = event.getGuild();
+        Member self = guild.flatMap(Guild::getSelfMember).blockOptional().orElseThrow(RuntimeException::new);
 
-        String prefix = guildService.prefix(guildId);
+        String prefix = guildService.prefix(guild.map(Guild::getId).block());
 
-        if(event.getMessage().getUserMentions().map(User::getId).any(u -> u.equals(discordService.gateway().getSelfId())).blockOptional().orElse(false)){
-            prefix = event.getClient().getSelf().map(User::getMention).blockOptional().orElse(prefix);
+        if(event.getMessage().getUserMentions().map(User::getId).any(u -> u.equals(self.getId())).blockOptional().orElse(false)){
+            prefix = self.getNicknameMention() + " ";
         }
 
         if(message == null || !message.startsWith(prefix)){
@@ -78,14 +77,13 @@ public class CommandHandler extends BaseCommandHandler{
                 return new CommandResponse(ResponseType.fewArguments, command, commandstr);
             }
 
-            if(command.permissions != null  && !command.permissions.isEmpty() && member.getGuild().map(Objects::nonNull).blockOptional().orElse(false)){
+            if(command.permissions != null  && !command.permissions.isEmpty()){
                 Mono<TextChannel> channel = event.getMessage().getChannel().cast(TextChannel.class);
-                Member self = event.getGuild().flatMap(Guild::getSelfMember).blockOptional().orElseThrow(RuntimeException::new);
                 PermissionSet selfPermissions = channel.flatMap(t -> t.getEffectivePermissions(self.getId()))
                                                        .blockOptional()
                                                        .orElse(PermissionSet.none());
                 List<Permission> permissions = Flux.fromIterable(command.permissions)
-                        .filterWhen(p -> channel.block().getEffectivePermissions(self.getId()).map(r -> !r.contains(p)))
+                        .filterWhen(p -> channel.flatMap(c -> c.getEffectivePermissions(self.getId()).map(r -> !r.contains(p))))
                         .collectList()
                         .blockOptional()
                         .orElse(Collections.emptyList());
@@ -103,7 +101,7 @@ public class CommandHandler extends BaseCommandHandler{
                             String builder = String.format("%s%n%n%s",
                                                            messageService.get("message.error.permission-denied.title"),
                                                            messageService.format("message.error.permission-denied.description", bundled));
-                            event.getMessage().getChannel().flatMap(c -> c.createMessage(builder)).block();
+                            channel.flatMap(c -> c.createMessage(builder)).block();
                         }
                         return new CommandResponse(ResponseType.permissionDenied, command, commandstr);
                     }
