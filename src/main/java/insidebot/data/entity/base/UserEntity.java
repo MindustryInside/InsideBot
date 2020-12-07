@@ -36,9 +36,4 @@ public abstract class UserEntity implements Serializable{
     public int hashCode(){
         return Objects.hash(userId);
     }
-
-    @Override
-    public String toString(){
-        return "UserEntity{userId='" + userId + "'}";
-    }
 }

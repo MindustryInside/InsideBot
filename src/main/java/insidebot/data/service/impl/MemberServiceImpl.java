@@ -46,7 +46,7 @@ public class MemberServiceImpl implements MemberService{
     @Override
     @Transactional(readOnly = true)
     public LocalMember get(Snowflake guildId, Snowflake userId){
-        return repository.findByGuildIdAndId(guildId, userId);
+        return repository.findByGuildIdAndUserId(guildId, userId);
     }
 
     @Override

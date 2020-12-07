@@ -46,14 +46,13 @@ public class MemberEventHandler extends AuditEventHandler{
         if(DiscordUtil.isBot(member)) return Mono.empty();
         context.init(member.getGuildId());
 
-        LocalMember localMember = memberService.getOr(member, () -> new LocalMember(member));
-        if(localMember.user() == null){
-            LocalUser localUser = new LocalUser(member);
-            localMember.user(localUser);
-            userService.save(localUser);
-        }
-
+        LocalMember localMember = memberService.getOr(member, () -> {
+            LocalMember l = new LocalMember(member);
+            l.user(userService.getOr(member.getId(), () -> new LocalUser(member)));
+            return l;
+        });
         memberService.save(localMember);
+
         return log(event.getGuildId(), embed -> {
             embed.setColor(userJoin.color);
             embed.setTitle(messageService.get("audit.member.join.title"));
@@ -97,16 +96,18 @@ public class MemberEventHandler extends AuditEventHandler{
         context.init(event.getGuildId()); // ???
         return event.getMember()
                     .filter(DiscordUtil::isNotBot)
-                    .doOnNext(m -> {
-                        LocalMember info = memberService.getOr(m, () -> new LocalMember(m));
-                        info.effectiveName(m.getDisplayName());
-                        if(info.user() == null){
-                            User user = discordService.gateway().getUserById(m.getId()).block();
-                            LocalUser local = new LocalUser(Objects.requireNonNull(user));
-                            info.user(local);
-                            userService.save(local);
+                    .doOnNext(member -> {
+                        LocalMember localMember = memberService.get(member);
+                        if(localMember != null){
+                            if(localMember.user() == null){
+                                User user = discordService.gateway().getUserById(member.getId()).block();
+                                LocalUser local = new LocalUser(Objects.requireNonNull(user));
+                                localMember.user(local);
+                                userService.save(local);
+                            }
+                            localMember.effectiveName(member.getDisplayName());
+                            memberService.save(localMember);
                         }
-                        memberService.save(info);
                     })
                     .then();
     }

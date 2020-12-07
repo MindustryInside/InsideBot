@@ -73,17 +73,14 @@ public class MessageEventHandler extends AuditEventHandler{
         Snowflake guildId = event.getGuildId().orElse(null);
         if(DiscordUtil.isBot(user) || guildId == null || channel == null) return Mono.empty();
         Snowflake userId = user.getId();
-        LocalMember localMember = memberService.getOr(member, () -> new LocalMember(member));
+        LocalMember localMember = memberService.getOr(member, () ->{
+            LocalMember l = new LocalMember(member);
+            l.user(userService.getOr(member.getId(), () -> new LocalUser(member)));
+            return l;
+        });
 
         localMember.addToSeq();
         localMember.lastSentMessage(Calendar.getInstance());
-
-        if(localMember.user() == null){
-            LocalUser localUser = userService.getOr(userId, () -> new LocalUser(user));
-            localMember.user(localUser);
-            userService.save(localUser);
-        }
-
         memberService.save(localMember);
 
         if(!guildService.exists(guildId)){

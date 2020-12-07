@@ -32,6 +32,6 @@ public class LocalUser extends UserEntity{
 
     @Override
     public String toString(){
-        return "LocalUser{name='" + name + "'} " + super.toString();
+        return "LocalUser{name='" + name + "', userId='" + userId + "}";
     }
 }

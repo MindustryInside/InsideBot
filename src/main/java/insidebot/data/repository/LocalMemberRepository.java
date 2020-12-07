@@ -11,5 +11,5 @@ import org.springframework.stereotype.Repository;
 public interface LocalMemberRepository extends GuildRepository<LocalMember>{
 
     @Query("select m from LocalMember m where m.guildId = :#{#guildId?.asString()} and m.user.userId = :#{#userId?.asString()}")
-    LocalMember findByGuildIdAndId(@Param("guildId") Snowflake guildId, @Param("userId") Snowflake userId);
+    LocalMember findByGuildIdAndUserId(@Param("guildId") Snowflake guildId, @Param("userId") Snowflake userId);
 }
