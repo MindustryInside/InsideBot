@@ -24,7 +24,7 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public LocalUser getOr(Snowflake userId, Supplier<LocalUser> prov){
         LocalUser localUser = get(userId);
         if(localUser == null){
