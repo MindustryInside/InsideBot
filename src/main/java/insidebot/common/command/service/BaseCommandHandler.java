@@ -14,8 +14,6 @@ import javax.annotation.PostConstruct;
 import java.util.*;
 
 public abstract class BaseCommandHandler{
-    protected ObjectMap<String, Command> commands = new ObjectMap<>();
-
     @Autowired
     protected GuildService guildService;
 
@@ -28,14 +26,13 @@ public abstract class BaseCommandHandler{
     @Autowired
     protected Settings settings;
 
-    @Autowired(required = false)
-    protected List<CommandRunner> orderedCommands = new ArrayList<>();
+    protected ObjectMap<String, Command> commands = new ObjectMap<>();
 
-    @PostConstruct
-    public void init(){
-        orderedCommands.forEach(c -> {
+    @Autowired(required = false)
+    public void init(List<CommandRunner> commands){
+        commands.forEach(c -> {
             Command command = c.compile();
-            commands.put(command.text, command);
+            this.commands.put(command.text, command);
         });
     }
 
@@ -48,7 +45,7 @@ public abstract class BaseCommandHandler{
     }
 
     public Flux<CommandRunner> commandFlux(){
-        return Flux.fromIterable(orderedCommands);
+        return Flux.fromIterable(commands.values().toSeq().map(c -> c.runner));
     }
 
     public abstract CommandResponse handleMessage(String message, CommandReference reference, MessageCreateEvent event);
@@ -68,7 +65,7 @@ public abstract class BaseCommandHandler{
             this.description = description;
             this.permissions = PermissionSet.of(permissions);
 
-            String[] psplit = paramText.split(" ");
+            String[] psplit = paramText.split("\\s+");
             if(paramText.length() == 0){
                 params = new CommandParam[0];
             }else{

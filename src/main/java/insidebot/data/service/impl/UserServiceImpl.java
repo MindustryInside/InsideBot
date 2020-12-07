@@ -32,6 +32,7 @@ public class UserServiceImpl implements UserService{
                 localUser = get(userId);
                 if(localUser == null){
                     localUser = prov.get();
+                    repository.saveAndFlush(localUser);
                 }
             }
         }

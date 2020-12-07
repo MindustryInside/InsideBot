@@ -11,7 +11,7 @@ import insidebot.data.repository.MessageInfoRepository;
 import insidebot.data.service.MessageService;
 import insidebot.util.LocaleUtil;
 import org.joda.time.*;
-import org.slf4j.Logger;
+import org.slf4j.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,6 +23,8 @@ import java.util.function.Consumer;
 
 @Service
 public class MessageServiceImpl implements MessageService{
+    private static final Logger log = LoggerFactory.getLogger(MessageService.class);
+
     @Autowired
     private MessageInfoRepository repository;
 
@@ -34,9 +36,6 @@ public class MessageServiceImpl implements MessageService{
 
     @Autowired
     private Settings settings;
-
-    @Autowired
-    private Logger log;
 
     @Override
     public String get(String key){

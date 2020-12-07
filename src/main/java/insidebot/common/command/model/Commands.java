@@ -15,7 +15,6 @@ import insidebot.data.entity.*;
 import insidebot.data.service.*;
 import insidebot.event.dispatcher.EventType.*;
 import insidebot.util.*;
-import org.apache.logging.log4j.util.Supplier;
 import org.joda.time.DateTime;
 import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +22,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
-import java.util.function.Consumer;
+import java.util.function.*;
 
 @Service
 public class Commands{

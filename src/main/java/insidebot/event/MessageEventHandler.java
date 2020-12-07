@@ -22,7 +22,7 @@ import insidebot.data.entity.*;
 import insidebot.data.service.*;
 import insidebot.util.*;
 import org.reactivestreams.Publisher;
-import org.slf4j.Logger;
+import org.slf4j.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
@@ -34,6 +34,8 @@ import static insidebot.event.audit.AuditEventType.*;
 
 @Component
 public class MessageEventHandler extends AuditEventHandler{
+    private static final Logger log = LoggerFactory.getLogger(MessageEventHandler.class);
+
     @Autowired
     private MemberService memberService;
 
@@ -51,9 +53,6 @@ public class MessageEventHandler extends AuditEventHandler{
 
     @Autowired
     private Settings settings;
-
-    @Autowired
-    private Logger log;
 
     public final ObjectSet<Snowflake> buffer = new ObjectSet<>();
 
@@ -78,6 +77,10 @@ public class MessageEventHandler extends AuditEventHandler{
         Snowflake userId = user.getId();
         LocalMember localMember = memberService.getOr(member, () -> new LocalMember(member));
 
+        localMember.addToSeq();
+        localMember.lastSentMessage(Calendar.getInstance());
+        memberService.save(localMember);
+
         if(!guildService.exists(guildId)){
             Region region = event.getGuild().flatMap(Guild::getRegion).block();
             GuildConfig guildConfig = new GuildConfig(guildId, LocaleUtil.get(region), settings.prefix);
@@ -91,10 +94,6 @@ public class MessageEventHandler extends AuditEventHandler{
             localMember.user(localUser);
             userService.save(localUser);
         }
-
-        localMember.lastSentMessage(Calendar.getInstance());
-        localMember.addToSeq();
-        memberService.save(localMember);
 
         if(!MessageUtil.isEmpty(message) && !message.isTts() && message.getEmbeds().isEmpty()){
             MessageInfo info = new MessageInfo();

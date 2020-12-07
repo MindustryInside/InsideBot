@@ -9,7 +9,7 @@ import insidebot.data.repository.LocalMemberRepository;
 import insidebot.data.service.*;
 import insidebot.data.service.AdminService.AdminActionType;
 import insidebot.event.dispatcher.EventType.MemberUnmuteEvent;
-import org.slf4j.Logger;
+import org.slf4j.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -21,6 +21,8 @@ import java.util.function.Supplier;
 
 @Service
 public class MemberServiceImpl implements MemberService{
+    private static final Logger log = LoggerFactory.getLogger(MemberService.class);
+
     @Autowired
     private DiscordService discordService;
 
@@ -29,9 +31,6 @@ public class MemberServiceImpl implements MemberService{
 
     @Autowired
     private AdminService adminService;
-
-    @Autowired
-    private Logger log;
 
     @Autowired
     private LocalMemberRepository repository;
@@ -65,6 +64,7 @@ public class MemberServiceImpl implements MemberService{
                 localMember = get(guildId, userId);
                 if(localMember == null){
                     localMember = prov.get();
+                    repository.saveAndFlush(localMember);
                 }
             }
         }

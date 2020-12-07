@@ -3,12 +3,14 @@ package insidebot.event.dispatcher;
 import insidebot.event.audit.*;
 import insidebot.event.dispatcher.EventType.*;
 import org.reactivestreams.Publisher;
+import org.slf4j.*;
 import reactor.core.publisher.Mono;
 
 /**
  * Сборка всех ивентов
  */
 public abstract class Events extends AuditEventHandler{
+    protected static final Logger log = LoggerFactory.getLogger(Events.class);
 
     public Publisher<?> onMessageClear(MessageClearEvent event){
         return Mono.empty();

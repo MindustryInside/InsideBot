@@ -9,7 +9,7 @@ import insidebot.event.dispatcher.EventType.*;
 import insidebot.event.dispatcher.Events;
 import insidebot.util.*;
 import org.reactivestreams.Publisher;
-import org.slf4j.Logger;
+import org.slf4j.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
@@ -32,9 +32,6 @@ public class EventsImpl extends Events{
 
     @Autowired
     private MessageEventHandler messageEventHandler;
-
-    @Autowired
-    private Logger log;
 
     @Override
     public Publisher<?> onMessageClear(MessageClearEvent event){

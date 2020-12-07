@@ -12,9 +12,7 @@ import java.util.Locale;
 
 @Service
 public class ContextServiceImpl implements ContextService{
-
     private final ThreadLocal<Locale> localeHolder = new NamedThreadLocal<>("ContextServiceImpl.Locale");
-
     private final ThreadLocal<Snowflake> guildHolder = new NamedThreadLocal<>("ContextServiceImpl.GuildId");
 
     @Autowired
