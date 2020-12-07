@@ -54,8 +54,6 @@ public class MessageEventHandler extends AuditEventHandler{
     @Autowired
     private Settings settings;
 
-    public final ObjectSet<Snowflake> buffer = new ObjectSet<>();
-
     @Override
     public Publisher<?> onReady(ReadyEvent event){ // не триггерится, баг текущей версии d4j
         return Mono.fromRunnable(() -> log.info("Bot up."));
@@ -154,7 +152,7 @@ public class MessageEventHandler extends AuditEventHandler{
         };
 
         if(under){
-            stringInputStream.writeString(String.format("%s:\n%s\n\n%s:\n%s",
+            stringInputStream.writeString(String.format("%s:%n%s%n%n%s:%n%s",
                                                         messageService.get("audit.message.old-content.title"), oldContent,
                                                         messageService.get("audit.message.new-content.title"), newContent));
         }
@@ -168,41 +166,36 @@ public class MessageEventHandler extends AuditEventHandler{
 
     @Override
     public Publisher<?> onMessageDelete(MessageDeleteEvent event){
-        Message m = event.getMessage().orElse(null);
-        if(m == null || m.getChannel().map(Channel::getType).block() != Type.GUILD_TEXT) return Mono.empty();
-        Guild guild = m.getGuild().block();
-        TextChannel c =  event.getChannel().cast(TextChannel.class).block();
-        if(guild == null || c == null) return Mono.empty();
-        if(c.getId().equals(guildService.logChannelId(guild.getId())) && !m.getEmbeds().isEmpty()){ /* =) */
-            AuditLogEntry l = guild.getAuditLog().filter(a -> a.getActionType() == ActionType.MESSAGE_DELETE).blockFirst();
+        Message message = event.getMessage().orElse(null);
+        if(message == null || event.getChannel().map(Channel::getType).map(t -> t != Type.GUILD_TEXT).blockOptional().orElse(true)) return Mono.empty();
+        Guild guild = message.getGuild().block();
+        User user = message.getAuthor().orElse(null);
+        TextChannel channel =  event.getChannel().cast(TextChannel.class).block();
+        if((guild == null || channel == null) || DiscordUtil.isBot(user)) return Mono.empty();
+        if(channel.getId().equals(guildService.logChannelId(guild.getId())) && !message.getEmbeds().isEmpty()){ /* =) */
+            AuditLogEntry l = guild.getAuditLog(a -> a.setActionType(ActionType.MESSAGE_DELETE)).blockFirst();
             return Mono.justOrEmpty(l).doOnNext(a -> {
-                log.warn("User '{}' deleted log message", guild.getMemberById(a.getResponsibleUserId()).block().getUsername());
+                log.warn("User '{}' deleted log message", guild.getMemberById(a.getResponsibleUserId()).map(Member::getUsername).block());
             }).then();
         }
-        if(!messageService.exists(m.getId())) return Mono.empty();
-        if(buffer.contains(m.getId())){
-            return Mono.fromRunnable(() -> buffer.remove(event.getMessageId()));
-        }
+        if(!messageService.exists(message.getId()) || messageService.isCleared(message.getId())) return Mono.empty();
 
-        MessageInfo info = messageService.getById(m.getId());
-        User user = m.getAuthor().orElse(null);
+        MessageInfo info = messageService.getById(message.getId());
         String content = info.content();
         boolean under = content.length() >= Field.MAX_VALUE_LENGTH;
-
-        if(DiscordUtil.isBot(user) || MessageUtil.isEmpty(content)) return Mono.empty();
 
         context.init(guild.getId());
 
         Consumer<EmbedCreateSpec> e = embed -> {
             embed.setColor(messageDelete.color);
             embed.setAuthor(user.getUsername(), null, user.getAvatarUrl());
-            embed.setTitle(messageService.format("audit.message.delete.title", c.getName()));
+            embed.setTitle(messageService.format("audit.message.delete.title", channel.getName()));
             embed.setFooter(MessageUtil.zonedFormat(), null);
             embed.addField(messageService.get("audit.message.deleted-content.title"), MessageUtil.substringTo(content, Field.MAX_VALUE_LENGTH), true);
         };
 
         if(under){
-            stringInputStream.writeString(String.format("%s:\n%s", messageService.get("audit.message.deleted-content.title"), content));
+            stringInputStream.writeString(String.format("%s:%n%s", messageService.get("audit.message.deleted-content.title"), content));
         }
 
         log(guild.getId(), e, under);

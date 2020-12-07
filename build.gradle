@@ -11,9 +11,10 @@ repositories{
 }
 
 ext{
+    discord4jVersion  = '3.1.2'
     arcVersion        = 'v115'
     jobaVersion       = 'v2.10.8'
-    discord4jVersion  = '3.1.2'
+    guavaVersion      = '30.0-jre'
 
     jaxbVersion       = '2.3.1'
     hibernateVersion  = '5.4.24.Final'
@@ -37,6 +38,7 @@ dependencies{
     implementation "com.discord4j:discord4j-core:$discord4jVersion"
     implementation "com.github.Anuken.Arc:arc-core:$arcVersion"
     implementation "com.github.JodaOrg:joda-time:$jobaVersion"
+    implementation "com.google.guava:guava:$guavaVersion"
 
     // data dependencies
     implementation "javax.xml.bind:jaxb-api:$jaxbVersion"

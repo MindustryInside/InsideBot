@@ -1,6 +1,7 @@
 package insidebot.data.service.impl;
 
 import arc.util.*;
+import com.google.common.cache.*;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.EmbedCreateSpec;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.*;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 @Service
@@ -36,6 +38,10 @@ public class MessageServiceImpl implements MessageService{
 
     @Autowired
     private Settings settings;
+
+    private Cache<Snowflake, Boolean> deletedMessage = CacheBuilder.newBuilder()
+            .expireAfterWrite(5, TimeUnit.MINUTES)
+            .build();
 
     @Override
     public String get(String key){
@@ -90,6 +96,16 @@ public class MessageServiceImpl implements MessageService{
         channel.createMessage(s -> s.setEmbed(e -> e.setColor(settings.errorColor).setTitle(title)
                                                     .setDescription(Strings.format(text, args)))).block();
         return Mono.empty();
+    }
+
+    @Override
+    public boolean isCleared(Snowflake messageId){
+        return Boolean.TRUE.equals(deletedMessage.getIfPresent(messageId));
+    }
+
+    @Override
+    public void putMessage(Snowflake messageId){
+        deletedMessage.put(messageId, true);
     }
 
     @Override

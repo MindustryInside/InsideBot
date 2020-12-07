@@ -31,6 +31,10 @@ public interface MessageService{
     Mono<Void> err(MessageChannel channel, String title, String text, Object... args);
 
     //data
+    boolean isCleared(Snowflake messageId);
+
+    void putMessage(Snowflake messageId);
+
     MessageInfo getById(Snowflake messageId);
 
     boolean exists(Snowflake messageId);

@@ -74,10 +74,6 @@ public class LocaleUtil{
         return locales.get(tag, getDefaultLocale());
     }
 
-    public static boolean isSupported(String tag){
-        return locales.containsKey(tag);
-    }
-
     public static Locale getDefaultLocale(){
         return get(defaultLocale);
     }

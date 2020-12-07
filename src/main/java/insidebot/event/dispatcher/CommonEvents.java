@@ -1,26 +1,25 @@
-package insidebot.event.dispatcher.impl;
+package insidebot.event.dispatcher;
 
 import discord4j.core.object.Embed;
-import discord4j.core.object.entity.Member;
+import discord4j.core.object.entity.*;
 import insidebot.data.entity.LocalMember;
 import insidebot.data.service.*;
-import insidebot.event.MessageEventHandler;
 import insidebot.event.dispatcher.EventType.*;
-import insidebot.event.dispatcher.Events;
 import insidebot.util.*;
 import org.reactivestreams.Publisher;
-import org.slf4j.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.ZoneId;
 import java.util.*;
+import java.util.function.Consumer;
 
 import static insidebot.event.audit.AuditEventType.*;
 
 @Service
-public class EventsImpl extends Events{
+public class CommonEvents extends Events{
     @Autowired
     private AdminService adminService;
 
@@ -30,46 +29,49 @@ public class EventsImpl extends Events{
     @Autowired
     private MemberService memberService;
 
-    @Autowired
-    private MessageEventHandler messageEventHandler;
-
     @Override
     public Publisher<?> onMessageClear(MessageClearEvent event){
-        context.init(event.guild().getId());
-        Flux.fromIterable(event.history).filter(Objects::nonNull).subscribe(m -> {
-            messageEventHandler.buffer.add(m.getId());
-            m.delete().block();
-        }, e -> log.warn("An exception was thrown in the MessageClear event, error: {}", e.getMessage()));
+        StringBuilder builder = new StringBuilder();
 
-        return log(event.guild().getId(), embed -> {
+        Consumer<Message> appendInfo = m -> {
+            Member member = m.getAuthorAsMember().block();
+            builder.append('[').append(MessageUtil.dateTime().withZone(ZoneId.systemDefault()).format(m.getTimestamp())).append("] ");
+            if(DiscordUtil.isBot(member)){
+                builder.append("[BOT] ");
+            }
+            builder.append(memberService.detailName(member)).append(" > ");
+            if(!MessageUtil.isEmpty(m)) builder.append(MessageUtil.effectiveContent(m));
+            for(int i = 0; i < m.getEmbeds().size(); i++){
+                Embed e = m.getEmbeds().get(i);
+                builder.append("\n[embed-").append(i).append(']');
+                if(e.getDescription().isPresent()){
+                    builder.append('\n').append(e.getDescription().get());
+                }else{
+                    builder.append("<empty>");
+                }
+            }
+            builder.append('\n');
+        };
+
+        Publisher<?> clear = Flux.fromIterable(event.history)
+                .filter(Objects::nonNull)
+                .publishOn(Schedulers.boundedElastic())
+                .flatMap(m -> Mono.fromRunnable(() -> {
+                    messageService.putMessage(m.getId());
+                    appendInfo.accept(m);
+                    m.delete().block();
+                }));
+
+        context.init(event.guild().getId());
+        return Mono.when(clear, log(event.guild().getId(), embed -> {
             embed.setTitle(messageService.format("audit.message.clear.title", event.count, event.channel.getName()));
             embed.setDescription(messageService.format("audit.message.clear.description", event.user.getUsername(), event.count, event.channel.getName()));
             embed.setFooter(MessageUtil.zonedFormat(), null);
             embed.setColor(messageClear.color);
 
-            StringBuilder builder = new StringBuilder();
-            event.history.forEach(m -> {
-                Member member = m.getAuthorAsMember().block();
-                builder.append('[').append(MessageUtil.dateTime().withZone(ZoneId.systemDefault()).format(m.getTimestamp())).append("] ");
-                if(DiscordUtil.isBot(member)){
-                    builder.append("[BOT] ");
-                }
-                builder.append(memberService.detailName(member)).append(" > ");
-                if(!MessageUtil.isEmpty(m.getContent())) builder.append(MessageUtil.effectiveContent(m));
-                for(int i = 0; i < m.getEmbeds().size(); i++){
-                    Embed e = m.getEmbeds().get(i);
-                    builder.append("\n[embed-").append(i).append(']');
-                    if(e.getDescription().isPresent()){
-                        builder.append('\n').append(e.getDescription().get());
-                    }else{
-                        builder.append("<empty>");
-                    }
-                }
-                builder.append('\n');
-            });
-
             stringInputStream.writeString(builder.toString());
-        }, true);
+            }, true)
+        );
     }
 
     @Override
@@ -106,8 +108,10 @@ public class EventsImpl extends Events{
         return log(member.getGuildId(), e -> {
             e.setTitle(messageService.get("audit.member.mute.title"));
             e.setDescription(String.format("%s%n%s",
-                                           messageService.format("audit.member.mute.description", member.getUsername(), event.delay, event.admin.username()),
-                                           messageService.format("common.reason", event.reason().orElse(messageService.get("common.not-defined")))));
+                                           messageService.format("audit.member.mute.description", member
+                                                   .getUsername(), event.delay, event.admin.username()),
+                                           messageService.format("common.reason", event.reason().orElse(messageService
+                                                                                                                .get("common.not-defined")))));
             e.setFooter(MessageUtil.zonedFormat(), null);
             e.setColor(userMute.color);
         });
