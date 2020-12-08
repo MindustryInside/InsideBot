@@ -15,7 +15,7 @@ public abstract class BaseEntity implements Serializable{
     private static final long serialVersionUID = 1337L;
 
     @Id
-    @GenericGenerator(name = "snowflake", strategy = "insidebot.data.type.SnowflakeGenerator")
+    @GenericGenerator(name = "snowflake", strategy = "inside.data.type.SnowflakeGenerator")
     @GeneratedValue(generator = "snowflake")
     protected String id;
 
