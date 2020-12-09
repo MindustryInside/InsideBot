@@ -30,7 +30,7 @@ public class CommonEvents extends Events{
 
     @Override
     public Publisher<?> onMessageClear(MessageClearEvent event){
-        StringBuilder builder = new StringBuilder();
+        StringBuffer builder = new StringBuffer();
 
         Consumer<Message> appendInfo = m -> {
             Member member = m.getAuthorAsMember().block();
@@ -61,7 +61,6 @@ public class CommonEvents extends Events{
             }, e -> {});
 
         stringInputStream.writeString(builder.toString());
-        context.init(event.guild().getId());
 
         return log(event.guild().getId(), embed -> {
             embed.setTitle(messageService.format("audit.message.clear.title", event.count, event.channel.getName()));
@@ -73,7 +72,6 @@ public class CommonEvents extends Events{
 
     @Override
     public Publisher<?> onMemberUnmute(MemberUnmuteEvent event){
-        context.init(event.guild().getId());
         LocalMember l = event.localMember;
         Member member = event.guild().getMemberById(l.user().userId()).block();
         if(member == null) return Mono.empty();
@@ -91,7 +89,6 @@ public class CommonEvents extends Events{
 
     @Override
     public Publisher<?> onMemberMute(MemberMuteEvent event){
-        context.init(event.guild().getId());
         LocalMember l = event.target;
         Member member = event.guild().getMemberById(l.user().userId()).block();
         if(member == null) return Mono.empty();
@@ -105,10 +102,8 @@ public class CommonEvents extends Events{
         return log(member.getGuildId(), e -> {
             e.setTitle(messageService.get("audit.member.mute.title"));
             e.setDescription(String.format("%s%n%s",
-                                           messageService.format("audit.member.mute.description", member
-                                                   .getUsername(), event.delay, event.admin.username()),
-                                           messageService.format("common.reason", event.reason().orElse(messageService
-                                                                                                                .get("common.not-defined")))));
+                                           messageService.format("audit.member.mute.description", member.getUsername(), event.delay, event.admin.username()),
+                                           messageService.format("common.reason", event.reason().orElse(messageService.get("common.not-defined")))));
             e.setFooter(MessageUtil.zonedFormat(), null);
             e.setColor(userMute.color);
         });

@@ -21,7 +21,7 @@ public class LocaleUtil{
         locales = ObjectMap.of(
                 ruLocale, Locale.forLanguageTag(ruLocale),
                 enLocale, Locale.US,
-                defaultLocale, Locale.ROOT
+                defaultLocale, Locale.US
         );
 
         pluralRules = ObjectMap.of(
@@ -57,7 +57,7 @@ public class LocaleUtil{
 
         ObjectMap<String, Pattern> rules = locale != null ? pluralRules.get(locale.getLanguage()) : null;
         if(rules == null){
-            rules = pluralRules.get(Locale.ENGLISH.getLanguage());
+            rules = pluralRules.get(defaultLocale);
         }
 
         for(Entry<String, Pattern> plural : rules){

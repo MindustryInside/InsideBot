@@ -67,10 +67,10 @@ public class MessageEventHandler extends AuditEventHandler{
         }
         Member member = event.getMember().orElse(null);
         if(member == null || message.getType() != Message.Type.DEFAULT || message.getChannel().map(Channel::getType).block() != Type.GUILD_TEXT) return Mono.empty();
-        TextChannel channel = message.getChannel().cast(TextChannel.class).block();
+        Mono<TextChannel> channel = message.getChannel().cast(TextChannel.class);
         User user = message.getAuthor().orElse(null);
         Snowflake guildId = event.getGuildId().orElse(null);
-        if(DiscordUtil.isBot(user) || guildId == null || channel == null) return Mono.empty();
+        if(DiscordUtil.isBot(user) || guildId == null) return Mono.empty();
         Snowflake userId = user.getId();
         LocalMember localMember = memberService.getOr(member, () -> new LocalMember(member));
         if(localMember.user() == null){
@@ -154,11 +154,10 @@ public class MessageEventHandler extends AuditEventHandler{
                                                         messageService.get("audit.message.new-content.title"), newContent));
         }
 
-        log(c.getGuildId(), e, under);
-
-        info.content(newContent);
-        messageService.save(info);
-        return Mono.empty();
+        return log(c.getGuildId(), e, under).then(Mono.fromRunnable(() -> {
+            info.content(newContent);
+            messageService.save(info);
+        }));
     }
 
     @Override
@@ -197,14 +196,11 @@ public class MessageEventHandler extends AuditEventHandler{
             stringInputStream.writeString(String.format("%s:%n%s", messageService.get("audit.message.deleted-content.title"), content));
         }
 
-        log(guild.getId(), e, under);
-
-        messageService.delete(info);
-        return Mono.empty();
+        return log(guild.getId(), e, under).then(Mono.fromRunnable(() -> messageService.delete(info)));
     }
 
-    protected void handleResponse(CommandResponse response, TextChannel channel){
-        String prefix = guildService.prefix(channel.getGuildId());
+    protected void handleResponse(CommandResponse response, Mono<TextChannel> channel){
+        String prefix = guildService.prefix(channel.map(TextChannel::getGuildId).block());
         if(response.type == ResponseType.unknownCommand){
             int min = 0;
             Command closest = null;
@@ -218,18 +214,18 @@ public class MessageEventHandler extends AuditEventHandler{
             }
 
             if(closest != null){
-                messageService.err(channel, messageService.format("command.response.found-closest", closest.text));
+                messageService.err(channel, messageService.format("command.response.found-closest", closest.text)).block();
             }else{
-                messageService.err(channel, messageService.format("command.response.unknown", prefix));
+                messageService.err(channel, messageService.format("command.response.unknown", prefix)).block();
             }
         }else if(response.type == ResponseType.manyArguments){
             messageService.err(channel, messageService.get("command.response.many-arguments.title"),
                                messageService.format("command.response.many-arguments.description",
-                                                     prefix, response.command.text, response.command.paramText));
+                                                     prefix, response.command.text, response.command.paramText)).block();
         }else if(response.type == ResponseType.fewArguments){
             messageService.err(channel, messageService.get("command.response.few-arguments.title"),
                                messageService.format("command.response.few-arguments.description",
-                                                     prefix, response.command.text));
+                                                     prefix, response.command.text)).block();
         }
     }
 }

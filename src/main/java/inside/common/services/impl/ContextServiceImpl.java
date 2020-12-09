@@ -30,7 +30,7 @@ public class ContextServiceImpl implements ContextService{
         if(locale == null){
             Snowflake guildId = guildHolder.get();
             if(guildId != null){
-                localeOrDefault(guildService.locale(guildId));
+                locale(localeOrDefault(guildId));
                 locale = localeHolder.get();
             }
         }
@@ -44,11 +44,6 @@ public class ContextServiceImpl implements ContextService{
         }else{
             localeHolder.set(locale);
         }
-    }
-
-    @Override
-    public Locale localeOrDefault(String locale){
-        return LocaleUtil.getOrDefault(locale);
     }
 
     @Override

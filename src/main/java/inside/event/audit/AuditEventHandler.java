@@ -10,6 +10,7 @@ import inside.data.service.*;
 import inside.util.StringInputStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.function.Consumer;
 
@@ -29,11 +30,10 @@ public abstract class AuditEventHandler extends ReactiveEventAdapter{
     protected StringInputStream stringInputStream = new StringInputStream();
 
     public Mono<Void> log(Snowflake guildId, MessageCreateSpec message){
-        MessageData data = discordService.getLogChannel(guildId)
-                                         .map(TextChannel::getRestChannel)
-                                         .flatMap(c -> c.createMessage(message.asRequest()))
-                                         .block();
-        return Mono.justOrEmpty(data).flatMap(__ -> Mono.fromRunnable(() -> context.reset()));
+        return discordService.getLogChannel(guildId)
+                             .publishOn(Schedulers.boundedElastic())
+                             .flatMap(c -> c.getRestChannel().createMessage(message.asRequest()))
+                             .then(Mono.fromRunnable(() -> context.reset()));
     }
 
     public Mono<Void> log(Snowflake guildId, Consumer<EmbedCreateSpec> embed){

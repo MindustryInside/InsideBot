@@ -30,7 +30,7 @@ public class CommandHandler extends BaseCommandHandler{
             return new CommandResponse(ResponseType.noCommand, null, null);
         }
 
-        message = message.substring(prefix.length());
+        message = message.substring(prefix.length()).trim();
 
         String commandstr = message.contains(" ") ? message.substring(0, message.indexOf(" ")) : message;
         String argstr = message.contains(" ") ? message.substring(commandstr.length() + 1) : "";
@@ -108,7 +108,7 @@ public class CommandHandler extends BaseCommandHandler{
                 }
             }
 
-            command.runner.execute(reference, event, result.toArray(String.class));
+            command.runner.execute(reference, event, result.toArray(String.class)).block();
 
             return new CommandResponse(ResponseType.valid, command, commandstr);
         }else{

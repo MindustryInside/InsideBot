@@ -19,6 +19,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.*;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -69,33 +70,36 @@ public class MessageServiceImpl implements MessageService{
     }
 
     @Override
-    public Mono<Void> text(MessageChannel channel, String text, Object... args){
-        channel.createMessage(Strings.format(text, args)).block();
-        return Mono.empty();
+    public Mono<Void> text(Mono<? extends MessageChannel> channel, String text, Object... args){
+        return channel.publishOn(Schedulers.boundedElastic())
+                      .flatMap(c -> c.createMessage(Strings.format(text, args)))
+                      .then();
     }
 
     @Override
-    public Mono<Void> info(MessageChannel channel, String title, String text, Object... args){
+    public Mono<Void> info(Mono<? extends MessageChannel> channel, String title, String text, Object... args){
         return info(channel, e -> e.setColor(settings.normalColor).setTitle(title)
                                    .setDescription(Strings.format(text, args)));
     }
 
     @Override
-    public Mono<Void> info(MessageChannel channel, Consumer<EmbedCreateSpec> embed){
-        channel.createMessage(s -> s.setEmbed(embed)).block();
-        return Mono.empty();
+    public Mono<Void> info(Mono<? extends MessageChannel> channel, Consumer<EmbedCreateSpec> embed){
+        return channel.publishOn(Schedulers.boundedElastic())
+                      .flatMap(c -> c.createEmbed(embed))
+                      .then();
     }
 
     @Override
-    public Mono<Void> err(MessageChannel channel, String text, Object... args){
+    public Mono<Void> err(Mono<? extends MessageChannel> channel, String text, Object... args){
         return err(channel, get("message.error.general.title"), text, args);
     }
 
     @Override
-    public Mono<Void> err(MessageChannel channel, String title, String text, Object... args){
-        channel.createMessage(s -> s.setEmbed(e -> e.setColor(settings.errorColor).setTitle(title)
-                                                    .setDescription(Strings.format(text, args)))).block();
-        return Mono.empty();
+    public Mono<Void> err(Mono<? extends MessageChannel> channel, String title, String text, Object... args){
+        return channel.publishOn(Schedulers.boundedElastic())
+                      .flatMap(c -> c.createEmbed(e -> e.setColor(settings.errorColor).setTitle(title)
+                                                        .setDescription(Strings.format(text, args))))
+                      .then();
     }
 
     @Override

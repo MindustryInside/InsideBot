@@ -23,10 +23,10 @@ public class InsideConfiguration{
 
     @Bean
     public MessageSource messageSource(){
-        ResourceBundleMessageSource b = new ResourceBundleMessageSource();
-        b.setBasename("bundle");
-        b.setDefaultEncoding("utf-8");
-        return b;
+        ResourceBundleMessageSource bundle = new ResourceBundleMessageSource();
+        bundle.setBasename("bundle");
+        bundle.setDefaultEncoding("utf-8");
+        return bundle;
     }
 
     @Bean("taskScheduler")

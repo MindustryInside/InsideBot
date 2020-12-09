@@ -20,15 +20,15 @@ public interface MessageService{
     String format(String key, Object... args);
 
     //send
-    Mono<Void> text(MessageChannel channel, String text, Object... args);
+    Mono<Void> text(Mono<? extends MessageChannel> channel, String text, Object... args);
 
-    Mono<Void> info(MessageChannel channel, String title, String text, Object... args);
+    Mono<Void> info(Mono<? extends MessageChannel> channel, String title, String text, Object... args);
 
-    Mono<Void> info(MessageChannel channel, Consumer<EmbedCreateSpec> embed);
+    Mono<Void> info(Mono<? extends MessageChannel> channel, Consumer<EmbedCreateSpec> embed);
 
-    Mono<Void> err(MessageChannel channel, String text, Object... args);
+    Mono<Void> err(Mono<? extends MessageChannel> channel, String text, Object... args);
 
-    Mono<Void> err(MessageChannel channel, String title, String text, Object... args);
+    Mono<Void> err(Mono<? extends MessageChannel> channel, String title, String text, Object... args);
 
     //data
     boolean isCleared(Snowflake messageId);

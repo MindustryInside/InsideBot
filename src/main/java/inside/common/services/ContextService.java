@@ -12,8 +12,6 @@ public interface ContextService{
 
     void locale(Locale locale);
 
-    Locale localeOrDefault(String locale);
-
     Locale localeOrDefault(Snowflake guildId);
 
     void reset();

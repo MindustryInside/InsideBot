@@ -25,6 +25,7 @@ public abstract class Events extends AuditEventHandler{
     }
 
     public final Publisher<?> hookOnEvent(BaseEvent event){
+        context.init(event.guild.getId());
         if (event instanceof MessageClearEvent e) return onMessageClear(e);
         else if (event instanceof MemberUnmuteEvent e) return onMemberUnmute(e);
         else if (event instanceof MemberMuteEvent e) return onMemberMute(e);
