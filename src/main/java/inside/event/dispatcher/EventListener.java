@@ -2,6 +2,7 @@ package inside.event.dispatcher;
 
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.*;
+import reactor.core.publisher.FluxSink.OverflowStrategy;
 import reactor.core.scheduler.Scheduler;
 import reactor.scheduler.forkjoin.ForkJoinPoolScheduler;
 
@@ -22,20 +23,20 @@ public interface EventListener{
 
     static EventListener withEarliestEvents(int bufferSize){
         return builder().eventProcessor(EmitterProcessor.create(bufferSize, false))
-                        .overflowStrategy(FluxSink.OverflowStrategy.DROP)
+                        .overflowStrategy(OverflowStrategy.DROP)
                         .build();
     }
 
     static EventListener withLatestEvents(int bufferSize){
         return builder().eventProcessor(EmitterProcessor.create(bufferSize, false))
-                        .overflowStrategy(FluxSink.OverflowStrategy.LATEST)
+                        .overflowStrategy(OverflowStrategy.LATEST)
                         .build();
     }
 
     static EventListener replayingWithTimeout(Duration maxAge){
         return new DefaultEventListener(
                 ReplayProcessor.createTimeout(maxAge),
-                FluxSink.OverflowStrategy.IGNORE,
+                OverflowStrategy.IGNORE,
                 DEFAULT_EVENT_SCHEDULER.get()
         );
     }
@@ -43,7 +44,7 @@ public interface EventListener{
     static EventListener replayingWithSize(int historySize){
         return new DefaultEventListener(
                 ReplayProcessor.create(historySize),
-                FluxSink.OverflowStrategy.IGNORE,
+                OverflowStrategy.IGNORE,
                 DEFAULT_EVENT_SCHEDULER.get()
         );
     }
@@ -67,7 +68,7 @@ public interface EventListener{
     interface Builder{
         DefaultEventListener.Builder eventProcessor(FluxProcessor<BaseEvent, BaseEvent> eventProcessor);
 
-        DefaultEventListener.Builder overflowStrategy(FluxSink.OverflowStrategy overflowStrategy);
+        DefaultEventListener.Builder overflowStrategy(OverflowStrategy overflowStrategy);
 
         DefaultEventListener.Builder eventScheduler(Scheduler eventScheduler);
 

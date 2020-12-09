@@ -63,7 +63,7 @@ public class GuildConfig extends GuildEntity{
     }
 
     public Snowflake logChannelId(){
-        return Snowflake.of(logChannelId);
+        return logChannelId != null ? Snowflake.of(logChannelId) : null;
     }
 
     public void logChannelId(Snowflake logChannelId){
@@ -71,7 +71,7 @@ public class GuildConfig extends GuildEntity{
     }
 
     public Snowflake muteRoleID(){
-        return Snowflake.of(muteRoleID);
+        return muteRoleID != null ? Snowflake.of(muteRoleID) : null;
     }
 
     public void muteRoleID(Snowflake muteRoleID){
@@ -79,7 +79,7 @@ public class GuildConfig extends GuildEntity{
     }
 
     public Snowflake activeUserRoleID(){
-        return Snowflake.of(activeUserRoleID);
+        return activeUserRoleID != null ? Snowflake.of(activeUserRoleID) : null;
     }
 
     public void activeUserRoleID(Snowflake activeUserRoleID){

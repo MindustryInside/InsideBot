@@ -1,5 +1,6 @@
 package inside.util;
 
+import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 
@@ -8,6 +9,14 @@ import java.util.*;
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class JacksonUtil{
     public static final ObjectMapper mapper = new ObjectMapper();
+
+    static{
+        mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+    }
+
+    public static ObjectMapper mapper(){
+        return mapper;
+    }
 
     public static <T> T fromString(String string, Class<T> clazz){
         try{
@@ -23,6 +32,10 @@ public class JacksonUtil{
         }catch(Throwable t){
             throw new RuntimeException(t);
         }
+    }
+
+    public static JsonNode toJsonNode(Object value){
+        return toJsonNode(toString(value));
     }
 
     public static JsonNode toJsonNode(String value){
