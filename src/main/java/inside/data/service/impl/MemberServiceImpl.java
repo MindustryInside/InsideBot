@@ -99,6 +99,7 @@ public class MemberServiceImpl implements MemberService{
         }
     }
 
+    @Transactional
     @Scheduled(cron = "0 */2 * * * *")
     public void unmuteUsers(){
         Flux.fromIterable(repository.findAll())
@@ -109,6 +110,7 @@ public class MemberServiceImpl implements MemberService{
             }, Log::err);
     }
 
+    @Transactional
     @Scheduled(cron = "0 * * * * *")
     public void activeUsers(){
         Flux.fromIterable(repository.findAll())

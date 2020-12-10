@@ -92,7 +92,6 @@ public class MemberEventHandler extends AuditEventHandler{
 
     @Override
     public Publisher<?> onMemberUpdate(MemberUpdateEvent event){
-        context.init(event.getGuildId()); // ???
         return event.getMember()
                     .filter(DiscordUtil::isNotBot)
                     .doOnNext(member -> {

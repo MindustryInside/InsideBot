@@ -233,11 +233,11 @@ public class Commands{
                     return messageService.err(channel, messageService.get("command.admin.mute.already-muted"));
                 }
 
-                if(adminService.isAdmin(m)){
+                if(adminService.isAdmin(m) && !adminService.isOwner(reference.member())){
                     return messageService.err(channel, messageService.get("command.admin.user-is-admin"));
                 }
 
-                if(reference.member().equals(m)){
+                if(Objects.equals(reference.member(), m)){
                     return messageService.err(channel, messageService.get("command.admin.mute.self-user"));
                 }
 
@@ -296,11 +296,11 @@ public class Commands{
                     return messageService.err(channel, messageService.get("command.admin.user-is-bot"));
                 }
 
-                if(adminService.isAdmin(m)){
+                if(adminService.isAdmin(m) && !adminService.isOwner(reference.member())){
                     return messageService.err(channel, messageService.get("command.admin.user-is-admin"));
                 }
 
-                if(reference.member().equals(m)){
+                if(Objects.equals(reference.member(), m)){
                     return messageService.err(channel, messageService.get("command.admin.warn.self-user"));
                 }
 
