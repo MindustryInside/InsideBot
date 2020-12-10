@@ -149,7 +149,7 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     @Transactional
-    @Scheduled(cron = "0 0 */6 * * *") // каждые 6 часов
+    @Scheduled(cron = "0 0 */2 * * *") // каждые 2 часа
     public void cleanUp(){
         long pre = repository.count();
         log.info("Audit cleanup started...");
