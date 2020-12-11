@@ -1,7 +1,6 @@
 package inside.common.command.model;
 
 import arc.util.*;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.*;
 import discord4j.common.util.Snowflake;
@@ -20,9 +19,11 @@ import inside.event.dispatcher.EventType.*;
 import inside.util.*;
 import org.joda.time.DateTime;
 import org.joda.time.format.*;
+import org.slf4j.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.*;
 import java.util.function.*;
@@ -74,6 +75,24 @@ public class Commands{
             });
 
             return messageService.info(event.getMessage().getChannel(), messageService.get("command.help"), builder.toString());
+        }
+    }
+
+    @DiscordCommand(key = "avatar", params = "<@user>", description = "command.avatar.description")
+    public class AvatarCommand extends CommandRunner{
+        @Override
+        public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
+            Mono<MessageChannel> channel = event.getMessage().getChannel();
+            Snowflake targetId = MessageUtil.parseUserId(args[0]);
+            if(targetId == null || !discordService.exists(targetId)){
+                return messageService.err(channel, messageService.get("command.incorrect-name"));
+            }
+
+            User user = discordService.gateway().getUserById(targetId).block();
+            return channel.flatMap(c -> c.createEmbed(e -> e.setColor(settings.normalColor)
+                                                            .setImage(user.getAvatarUrl() + "?size=512")
+                                                            .setDescription(messageService.format("command.avatar.text", user.getUsername()))))
+                                         .then();
         }
     }
 
@@ -343,10 +362,10 @@ public class Commands{
                             AdminAction w = warns.get(i);
                             String title = String.format("%2s. %s", i + 1, formatter.print(new DateTime(w.timestamp())));
 
-                            StringBuilder description = new StringBuilder();
-                            description.append(messageService.format("common.admin", w.admin().effectiveName())).append('\n');
-                            description.append(messageService.format("common.reason", w.reason().orElse(messageService.get("common.not-defined"))));
-                            e.addField(title, description.toString(), true);
+                            String description = String.format("%s%n%s",
+                                                               messageService.format("common.admin", w.admin().effectiveName()),
+                                                               messageService.format("common.reason", w.reason().orElse(messageService.get("common.not-defined"))));
+                            e.addField(title, description, true);
                         }
                     };
                     return messageService.info(channel, spec);

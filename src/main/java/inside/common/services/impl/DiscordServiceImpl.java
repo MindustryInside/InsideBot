@@ -6,6 +6,7 @@ import discord4j.core.*;
 import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.*;
+import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.core.shard.MemberRequestFilter;
 import discord4j.gateway.intent.*;
 import inside.Settings;
@@ -103,8 +104,7 @@ public class DiscordServiceImpl implements DiscordService{
     @Override
     public boolean exists(Snowflake userId){
         try{
-            gateway.getUserById(userId);
-            return true;
+            return gateway.withRetrievalStrategy(EntityRetrievalStrategy.STORE).getUserById(userId).block() != null;
         }catch(Throwable t){
             return true;
         }
@@ -113,8 +113,7 @@ public class DiscordServiceImpl implements DiscordService{
     @Override
     public boolean exists(Snowflake guildId, Snowflake userId){
         try{
-            gateway.getMemberById(guildId, userId).block();
-            return true;
+            return gateway.withRetrievalStrategy(EntityRetrievalStrategy.STORE).getMemberById(guildId, userId).block() != null;
         }catch(Throwable t){
             return true;
         }

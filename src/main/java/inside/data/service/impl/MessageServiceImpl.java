@@ -65,7 +65,7 @@ public class MessageServiceImpl implements MessageService{
     }
 
     @Override
-    public String format(String key, Object... args) {
+    public String format(String key, Object... args){
         return context.getMessage(key, args, contextService.locale());
     }
 
