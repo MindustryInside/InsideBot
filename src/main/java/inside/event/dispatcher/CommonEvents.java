@@ -65,7 +65,7 @@ public class CommonEvents extends Events{
         return log(event.guild().getId(), embed -> {
             embed.setTitle(messageService.format("audit.message.clear.title", event.count, event.channel.getName()));
             embed.setDescription(messageService.format("audit.message.clear.description", event.user.getUsername(), event.count, event.channel.getName()));
-            embed.setFooter(MessageUtil.zonedFormat(), null);
+            embed.setFooter(timestamp(), null);
             embed.setColor(messageClear.color);
         }, true);
     }
@@ -82,7 +82,7 @@ public class CommonEvents extends Events{
         return log(member.getGuildId(), e -> {
             e.setTitle(messageService.get("audit.member.unmute.title"));
             e.setDescription(messageService.format("audit.member.unmute.description", member.getUsername()));
-            e.setFooter(MessageUtil.zonedFormat(), null);
+            e.setFooter(timestamp(), null);
             e.setColor(userUnmute.color);
         });
     }
@@ -102,9 +102,9 @@ public class CommonEvents extends Events{
         return log(member.getGuildId(), e -> {
             e.setTitle(messageService.get("audit.member.mute.title"));
             e.setDescription(String.format("%s%n%s",
-                                           messageService.format("audit.member.mute.description", member.getUsername(), event.delay, event.admin.username()),
-                                           messageService.format("common.reason", event.reason().orElse(messageService.get("common.not-defined")))));
-            e.setFooter(MessageUtil.zonedFormat(), null);
+            messageService.format("audit.member.mute.description", member.getUsername(), event.delay, event.admin.username()),
+            messageService.format("common.reason", event.reason().orElse(messageService.get("common.not-defined")))));
+            e.setFooter(timestamp(), null);
             e.setColor(userMute.color);
         });
     }

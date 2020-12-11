@@ -35,7 +35,7 @@ public class MemberEventHandler extends AuditEventHandler{
             embed.setColor(userBan.color);
             embed.setTitle(messageService.get("audit.member.ban.title"));
             embed.setDescription(messageService.format("audit.member.ban.description", user.getUsername()));
-            embed.setFooter(MessageUtil.zonedFormat(), null);
+            embed.setFooter(timestamp(), null);
         })
         .thenEmpty(Mono.fromRunnable(() -> memberService.deleteById(event.getGuildId(), user.getId())));
     }
@@ -56,7 +56,7 @@ public class MemberEventHandler extends AuditEventHandler{
             embed.setColor(userJoin.color);
             embed.setTitle(messageService.get("audit.member.join.title"));
             embed.setDescription(messageService.format("audit.member.join.description", member.getUsername()));
-            embed.setFooter(MessageUtil.zonedFormat(), null);
+            embed.setFooter(timestamp(), null);
         });
     }
 
@@ -78,14 +78,14 @@ public class MemberEventHandler extends AuditEventHandler{
                 Optional<String> reason = l.getReason();
                 desc.append('\n').append(messageService.format("common.reason", reason.filter(r -> !r.trim().isBlank()).isPresent() ? reason.map(String::trim).get() : messageService.get("common.not-defined")));
                 embed.setDescription(desc.toString());
-                embed.setFooter(MessageUtil.zonedFormat(), null);
+                embed.setFooter(timestamp(), null);
             });
         }else{
             return log(event.getGuildId(), embed -> {
                 embed.setColor(userLeave.color);
                 embed.setTitle(messageService.get("audit.member.leave.title"));
                 embed.setDescription(messageService.format("audit.member.leave.description", user.getUsername()));
-                embed.setFooter(MessageUtil.zonedFormat(), null);
+                embed.setFooter(timestamp(), null);
             });
         }
     }

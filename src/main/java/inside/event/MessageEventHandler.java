@@ -145,7 +145,7 @@ public class MessageEventHandler extends AuditEventHandler{
             embed.addField(messageService.get("audit.message.new-content.title"),
                            MessageUtil.substringTo(newContent, Field.MAX_VALUE_LENGTH), true);
 
-            embed.setFooter(MessageUtil.zonedFormat(), null);
+            embed.setFooter(timestamp(), null);
         };
 
         if(under){
@@ -188,7 +188,7 @@ public class MessageEventHandler extends AuditEventHandler{
             embed.setColor(messageDelete.color);
             embed.setAuthor(user.getUsername(), null, user.getAvatarUrl());
             embed.setTitle(messageService.format("audit.message.delete.title", channel.getName()));
-            embed.setFooter(MessageUtil.zonedFormat(), null);
+            embed.setFooter(timestamp(), null);
             embed.addField(messageService.get("audit.message.deleted-content.title"), MessageUtil.substringTo(content, Field.MAX_VALUE_LENGTH), true);
         };
 

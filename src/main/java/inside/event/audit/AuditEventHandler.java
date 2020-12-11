@@ -8,6 +8,8 @@ import discord4j.discordjson.json.MessageData;
 import inside.common.services.*;
 import inside.data.service.*;
 import inside.util.StringInputStream;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -44,6 +46,12 @@ public abstract class AuditEventHandler extends ReactiveEventAdapter{
         if(guildService.auditDisabled(guildId)) return Mono.empty();
         MessageCreateSpec m = new MessageCreateSpec().setEmbed(embed);
         return log(guildId, file ? m.addFile("message.txt", stringInputStream) : m);
+    }
+
+    public String timestamp(){
+        return DateTimeFormat.longDateTime()
+                             .withLocale(context.locale())
+                             .print(DateTime.now());
     }
 
     //todo

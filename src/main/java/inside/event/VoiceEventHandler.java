@@ -32,7 +32,7 @@ public class VoiceEventHandler extends AuditEventHandler{
                 embed.setColor(voiceLeave.color);
                 embed.setTitle(messageService.get("audit.voice.leave.title"));
                 embed.setDescription(messageService.format("audit.voice.leave.description", user.getUsername(), channel.getName()));
-                embed.setFooter(MessageUtil.zonedFormat(), null);
+                embed.setFooter(timestamp(), null);
             });
         }else{
             VoiceState current = event.getCurrent();
@@ -44,7 +44,7 @@ public class VoiceEventHandler extends AuditEventHandler{
                 embed.setColor(voiceJoin.color);
                 embed.setTitle(messageService.get("audit.voice.join.title"));
                 embed.setDescription(messageService.format("audit.voice.join.description", user.getUsername(), channel.getName()));
-                embed.setFooter(MessageUtil.zonedFormat(), null);
+                embed.setFooter(timestamp(), null);
             });
         }
     }

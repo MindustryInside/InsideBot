@@ -6,7 +6,6 @@ import org.hibernate.usertype.DynamicParameterizedType;
 import java.util.Properties;
 
 public class JsonBinaryType extends AbstractSingleColumnStandardBasicType<Object> implements DynamicParameterizedType{
-
     private static final long serialVersionUID = -3828163915941087141L;
 
     public JsonBinaryType(){

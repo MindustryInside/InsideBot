@@ -1,8 +1,6 @@
 package inside.common.command.model;
 
-import arc.util.*;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.*;
+import arc.util.Strings;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.*;
@@ -19,11 +17,9 @@ import inside.event.dispatcher.EventType.*;
 import inside.util.*;
 import org.joda.time.DateTime;
 import org.joda.time.format.*;
-import org.slf4j.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 import java.util.*;
 import java.util.function.*;
@@ -90,9 +86,9 @@ public class Commands{
 
             User user = discordService.gateway().getUserById(targetId).block();
             return channel.flatMap(c -> c.createEmbed(e -> e.setColor(settings.normalColor)
-                                                            .setImage(user.getAvatarUrl() + "?size=512")
-                                                            .setDescription(messageService.format("command.avatar.text", user.getUsername()))))
-                                         .then();
+                    .setImage(user.getAvatarUrl() + "?size=512")
+                    .setDescription(messageService.format("command.avatar.text", user.getUsername()))))
+            .then();
         }
     }
 
@@ -281,7 +277,7 @@ public class Commands{
                 return messageService.err(channel, messageService.get("command.incorrect-number"));
             }
 
-            int number = Integer.parseInt(args[0]);
+            int number = Strings.parseInt(args[0]);
             if(number >= 100){
                 return messageService.err(channel, messageService.format("common.limit-number", 100));
             }
@@ -295,8 +291,7 @@ public class Commands{
                 return messageService.err(channel, messageService.get("message.error.history-retrieve"));
             }
 
-            discordService.eventListener().publish(new MessageClearEvent(event.getGuild().block(), history, reference.user(), channel.block(), number));
-            return Mono.empty();
+            return Mono.fromRunnable(() -> discordService.eventListener().publish(new MessageClearEvent(event.getGuild().block(), history, reference.user(), channel.block(), number)));
         }
     }
 
@@ -330,7 +325,7 @@ public class Commands{
                 adminService.warn(reference.localMember(), info, reason).block();
                 long warnings = adminService.warnings(m.getGuildId(), info.user().userId()).count().blockOptional().orElse(0L);
 
-                messageService.text(channel, messageService.format("message.admin.warn", m.getUsername(), warnings)).block();
+                messageService.text(channel, messageService.format("message.admin.warn", m.getUsername(), warnings)).block(); // todo
 
                 if(warnings >= 3){
                     return event.getGuild().flatMap(g -> g.ban(m.getId(), b -> b.setDeleteMessageDays(0)));
@@ -354,7 +349,8 @@ public class Commands{
                 if(warns.isEmpty()){
                     return messageService.text(channel, messageService.get("command.admin.warnings.empty"));
                 }else{
-                    DateTimeFormatter formatter = DateTimeFormat.shortDateTime();
+                    DateTimeFormatter formatter = DateTimeFormat.shortDateTime()
+                                                                .withLocale(context.locale());
                     Consumer<EmbedCreateSpec> spec = e -> {
                         e.setColor(settings.normalColor);
                         e.setTitle(messageService.format("command.admin.warnings.title", info.effectiveName()));
@@ -363,8 +359,8 @@ public class Commands{
                             String title = String.format("%2s. %s", i + 1, formatter.print(new DateTime(w.timestamp())));
 
                             String description = String.format("%s%n%s",
-                                                               messageService.format("common.admin", w.admin().effectiveName()),
-                                                               messageService.format("common.reason", w.reason().orElse(messageService.get("common.not-defined"))));
+                            messageService.format("common.admin", w.admin().effectiveName()),
+                            messageService.format("common.reason", w.reason().orElse(messageService.get("common.not-defined"))));
                             e.addField(title, description, true);
                         }
                     };

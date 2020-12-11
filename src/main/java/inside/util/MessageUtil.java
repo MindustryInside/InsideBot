@@ -61,10 +61,6 @@ public class MessageUtil{
         return canParseId(message) ? Snowflake.of(message) : null;
     }
 
-    public static String zonedFormat(){
-        return DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss ZZZZ").format(ZonedDateTime.now());
-    }
-
     public static DateTimeFormatter dateTime(){
         return DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss");
     }
