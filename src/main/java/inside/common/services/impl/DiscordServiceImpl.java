@@ -9,6 +9,7 @@ import discord4j.core.object.entity.channel.*;
 import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.core.shard.MemberRequestFilter;
 import discord4j.gateway.intent.*;
+import discord4j.rest.response.ResponseFunction;
 import inside.Settings;
 import inside.common.services.DiscordService;
 import inside.data.service.GuildService;
@@ -29,31 +30,30 @@ public class DiscordServiceImpl implements DiscordService{
     @Autowired
     private GuildService guildService;
 
-    @Autowired
-    private List<Events> events;
-
     protected GatewayDiscordClient gateway;
     protected EventListener eventListener;
 
     @Autowired(required = false)
-    public void init(List<ReactiveEventAdapter> handlers){
+    public void init(List<ReactiveEventAdapter> handlers, List<Events> events){
         String token = settings.token;
         Objects.requireNonNull(token, "Discord token not provided");
 
-        gateway = DiscordClient.create(token)
-                               .gateway()
-                               .setMemberRequestFilter(MemberRequestFilter.all())
-                               .setEnabledIntents(IntentSet.of(
-                                       Intent.GUILDS,
-                                       Intent.GUILD_MEMBERS,
-                                       Intent.GUILD_MESSAGES,
-                                       Intent.GUILD_VOICE_STATES,
-                                       Intent.GUILD_MESSAGE_REACTIONS,
-                                       Intent.DIRECT_MESSAGES,
-                                       Intent.DIRECT_MESSAGE_REACTIONS
-                               ))
-                               .login()
-                               .block();
+        gateway = DiscordClientBuilder.create(token)
+                .onClientResponse(ResponseFunction.emptyIfNotFound())
+                .build()
+                .gateway()
+                .setMemberRequestFilter(MemberRequestFilter.all())
+                .setEnabledIntents(IntentSet.of(
+                        Intent.GUILDS,
+                        Intent.GUILD_MEMBERS,
+                        Intent.GUILD_MESSAGES,
+                        Intent.GUILD_VOICE_STATES,
+                        Intent.GUILD_MESSAGE_REACTIONS,
+                        Intent.DIRECT_MESSAGES,
+                        Intent.DIRECT_MESSAGE_REACTIONS
+                ))
+                .login()
+                .block();
 
         eventListener = EventListener.buffering();
 
@@ -103,19 +103,11 @@ public class DiscordServiceImpl implements DiscordService{
 
     @Override
     public boolean exists(Snowflake userId){
-        try{
-            return gateway.withRetrievalStrategy(EntityRetrievalStrategy.STORE).getUserById(userId).block() != null;
-        }catch(Throwable t){
-            return true;
-        }
+        return gateway.getUserById(userId).map(Objects::nonNull).block();
     }
 
     @Override
     public boolean exists(Snowflake guildId, Snowflake userId){
-        try{
-            return gateway.withRetrievalStrategy(EntityRetrievalStrategy.STORE).getMemberById(guildId, userId).block() != null;
-        }catch(Throwable t){
-            return true;
-        }
+        return gateway.getMemberById(guildId, userId).map(Objects::nonNull).block();
     }
 }

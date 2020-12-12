@@ -3,6 +3,8 @@ package inside.event.dispatcher;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
 import inside.data.entity.LocalMember;
+import org.joda.time.DateTime;
+import reactor.core.publisher.*;
 import reactor.util.annotation.*;
 
 import java.util.*;
@@ -13,12 +15,12 @@ import java.util.*;
 public final class EventType{
 
     public static class MessageClearEvent extends BaseEvent{
-        public final @NonNull List<Message> history;
-        public final @NonNull TextChannel channel;
+        public final @NonNull Flux<Message> history;
+        public final @NonNull Mono<TextChannel> channel;
         public final @NonNull User user;
         public final int count;
 
-        public MessageClearEvent(Guild guild, @NonNull List<Message> history, @NonNull User user, @NonNull TextChannel channel, int count){
+        public MessageClearEvent(Guild guild, @NonNull Flux<Message> history, @NonNull User user, @NonNull Mono<TextChannel> channel, int count){
             super(guild);
             this.history = history;
             this.channel = channel;
@@ -59,9 +61,9 @@ public final class EventType{
         public final @NonNull LocalMember admin;
         public final @NonNull LocalMember target;
         private final @Nullable String reason;
-        public final int delay;
+        public final DateTime delay;
 
-        public MemberMuteEvent(Guild guild, @NonNull LocalMember admin, @NonNull LocalMember target, @Nullable String reason, int delay){
+        public MemberMuteEvent(Guild guild, @NonNull LocalMember admin, @NonNull LocalMember target, @Nullable String reason, DateTime delay){
             super(guild);
             this.admin = admin;
             this.target = target;

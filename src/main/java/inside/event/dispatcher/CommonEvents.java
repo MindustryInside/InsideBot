@@ -2,16 +2,17 @@ package inside.event.dispatcher;
 
 import discord4j.core.object.Embed;
 import discord4j.core.object.entity.*;
+import discord4j.core.object.entity.channel.*;
 import inside.data.entity.LocalMember;
 import inside.data.service.*;
 import inside.event.dispatcher.EventType.*;
 import inside.util.*;
+import org.joda.time.format.*;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
 
-import java.time.ZoneId;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -31,10 +32,12 @@ public class CommonEvents extends Events{
     @Override
     public Publisher<?> onMessageClear(MessageClearEvent event){
         StringBuffer builder = new StringBuffer();
+        DateTimeFormatter formatter = DateTimeFormat.forPattern("MM-dd-yyyy HH:mm:ss")
+                                                    .withLocale(context.locale());
 
         Consumer<Message> appendInfo = m -> {
             Member member = m.getAuthorAsMember().block();
-            builder.append('[').append(MessageUtil.dateTime().withZone(ZoneId.systemDefault()).format(m.getTimestamp())).append("] ");
+            builder.append('[').append(formatter.print(m.getTimestamp().toEpochMilli())).append("] ");
             if(DiscordUtil.isBot(member)){
                 builder.append("[BOT] ");
             }
@@ -52,19 +55,19 @@ public class CommonEvents extends Events{
             builder.append('\n');
         };
 
-        Flux.fromIterable(event.history)
-            .filter(Objects::nonNull)
-            .subscribe(m -> {
-                messageService.putMessage(m.getId());
-                appendInfo.accept(m);
-                m.delete().block();
-            }, e -> {});
+        event.history.filter(Objects::nonNull)
+             .subscribe(m -> { // todo пока не придумал как сделать неблокируемо
+                 messageService.putMessage(m.getId());
+                 appendInfo.accept(m);
+                 m.delete().block();
+             }, e -> {});
 
         stringInputStream.writeString(builder.toString());
+        String channel = event.channel.map(GuildChannel::getName).block();
 
         return log(event.guild().getId(), embed -> {
-            embed.setTitle(messageService.format("audit.message.clear.title", event.count, event.channel.getName()));
-            embed.setDescription(messageService.format("audit.message.clear.description", event.user.getUsername(), event.count, event.channel.getName()));
+            embed.setTitle(messageService.format("audit.message.clear.title", event.count, channel));
+            embed.setDescription(messageService.format("audit.message.clear.description", event.user.getUsername(), event.count, channel));
             embed.setFooter(timestamp(), null);
             embed.setColor(messageClear.color);
         }, true);
@@ -95,7 +98,7 @@ public class CommonEvents extends Events{
         if(guildService.muteDisabled(member.getGuildId())) return Mono.empty();
 
         Calendar end = Calendar.getInstance();
-        end.roll(Calendar.DAY_OF_YEAR, +event.delay);
+        end.setTime(event.delay.toDate());
         adminService.mute(event.admin, l, end, event.reason().orElse(null)).block();
         member.addRole(guildService.muteRoleId(member.getGuildId())).block();
 

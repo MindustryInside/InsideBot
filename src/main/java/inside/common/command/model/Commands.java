@@ -19,7 +19,7 @@ import org.joda.time.DateTime;
 import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.*;
 
 import java.util.*;
 import java.util.function.*;
@@ -230,12 +230,12 @@ public class Commands{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
             Mono<MessageChannel> channel = event.getMessage().getChannel();
-            if(!MessageUtil.canParseInt(args[1])){
-                return messageService.err(channel, messageService.get("command.incorrect-number"));
-            }
 
             try{
-                int delayDays = Strings.parseInt(args[1]);
+                DateTime delay = MessageUtil.parseTime(args[1]);
+                if(delay == null){
+                    return messageService.err(channel, messageService.get("message.error.invalid-time"));
+                }
                 LocalMember info = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
                 Member m = discordService.gateway().getMemberById(info.guildId(), info.user().userId()).block();
                 String reason = args.length > 2 ? args[2] : null;
@@ -260,7 +260,7 @@ public class Commands{
                     return messageService.err(channel, messageService.format("common.string-limit", 1000));
                 }
 
-                return Mono.fromRunnable(() -> discordService.eventListener().publish(new MemberMuteEvent(m.getGuild().block(), reference.localMember(), info, reason, delayDays)));
+                return Mono.fromRunnable(() -> discordService.eventListener().publish(new MemberMuteEvent(m.getGuild().block(), reference.localMember(), info, reason, delay)));
             }catch(Exception e){
                 return messageService.err(channel, messageService.get("command.incorrect-name"));
             }
@@ -282,16 +282,10 @@ public class Commands{
                 return messageService.err(channel, messageService.format("common.limit-number", 100));
             }
 
-            List<Message> history = channel.flatMapMany(c -> c.getMessagesBefore(event.getMessage().getId()))
-                                           .limitRequest(number)
-                                           .collectList()
-                                           .block();
+            Flux<Message> history = channel.flatMapMany(c -> c.getMessagesBefore(event.getMessage().getId()))
+                                           .limitRequest(number);
 
-            if(history == null || (history.isEmpty() && number > 0)){
-                return messageService.err(channel, messageService.get("message.error.history-retrieve"));
-            }
-
-            return Mono.fromRunnable(() -> discordService.eventListener().publish(new MessageClearEvent(event.getGuild().block(), history, reference.user(), channel.block(), number)));
+            return Mono.fromRunnable(() -> discordService.eventListener().publish(new MessageClearEvent(event.getGuild().block(), history, reference.user(), channel, number)));
         }
     }
 
