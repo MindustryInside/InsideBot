@@ -4,6 +4,7 @@ import discord4j.common.util.Snowflake;
  import inside.common.services.ContextService;
 import inside.data.service.GuildService;
 import inside.util.LocaleUtil;
+import org.joda.time.DateTimeZone;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.NamedThreadLocal;
 import org.springframework.stereotype.Service;
@@ -44,6 +45,11 @@ public class ContextServiceImpl implements ContextService{
         }else{
             localeHolder.set(locale);
         }
+    }
+
+    @Override
+    public DateTimeZone zone(){
+        return guildService.timeZone(guildHolder.get());
     }
 
     @Override

@@ -35,7 +35,7 @@ public class InsideConfiguration{
         scheduler.setPoolSize(settings.executor.schedulerPoolSize);
         scheduler.setWaitForTasksToCompleteOnShutdown(true);
         scheduler.setAwaitTerminationSeconds(30);
-        scheduler.setThreadNamePrefix("taskScheduler");
+        scheduler.setThreadNamePrefix("taskScheduler-");
         return scheduler;
     }
 }

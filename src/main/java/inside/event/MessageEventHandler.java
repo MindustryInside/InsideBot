@@ -84,7 +84,10 @@ public class MessageEventHandler extends AuditEventHandler{
 
         if(!guildService.exists(guildId)){
             Region region = event.getGuild().flatMap(Guild::getRegion).block();
-            GuildConfig guildConfig = new GuildConfig(guildId, LocaleUtil.get(region), settings.prefix);
+            GuildConfig guildConfig = new GuildConfig(guildId);
+            guildConfig.locale(LocaleUtil.get(region));
+            guildConfig.prefix(settings.prefix);
+            guildConfig.timeZone("Etc/Greenwich");
             guildService.save(guildConfig);
         }
 

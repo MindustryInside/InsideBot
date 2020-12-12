@@ -1,6 +1,7 @@
 package inside.data.entity;
 
 import discord4j.common.util.Snowflake;
+import discord4j.core.object.entity.Guild;
 import inside.data.entity.base.*;
 import org.hibernate.annotations.Type;
 import reactor.core.publisher.Flux;
@@ -14,10 +15,13 @@ import java.util.*;
 public class GuildConfig extends GuildEntity{
 
     @Column
-    private String locale;
+    private String prefix;
 
     @Column
-    private String prefix;
+    private String locale;
+
+    @Column(name = "time_zone")
+    private String timeZone;
 
     @Column(name = "log_channel_id")
     private String logChannelId;
@@ -34,10 +38,17 @@ public class GuildConfig extends GuildEntity{
 
     public GuildConfig(){}
 
-    public GuildConfig(Snowflake guildId, Locale locale, String prefix){
+    public GuildConfig(Snowflake guildId){
         guildId(guildId);
-        locale(locale);
-        prefix(prefix);
+    }
+
+    @NonNull
+    public String prefix(){
+        return prefix;
+    }
+
+    public void prefix(@NonNull String prefix){
+        this.prefix = prefix;
     }
 
     @NonNull
@@ -54,12 +65,12 @@ public class GuildConfig extends GuildEntity{
     }
 
     @NonNull
-    public String prefix(){
-        return prefix;
+    public String timeZone(){
+        return timeZone;
     }
 
-    public void prefix(@NonNull String prefix){
-        this.prefix = prefix;
+    public void timeZone(@NonNull String timeZone){
+        this.timeZone = timeZone;
     }
 
     public Snowflake logChannelId(){
@@ -111,8 +122,9 @@ public class GuildConfig extends GuildEntity{
     @Override
     public String toString(){
         return "GuildConfig{" +
-               "locale='" + locale + '\'' +
-               ", prefix='" + prefix + '\'' +
+               "prefix='" + prefix + '\'' +
+               ", locale='" + locale + '\'' +
+               ", timeZone='" + timeZone + '\'' +
                ", logChannelId='" + logChannelId + '\'' +
                ", muteRoleID='" + muteRoleID + '\'' +
                ", activeUserRoleID='" + activeUserRoleID + '\'' +

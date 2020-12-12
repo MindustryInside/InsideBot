@@ -7,6 +7,7 @@ import inside.data.entity.GuildConfig;
 import inside.data.repository.GuildConfigRepository;
 import inside.data.service.GuildService;
 import inside.util.LocaleUtil;
+import org.joda.time.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,6 +69,12 @@ public class GuildServiceImpl implements GuildService{
     @Transactional(readOnly = true)
     public String locale(Snowflake guildId){
         return repository.findLocaleByGuildId(guildId).orElse(LocaleUtil.enLocale);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DateTimeZone timeZone(Snowflake guildId){
+        return DateTimeZone.forID(repository.findTimeZoneByGuildId(guildId).orElse("UTC"));
     }
 
     @Override

@@ -14,6 +14,13 @@ public class LocalUser extends UserEntity{
     @Column(length = 32)
     private String name;
 
+    public LocalUser(){}
+
+    public LocalUser(User user){
+        userId(user.getId());
+        name(user.getUsername());
+    }
+
     @NonNull
     public String name(){
         return name;
@@ -21,13 +28,6 @@ public class LocalUser extends UserEntity{
 
     public void name(@NonNull String name){
         this.name = name;
-    }
-
-    public LocalUser(){}
-
-    public LocalUser(User user){
-        userId(user.getId());
-        name(user.getUsername());
     }
 
     @Override

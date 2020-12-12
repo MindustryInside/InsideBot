@@ -85,7 +85,7 @@ public class Commands{
             }
 
             User user = discordService.gateway().getUserById(targetId).block();
-            return channel.flatMap(c -> c.createEmbed(e -> e.setColor(settings.normalColor)
+            return channel.flatMap(c -> c.createEmbed(e -> e.setColor(settings.normalColor) // todo не понимаю почему меняется локаль при отправке, хоть подобное уже прописывал
                     .setImage(user.getAvatarUrl() + "?size=512")
                     .setDescription(messageService.format("command.avatar.text", user.getUsername()))))
             .then();
@@ -203,7 +203,7 @@ public class Commands{
             Mono<MessageChannel> channel = event.getMessage().getChannel();
 
             GuildConfig c = guildService.get(guild);
-            Supplier<String> r = () -> context.locale().equals(Locale.ROOT) ? messageService.get("common.default") : context.locale().toString();
+            Supplier<String> r = () -> Objects.equals(context.locale(), Locale.ROOT) ? messageService.get("common.default") : context.locale().toString();
             if(args.length == 0){
                 return messageService.text(channel, messageService.format("command.config.locale", r.get()));
             }else{

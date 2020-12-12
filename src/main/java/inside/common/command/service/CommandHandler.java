@@ -98,10 +98,11 @@ public class CommandHandler extends BaseCommandHandler{
                                 e.setDescription(messageService.format("message.error.permission-denied.description", bundled));
                             })).block();
                         }else{
-                            String builder = String.format("%s%n%n%s",
-                                                           messageService.get("message.error.permission-denied.title"),
-                                                           messageService.format("message.error.permission-denied.description", bundled));
-                            channel.flatMap(c -> c.createMessage(builder)).block();
+                            channel.flatMap(c -> c.createMessage(String.format("%s%n%n%s",
+                            messageService.get("message.error.permission-denied.title"),
+                            messageService.format("message.error.permission-denied.description", bundled)))
+                            )
+                            .block();
                         }
                         return new CommandResponse(ResponseType.permissionDenied, command, commandstr);
                     }

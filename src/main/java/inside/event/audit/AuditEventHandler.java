@@ -51,6 +51,7 @@ public abstract class AuditEventHandler extends ReactiveEventAdapter{
     public String timestamp(){
         return DateTimeFormat.longDateTime()
                              .withLocale(context.locale())
+                             .withZone(context.zone())
                              .print(DateTime.now());
     }
 

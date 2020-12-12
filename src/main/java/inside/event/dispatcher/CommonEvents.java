@@ -33,7 +33,8 @@ public class CommonEvents extends Events{
     public Publisher<?> onMessageClear(MessageClearEvent event){
         StringBuffer builder = new StringBuffer();
         DateTimeFormatter formatter = DateTimeFormat.forPattern("MM-dd-yyyy HH:mm:ss")
-                                                    .withLocale(context.locale());
+                                                    .withLocale(context.locale())
+                                                    .withZone(context.zone());
 
         Consumer<Message> appendInfo = m -> {
             Member member = m.getAuthorAsMember().block();
@@ -76,39 +77,46 @@ public class CommonEvents extends Events{
     @Override
     public Publisher<?> onMemberUnmute(MemberUnmuteEvent event){
         LocalMember l = event.localMember;
-        Member member = event.guild().getMemberById(l.user().userId()).block();
-        if(member == null) return Mono.empty();
-        if(guildService.muteDisabled(member.getGuildId())) return Mono.empty();
+        return event.guild().getMemberById(l.user().userId())
+                .filter(m -> !guildService.muteDisabled(m.getGuildId()))
+                .flatMap(m -> {
+                    Mono<Void> unmute = Mono.fromRunnable(() -> {
+                        adminService.unmute(l.guildId(), l.user().userId()).block();
+                        m.removeRole(guildService.muteRoleId(m.getGuildId())).block();
+                    });
 
-        adminService.unmute(l.guildId(), l.user().userId()).block();
-        member.removeRole(guildService.muteRoleId(member.getGuildId())).block();
-        return log(member.getGuildId(), e -> {
-            e.setTitle(messageService.get("audit.member.unmute.title"));
-            e.setDescription(messageService.format("audit.member.unmute.description", member.getUsername()));
-            e.setFooter(timestamp(), null);
-            e.setColor(userUnmute.color);
-        });
+                    Mono<Void> publishLog = log(m.getGuildId(), e -> {
+                        e.setTitle(messageService.get("audit.member.unmute.title"));
+                        e.setDescription(messageService.format("audit.member.unmute.description", m.getUsername()));
+                        e.setFooter(timestamp(), null);
+                        e.setColor(userUnmute.color);
+                    });
+
+                    return unmute.then(publishLog);
+                });
     }
 
     @Override
     public Publisher<?> onMemberMute(MemberMuteEvent event){
         LocalMember l = event.target;
-        Member member = event.guild().getMemberById(l.user().userId()).block();
-        if(member == null) return Mono.empty();
-        if(guildService.muteDisabled(member.getGuildId())) return Mono.empty();
+        return event.guild().getMemberById(l.user().userId())
+                .filter(member -> !guildService.muteDisabled(member.getGuildId()))
+                .flatMap(m -> {
+                    Mono<Void> mute = Mono.fromRunnable(() -> {
+                        adminService.mute(event.admin, l, event.delay.toCalendar(context.locale()), event.reason().orElse(null)).block();
+                        m.addRole(guildService.muteRoleId(m.getGuildId())).block();
+                    });
 
-        Calendar end = Calendar.getInstance();
-        end.setTime(event.delay.toDate());
-        adminService.mute(event.admin, l, end, event.reason().orElse(null)).block();
-        member.addRole(guildService.muteRoleId(member.getGuildId())).block();
+                    Mono<Void> publishLog = log(m.getGuildId(), e -> {
+                        e.setTitle(messageService.get("audit.member.mute.title"));
+                        e.setDescription(String.format("%s%n%s",
+                        messageService.format("audit.member.mute.description", m.getUsername(), event.delay, event.admin.username()),
+                        messageService.format("common.reason", event.reason().orElse(messageService.get("common.not-defined")))));
+                        e.setFooter(timestamp(), null);
+                        e.setColor(userMute.color);
+                    });
 
-        return log(member.getGuildId(), e -> {
-            e.setTitle(messageService.get("audit.member.mute.title"));
-            e.setDescription(String.format("%s%n%s",
-            messageService.format("audit.member.mute.description", member.getUsername(), event.delay, event.admin.username()),
-            messageService.format("common.reason", event.reason().orElse(messageService.get("common.not-defined")))));
-            e.setFooter(timestamp(), null);
-            e.setColor(userMute.color);
-        });
+                    return mute.then(publishLog);
+                });
     }
 }
