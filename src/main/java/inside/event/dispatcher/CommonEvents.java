@@ -98,6 +98,9 @@ public class CommonEvents extends Events{
 
     @Override
     public Publisher<?> onMemberMute(MemberMuteEvent event){
+        DateTimeFormatter formatter = DateTimeFormat.shortDateTime()
+                                                    .withLocale(context.locale())
+                                                    .withZone(context.zone());
         LocalMember l = event.target;
         return event.guild().getMemberById(l.user().userId())
                 .filter(member -> !guildService.muteDisabled(member.getGuildId()))
@@ -109,9 +112,11 @@ public class CommonEvents extends Events{
 
                     Mono<Void> publishLog = log(m.getGuildId(), e -> {
                         e.setTitle(messageService.get("audit.member.mute.title"));
-                        e.setDescription(String.format("%s%n%s",
-                        messageService.format("audit.member.mute.description", m.getUsername(), event.delay, event.admin.username()),
-                        messageService.format("common.reason", event.reason().orElse(messageService.get("common.not-defined")))));
+                        e.setDescription(String.format("%s%n%s%n%s",
+                        messageService.format("audit.member.mute.description", m.getUsername(), event.admin.username()),
+                        messageService.format("common.reason", event.reason().orElse(messageService.get("common.not-defined"))),
+                        messageService.format("audit.member.mute.delay", formatter.print(event.delay))
+                        ));
                         e.setFooter(timestamp(), null);
                         e.setColor(userMute.color);
                     });
