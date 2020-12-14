@@ -37,7 +37,7 @@ public class MemberEventHandler extends AuditEventHandler{
             embed.setDescription(messageService.format("audit.member.ban.description", user.getUsername()));
             embed.setFooter(timestamp(), null);
         })
-        .thenEmpty(Mono.fromRunnable(() -> memberService.deleteById(event.getGuildId(), user.getId())));
+        .then(Mono.fromRunnable(() -> memberService.deleteById(event.getGuildId(), user.getId())));
     }
 
     @Override
