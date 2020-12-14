@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 
-import java.util.Locale;
+import java.util.*;
 import java.util.function.Supplier;
 
 @Service
@@ -69,13 +69,13 @@ public class GuildServiceImpl implements GuildService{
     @Override
     @Transactional(readOnly = true)
     public Locale locale(Snowflake guildId){
-        return repository.findLocaleByGuildId(guildId).map(Locale::forLanguageTag).orElse(LocaleUtil.getDefaultLocale());
+        return repository.findLocaleByGuildId(guildId).orElse(LocaleUtil.getDefaultLocale());
     }
 
     @Override
     @Transactional(readOnly = true)
     public DateTimeZone timeZone(Snowflake guildId){
-        return DateTimeZone.forID(repository.findTimeZoneByGuildId(guildId).orElse("UTC"));
+        return DateTimeZone.forTimeZone(repository.findTimeZoneByGuildId(guildId).orElse(TimeZone.getTimeZone("UTC")));
     }
 
     @Override

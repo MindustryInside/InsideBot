@@ -38,5 +38,4 @@ public abstract class AbstractJsonSqlTypeDescriptor implements SqlTypeDescriptor
             }
         };
     }
-
 }

@@ -73,7 +73,7 @@ public class MessageServiceImpl implements MessageService{
     public Mono<Void> text(Mono<? extends MessageChannel> channel, String text, Object... args){
         return channel.publishOn(Schedulers.boundedElastic())
                       .doOnNext(c -> {
-                          if(c instanceof TextChannel t){
+                          if(c instanceof TextChannel t){ // todo так всё же нужна поддержка лс?
                               contextService.init(t.getGuildId());
                           }
                       })

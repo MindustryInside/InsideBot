@@ -70,17 +70,13 @@ public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implement
     @Override
     public <X> X unwrap(Object value, Class<X> type, WrapperOptions options){
         if(value == null) return null;
-        if(String.class.isAssignableFrom(type)) return (X)toString(value);
-        if(Object.class.isAssignableFrom(type)) return (X)JacksonUtil.toJsonNode(toString(value));
-        throw unknownUnwrap(type);
+        else if(String.class.isAssignableFrom(type)) return (X)toString(value);
+        else if(Object.class.isAssignableFrom(type)) return (X)JacksonUtil.toJsonNode(toString(value));
+        else throw unknownUnwrap(type);
     }
 
     @Override
     public <X> Object wrap(X value, WrapperOptions options){
-        if(value == null){
-            return null;
-        }
-        return fromString(value.toString());
+        return value == null ? null : fromString(value.toString());
     }
-
 }

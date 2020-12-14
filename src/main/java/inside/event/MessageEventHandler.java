@@ -26,7 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.*;
 
-import java.util.Calendar;
+import java.util.*;
 import java.util.function.Consumer;
 
 import static inside.event.audit.AuditEventType.*;
@@ -87,7 +87,7 @@ public class MessageEventHandler extends AuditEventHandler{
             GuildConfig guildConfig = new GuildConfig(guildId);
             guildConfig.locale(LocaleUtil.get(region));
             guildConfig.prefix(settings.prefix);
-            guildConfig.timeZone("Etc/Greenwich");
+            guildConfig.timeZone(TimeZone.getTimeZone("Etc/Greenwich"));
             guildService.save(guildConfig);
         }
 

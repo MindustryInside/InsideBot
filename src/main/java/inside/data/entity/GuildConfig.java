@@ -18,10 +18,10 @@ public class GuildConfig extends GuildEntity{
     private String prefix;
 
     @Column
-    private String locale;
+    private Locale locale;
 
     @Column(name = "time_zone")
-    private String timeZone;
+    private TimeZone timeZone;
 
     @Column(name = "log_channel_id")
     private String logChannelId;
@@ -53,23 +53,19 @@ public class GuildConfig extends GuildEntity{
 
     @NonNull
     public Locale locale(){
-        return new Locale(locale);
+        return locale;
     }
 
     public void locale(@NonNull Locale locale){
-        locale(locale.toString());
-    }
-
-    public void locale(@NonNull String locale){
         this.locale = locale;
     }
 
     @NonNull
-    public String timeZone(){
+    public TimeZone timeZone(){
         return timeZone;
     }
 
-    public void timeZone(@NonNull String timeZone){
+    public void timeZone(@NonNull TimeZone timeZone){
         this.timeZone = timeZone;
     }
 

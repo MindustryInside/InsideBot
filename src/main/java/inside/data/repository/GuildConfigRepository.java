@@ -6,7 +6,7 @@ import inside.data.repository.base.GuildRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
+import java.util.*;
 
 @Repository
 public interface GuildConfigRepository extends GuildRepository<GuildConfig>{
@@ -15,10 +15,10 @@ public interface GuildConfigRepository extends GuildRepository<GuildConfig>{
     Optional<String> findPrefixByGuildId(Snowflake guildId);
 
     @Query("select e.locale from GuildConfig e where e.guildId = :#{#guildId?.asString()}")
-    Optional<String> findLocaleByGuildId(Snowflake guildId);
+    Optional<Locale> findLocaleByGuildId(Snowflake guildId);
 
     @Query("select e.timeZone from GuildConfig e where e.guildId = :#{#guildId?.asString()}")
-    Optional<String> findTimeZoneByGuildId(Snowflake guildId);
+    Optional<TimeZone> findTimeZoneByGuildId(Snowflake guildId);
 
     @Query("select e.logChannelId from GuildConfig e where e.guildId = :#{#guildId?.asString()}")
     Optional<String> findLogChannelIdByGuildId(Snowflake guildId);
