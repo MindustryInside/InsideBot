@@ -3,7 +3,7 @@ package inside.data.service.impl;
 import arc.util.*;
 import com.google.common.cache.*;
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.entity.channel.MessageChannel;
+import discord4j.core.object.entity.channel.*;
 import discord4j.core.spec.EmbedCreateSpec;
 import inside.Settings;
 import inside.common.services.ContextService;
@@ -72,6 +72,11 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public Mono<Void> text(Mono<? extends MessageChannel> channel, String text, Object... args){
         return channel.publishOn(Schedulers.boundedElastic())
+                      .doOnNext(c -> {
+                          if(c instanceof TextChannel t){
+                              contextService.init(t.getGuildId());
+                          }
+                      })
                       .flatMap(c -> c.createMessage(Strings.format(text, args)))
                       .then();
     }
@@ -85,8 +90,13 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public Mono<Void> info(Mono<? extends MessageChannel> channel, Consumer<EmbedCreateSpec> embed){
         return channel.publishOn(Schedulers.boundedElastic())
+                      .doOnNext(c -> {
+                          if(c instanceof TextChannel t){
+                              contextService.init(t.getGuildId());
+                          }
+                      })
                       .flatMap(c -> c.createEmbed(embed))
-                      .then();
+                      .then(Mono.fromRunnable(() -> contextService.reset()));
     }
 
     @Override
@@ -97,9 +107,14 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public Mono<Void> err(Mono<? extends MessageChannel> channel, String title, String text, Object... args){
         return channel.publishOn(Schedulers.boundedElastic())
+                      .doOnNext(c -> {
+                          if(c instanceof TextChannel t){
+                              contextService.init(t.getGuildId());
+                          }
+                      })
                       .flatMap(c -> c.createEmbed(e -> e.setColor(settings.errorColor).setTitle(title)
                                                         .setDescription(Strings.format(text, args))))
-                      .then();
+                      .then(Mono.fromRunnable(() -> contextService.reset()));
     }
 
     @Override

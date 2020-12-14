@@ -21,7 +21,7 @@ public class ContextServiceImpl implements ContextService{
 
     @Override
     public void init(Snowflake guildId){
-        locale(localeOrDefault(guildId));
+        localeHolder.set(localeOrDefault(guildId));
         guildHolder.set(guildId);
     }
 
@@ -54,7 +54,7 @@ public class ContextServiceImpl implements ContextService{
 
     @Override
     public Locale localeOrDefault(Snowflake guildId){
-        return LocaleUtil.getOrDefault(guildService.locale(guildId));
+        return guildService.locale(guildId);
     }
 
     @Override

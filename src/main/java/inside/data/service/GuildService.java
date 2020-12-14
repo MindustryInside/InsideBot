@@ -6,6 +6,7 @@ import inside.data.entity.GuildConfig;
 import org.joda.time.*;
 import reactor.core.publisher.Flux;
 
+import java.util.Locale;
 import java.util.function.Supplier;
 
 public interface GuildService{
@@ -24,7 +25,7 @@ public interface GuildService{
 
     String prefix(Snowflake guildId);
 
-    String locale(Snowflake guildId);
+    Locale locale(Snowflake guildId);
 
     DateTimeZone timeZone(Snowflake guildId);
 

@@ -84,11 +84,11 @@ public class Commands{
                 return messageService.err(channel, messageService.get("command.incorrect-name"));
             }
 
-            User user = discordService.gateway().getUserById(targetId).block();
-            return channel.flatMap(c -> c.createEmbed(e -> e.setColor(settings.normalColor) // todo не понимаю почему меняется локаль при отправке, хоть подобное уже прописывал
-                    .setImage(user.getAvatarUrl() + "?size=512")
-                    .setDescription(messageService.format("command.avatar.text", user.getUsername()))))
-            .then();
+            return discordService.gateway().getUserById(targetId).flatMap(u -> messageService.info(channel, e -> {
+                e.setColor(settings.normalColor);
+                e.setImage(u.getAvatarUrl() + "?size=512");
+                e.setDescription(messageService.format("command.avatar.text", u.getUsername()));
+            }));
         }
     }
 
@@ -344,7 +344,8 @@ public class Commands{
                     return messageService.text(channel, messageService.get("command.admin.warnings.empty"));
                 }else{
                     DateTimeFormatter formatter = DateTimeFormat.shortDateTime()
-                                                                .withLocale(context.locale());
+                                                                .withLocale(context.locale())
+                                                                .withZone(context.zone());
                     Consumer<EmbedCreateSpec> spec = e -> {
                         e.setColor(settings.normalColor);
                         e.setTitle(messageService.format("command.admin.warnings.title", info.effectiveName()));
