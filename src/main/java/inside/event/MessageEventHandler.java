@@ -13,8 +13,7 @@ import discord4j.core.object.entity.channel.Channel.Type;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.EmbedCreateSpec;
 import inside.Settings;
-import inside.common.command.model.base.CommandReference;
-import inside.common.command.service.BaseCommandHandler.*;
+import inside.common.command.model.base.*;
 import inside.common.command.service.CommandHandler;
 import inside.data.entity.*;
 import inside.data.service.*;
@@ -103,14 +102,15 @@ public class MessageEventHandler extends AuditEventHandler{
             messageService.save(info);
         }
 
-        CommandReference reference = new CommandReference()
+        CommandReference reference = CommandReference
+                .builder()
+                .event(event)
                 .localMember(localMember)
-                .localUser(localMember.user())
-                .member(member)
-                .user(user);
+                .channel(() -> channel)
+                .build();
 
         if(adminService.isAdmin(member)){
-            handleResponse(commandHandler.handleMessage(text, reference, event), channel);
+            return commandHandler.handleMessage(text, reference);
         }
         return Mono.empty();
     }
@@ -202,33 +202,33 @@ public class MessageEventHandler extends AuditEventHandler{
         return log(guild.getId(), e, under).then(Mono.fromRunnable(() -> messageService.delete(info)));
     }
 
-    protected void handleResponse(CommandResponse response, Mono<TextChannel> channel){
-        String prefix = guildService.prefix(channel.map(TextChannel::getGuildId).block());
-        if(response.type == ResponseType.unknownCommand){
-            int min = 0;
-            Command closest = null;
-
-            for(Command command : commandHandler.commandList()){
-                int dst = Strings.levenshtein(command.text, response.runCommand);
-                if(dst < 3 && (closest == null || dst < min)){
-                    min = dst;
-                    closest = command;
-                }
-            }
-
-            if(closest != null){
-                messageService.err(channel, messageService.format("command.response.found-closest", closest.text)).block();
-            }else{
-                messageService.err(channel, messageService.format("command.response.unknown", prefix)).block();
-            }
-        }else if(response.type == ResponseType.manyArguments){
-            messageService.err(channel, messageService.get("command.response.many-arguments.title"),
-                               messageService.format("command.response.many-arguments.description",
-                                                     prefix, response.command.text, response.command.paramText)).block();
-        }else if(response.type == ResponseType.fewArguments){
-            messageService.err(channel, messageService.get("command.response.few-arguments.title"),
-                               messageService.format("command.response.few-arguments.description",
-                                                     prefix, response.command.text)).block();
-        }
-    }
+    // protected void handleResponse(CommandResponse response, Mono<TextChannel> channel){
+    //     String prefix = guildService.prefix(channel.map(TextChannel::getGuildId).block());
+    //     if(response.type == ResponseType.unknownCommand){
+    //         int min = 0;
+    //         CommandInfo closest = null;
+    //
+    //         for(CommandInfo command : commandHandler.commandList()){
+    //             int dst = Strings.levenshtein(command.text, response.runCommand);
+    //             if(dst < 3 && (closest == null || dst < min)){
+    //                 min = dst;
+    //                 closest = command;
+    //             }
+    //         }
+    //
+    //         if(closest != null){
+    //             messageService.err(channel, messageService.format("command.response.found-closest", closest.text)).block();
+    //         }else{
+    //             messageService.err(channel, messageService.format("command.response.unknown", prefix)).block();
+    //         }
+    //     }else if(response.type == ResponseType.manyArguments){
+    //         messageService.err(channel, messageService.get("command.response.many-arguments.title"),
+    //                            messageService.format("command.response.many-arguments.description",
+    //                                                  prefix, response.command.text, response.command.paramText)).block();
+    //     }else if(response.type == ResponseType.fewArguments){
+    //         messageService.err(channel, messageService.get("command.response.few-arguments.title"),
+    //                            messageService.format("command.response.few-arguments.description",
+    //                                                  prefix, response.command.text)).block();
+    //     }
+    // }
 }

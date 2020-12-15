@@ -57,7 +57,7 @@ public class CommonEvents extends Events{
         };
 
         event.history.filter(Objects::nonNull)
-             .subscribe(m -> { // todo пока не придумал как сделать неблокируемо
+             .subscribe(m -> { // todo пока не придумал как сделать не блокируемо
                  messageService.putMessage(m.getId());
                  appendInfo.accept(m);
                  m.delete().block();
@@ -68,7 +68,7 @@ public class CommonEvents extends Events{
 
         return log(event.guild().getId(), embed -> {
             embed.setTitle(messageService.format("audit.message.clear.title", event.count, channel));
-            embed.setDescription(messageService.format("audit.message.clear.description", event.user.getUsername(), event.count, channel));
+            embed.setDescription(messageService.format("audit.message.clear.description", event.member.getUsername(), event.count, channel));
             embed.setFooter(timestamp(), null);
             embed.setColor(messageClear.color);
         }, true);

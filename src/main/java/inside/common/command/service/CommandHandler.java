@@ -1,11 +1,11 @@
 package inside.common.command.service;
 
-import arc.struct.Seq;
-import discord4j.core.event.domain.message.MessageCreateEvent;
+import arc.util.Strings;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.rest.util.*;
-import inside.common.command.model.base.CommandReference;
+import inside.common.command.model.base.*;
+import org.reactivestreams.Publisher;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
 
@@ -16,18 +16,19 @@ import java.util.stream.Collectors;
 public class CommandHandler extends BaseCommandHandler{
 
     @Override
-    public CommandResponse handleMessage(String message, CommandReference reference, MessageCreateEvent event){
-        Mono<Guild> guild = event.getGuild();
+    public Publisher<Void> handleMessage(String message, CommandReference reference){
+        Mono<Guild> guild = reference.event().getGuild();
+        Mono<TextChannel> channel = reference.getReplyChannel().cast(TextChannel.class);
         Member self = guild.flatMap(Guild::getSelfMember).blockOptional().orElseThrow(RuntimeException::new);
 
-        String prefix = guildService.prefix(guild.map(Guild::getId).block());
+        String prefix = guildService.prefix(self.getGuildId());
 
-        if(event.getMessage().getUserMentions().map(User::getId).any(u -> u.equals(self.getId())).blockOptional().orElse(false)){
+        if(reference.event().getMessage().getUserMentions().map(User::getId).any(u -> u.equals(self.getId())).blockOptional().orElse(false)){
             prefix = self.getNicknameMention() + " ";
         }
 
         if(message == null || !message.startsWith(prefix)){
-            return new CommandResponse(ResponseType.noCommand, null, null);
+            return Mono.empty();
         }
 
         message = message.substring(prefix.length()).trim();
@@ -35,9 +36,9 @@ public class CommandHandler extends BaseCommandHandler{
         String commandstr = message.contains(" ") ? message.substring(0, message.indexOf(" ")) : message;
         String argstr = message.contains(" ") ? message.substring(commandstr.length() + 1) : "";
 
-        Seq<String> result = new Seq<>();
+        LinkedList<String> result = new LinkedList<>();
 
-        Command command = commands.get(commandstr);
+        CommandInfo command = commands.get(commandstr).compile();
 
         if(command != null){
             int index = 0;
@@ -45,7 +46,9 @@ public class CommandHandler extends BaseCommandHandler{
 
             while(true){
                 if(index >= command.params.length && !argstr.isEmpty()){
-                    return new CommandResponse(ResponseType.manyArguments, command, commandstr);
+                    return messageService.err(channel, messageService.get("command.response.many-arguments.title"),
+                                       messageService.format("command.response.many-arguments.description",
+                                                             prefix, command.text, command.paramText));
                 }else if(argstr.isEmpty()) break;
 
                 if(command.params[index].optional || index >= command.params.length - 1 || command.params[index + 1].optional){
@@ -60,7 +63,9 @@ public class CommandHandler extends BaseCommandHandler{
                 int next = argstr.indexOf(" ");
                 if(next == -1){
                     if(!satisfied){
-                        return new CommandResponse(ResponseType.fewArguments, command, commandstr);
+                        return messageService.err(channel, messageService.get("command.response.few-arguments.title"),
+                                           messageService.format("command.response.few-arguments.description",
+                                                                 prefix, command.text));
                     }
                     result.add(argstr);
                     break;
@@ -74,11 +79,12 @@ public class CommandHandler extends BaseCommandHandler{
             }
 
             if(!satisfied && command.params.length > 0 && !command.params[0].optional){
-                return new CommandResponse(ResponseType.fewArguments, command, commandstr);
+                return messageService.err(channel, messageService.get("command.response.few-arguments.title"),
+                                          messageService.format("command.response.few-arguments.description",
+                                                                prefix, command.text));
             }
 
             if(command.permissions != null  && !command.permissions.isEmpty()){
-                Mono<TextChannel> channel = event.getMessage().getChannel().cast(TextChannel.class);
                 PermissionSet selfPermissions = channel.flatMap(t -> t.getEffectivePermissions(self.getId()))
                                                        .blockOptional()
                                                        .orElse(PermissionSet.none());
@@ -92,28 +98,37 @@ public class CommandHandler extends BaseCommandHandler{
                     String bundled = permissions.stream().map(p -> messageService.getEnum(p)).collect(Collectors.joining("\n"));
                     if(selfPermissions.contains(Permission.SEND_MESSAGES)){
                         if(selfPermissions.contains(Permission.EMBED_LINKS)){
-                            channel.flatMap(c -> c.createEmbed(e -> {
-                                e.setColor(settings.normalColor);
-                                e.setTitle(messageService.get("message.error.permission-denied.title"));
-                                e.setDescription(messageService.format("message.error.permission-denied.description", bundled));
-                            })).block();
-                        }else{
-                            channel.flatMap(c -> c.createMessage(String.format("%s%n%n%s",
-                            messageService.get("message.error.permission-denied.title"),
-                            messageService.format("message.error.permission-denied.description", bundled)))
-                            )
-                            .block();
+                            return messageService.info(
+                                    channel,
+                                    messageService.get("message.error.permission-denied.title"),
+                                    messageService.format("message.error.permission-denied.description", bundled)
+                            );
                         }
-                        return new CommandResponse(ResponseType.permissionDenied, command, commandstr);
+                        return messageService.text(channel, String.format("%s%n%n%s",
+                                messageService.get("message.error.permission-denied.title"),
+                                messageService.format("message.error.permission-denied.description", bundled)
+                        ));
                     }
                 }
             }
 
-            command.runner.execute(reference, event, result.toArray(String.class)).block();
-
-            return new CommandResponse(ResponseType.valid, command, commandstr);
+            return commands.get(command.text).execute(reference, result.toArray(new String[0]));
         }else{
-            return new CommandResponse(ResponseType.unknownCommand, null, commandstr);
+            int min = 0;
+            CommandInfo closest = null;
+
+            for(CommandInfo cmd : commandList()){
+                int dst = Strings.levenshtein(cmd.text, commandstr);
+                if(dst < 3 && (closest == null || dst < min)){
+                    min = dst;
+                    closest = cmd;
+                }
+            }
+
+            if(closest != null){
+                return messageService.err(channel, messageService.format("command.response.found-closest", closest.text));
+            }
+            return messageService.err(channel, messageService.format("command.response.unknown", prefix));
         }
     }
 }

@@ -17,14 +17,14 @@ public final class EventType{
     public static class MessageClearEvent extends BaseEvent{
         public final @NonNull Flux<Message> history;
         public final @NonNull Mono<TextChannel> channel;
-        public final @NonNull User user;
+        public final @NonNull Member member;
         public final int count;
 
-        public MessageClearEvent(Guild guild, @NonNull Flux<Message> history, @NonNull User user, @NonNull Mono<TextChannel> channel, int count){
+        public MessageClearEvent(Guild guild, @NonNull Flux<Message> history, @NonNull Member member, @NonNull Mono<TextChannel> channel, int count){
             super(guild);
             this.history = history;
             this.channel = channel;
-            this.user = user;
+            this.member = member;
             this.count = count;
         }
 
@@ -33,7 +33,7 @@ public final class EventType{
             return "MessageClearEvent{" +
                    "history=" + history +
                    ", channel=" + channel +
-                   ", user=" + user +
+                   ", user=" + member +
                    ", count=" + count +
                    ", guild=" + guild +
                    '}';

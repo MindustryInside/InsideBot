@@ -49,11 +49,11 @@ public class Commands{
     private Settings settings;
 
     @DiscordCommand(key = "help", description = "command.help.description")
-    public class HelpCommand extends CommandRunner{
+    public class HelpCommand extends Command{
         @Override
-        public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
+        public Mono<Void> execute(CommandReference reference, String[] args){
             StringBuffer builder = new StringBuffer();
-            Snowflake guildId = reference.member().getGuildId();
+            Snowflake guildId = reference.getAuthorAsMember().getGuildId();
             String prefix = guildService.prefix(guildId);
 
             handler.commandList().forEach(command -> {
@@ -72,15 +72,15 @@ public class Commands{
             });
             builder.append(messageService.get("command.help.disclaimer.user"));
 
-            return messageService.info(event.getMessage().getChannel(), messageService.get("command.help"), builder.toString());
+            return messageService.info(reference.getReplyChannel(), messageService.get("command.help"), builder.toString());
         }
     }
 
     @DiscordCommand(key = "avatar", params = "<@user>", description = "command.avatar.description")
-    public class AvatarCommand extends CommandRunner{
+    public class AvatarCommand extends Command{
         @Override
-        public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
-            Mono<MessageChannel> channel = event.getMessage().getChannel();
+        public Mono<Void> execute(CommandReference reference, String[] args){
+            Mono<MessageChannel> channel = reference.getReplyChannel();
             Snowflake targetId = MessageUtil.parseUserId(args[0]);
             if(targetId == null || !discordService.exists(targetId)){
                 return messageService.err(channel, messageService.get("command.incorrect-name"));
@@ -95,11 +95,11 @@ public class Commands{
     }
 
     @DiscordCommand(key = "ping", description = "command.ping.description")
-    public class PingCommand extends CommandRunner{
+    public class PingCommand extends Command{
         @Override
-        public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
+        public Mono<Void> execute(CommandReference reference, String[] args){
             long now = System.currentTimeMillis();
-            return messageService.text(event.getMessage().getChannel(), messageService.format("command.ping", System.currentTimeMillis() - now));
+            return messageService.text(reference.getReplyChannel(), messageService.format("command.ping", System.currentTimeMillis() - now));
         }
     }
 
@@ -108,7 +108,7 @@ public class Commands{
     //     public final List<String> allowedKeys = List.of("guildID", "id");
     //
     //     @Override
-    //     public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
+    //     public Mono<Void> execute(CommandReference reference, String[] args){
     //         Mono<MessageChannel> channel = event.getMessage().getChannel();
     //         if(!adminService.isOwner(reference.member())){
     //             return messageService.err(channel, messageService.get("command.owner-only"));
@@ -172,17 +172,17 @@ public class Commands{
     // }
 
     @DiscordCommand(key = "prefix", params = "[prefix]", description = "command.config.prefix.description")
-    public class PrefixCommand extends CommandRunner{
+    public class PrefixCommand extends Command{
         @Override
-        public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
-            Guild guild = event.getGuild().block();
-            Mono<MessageChannel> channel = event.getMessage().getChannel();
+        public Mono<Void> execute(CommandReference reference, String[] args){
+            Guild guild = reference.event().getGuild().block();
+            Mono<MessageChannel> channel = reference.event().getMessage().getChannel();
 
             GuildConfig c = guildService.get(guild);
             if(args.length == 0){
                 return messageService.text(channel, messageService.format("command.config.prefix", c.prefix()));
             }else{
-                if(!adminService.isOwner(reference.member())){
+                if(!adminService.isOwner(reference.getAuthorAsMember())){
                     return messageService.err(channel, messageService.get("command.owner-only"));
                 }
 
@@ -198,18 +198,19 @@ public class Commands{
     }
 
     @DiscordCommand(key = "locale", params = "[locale]", description = "command.config.locale.description")
-    public class LocaleCommand extends CommandRunner{
+    public class LocaleCommand extends Command{
         @Override
-        public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
-            Guild guild = event.getGuild().block();
-            Mono<MessageChannel> channel = event.getMessage().getChannel();
+        public Mono<Void> execute(CommandReference reference, String[] args){
+            Member member = reference.getAuthorAsMember();
+            Guild guild = member.getGuild().block();
+            Mono<MessageChannel> channel = reference.getReplyChannel();
 
             GuildConfig c = guildService.get(guild);
             Supplier<String> r = () -> Objects.equals(context.locale(), Locale.ROOT) ? messageService.get("common.default") : context.locale().toString();
             if(args.length == 0){
                 return messageService.text(channel, messageService.format("command.config.locale", r.get()));
             }else{
-                if(!adminService.isOwner(reference.member())){
+                if(!adminService.isOwner(member)){
                     return messageService.err(channel, messageService.get("command.owner-only"));
                 }
 
@@ -228,19 +229,20 @@ public class Commands{
 
     @DiscordCommand(key = "mute", params = "<@user> <delay> [reason...]", description = "command.admin.mute.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_ROLES})
-    public class MuteCommand extends CommandRunner{
+    public class MuteCommand extends Command{
         @Override
-        public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
-            Mono<MessageChannel> channel = event.getMessage().getChannel();
+        public Mono<Void> execute(CommandReference reference, String[] args){
+            Mono<MessageChannel> channel = reference.getReplyChannel();
 
             try{
+                Member author = reference.getAuthorAsMember();
                 DateTime delay = MessageUtil.parseTime(args[1]);
                 if(delay == null){
                     return messageService.err(channel, messageService.get("message.error.invalid-time"));
                 }
-                LocalMember info = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
+                LocalMember info = memberService.get(author.getGuildId(), MessageUtil.parseUserId(args[0]));
                 Member m = discordService.gateway().getMemberById(info.guildId(), info.user().userId()).block();
-                String reason = args.length > 2 ? args[2] : null;
+                String reason = args.length > 2 ? args[2].trim() : null;
 
                 if(DiscordUtil.isBot(m)){
                     return messageService.err(channel, messageService.get("command.admin.user-is-bot"));
@@ -250,11 +252,11 @@ public class Commands{
                     return messageService.err(channel, messageService.get("command.admin.mute.already-muted"));
                 }
 
-                if(adminService.isAdmin(m) && !adminService.isOwner(reference.member())){
+                if(adminService.isAdmin(m) && !adminService.isOwner(author)){
                     return messageService.err(channel, messageService.get("command.admin.user-is-admin"));
                 }
 
-                if(Objects.equals(reference.member(), m)){
+                if(Objects.equals(author, m)){
                     return messageService.err(channel, messageService.get("command.admin.mute.self-user"));
                 }
 
@@ -271,10 +273,11 @@ public class Commands{
 
     @DiscordCommand(key = "delete", params = "<amount>", description = "command.admin.delete.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_MESSAGES, Permission.READ_MESSAGE_HISTORY})
-    public class DeleteCommand extends CommandRunner{
+    public class DeleteCommand extends Command{
         @Override
-        public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
-            Mono<TextChannel> channel = event.getMessage().getChannel().cast(TextChannel.class);
+        public Mono<Void> execute(CommandReference reference, String[] args){
+            Member member = reference.getAuthorAsMember();
+            Mono<TextChannel> channel = reference.getReplyChannel().cast(TextChannel.class);
             if(!MessageUtil.canParseInt(args[0])){
                 return messageService.err(channel, messageService.get("command.incorrect-number"));
             }
@@ -284,33 +287,34 @@ public class Commands{
                 return messageService.err(channel, messageService.format("common.limit-number", 100));
             }
 
-            Flux<Message> history = channel.flatMapMany(c -> c.getMessagesBefore(event.getMessage().getId()))
+            Flux<Message> history = channel.flatMapMany(c -> c.getMessagesBefore(reference.getMessage().getId()))
                                            .limitRequest(number);
 
-            return Mono.fromRunnable(() -> discordService.eventListener().publish(new MessageClearEvent(event.getGuild().block(), history, reference.user(), channel, number)));
+            return member.getGuild().flatMap(g -> Mono.fromRunnable(() -> discordService.eventListener().publish(new MessageClearEvent(g, history, member, channel, number))));
         }
     }
 
     @DiscordCommand(key = "warn", params = "<@user> [reason...]", description = "command.admin.warn.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.BAN_MEMBERS})
-    public class WarnCommand extends CommandRunner{
+    public class WarnCommand extends Command{
         @Override
-        public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){ //todo переделать предложение
-            Mono<MessageChannel> channel = event.getMessage().getChannel();
+        public Mono<Void> execute(CommandReference reference, String[] args){ //todo переделать предложение
+            Member author = reference.getAuthorAsMember();
+            Mono<MessageChannel> channel = reference.getReplyChannel();
             try{
-                LocalMember info = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
+                LocalMember info = memberService.get(author.getGuildId(), MessageUtil.parseUserId(args[0]));
                 Member m = discordService.gateway().getMemberById(info.guildId(), info.user().userId()).block();
-                String reason = args.length > 1 ? args[1] : null;
+                String reason = args.length > 1 ? args[1].trim() : null;
 
                 if(DiscordUtil.isBot(m)){
                     return messageService.err(channel, messageService.get("command.admin.user-is-bot"));
                 }
 
-                if(adminService.isAdmin(m) && !adminService.isOwner(reference.member())){
+                if(adminService.isAdmin(m) && !adminService.isOwner(author)){
                     return messageService.err(channel, messageService.get("command.admin.user-is-admin"));
                 }
 
-                if(Objects.equals(reference.member(), m)){
+                if(Objects.equals(author, m)){
                     return messageService.err(channel, messageService.get("command.admin.warn.self-user"));
                 }
 
@@ -324,7 +328,7 @@ public class Commands{
                 Mono<Void> publisher = messageService.text(channel, messageService.format("message.admin.warn", m.getUsername(), warnings));
 
                 if(warnings >= 3){
-                    return publisher.then(event.getGuild().flatMap(g -> g.ban(m.getId(), b -> b.setDeleteMessageDays(0))));
+                    return publisher.then(author.getGuild().flatMap(g -> g.ban(m.getId(), b -> b.setDeleteMessageDays(0))));
                 }
                 return publisher;
             }catch(Exception e){
@@ -334,12 +338,12 @@ public class Commands{
     }
 
     @DiscordCommand(key = "warnings", params = "<@user>", description = "command.admin.warnings.description")
-    public class WarningsCommand extends CommandRunner{
+    public class WarningsCommand extends Command{
         @Override
-        public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
-            Mono<MessageChannel> channel = event.getMessage().getChannel();
+        public Mono<Void> execute(CommandReference reference, String[] args){
+            Mono<MessageChannel> channel = reference.getReplyChannel();
             try{
-                LocalMember info = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
+                LocalMember info = memberService.get(reference.getAuthorAsMember().getGuildId(), MessageUtil.parseUserId(args[0]));
                 List<AdminAction> warns = adminService.warnings(info.guildId(), info.user().userId()).limitRequest(21)
                                                       .collectList().blockOptional().orElse(Collections.emptyList());
                 if(warns.isEmpty()){
@@ -370,12 +374,12 @@ public class Commands{
     }
 
     @DiscordCommand(key = "unwarn", params = "<@user> [number]", description = "command.admin.unwarn.description")
-    public class UnwarnCommand extends CommandRunner{
+    public class UnwarnCommand extends Command{
         @Override
-        public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
-            Mono<MessageChannel> channel = event.getMessage().getChannel();
+        public Mono<Void> execute(CommandReference reference, String[] args){
+            Mono<MessageChannel> channel = reference.getReplyChannel();
             Snowflake targetId = MessageUtil.parseUserId(args[0]);
-            Snowflake guildId = reference.member().getGuildId();
+            Snowflake guildId = reference.getAuthorAsMember().getGuildId();
             if(targetId == null || !discordService.exists(guildId, targetId) || !memberService.exists(guildId, targetId)){
                 return messageService.err(channel, messageService.get("command.incorrect-name"));
             }
@@ -401,16 +405,16 @@ public class Commands{
 
     @DiscordCommand(key = "unmute", params = "<@user>", description = "command.admin.unmute.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_ROLES})
-    public class UnmuteCommand extends CommandRunner{
+    public class UnmuteCommand extends Command{
         @Override
-        public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
-            Mono<MessageChannel> channel = event.getMessage().getChannel();
+        public Mono<Void> execute(CommandReference reference, String[] args){
+            Mono<MessageChannel> channel = reference.getReplyChannel();
             try{
-                LocalMember member = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
+                LocalMember member = memberService.get(reference.getAuthorAsMember().getGuildId(), MessageUtil.parseUserId(args[0]));
                 if(!adminService.isMuted(member.guildId(), member.userId()).blockOptional().orElse(false)){
                     return messageService.err(channel, messageService.format("audit.member.unmute.is-not-muted", member.username()));
                 }
-                return Mono.fromRunnable(() -> discordService.eventListener().publish(new MemberUnmuteEvent(event.getGuild().block(), member)));
+                return reference.event().getGuild().flatMap(g -> Mono.fromRunnable(() -> discordService.eventListener().publish(new MemberUnmuteEvent(g, member))));
             }catch(Exception e){
                 return messageService.err(channel, messageService.get("command.incorrect-name"));
             }
