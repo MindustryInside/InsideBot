@@ -13,6 +13,7 @@ import inside.common.command.service.CommandHandler;
 import inside.common.services.DiscordService;
 import inside.data.entity.*;
 import inside.data.service.*;
+import inside.data.service.AdminService.AdminActionType;
 import inside.event.dispatcher.EventType.*;
 import inside.util.*;
 import org.joda.time.DateTime;
@@ -319,12 +320,12 @@ public class Commands{
                 adminService.warn(reference.localMember(), info, reason).block();
                 long warnings = adminService.warnings(m.getGuildId(), info.user().userId()).count().blockOptional().orElse(0L);
 
-                messageService.text(channel, messageService.format("message.admin.warn", m.getUsername(), warnings)).block(); // todo
+                Mono<Void> publisher = messageService.text(channel, messageService.format("message.admin.warn", m.getUsername(), warnings));
 
                 if(warnings >= 3){
-                    return event.getGuild().flatMap(g -> g.ban(m.getId(), b -> b.setDeleteMessageDays(0)));
+                    return publisher.then(event.getGuild().flatMap(g -> g.ban(m.getId(), b -> b.setDeleteMessageDays(0))));
                 }
-                return Mono.empty();
+                return publisher;
             }catch(Exception e){
                 return messageService.err(channel, messageService.get("command.incorrect-name"));
             }
@@ -372,23 +373,28 @@ public class Commands{
         @Override
         public Mono<Void> execute(CommandReference reference, MessageCreateEvent event, String[] args){
             Mono<MessageChannel> channel = event.getMessage().getChannel();
+            Snowflake targetId = MessageUtil.parseUserId(args[0]);
+            Snowflake guildId = reference.member().getGuildId();
+            if(targetId == null || !discordService.exists(guildId, targetId) || !memberService.exists(guildId, targetId)){
+                return messageService.err(channel, messageService.get("command.incorrect-name"));
+            }
             if(args.length > 1 && !MessageUtil.canParseInt(args[1])){
                 return messageService.err(channel, messageService.get("command.incorrect-number"));
             }
 
-            int warnings = args.length > 1 ? Strings.parseInt(args[1]) + 1 : 0;
-
-            try{
-                LocalMember info = memberService.get(reference.member().getGuildId(), MessageUtil.parseUserId(args[0]));
-                adminService.unwarn(info.guildId(), info.user().userId(), warnings).block();
-                return messageService.text(channel, messageService.format("command.admin.unwarn", info.effectiveName(), warnings + 1));
-            }catch(Throwable t){
-                if(t instanceof IndexOutOfBoundsException){
-                    return messageService.err(channel, messageService.get("command.incorrect-number"));
-                }else{
-                    return messageService.err(channel, messageService.get("command.incorrect-name"));
-                }
+            long count = adminService.get(AdminActionType.warn, guildId, targetId).count().blockOptional().orElse(0L);
+            int warn = args.length > 1 ? Strings.parseInt(args[1]) : 1;
+            boolean under = warn > count;
+            if(count == 0){
+                return messageService.text(channel, messageService.get("command.admin.warnings.empty"));
             }
+            if(under){
+                return messageService.err(channel, messageService.get("command.incorrect-number"));
+            }
+
+            LocalMember info = memberService.get(guildId, targetId);
+            return messageService.text(channel, messageService.format("command.admin.unwarn", info.effectiveName(), warn))
+                                 .then(adminService.unwarn(info.guildId(), info.user().userId(), warn - 1));
         }
     }
 
