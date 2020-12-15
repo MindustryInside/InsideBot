@@ -70,6 +70,7 @@ public class Commands{
                 builder.append(messageService.get(command.description));
                 builder.append('\n');
             });
+            builder.append(messageService.get("command.help.disclaimer.user"));
 
             return messageService.info(event.getMessage().getChannel(), messageService.get("command.help"), builder.toString());
         }
