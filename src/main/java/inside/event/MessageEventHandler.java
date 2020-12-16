@@ -118,8 +118,7 @@ public class MessageEventHandler extends AuditEventHandler{
         if(message == null || message.getChannel().map(Channel::getType).block() != Type.GUILD_TEXT) return Mono.empty();
         User user = message.getAuthor().orElse(null);
         TextChannel c = message.getChannel().cast(TextChannel.class).block();
-        if(DiscordUtil.isBot(user) || c == null) return Mono.empty();
-        if(!messageService.exists(message.getId())) return Mono.empty();
+        if(DiscordUtil.isBot(user) || c == null || !messageService.exists(message.getId())) return Mono.empty();
 
         MessageInfo info = messageService.getById(event.getMessageId());
 
@@ -150,8 +149,9 @@ public class MessageEventHandler extends AuditEventHandler{
 
         if(under){
             stringInputStream.writeString(String.format("%s:%n%s%n%n%s:%n%s",
-                                                        messageService.get("audit.message.old-content.title"), oldContent,
-                                                        messageService.get("audit.message.new-content.title"), newContent));
+                    messageService.get("audit.message.old-content.title"), oldContent,
+                    messageService.get("audit.message.new-content.title"), newContent)
+            );
         }
 
         return log(c.getGuildId(), e, under).then(Mono.fromRunnable(() -> {
@@ -168,9 +168,8 @@ public class MessageEventHandler extends AuditEventHandler{
         User user = message.getAuthor().orElse(null);
         TextChannel channel =  event.getChannel().cast(TextChannel.class).block();
         if(guild == null || channel == null || user == null) return Mono.empty();
-        if(channel.getId().equals(guildService.logChannelId(guild.getId())) && !message.getEmbeds().isEmpty()){ /* =) */
-            AuditLogEntry l = guild.getAuditLog(a -> a.setActionType(ActionType.MESSAGE_DELETE)).blockFirst();
-            return Mono.justOrEmpty(l).doOnNext(a -> {
+        if(Objects.equals(channel.getId(), guildService.logChannelId(guild.getId())) && !message.getEmbeds().isEmpty()){ /* =) */
+            return guild.getAuditLog(a -> a.setActionType(ActionType.MESSAGE_DELETE)).next().doOnNext(a -> {
                 log.warn("Member '{}' deleted log message in guild '{}'",
                          guild.getMemberById(a.getResponsibleUserId()).map(Member::getUsername).block(),
                          guild.getName());

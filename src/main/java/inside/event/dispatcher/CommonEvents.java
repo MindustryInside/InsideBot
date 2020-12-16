@@ -64,14 +64,13 @@ public class CommonEvents extends Events{
              }, e -> {});
 
         stringInputStream.writeString(builder.toString());
-        String channel = event.channel.map(GuildChannel::getName).block();
 
-        return log(event.guild().getId(), embed -> {
-            embed.setTitle(messageService.format("audit.message.clear.title", event.count, channel));
-            embed.setDescription(messageService.format("audit.message.clear.description", event.member.getUsername(), event.count, channel));
+        return event.channel.map(GuildChannel::getName).flatMap(c -> log(event.guild().getId(), embed -> {
+            embed.setTitle(messageService.format("audit.message.clear.title", event.count, c));
+            embed.setDescription(messageService.format("audit.message.clear.description", event.member.getUsername(), event.count, c));
             embed.setFooter(timestamp(), null);
             embed.setColor(messageClear.color);
-        }, true);
+        }, true));
     }
 
     @Override
@@ -85,11 +84,11 @@ public class CommonEvents extends Events{
                         m.removeRole(guildService.muteRoleId(m.getGuildId())).block();
                     });
 
-                    Mono<Void> publishLog = log(m.getGuildId(), e -> {
-                        e.setTitle(messageService.get("audit.member.unmute.title"));
-                        e.setDescription(messageService.format("audit.member.unmute.description", m.getUsername()));
-                        e.setFooter(timestamp(), null);
-                        e.setColor(userUnmute.color);
+                    Mono<Void> publishLog = log(m.getGuildId(), embed -> {
+                        embed.setTitle(messageService.get("audit.member.unmute.title"));
+                        embed.setDescription(messageService.format("audit.member.unmute.description", m.getUsername()));
+                        embed.setFooter(timestamp(), null);
+                        embed.setColor(userUnmute.color);
                     });
 
                     return unmute.then(publishLog);
@@ -110,15 +109,15 @@ public class CommonEvents extends Events{
                         m.addRole(guildService.muteRoleId(m.getGuildId())).block();
                     });
 
-                    Mono<Void> publishLog = log(m.getGuildId(), e -> {
-                        e.setTitle(messageService.get("audit.member.mute.title"));
-                        e.setDescription(String.format("%s%n%s%n%s",
+                    Mono<Void> publishLog = log(m.getGuildId(), embed -> {
+                        embed.setTitle(messageService.get("audit.member.mute.title"));
+                        embed.setDescription(String.format("%s%n%s%n%s",
                         messageService.format("audit.member.mute.description", m.getUsername(), event.admin.username()),
                         messageService.format("common.reason", event.reason().orElse(messageService.get("common.not-defined"))),
                         messageService.format("audit.member.mute.delay", formatter.print(event.delay))
                         ));
-                        e.setFooter(timestamp(), null);
-                        e.setColor(userMute.color);
+                        embed.setFooter(timestamp(), null);
+                        embed.setColor(userMute.color);
                     });
 
                     return mute.then(publishLog);
