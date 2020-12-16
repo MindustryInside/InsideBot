@@ -86,10 +86,10 @@ public class Commands{
                 return messageService.err(channel, messageService.get("command.incorrect-name"));
             }
 
-            return discordService.gateway().getUserById(targetId).flatMap(u -> messageService.info(channel, e -> {
-                e.setColor(settings.normalColor);
-                e.setImage(u.getAvatarUrl() + "?size=512");
-                e.setDescription(messageService.format("command.avatar.text", u.getUsername()));
+            return discordService.gateway().getUserById(targetId).flatMap(u -> messageService.info(channel, embed -> {
+                embed.setColor(settings.normalColor);
+                embed.setImage(u.getAvatarUrl() + "?size=512");
+                embed.setDescription(messageService.format("command.avatar.text", u.getUsername()));
             }));
         }
     }
@@ -98,8 +98,10 @@ public class Commands{
     public class PingCommand extends Command{
         @Override
         public Mono<Void> execute(CommandReference reference, String[] args){
-            long now = System.currentTimeMillis();
-            return messageService.text(reference.getReplyChannel(), messageService.format("command.ping", System.currentTimeMillis() - now));
+            return Mono.just(System.currentTimeMillis())
+                    .timestamp().flatMap(t ->
+                            messageService.text(reference.getReplyChannel(), messageService.format("command.ping", t.getT1() - t.getT2()))
+                    );
         }
     }
 
@@ -352,9 +354,9 @@ public class Commands{
                     DateTimeFormatter formatter = DateTimeFormat.shortDateTime()
                                                                 .withLocale(context.locale())
                                                                 .withZone(context.zone());
-                    Consumer<EmbedCreateSpec> spec = e -> {
-                        e.setColor(settings.normalColor);
-                        e.setTitle(messageService.format("command.admin.warnings.title", info.effectiveName()));
+                    Consumer<EmbedCreateSpec> spec = embed -> {
+                        embed.setColor(settings.normalColor);
+                        embed.setTitle(messageService.format("command.admin.warnings.title", info.effectiveName()));
                         for(int i = 0; i < warns.size(); i++){
                             AdminAction w = warns.get(i);
                             String title = String.format("%2s. %s", i + 1, formatter.print(new DateTime(w.timestamp())));
@@ -362,7 +364,7 @@ public class Commands{
                             String description = String.format("%s%n%s",
                             messageService.format("common.admin", w.admin().effectiveName()),
                             messageService.format("common.reason", w.reason().orElse(messageService.get("common.not-defined"))));
-                            e.addField(title, description, true);
+                            embed.addField(title, description, true);
                         }
                     };
                     return messageService.info(channel, spec);
