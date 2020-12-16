@@ -2,7 +2,7 @@ package inside.event.dispatcher;
 
 import discord4j.core.object.Embed;
 import discord4j.core.object.entity.*;
-import discord4j.core.object.entity.channel.*;
+import discord4j.core.object.entity.channel.GuildChannel;
 import inside.data.entity.LocalMember;
 import inside.data.service.*;
 import inside.event.dispatcher.EventType.*;
@@ -11,9 +11,10 @@ import org.joda.time.format.*;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.*;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
-import java.util.*;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static inside.event.audit.AuditEventType.*;
@@ -56,21 +57,24 @@ public class CommonEvents extends Events{
             builder.append('\n');
         };
 
-        event.history.filter(Objects::nonNull)
-             .subscribe(m -> { // todo пока не придумал как сделать не блокируемо
-                 messageService.putMessage(m.getId());
-                 appendInfo.accept(m);
-                 m.delete().block();
-             }, e -> {});
-
-        stringInputStream.writeString(builder.toString());
-
-        return event.channel.map(GuildChannel::getName).flatMap(c -> log(event.guild().getId(), embed -> {
+        Mono<Void> publishLog = event.channel.map(GuildChannel::getName).flatMap(c -> log(event.guild().getId(), embed -> {
+            context.init(event.guild.getId());
             embed.setTitle(messageService.format("audit.message.clear.title", event.count, c));
             embed.setDescription(messageService.format("audit.message.clear.description", event.member.getUsername(), event.count, c));
             embed.setFooter(timestamp(), null);
             embed.setColor(messageClear.color);
         }, true));
+
+        return event.history
+                .filter(Objects::nonNull)
+                .publishOn(Schedulers.boundedElastic())
+                .doOnError(e -> {})
+                .flatMap(m -> Mono.fromRunnable(() -> {
+                    messageService.putMessage(m.getId());
+                    appendInfo.accept(m);
+                    m.delete().block();
+                }))
+                .then(Mono.fromRunnable(() -> stringInputStream.writeString(builder.toString())).then(publishLog));
     }
 
     @Override
