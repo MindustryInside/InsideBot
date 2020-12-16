@@ -61,9 +61,6 @@ public class MessageEventHandler extends AuditEventHandler{
     public Publisher<?> onMessageCreate(MessageCreateEvent event){
         Message message = event.getMessage();
         String text = message.getContent().trim();
-        if(text.toLowerCase().contains("egg")){ /* egg */
-            message.addReaction(ReactionEmoji.unicode("\uD83E\uDD5A")).block();
-        }
         Member member = event.getMember().orElse(null);
         if(member == null || message.getType() != Message.Type.DEFAULT || message.getChannel().map(Channel::getType).block() != Type.GUILD_TEXT) return Mono.empty();
         Mono<TextChannel> channel = message.getChannel().cast(TextChannel.class);
@@ -201,34 +198,4 @@ public class MessageEventHandler extends AuditEventHandler{
 
         return log(guild.getId(), e, under).then(Mono.fromRunnable(() -> messageService.delete(info)));
     }
-
-    // protected void handleResponse(CommandResponse response, Mono<TextChannel> channel){
-    //     String prefix = guildService.prefix(channel.map(TextChannel::getGuildId).block());
-    //     if(response.type == ResponseType.unknownCommand){
-    //         int min = 0;
-    //         CommandInfo closest = null;
-    //
-    //         for(CommandInfo command : commandHandler.commandList()){
-    //             int dst = Strings.levenshtein(command.text, response.runCommand);
-    //             if(dst < 3 && (closest == null || dst < min)){
-    //                 min = dst;
-    //                 closest = command;
-    //             }
-    //         }
-    //
-    //         if(closest != null){
-    //             messageService.err(channel, messageService.format("command.response.found-closest", closest.text)).block();
-    //         }else{
-    //             messageService.err(channel, messageService.format("command.response.unknown", prefix)).block();
-    //         }
-    //     }else if(response.type == ResponseType.manyArguments){
-    //         messageService.err(channel, messageService.get("command.response.many-arguments.title"),
-    //                            messageService.format("command.response.many-arguments.description",
-    //                                                  prefix, response.command.text, response.command.paramText)).block();
-    //     }else if(response.type == ResponseType.fewArguments){
-    //         messageService.err(channel, messageService.get("command.response.few-arguments.title"),
-    //                            messageService.format("command.response.few-arguments.description",
-    //                                                  prefix, response.command.text)).block();
-    //     }
-    // }
 }
