@@ -68,18 +68,17 @@ public class MemberEventHandler extends AuditEventHandler{
         AuditLogEntry l = event.getGuild().flatMapMany(g -> g.getAuditLog(q -> q.setActionType(ActionType.MEMBER_KICK))).blockFirst();
         memberService.deleteById(event.getGuildId(), user.getId());
         if(l != null && l.getId().getTimestamp().isAfter(Instant.now().minusMillis(2500))){
-            Member moderator = event.getGuild().flatMap(g -> g.getMemberById(l.getResponsibleUserId())).block();
-            if(moderator == null) return Mono.empty();
-            return log(event.getGuildId(), embed -> {
-                embed.setColor(userKick.color);
-                embed.setTitle(messageService.get("audit.member.kick.title"));
-                StringBuilder desc = new StringBuilder();
-                desc.append(messageService.format("audit.member.kick.description", user.getUsername(), moderator.getUsername()));
-                Optional<String> reason = l.getReason();
-                desc.append('\n').append(messageService.format("common.reason", reason.filter(r -> !r.trim().isBlank()).isPresent() ? reason.map(String::trim).get() : messageService.get("common.not-defined")));
-                embed.setDescription(desc.toString());
-                embed.setFooter(timestamp(), null);
-            });
+            return event.getGuild().flatMap(g -> g.getMemberById(l.getResponsibleUserId()))
+                    .flatMap(admin -> log(event.getGuildId(), embed -> {
+                            embed.setColor(userKick.color);
+                            embed.setTitle(messageService.get("audit.member.kick.title"));
+                            StringBuilder desc = new StringBuilder();
+                            desc.append(messageService.format("audit.member.kick.description", user.getUsername(), admin.getUsername()));
+                            Optional<String> reason = l.getReason();
+                            desc.append('\n').append(messageService.format("common.reason", reason.filter(r -> !r.trim().isBlank()).isPresent() ? reason.map(String::trim).get() : messageService.get("common.not-defined")));
+                            embed.setDescription(desc.toString());
+                            embed.setFooter(timestamp(), null);
+                    }));
         }else{
             return log(event.getGuildId(), embed -> {
                 embed.setColor(userLeave.color);
