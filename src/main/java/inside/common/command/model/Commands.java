@@ -76,12 +76,12 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "avatar", params = "<@user>", description = "command.avatar.description")
+    @DiscordCommand(key = "avatar", params = "[@user]", description = "command.avatar.description")
     public class AvatarCommand extends Command{
         @Override
         public Mono<Void> execute(CommandReference reference, String[] args){
             Mono<MessageChannel> channel = reference.getReplyChannel();
-            Snowflake targetId = MessageUtil.parseUserId(args[0]);
+            Snowflake targetId = args.length > 0 ? MessageUtil.parseUserId(args[0]) : reference.getAuthor().map(User::getId).orElseThrow(RuntimeException::new);
             if(targetId == null || !discordService.exists(targetId)){
                 return messageService.err(channel, messageService.get("command.incorrect-name"));
             }
@@ -411,15 +411,20 @@ public class Commands{
         @Override
         public Mono<Void> execute(CommandReference reference, String[] args){
             Mono<MessageChannel> channel = reference.getReplyChannel();
-            try{
-                LocalMember member = memberService.get(reference.getAuthorAsMember().getGuildId(), MessageUtil.parseUserId(args[0]));
-                if(!adminService.isMuted(member.guildId(), member.userId()).blockOptional().orElse(false)){
-                    return messageService.err(channel, messageService.format("audit.member.unmute.is-not-muted", member.username()));
-                }
-                return reference.event().getGuild().flatMap(g -> Mono.fromRunnable(() -> discordService.eventListener().publish(new MemberUnmuteEvent(g, member))));
-            }catch(Exception e){
+            Snowflake targetId = MessageUtil.parseUserId(args[0]);
+            Snowflake guildId = reference.localMember().guildId();
+            if(targetId == null || !discordService.exists(targetId)){
                 return messageService.err(channel, messageService.get("command.incorrect-name"));
             }
+
+            return Mono.just(memberService.get(guildId, targetId))
+                    .flatMap(m -> adminService.isMuted(m.guildId(), m.userId())
+                            .filterWhen(b -> b ? reference.event()
+                                    .getGuild().flatMap(g -> Mono.fromRunnable(() -> discordService.eventListener().publish(new MemberUnmuteEvent(g, m)))).then(Mono.just(true))
+                                               : messageService.err(channel, messageService.format("audit.member.unmute.is-not-muted", m.username())).then(Mono.just(false))
+                            )
+                            .then()
+                    );
         }
     }
 }
