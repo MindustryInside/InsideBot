@@ -178,25 +178,27 @@ public class Commands{
     public class PrefixCommand extends Command{
         @Override
         public Mono<Void> execute(CommandReference reference, String[] args){
-            Guild guild = reference.event().getGuild().block();
+            Member member = reference.getAuthorAsMember();
             Mono<MessageChannel> channel = reference.event().getMessage().getChannel();
 
-            GuildConfig c = guildService.get(guild);
-            if(args.length == 0){
-                return messageService.text(channel, messageService.format("command.config.prefix", c.prefix()));
-            }else{
-                if(!adminService.isOwner(reference.getAuthorAsMember())){
-                    return messageService.err(channel, messageService.get("command.owner-only"));
-                }
+            return member.getGuild().map(guild -> guildService.get(guild))
+                    .flatMap(guildConfig -> {
+                        if(args.length == 0){
+                            return messageService.text(channel, messageService.format("command.config.prefix", guildConfig.prefix()));
+                        }else{
+                            if(!adminService.isOwner(member)){
+                                return messageService.err(channel, messageService.get("command.owner-only"));
+                            }
 
-                if(!MessageUtil.isEmpty(args[0])){
-                    c.prefix(args[0]);
-                    guildService.save(c);
-                    return messageService.text(channel, messageService.format("command.config.prefix-updated", c.prefix()));
-                }
-            }
+                            if(!MessageUtil.isEmpty(args[0])){
+                                guildConfig.prefix(args[0]);
+                                guildService.save(guildConfig);
+                                return messageService.text(channel, messageService.format("command.config.prefix-updated", guildConfig.prefix()));
+                            }
+                        }
 
-            return Mono.empty();
+                        return Mono.empty();
+                    });
         }
     }
 
@@ -205,28 +207,30 @@ public class Commands{
         @Override
         public Mono<Void> execute(CommandReference reference, String[] args){
             Member member = reference.getAuthorAsMember();
-            Guild guild = member.getGuild().block();
             Mono<MessageChannel> channel = reference.getReplyChannel();
 
-            GuildConfig c = guildService.get(guild);
-            Supplier<String> r = () -> Objects.equals(context.locale(), Locale.ROOT) ? messageService.get("common.default") : context.locale().toString();
-            if(args.length == 0){
-                return messageService.text(channel, messageService.format("command.config.locale", r.get()));
-            }else{
-                if(!adminService.isOwner(member)){
-                    return messageService.err(channel, messageService.get("command.owner-only"));
-                }
+            return member.getGuild().map(guild -> guildService.get(guild))
+                    .flatMap(guildConfig -> {
+                        Supplier<String> r = () -> Objects.equals(context.locale(), Locale.ROOT) ? messageService.get("common.default") : context.locale().toString();
 
-                if(!MessageUtil.isEmpty(args[0])){
-                    Locale l = LocaleUtil.getOrDefault(args[0]);
-                    c.locale(l);
-                    guildService.save(c);
-                    context.locale(l);
-                    return messageService.text(channel, messageService.format("command.config.locale-updated", r.get()));
-                }
-            }
+                        if(args.length == 0){
+                            return messageService.text(channel, messageService.format("command.config.locale", r.get()));
+                        }else{
+                            if(!adminService.isOwner(member)){
+                                return messageService.err(channel, messageService.get("command.owner-only"));
+                            }
 
-            return Mono.empty();
+                            if(!MessageUtil.isEmpty(args[0])){
+                                Locale l = LocaleUtil.getOrDefault(args[0]);
+                                guildConfig.locale(l);
+                                guildService.save(guildConfig);
+                                context.locale(l);
+                                return messageService.text(channel, messageService.format("command.config.locale-updated", r.get()));
+                            }
+                        }
+
+                        return Mono.empty();
+                    });
         }
     }
 
