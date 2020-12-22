@@ -171,6 +171,6 @@ public class MessageServiceImpl implements MessageService{
         log.info("Audit cleanup started...");
         Flux.fromIterable(repository.findAll())
             .filter(m -> Weeks.weeksBetween(new DateTime(m.timestamp()), DateTime.now()).getWeeks() >= 4)
-            .subscribe(repository::delete, Log::err, () -> log.info("Audit cleanup finished, deleted {}", pre - repository.count()));
+            .subscribe(repository::delete, Log::err, () -> log.info("Audit cleanup finished, deleted {}", repository.count() - pre));
     }
 }
