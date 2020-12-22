@@ -36,8 +36,7 @@ public class MemberEventHandler extends AuditEventHandler{
             embed.setTitle(messageService.get("audit.member.ban.title"));
             embed.setDescription(messageService.format("audit.member.ban.description", user.getUsername()));
             embed.setFooter(timestamp(), null);
-        })
-        .then(Mono.fromRunnable(() -> memberService.deleteById(event.getGuildId(), user.getId())));
+        });
     }
 
     @Override
@@ -66,7 +65,6 @@ public class MemberEventHandler extends AuditEventHandler{
         if(DiscordUtil.isBot(user)) return Mono.empty();
         context.init(event.getGuildId());
         AuditLogEntry l = event.getGuild().flatMapMany(g -> g.getAuditLog(q -> q.setActionType(ActionType.MEMBER_KICK))).blockFirst();
-        memberService.deleteById(event.getGuildId(), user.getId());
         if(l != null && l.getId().getTimestamp().isAfter(Instant.now().minusMillis(2500))){
             return event.getGuild().flatMap(g -> g.getMemberById(l.getResponsibleUserId()))
                     .flatMap(admin -> log(event.getGuildId(), embed -> {
