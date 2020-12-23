@@ -33,19 +33,13 @@ public class MessageEventHandler extends AuditEventHandler{
     private static final Logger log = LoggerFactory.getLogger(MessageEventHandler.class);
 
     @Autowired
-    private MemberService memberService;
-
-    @Autowired
-    private UserService userService;
+    private AdminService adminService;
 
     @Autowired
     private CommandHandler commandHandler;
 
     @Autowired
-    private GuildService guildService;
-
-    @Autowired
-    private AdminService adminService;
+    private DiscordEntityRetrieveService discordEntityRetrieveService;
 
     @Autowired
     private Settings settings;
@@ -66,23 +60,19 @@ public class MessageEventHandler extends AuditEventHandler{
         Snowflake guildId = event.getGuildId().orElse(null);
         if(DiscordUtil.isBot(user) || guildId == null) return Mono.empty();
         Snowflake userId = user.getId();
-        LocalMember localMember = memberService.getOr(member, () -> new LocalMember(member));
-        if(localMember.user() == null){
-            LocalUser localUser = userService.getOr(userId, () -> new LocalUser(user));
-            localMember.user(localUser);
-        }
+        LocalMember localMember = discordEntityRetrieveService.getMember(member, () -> new LocalMember(member));
 
         localMember.addToSeq();
         localMember.lastSentMessage(Calendar.getInstance());
-        memberService.save(localMember);
+        discordEntityRetrieveService.saveMember(localMember);
 
-        if(!guildService.exists(guildId)){
+        if(!discordEntityRetrieveService.existsGuildById(guildId)){
             Region region = event.getGuild().flatMap(Guild::getRegion).block();
             GuildConfig guildConfig = new GuildConfig(guildId);
             guildConfig.locale(LocaleUtil.get(region));
             guildConfig.prefix(settings.prefix);
             guildConfig.timeZone(TimeZone.getTimeZone("Etc/Greenwich"));
-            guildService.save(guildConfig);
+            discordEntityRetrieveService.saveGuild(guildConfig);
         }
 
         context.init(guildId);
@@ -166,7 +156,7 @@ public class MessageEventHandler extends AuditEventHandler{
         User user = message.getAuthor().orElse(null);
         TextChannel channel =  event.getChannel().cast(TextChannel.class).block();
         if(guild == null || channel == null || user == null) return Mono.empty();
-        if(Objects.equals(channel.getId(), guildService.logChannelId(guild.getId())) && !message.getEmbeds().isEmpty()){ /* =) */
+        if(Objects.equals(channel.getId(), discordEntityRetrieveService.logChannelId(guild.getId())) && !message.getEmbeds().isEmpty()){ /* =) */
             return guild.getAuditLog(a -> a.setActionType(ActionType.MESSAGE_DELETE)).next().doOnNext(a -> {
                 log.warn("Member '{}' deleted log message in guild '{}'",
                          guild.getMemberById(a.getResponsibleUserId()).map(Member::getUsername).block(),

@@ -6,13 +6,12 @@ import discord4j.core.*;
 import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.*;
-import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.core.shard.MemberRequestFilter;
 import discord4j.gateway.intent.*;
 import discord4j.rest.response.ResponseFunction;
 import inside.Settings;
 import inside.common.services.DiscordService;
-import inside.data.service.GuildService;
+import inside.data.service.DiscordEntityRetrieveService;
 import inside.event.dispatcher.EventListener;
 import inside.event.dispatcher.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,9 +27,10 @@ public class DiscordServiceImpl implements DiscordService{
     private Settings settings;
 
     @Autowired
-    private GuildService guildService;
+    private DiscordEntityRetrieveService discordEntityRetrieveService;
 
     protected GatewayDiscordClient gateway;
+
     protected EventListener eventListener;
 
     @Autowired(required = false)
@@ -93,7 +93,7 @@ public class DiscordServiceImpl implements DiscordService{
 
     @Override
     public Mono<TextChannel> getLogChannel(Snowflake guildId){
-        return getTextChannelById(guildService.logChannelId(guildId));
+        return getTextChannelById(discordEntityRetrieveService.logChannelId(guildId));
     }
 
     @Override

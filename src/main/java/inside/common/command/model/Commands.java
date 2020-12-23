@@ -32,16 +32,13 @@ public class Commands{
     private DiscordService discordService;
 
     @Autowired
-    private GuildService guildService;
-
-    @Autowired
     private MessageService messageService;
 
     @Autowired
-    private MemberService memberService;
+    private AdminService adminService;
 
     @Autowired
-    private AdminService adminService;
+    private DiscordEntityRetrieveService discordEntityRetrieveService;
 
     @Autowired
     private CommandHandler handler;
@@ -55,7 +52,7 @@ public class Commands{
         public Mono<Void> execute(CommandReference reference, String[] args){
             StringBuffer builder = new StringBuffer();
             Snowflake guildId = reference.getAuthorAsMember().getGuildId();
-            String prefix = guildService.prefix(guildId);
+            String prefix = discordEntityRetrieveService.prefix(guildId);
 
             handler.commandList().forEach(command -> {
                 builder.append(prefix);
@@ -181,7 +178,7 @@ public class Commands{
             Member member = reference.getAuthorAsMember();
             Mono<MessageChannel> channel = reference.event().getMessage().getChannel();
 
-            return member.getGuild().map(guild -> guildService.get(guild))
+            return member.getGuild().map(guild -> discordEntityRetrieveService.getGuild(guild))
                     .flatMap(guildConfig -> {
                         if(args.length == 0){
                             return messageService.text(channel, messageService.format("command.config.prefix", guildConfig.prefix()));
@@ -192,7 +189,7 @@ public class Commands{
 
                             if(!MessageUtil.isEmpty(args[0])){
                                 guildConfig.prefix(args[0]);
-                                guildService.save(guildConfig);
+                                discordEntityRetrieveService.saveGuild(guildConfig);
                                 return messageService.text(channel, messageService.format("command.config.prefix-updated", guildConfig.prefix()));
                             }
                         }
@@ -209,7 +206,7 @@ public class Commands{
             Member member = reference.getAuthorAsMember();
             Mono<MessageChannel> channel = reference.getReplyChannel();
 
-            return member.getGuild().map(guild -> guildService.get(guild))
+            return member.getGuild().map(guild -> discordEntityRetrieveService.getGuild(guild))
                     .flatMap(guildConfig -> {
                         Supplier<String> r = () -> Objects.equals(context.locale(), Locale.ROOT) ? messageService.get("common.default") : context.locale().toString();
 
@@ -223,7 +220,7 @@ public class Commands{
                             if(!MessageUtil.isEmpty(args[0])){
                                 Locale l = LocaleUtil.getOrDefault(args[0]);
                                 guildConfig.locale(l);
-                                guildService.save(guildConfig);
+                                discordEntityRetrieveService.saveGuild(guildConfig);
                                 context.locale(l);
                                 return messageService.text(channel, messageService.format("command.config.locale-updated", r.get()));
                             }
@@ -254,7 +251,7 @@ public class Commands{
             }
 
             return discordService.gateway().getMemberById(guildId, targetId)
-                    .flatMap(target -> Mono.just(memberService.getOr(target, () -> new LocalMember(target)))
+                    .flatMap(target -> Mono.just(discordEntityRetrieveService.getMember(target, () -> new LocalMember(target)))
                             .filterWhen(local -> adminService.isMuted(guildId, target.getId())
                                     .flatMap(b -> b ? messageService.err(channel, messageService.get("command.admin.mute.already-muted")).then(Mono.just(false)) : Mono.just(true)))
                             .flatMap(local -> {
@@ -317,7 +314,7 @@ public class Commands{
             }
 
             return discordService.gateway().getMemberById(guildId, targetId)
-                    .flatMap(target -> Mono.just(memberService.getOr(target, () -> new LocalMember(target)))
+                    .flatMap(target -> Mono.just(discordEntityRetrieveService.getMember(target, () -> new LocalMember(target)))
                              .flatMap(local -> {
                                  String reason = args.length > 1 ? args[1].trim() : null;
 
@@ -334,8 +331,7 @@ public class Commands{
                                  }
 
                                  return adminService.warn(reference.localMember(), local, reason)
-                                        .then(adminService.warnings(local.guildId(), local.userId()).count()
-                                                .map(l -> l + 1)
+                                        .then(Mono.defer(() -> adminService.warnings(local.guildId(), local.userId()).count())
                                                 .flatMap(count -> {
                                                     Mono<Void> publisher = messageService.text(channel, messageService.format("message.admin.warn", target.getUsername(), count));
 
@@ -362,7 +358,7 @@ public class Commands{
             }
 
             return discordService.gateway().getMemberById(guildId, targetId)
-                    .flatMap(target -> Mono.just(memberService.getOr(target, () -> new LocalMember(target)))
+                    .flatMap(target -> Mono.just(discordEntityRetrieveService.getMember(target, () -> new LocalMember(target)))
                             .flatMap(local -> {
                                 Flux<AdminAction> warnings = adminService.warnings(local.guildId(), local.userId()).limitRequest(21);
 
@@ -417,9 +413,9 @@ public class Commands{
                 }
 
                 return discordService.gateway().getMemberById(guildId, targetId)
-                        .map(target -> memberService.getOr(target, () -> new LocalMember(target)))
+                        .map(target -> discordEntityRetrieveService.getMember(target, () -> new LocalMember(target)))
                                 .flatMap(local -> messageService.text(channel, messageService.format("command.admin.unwarn", local.effectiveName(), warn))
-                                        .then(adminService.unwarn(local.guildId(), local.user().userId(), warn - 1)));
+                                        .then(adminService.unwarn(local.guildId(), local.userId(), warn - 1)));
             });
         }
     }
@@ -436,12 +432,13 @@ public class Commands{
                 return messageService.err(channel, messageService.get("command.incorrect-name"));
             }
 
-            return discordService.gateway().getMemberById(guildId, targetId)
-                    .map(target -> memberService.getOr(target, () -> new LocalMember(target)))
+            Mono<Member> target = discordService.gateway().getMemberById(guildId, targetId);
+
+            return target.map(member -> discordEntityRetrieveService.getMember(member, () -> new LocalMember(member)))
                     .flatMap(local -> adminService.isMuted(local.guildId(), local.userId())
                             .filterWhen(b -> b ? reference.event()
                                     .getGuild().flatMap(g -> Mono.fromRunnable(() -> discordService.eventListener().publish(new MemberUnmuteEvent(g, local)))).then(Mono.just(true))
-                                               : messageService.err(channel, messageService.format("audit.member.unmute.is-not-muted", local.username())).then(Mono.just(false))
+                                               : target.flatMap(m -> messageService.err(channel, messageService.format("audit.member.unmute.is-not-muted", m.getUsername())).then(Mono.just(false)))
                             )
                             .then()
                     );

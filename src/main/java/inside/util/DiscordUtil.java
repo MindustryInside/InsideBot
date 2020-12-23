@@ -13,4 +13,13 @@ public class DiscordUtil{
     public static boolean isNotBot(User user){
         return !isBot(user);
     }
+
+    public static String detailName(Member member){
+        if(member == null) return null;
+        String name = member.getUsername();
+        if(member.getNickname().isPresent()){
+            name += String.format(" (%s)", member.getNickname().get());
+        }
+        return name;
+    }
 }

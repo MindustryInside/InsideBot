@@ -14,9 +14,8 @@ import java.util.Calendar;
 public class LocalMember extends GuildEntity{
     private static final long serialVersionUID = -9169934990408633927L;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private LocalUser user;
+    @Column(name = "user_id")
+    private String userId;
 
     @Column(name = "effective_name", length = 32)
     private String effectiveName;
@@ -48,32 +47,17 @@ public class LocalMember extends GuildEntity{
         return diff < 3 && messageSeq() >= 75;
     }
 
-    public LocalUser user(){
-        return user;
-    }
-
-    public void user(@NonNull LocalUser user){
-        this.user = user;
-    }
-
     @NonNull
-    @Transient
     public Snowflake userId(){
-        return user.userId();
-    }
-
-    @NonNull
-    @Transient
-    public String username(){
-        return user.name();
+        return Snowflake.of(userId);
     }
 
     @NonNull
     public String effectiveName(){
-        return effectiveName != null ? effectiveName : user.name();
+        return effectiveName;
     }
 
-    public void effectiveName(@Nullable String effectiveName){
+    public void effectiveName(@NonNull String effectiveName){
         this.effectiveName = effectiveName;
     }
 
@@ -97,7 +81,7 @@ public class LocalMember extends GuildEntity{
     @Override
     public String toString(){
         return "LocalMember{" +
-               "user=" + user +
+               "userId='" + userId + '\'' +
                ", effectiveName='" + effectiveName + '\'' +
                ", messageSeq=" + messageSeq +
                ", lastSentMessage=" + lastSentMessage +

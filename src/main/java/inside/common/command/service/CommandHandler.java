@@ -21,7 +21,7 @@ public class CommandHandler extends BaseCommandHandler{
         Mono<TextChannel> channel = reference.getReplyChannel().cast(TextChannel.class);
         Member self = guild.flatMap(Guild::getSelfMember).blockOptional().orElseThrow(RuntimeException::new);
 
-        String prefix = guildService.prefix(self.getGuildId());
+        String prefix = discordEntityRetrieveService.prefix(self.getGuildId());
 
         if(reference.event().getMessage().getUserMentions().map(User::getId).any(u -> u.equals(self.getId())).blockOptional().orElse(false)){
             prefix = self.getNicknameMention() + " ";

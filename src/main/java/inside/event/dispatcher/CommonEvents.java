@@ -28,7 +28,7 @@ public class CommonEvents extends Events{
     private MessageService messageService;
 
     @Autowired
-    private MemberService memberService;
+    private DiscordEntityRetrieveService discordEntityRetrieveService;
 
     @Override
     public Publisher<?> onMessageClear(MessageClearEvent event){
@@ -43,7 +43,7 @@ public class CommonEvents extends Events{
             if(DiscordUtil.isBot(member)){
                 builder.append("[BOT] ");
             }
-            builder.append(memberService.detailName(member)).append(" > ");
+            builder.append(DiscordUtil.detailName(member)).append(" > ");
             if(!MessageUtil.isEmpty(m)) builder.append(MessageUtil.effectiveContent(m));
             for(int i = 0; i < m.getEmbeds().size(); i++){
                 Embed e = m.getEmbeds().get(i);
@@ -79,18 +79,18 @@ public class CommonEvents extends Events{
 
     @Override
     public Publisher<?> onMemberUnmute(MemberUnmuteEvent event){
-        LocalMember l = event.localMember;
-        return event.guild().getMemberById(l.user().userId())
-                .filter(m -> !guildService.muteDisabled(m.getGuildId()))
-                .flatMap(m -> {
+        LocalMember local = event.localMember;
+        return event.guild().getMemberById(local.userId())
+                .filter(member -> !discordEntityRetrieveService.muteDisabled(member.getGuildId()))
+                .flatMap(member -> {
                     Mono<Void> unmute = Mono.fromRunnable(() -> {
-                        adminService.unmute(l.guildId(), l.user().userId()).block();
-                        m.removeRole(guildService.muteRoleId(m.getGuildId())).block();
+                        adminService.unmute(local.guildId(), local.userId()).block();
+                        member.removeRole(discordEntityRetrieveService.muteRoleId(member.getGuildId())).block();
                     });
 
-                    Mono<Void> publishLog = log(m.getGuildId(), embed -> {
+                    Mono<Void> publishLog = log(member.getGuildId(), embed -> {
                         embed.setTitle(messageService.get("audit.member.unmute.title"));
-                        embed.setDescription(messageService.format("audit.member.unmute.description", m.getUsername()));
+                        embed.setDescription(messageService.format("audit.member.unmute.description", member.getUsername()));
                         embed.setFooter(timestamp(), null);
                         embed.setColor(userUnmute.color);
                     });
@@ -104,25 +104,28 @@ public class CommonEvents extends Events{
         DateTimeFormatter formatter = DateTimeFormat.shortDateTime()
                                                     .withLocale(context.locale())
                                                     .withZone(context.zone());
-        LocalMember l = event.target;
-        return event.guild().getMemberById(l.user().userId())
-                .filter(member -> !guildService.muteDisabled(member.getGuildId()))
-                .flatMap(m -> {
+        LocalMember local = event.target;
+        Guild guild = event.guild();
+        return guild.getMemberById(local.userId())
+                .filter(member -> !discordEntityRetrieveService.muteDisabled(member.getGuildId()))
+                .flatMap(member -> {
+                    Mono<Member> admin = guild.getMemberById(event.admin.userId());
+
                     Mono<Void> mute = Mono.fromRunnable(() -> {
-                        adminService.mute(event.admin, l, event.delay.toCalendar(context.locale()), event.reason().orElse(null)).block();
-                        m.addRole(guildService.muteRoleId(m.getGuildId())).block();
+                        adminService.mute(event.admin, local, event.delay.toCalendar(context.locale()), event.reason().orElse(null)).block();
+                        member.addRole(discordEntityRetrieveService.muteRoleId(member.getGuildId())).block();
                     });
 
-                    Mono<Void> publishLog = log(m.getGuildId(), embed -> {
+                    Mono<Void> publishLog = admin.map(Member::getUsername).flatMap(username -> log(member.getGuildId(), embed -> {
                         embed.setTitle(messageService.get("audit.member.mute.title"));
                         embed.setDescription(String.format("%s%n%s%n%s",
-                        messageService.format("audit.member.mute.description", m.getUsername(), event.admin.username()),
+                        messageService.format("audit.member.mute.description", member.getUsername(), username),
                         messageService.format("common.reason", event.reason().orElse(messageService.get("common.not-defined"))),
                         messageService.format("audit.member.mute.delay", formatter.print(event.delay))
                         ));
                         embed.setFooter(timestamp(), null);
                         embed.setColor(userMute.color);
-                    });
+                    }));
 
                     return mute.then(publishLog);
                 });

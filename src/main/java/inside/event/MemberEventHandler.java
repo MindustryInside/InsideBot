@@ -19,11 +19,9 @@ import static inside.event.audit.AuditEventType.*;
 
 @Component
 public class MemberEventHandler extends AuditEventHandler{
-    @Autowired
-    private UserService userService;
 
     @Autowired
-    private MemberService memberService;
+    private DiscordEntityRetrieveService discordEntityRetrieveService;
 
     @Override
     public Publisher<?> onBan(BanEvent event){ // не триггерится, баг д4ж текущей версии
@@ -45,11 +43,7 @@ public class MemberEventHandler extends AuditEventHandler{
         if(DiscordUtil.isBot(member)) return Mono.empty();
         context.init(member.getGuildId());
 
-        memberService.getOr(member, () -> {
-            LocalMember l = new LocalMember(member);
-            l.user(userService.getOr(member.getId(), () -> new LocalUser(member)));
-            return l;
-        });
+        discordEntityRetrieveService.getMember(member, () -> new LocalMember(member));
 
         return log(event.getGuildId(), embed -> {
             embed.setColor(userJoin.color);
@@ -92,16 +86,10 @@ public class MemberEventHandler extends AuditEventHandler{
         return event.getMember()
                     .filter(DiscordUtil::isNotBot)
                     .doOnNext(member -> {
-                        LocalMember localMember = memberService.get(member);
+                        LocalMember localMember = discordEntityRetrieveService.getMember(member);
                         if(localMember != null){
-                            if(localMember.user() == null){
-                                User user = discordService.gateway().getUserById(member.getId()).block();
-                                LocalUser local = new LocalUser(Objects.requireNonNull(user));
-                                localMember.user(local);
-                                userService.save(local);
-                            }
                             localMember.effectiveName(member.getDisplayName());
-                            memberService.save(localMember);
+                            discordEntityRetrieveService.saveMember(localMember);
                         }
                     })
                     .then();

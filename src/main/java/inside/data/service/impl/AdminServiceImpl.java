@@ -15,11 +15,15 @@ import java.util.Calendar;
 
 @Service
 public class AdminServiceImpl implements AdminService{
-    @Autowired
-    private AdminActionRepository repository;
 
-    @Autowired
-    private GuildService guildService;
+    private final AdminActionRepository repository;
+
+    private final DiscordEntityRetrieveService discordEntityRetrieveService;
+
+    public AdminServiceImpl(@Autowired AdminActionRepository repository, @Autowired DiscordEntityRetrieveService discordEntityRetrieveService){
+        this.repository = repository;
+        this.discordEntityRetrieveService = discordEntityRetrieveService;
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -114,7 +118,7 @@ public class AdminServiceImpl implements AdminService{
     @Override
     public boolean isAdmin(Member member){
         if(member == null) return false;
-        GuildConfig config = guildService.get(member.getGuildId());
+        GuildConfig config = discordEntityRetrieveService.getGuildById(member.getGuildId());
 
         boolean permissed = !config.adminRoleIdsAsList().isEmpty() &&
                             member.getRoles().map(Role::getId)

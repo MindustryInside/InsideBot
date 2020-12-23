@@ -1,8 +1,8 @@
 package inside.common.services.impl;
 
 import discord4j.common.util.Snowflake;
- import inside.common.services.ContextService;
-import inside.data.service.GuildService;
+import inside.common.services.ContextService;
+import inside.data.service.DiscordEntityRetrieveService;
 import inside.util.LocaleUtil;
 import org.joda.time.DateTimeZone;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +17,7 @@ public class ContextServiceImpl implements ContextService{
     private final ThreadLocal<Snowflake> guildHolder = new NamedThreadLocal<>("ContextServiceImpl.GuildId");
 
     @Autowired
-    private GuildService guildService;
+    private DiscordEntityRetrieveService discordEntityRetrieveService;
 
     @Override
     public void init(Snowflake guildId){
@@ -49,12 +49,12 @@ public class ContextServiceImpl implements ContextService{
 
     @Override
     public DateTimeZone zone(){
-        return guildService.timeZone(guildHolder.get());
+        return discordEntityRetrieveService.timeZone(guildHolder.get());
     }
 
     @Override
     public Locale localeOrDefault(Snowflake guildId){
-        return guildService.locale(guildId);
+        return discordEntityRetrieveService.locale(guildId);
     }
 
     @Override
