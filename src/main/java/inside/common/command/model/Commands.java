@@ -243,7 +243,8 @@ public class Commands{
 
             Member author = reference.getAuthorAsMember();
             Snowflake targetId = MessageUtil.parseUserId(args[0]);
-            if(targetId == null || !discordService.exists(targetId)){
+            Snowflake guildId = author.getGuildId();
+            if(targetId == null || !discordService.exists(guildId, targetId)){
                 return messageService.err(channel, messageService.get("command.incorrect-name"));
             }
 
@@ -252,9 +253,9 @@ public class Commands{
                 return messageService.err(channel, messageService.get("message.error.invalid-time"));
             }
 
-            return discordService.gateway().getMemberById(author.getGuildId(), targetId)
+            return discordService.gateway().getMemberById(guildId, targetId)
                     .flatMap(target -> Mono.just(memberService.getOr(target, () -> new LocalMember(target)))
-                            .filterWhen(local -> adminService.isMuted(target.getGuildId(), target.getId())
+                            .filterWhen(local -> adminService.isMuted(guildId, target.getId())
                                     .flatMap(b -> b ? messageService.err(channel, messageService.get("command.admin.mute.already-muted")).then(Mono.just(false)) : Mono.just(true)))
                             .flatMap(local -> {
                                 String reason = args.length > 2 ? args[2].trim() : null;
@@ -310,11 +311,12 @@ public class Commands{
             Member author = reference.getAuthorAsMember();
             Mono<MessageChannel> channel = reference.getReplyChannel();
             Snowflake targetId = MessageUtil.parseUserId(args[0]);
-            if(targetId == null || !discordService.exists(targetId)){
+            Snowflake guildId = author.getGuildId();
+            if(targetId == null || !discordService.exists(guildId, targetId)){
                 return messageService.err(channel, messageService.get("command.incorrect-name"));
             }
 
-            return discordService.gateway().getMemberById(author.getGuildId(), targetId)
+            return discordService.gateway().getMemberById(guildId, targetId)
                     .flatMap(target -> Mono.just(memberService.getOr(target, () -> new LocalMember(target)))
                              .flatMap(local -> {
                                  String reason = args.length > 1 ? args[1].trim() : null;
@@ -333,6 +335,7 @@ public class Commands{
 
                                  return adminService.warn(reference.localMember(), local, reason)
                                         .then(adminService.warnings(local.guildId(), local.userId()).count()
+                                                .map(l -> l + 1)
                                                 .flatMap(count -> {
                                                     Mono<Void> publisher = messageService.text(channel, messageService.format("message.admin.warn", target.getUsername(), count));
 
@@ -353,11 +356,12 @@ public class Commands{
             Member author = reference.getAuthorAsMember();
             Mono<MessageChannel> channel = reference.getReplyChannel();
             Snowflake targetId = MessageUtil.parseUserId(args[0]);
-            if(targetId == null || !discordService.exists(targetId)){
+            Snowflake guildId = author.getGuildId();
+            if(targetId == null || !discordService.exists(guildId, targetId)){
                 return messageService.err(channel, messageService.get("command.incorrect-name"));
             }
 
-            return discordService.gateway().getMemberById(author.getGuildId(), targetId)
+            return discordService.gateway().getMemberById(guildId, targetId)
                     .flatMap(target -> Mono.just(memberService.getOr(target, () -> new LocalMember(target)))
                             .flatMap(local -> {
                                 Flux<AdminAction> warnings = adminService.warnings(local.guildId(), local.userId()).limitRequest(21);
@@ -428,7 +432,7 @@ public class Commands{
             Mono<MessageChannel> channel = reference.getReplyChannel();
             Snowflake targetId = MessageUtil.parseUserId(args[0]);
             Snowflake guildId = reference.localMember().guildId();
-            if(targetId == null || !discordService.exists(targetId)){
+            if(targetId == null || !discordService.exists(guildId, targetId)){
                 return messageService.err(channel, messageService.get("command.incorrect-name"));
             }
 
