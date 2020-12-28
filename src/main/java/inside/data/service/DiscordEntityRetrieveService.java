@@ -19,7 +19,7 @@ public interface DiscordEntityRetrieveService{
 
     GuildConfig getGuildById(Snowflake guildId, Supplier<GuildConfig> prov);
 
-    GuildConfig saveGuild(GuildConfig entity);
+    GuildConfig save(GuildConfig entity);
 
     boolean existsGuildById(Snowflake guildId);
 
@@ -53,7 +53,7 @@ public interface DiscordEntityRetrieveService{
 
     LocalMember getMemberById(Snowflake guildId, Snowflake userId, Supplier<LocalMember> prov);
 
-    LocalMember saveMember(LocalMember member);
+    LocalMember save(LocalMember member);
 
     boolean existsMemberById(Snowflake guildId, Snowflake userId);
 

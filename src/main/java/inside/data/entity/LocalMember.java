@@ -30,6 +30,7 @@ public class LocalMember extends GuildEntity{
 
     public LocalMember(Member member){
         guildId(member.getGuildId());
+        userId = member.getId().asString();
         effectiveName(member.getDisplayName());
     }
 

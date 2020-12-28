@@ -16,6 +16,7 @@ import static inside.event.audit.AuditEventType.*;
 
 @Component
 public class VoiceEventHandler extends AuditEventHandler{
+
     @Override
     public Publisher<?> onVoiceStateUpdate(VoiceStateUpdateEvent event){
         VoiceState state = event.getOld().orElse(null);
@@ -25,27 +26,25 @@ public class VoiceEventHandler extends AuditEventHandler{
                                         s.isSelfVideoEnabled() || s.isSuppressed();
         if(state != null){
             if(ignore.get(state)) return Mono.empty();
-            VoiceChannel channel = state.getChannel().block();
-            User user = state.getUser().block();
-            if(DiscordUtil.isBot(user) || channel == null) return Mono.empty();
-            return log(guildId, embed -> {
+            Mono<VoiceChannel> channel = state.getChannel();
+            Mono<User> user = state.getUser();
+            return Mono.zip(channel, user).filter(t -> DiscordUtil.isNotBot(t.getT2())).flatMap(t -> log(guildId, embed -> {
                 embed.setColor(voiceLeave.color);
                 embed.setTitle(messageService.get("audit.voice.leave.title"));
-                embed.setDescription(messageService.format("audit.voice.leave.description", user.getUsername(), channel.getName()));
+                embed.setDescription(messageService.format("audit.voice.leave.description", t.getT2().getUsername(), t.getT1().getName()));
                 embed.setFooter(timestamp(), null);
-            });
+            }));
         }else{
             VoiceState current = event.getCurrent();
             if(ignore.get(current)) return Mono.empty();
-            VoiceChannel channel = current.getChannel().block();
-            User user = current.getUser().block();
-            if(DiscordUtil.isBot(user) || channel == null) return Mono.empty();
-            return log(guildId, embed -> {
+            Mono<VoiceChannel> channel = current.getChannel();
+            Mono<User> user = current.getUser();
+            return Mono.zip(channel, user).filter(t -> DiscordUtil.isNotBot(t.getT2())).flatMap(t -> log(guildId, embed -> {
                 embed.setColor(voiceJoin.color);
                 embed.setTitle(messageService.get("audit.voice.join.title"));
-                embed.setDescription(messageService.format("audit.voice.join.description", user.getUsername(), channel.getName()));
+                embed.setDescription(messageService.format("audit.voice.join.description", t.getT2().getUsername(), t.getT1().getName()));
                 embed.setFooter(timestamp(), null);
-            });
+            }));
         }
     }
 }

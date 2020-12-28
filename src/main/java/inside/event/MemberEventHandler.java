@@ -71,6 +71,7 @@ public class MemberEventHandler extends AuditEventHandler{
                             embed.setDescription(desc.toString());
                             embed.setFooter(timestamp(), null);
                     }));
+    ////}else if(){
         }else{
             return log(event.getGuildId(), embed -> {
                 embed.setColor(userLeave.color);
@@ -85,13 +86,7 @@ public class MemberEventHandler extends AuditEventHandler{
     public Publisher<?> onMemberUpdate(MemberUpdateEvent event){
         return event.getMember()
                     .filter(DiscordUtil::isNotBot)
-                    .doOnNext(member -> {
-                        LocalMember localMember = discordEntityRetrieveService.getMember(member);
-                        if(localMember != null){
-                            localMember.effectiveName(member.getDisplayName());
-                            discordEntityRetrieveService.saveMember(localMember);
-                        }
-                    })
+                    .doOnNext(member -> discordEntityRetrieveService.save(discordEntityRetrieveService.getMember(member, () -> new LocalMember(member))))
                     .then();
     }
 }

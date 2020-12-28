@@ -56,7 +56,7 @@ public class DiscordEntityRetrieveServiceImpl implements DiscordEntityRetrieveSe
 
     @Override
     @Transactional
-    public GuildConfig saveGuild(GuildConfig entity){
+    public GuildConfig save(GuildConfig entity){
         return guildRepository.save(entity);
     }
 
@@ -160,7 +160,7 @@ public class DiscordEntityRetrieveServiceImpl implements DiscordEntityRetrieveSe
 
     @Override
     @Transactional
-    public LocalMember saveMember(LocalMember member){
+    public LocalMember save(LocalMember member){
         return memberRepository.save(member);
     }
 

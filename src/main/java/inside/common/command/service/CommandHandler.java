@@ -5,7 +5,7 @@ import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.rest.util.*;
 import inside.common.command.model.base.*;
-import org.reactivestreams.Publisher;
+import inside.util.MessageUtil;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
 
@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 public class CommandHandler extends BaseCommandHandler{
 
     @Override
-    public Publisher<Void> handleMessage(String message, CommandReference reference){
+    public Mono<Void> handleMessage(String message, CommandReference reference){
         Mono<Guild> guild = reference.event().getGuild();
         Mono<TextChannel> channel = reference.getReplyChannel().cast(TextChannel.class);
         Member self = guild.flatMap(Guild::getSelfMember).blockOptional().orElseThrow(RuntimeException::new);
@@ -24,10 +24,10 @@ public class CommandHandler extends BaseCommandHandler{
         String prefix = discordEntityRetrieveService.prefix(self.getGuildId());
 
         if(reference.event().getMessage().getUserMentions().map(User::getId).any(u -> u.equals(self.getId())).blockOptional().orElse(false)){
-            prefix = self.getNicknameMention() + " ";
+            prefix = self.getNicknameMention() + " "; //todo не очень нравится
         }
 
-        if(message == null || !message.startsWith(prefix)){
+        if(MessageUtil.isEmpty(message) || !message.startsWith(prefix)){
             return Mono.empty();
         }
 
@@ -38,9 +38,10 @@ public class CommandHandler extends BaseCommandHandler{
 
         LinkedList<String> result = new LinkedList<>();
 
-        CommandInfo command = commands.get(commandstr).compile();
+        Command cmd = commands.get(commandstr);
 
-        if(command != null){
+        if(cmd != null){
+            CommandInfo command = cmd.compile();
             int index = 0;
             boolean satisfied = false;
 
@@ -112,16 +113,16 @@ public class CommandHandler extends BaseCommandHandler{
                 }
             }
 
-            return commands.get(command.text).execute(reference, result.toArray(new String[0]));
+            return cmd.execute(reference, result.toArray(new String[0]));
         }else{
             int min = 0;
             CommandInfo closest = null;
 
-            for(CommandInfo cmd : commandList()){
-                int dst = Strings.levenshtein(cmd.text, commandstr);
+            for(CommandInfo c : commandList()){
+                int dst = Strings.levenshtein(c.text, commandstr);
                 if(dst < 3 && (closest == null || dst < min)){
                     min = dst;
-                    closest = cmd;
+                    closest = c;
                 }
             }
 

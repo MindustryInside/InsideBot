@@ -22,6 +22,7 @@ import org.slf4j.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import reactor.util.context.Context;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -31,6 +32,12 @@ import static inside.event.audit.AuditEventType.*;
 @Component
 public class MessageEventHandler extends AuditEventHandler{
     private static final Logger log = LoggerFactory.getLogger(MessageEventHandler.class);
+
+    public static final String KEY_GUILD_ID = "inside.guild";
+
+    public static final String KEY_LOCALE = "inside.locale";
+
+    public static final String KEY_TIMEZONE = "inside.timezone";
 
     @Autowired
     private AdminService adminService;
@@ -64,7 +71,7 @@ public class MessageEventHandler extends AuditEventHandler{
 
         localMember.addToSeq();
         localMember.lastSentMessage(Calendar.getInstance());
-        discordEntityRetrieveService.saveMember(localMember);
+        discordEntityRetrieveService.save(localMember);
 
         if(!discordEntityRetrieveService.existsGuildById(guildId)){
             Region region = event.getGuild().flatMap(Guild::getRegion).block();
@@ -72,7 +79,7 @@ public class MessageEventHandler extends AuditEventHandler{
             guildConfig.locale(LocaleUtil.get(region));
             guildConfig.prefix(settings.prefix);
             guildConfig.timeZone(TimeZone.getTimeZone("Etc/Greenwich"));
-            discordEntityRetrieveService.saveGuild(guildConfig);
+            discordEntityRetrieveService.save(guildConfig);
         }
 
         context.init(guildId);
@@ -87,15 +94,17 @@ public class MessageEventHandler extends AuditEventHandler{
             messageService.save(info);
         }
 
-        CommandReference reference = CommandReference
-                .builder()
+        CommandReference reference = CommandReference.builder()
                 .event(event)
                 .localMember(localMember)
                 .channel(() -> channel)
                 .build();
 
         if(adminService.isAdmin(member)){
-            return commandHandler.handleMessage(text, reference);
+            Context context = Context.of(KEY_GUILD_ID, guildId,
+                                         KEY_LOCALE, discordEntityRetrieveService.locale(guildId),
+                                         KEY_TIMEZONE, discordEntityRetrieveService.timeZone(guildId));
+            return commandHandler.handleMessage(text, reference).contextWrite(ctx -> context);
         }
         return Mono.empty();
     }

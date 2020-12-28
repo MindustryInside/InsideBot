@@ -2,10 +2,8 @@ package inside.common.command.model;
 
 import arc.util.Strings;
 import discord4j.common.util.Snowflake;
-import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
-import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.Permission;
 import inside.Settings;
 import inside.common.command.model.base.*;
@@ -21,7 +19,6 @@ import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
-import reactor.core.scheduler.Schedulers;
 
 import java.util.*;
 import java.util.function.*;
@@ -189,7 +186,7 @@ public class Commands{
 
                             if(!MessageUtil.isEmpty(args[0])){
                                 guildConfig.prefix(args[0]);
-                                discordEntityRetrieveService.saveGuild(guildConfig);
+                                discordEntityRetrieveService.save(guildConfig);
                                 return messageService.text(channel, messageService.format("command.config.prefix-updated", guildConfig.prefix()));
                             }
                         }
@@ -220,7 +217,7 @@ public class Commands{
                             if(!MessageUtil.isEmpty(args[0])){
                                 Locale l = LocaleUtil.getOrDefault(args[0]);
                                 guildConfig.locale(l);
-                                discordEntityRetrieveService.saveGuild(guildConfig);
+                                discordEntityRetrieveService.save(guildConfig);
                                 context.locale(l);
                                 return messageService.text(channel, messageService.format("command.config.locale-updated", r.get()));
                             }

@@ -7,6 +7,7 @@ import inside.common.services.DiscordService;
 import inside.data.service.*;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -45,5 +46,5 @@ public abstract class BaseCommandHandler{
         return handlers.stream().map(Command::compile).collect(Collectors.toUnmodifiableList());
     }
 
-    public abstract Publisher<Void> handleMessage(String message, CommandReference reference);
+    public abstract Mono<Void> handleMessage(String message, CommandReference reference);
 }
