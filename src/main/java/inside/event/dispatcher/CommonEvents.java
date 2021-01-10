@@ -44,8 +44,12 @@ public class CommonEvents extends Events{
             if(DiscordUtil.isBot(member)){
                 builder.append("[BOT] ");
             }
+
             builder.append(DiscordUtil.detailName(member)).append(" > ");
-            if(!MessageUtil.isEmpty(m)) builder.append(MessageUtil.effectiveContent(m));
+            if(!MessageUtil.isEmpty(m)){
+                builder.append(MessageUtil.effectiveContent(m));
+            }
+
             for(int i = 0; i < m.getEmbeds().size(); i++){
                 Embed e = m.getEmbeds().get(i);
                 builder.append("\n[embed-").append(i).append(']');

@@ -1,6 +1,10 @@
 package inside.event;
 
-import discord4j.common.LogUtil;
+import arc.files.*;
+import arc.util.Strings;
+import arc.util.io.*;
+import arc.util.serialization.Base64Coder;
+import com.fasterxml.jackson.databind.ser.Serializers;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.*;
@@ -10,7 +14,7 @@ import discord4j.core.object.audit.ActionType;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
 import discord4j.core.object.entity.channel.Channel.Type;
-import discord4j.core.spec.EmbedCreateSpec;
+import discord4j.core.spec.*;
 import inside.Settings;
 import inside.common.command.model.base.CommandReference;
 import inside.common.command.service.CommandHandler;
@@ -22,11 +26,16 @@ import org.reactivestreams.Publisher;
 import org.slf4j.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Mono;
-import reactor.util.context.*;
+import reactor.core.publisher.*;
+import reactor.util.context.Context;
+import reactor.util.function.*;
 
+import java.io.*;
+import java.net.*;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.zip.*;
 
 import static inside.event.audit.AuditEventType.*;
 import static inside.util.ContextUtil.*;
@@ -84,7 +93,22 @@ public class MessageEventHandler extends AuditEventHandler{
             info.messageId(message.getId());
             info.guildId(guildId);
             info.timestamp(Calendar.getInstance());
-            info.content(MessageUtil.effectiveContent(message));
+            info.content(message.getContent());
+            Map<String, String> attachments = Flux.fromIterable(message.getAttachments())
+                    .flatMap(attachment ->
+                            Flux.using(() -> new URL(attachment.getUrl()).openConnection().getInputStream(),
+                                       input -> Mono.fromCallable(() -> {
+                                           try{
+                                               return Tuples.of(attachment.getFilename(), Base64Coder.encodeLines(input.readAllBytes()));
+                                           }catch(IOException e){
+                                               log.warn("Failed to download file '{}'; skipping...", attachment.getFilename());
+                                               return null;
+                                           }
+                                       }), Streams::close))
+                    .collect(Collectors.toMap(Tuple2::getT1, Tuple2::getT2))
+                    .block();
+
+            info.attachments(attachments);
             messageService.save(info);
         }
 
@@ -119,9 +143,8 @@ public class MessageEventHandler extends AuditEventHandler{
         }
 
         MessageInfo info = messageService.getById(event.getMessageId());
-
         String oldContent = info.content();
-        String newContent = MessageUtil.effectiveContent(message);
+        String newContent = message.getContent();
         boolean under = newContent.length() >= Field.MAX_VALUE_LENGTH || oldContent.length() >= Field.MAX_VALUE_LENGTH;
 
         if(message.isPinned() || newContent.equals(oldContent)){
@@ -133,31 +156,64 @@ public class MessageEventHandler extends AuditEventHandler{
                              KEY_LOCALE, discordEntityRetrieveService.locale(guildId),
                              KEY_TIMEZONE, discordEntityRetrieveService.timeZone(guildId));
 
-        Consumer<EmbedCreateSpec> e = embed -> {
-            embed.setColor(messageEdit.color);
-            embed.setAuthor(user.getUsername(), null, user.getAvatarUrl());
-            embed.setTitle(messageService.format(context, "audit.message.edit.title", c.getName()));
-            embed.setDescription(messageService.format(context, "audit.message.edit.description",
-                                                       c.getGuildId().asString(),
-                                                       c.getId().asString(),
-                                                       message.getId().asString()));
+        Consumer<EmbedCreateSpec> embed = spec -> {
+            spec.setColor(messageEdit.color);
+            spec.setAuthor(user.getUsername(), null, user.getAvatarUrl());
+            spec.setTitle(messageService.format(context, "audit.message.edit.title", c.getName()));
+            spec.setDescription(messageService.format(context, "audit.message.edit.description",
+                                                      c.getGuildId().asString(),
+                                                      c.getId().asString(),
+                                                      message.getId().asString()));
 
-            embed.addField(messageService.get(context, "audit.message.old-content.title"),
+            spec.addField(messageService.get(context, "audit.message.old-content.title"),
                            MessageUtil.substringTo(oldContent, Field.MAX_VALUE_LENGTH), false);
-            embed.addField(messageService.get(context, "audit.message.new-content.title"),
+            spec.addField(messageService.get(context, "audit.message.new-content.title"),
                            MessageUtil.substringTo(newContent, Field.MAX_VALUE_LENGTH), true);
 
-            embed.setFooter(timestamp(), null);
+            spec.setFooter(timestamp(), null);
         };
 
+        MessageCreateSpec spec = new MessageCreateSpec().setEmbed(embed);
         if(under){
             stringInputStream.writeString(String.format("%s:%n%s%n%n%s:%n%s",
                     messageService.get(context, "audit.message.old-content.title"), oldContent,
                     messageService.get(context, "audit.message.new-content.title"), newContent)
             );
+            spec.addFile("message.txt", stringInputStream);
         }
 
-        return log(c.getGuildId(), e, under).contextWrite(context).then(Mono.fromRunnable(() -> {
+        //todo
+        if(info.attachments().size() > 1){
+            try(ByteArrayOutputStream zip = new ByteArrayOutputStream();
+                ZipOutputStream out = new ZipOutputStream(zip)){
+
+                info.attachments().forEach((key, value) -> {
+                    try(ByteArrayOutputStream o = new ReusableByteOutStream()){
+                        o.writeBytes(Base64Coder.decodeLines(value));
+                        ZipEntry entry = new ZipEntry(key);
+                        entry.setSize(o.size());
+                        out.putNextEntry(entry);
+                        Streams.copy(new ByteArrayInputStream(o.toByteArray()), out);
+                        out.closeEntry();
+                    }catch(IOException e){
+                        throw new RuntimeException(e);
+                    }
+                });
+
+                out.finish();
+                spec.addFile("attachments.zip", new ByteArrayInputStream(zip.toByteArray()));
+            }catch(IOException e){
+                throw new RuntimeException(e);
+            }
+        }else if(info.attachments().size() == 1){
+            //todo this is terrible...
+            info.attachments().forEach((key, value) -> {
+                stringInputStream.setBytes(Base64Coder.decodeLines(value));
+                spec.addFile(key, stringInputStream);
+            });
+        }
+
+        return log(c.getGuildId(), spec).contextWrite(context).then(Mono.fromRunnable(() -> {
             info.content(newContent);
             messageService.save(info);
         }));
@@ -196,19 +252,51 @@ public class MessageEventHandler extends AuditEventHandler{
                              KEY_LOCALE, discordEntityRetrieveService.locale(guild.getId()),
                              KEY_TIMEZONE, discordEntityRetrieveService.timeZone(guild.getId()));
 
-        Consumer<EmbedCreateSpec> e = embed -> {
-            embed.setColor(messageDelete.color);
-            embed.setAuthor(user.getUsername(), null, user.getAvatarUrl());
-            embed.setTitle(messageService.format(context, "audit.message.delete.title", channel.getName()));
-            embed.setFooter(timestamp(), null);
-            embed.addField(messageService.get(context, "audit.message.deleted-content.title"),
+        Consumer<EmbedCreateSpec> embed = spec -> {
+            spec.setColor(messageDelete.color);
+            spec.setAuthor(user.getUsername(), null, user.getAvatarUrl());
+            spec.setTitle(messageService.format(context, "audit.message.delete.title", channel.getName()));
+            spec.setFooter(timestamp(), null);
+            spec.addField(messageService.get(context, "audit.message.deleted-content.title"),
                            MessageUtil.substringTo(content, Field.MAX_VALUE_LENGTH), true);
         };
 
+        MessageCreateSpec spec = new MessageCreateSpec().setEmbed(embed);
         if(under){
             stringInputStream.writeString(String.format("%s:%n%s", messageService.get(context, "audit.message.deleted-content.title"), content));
+            spec.addFile("message.txt", stringInputStream);
         }
 
-        return log(guild.getId(), e, under).contextWrite(context).then(Mono.fromRunnable(() -> messageService.delete(info)));
+        if(info.attachments().size() > 1){
+            try(ByteArrayOutputStream zip = new ByteArrayOutputStream();
+                ZipOutputStream out = new ZipOutputStream(zip)){
+
+                info.attachments().forEach((key, value) -> {
+                    try(ByteArrayOutputStream o = new ReusableByteOutStream()){
+                        o.writeBytes(Base64Coder.decodeLines(value));
+                        ZipEntry entry = new ZipEntry(key);
+                        entry.setSize(o.size());
+                        out.putNextEntry(entry);
+                        Streams.copy(new ByteArrayInputStream(o.toByteArray()), out);
+                        out.closeEntry();
+                    }catch(IOException e){
+                        throw new RuntimeException(e);
+                    }
+                });
+
+                out.finish();
+                spec.addFile("attachments.zip", new ByteArrayInputStream(zip.toByteArray()));
+            }catch(IOException e){
+                throw new RuntimeException(e);
+            }
+        }else if(info.attachments().size() == 1){
+            //todo this is terrible...
+            info.attachments().forEach((key, value) -> {
+                stringInputStream.setBytes(Base64Coder.decodeLines(value));
+                spec.addFile(key, stringInputStream);
+            });
+        }
+
+        return log(guild.getId(), spec).contextWrite(context).then(Mono.fromRunnable(() -> messageService.delete(info)));
     }
 }

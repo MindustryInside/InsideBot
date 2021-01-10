@@ -2,10 +2,11 @@ package inside.data.entity;
 
 import discord4j.common.util.Snowflake;
 import inside.data.entity.base.GuildEntity;
+import org.hibernate.annotations.Type;
 import reactor.util.annotation.NonNull;
 
 import javax.persistence.*;
-import java.util.Calendar;
+import java.util.*;
 
 @Entity
 @Table(name = "message_info")
@@ -20,6 +21,10 @@ public class MessageInfo extends GuildEntity{
 
     @Column(length = 2000)
     private String content;
+
+    @Type(type = "jsonb")
+    @Column(columnDefinition = "json")
+    private Map<String, String> attachments = new HashMap<>();
 
     @Column
     private Calendar timestamp;
@@ -51,6 +56,14 @@ public class MessageInfo extends GuildEntity{
         this.content = content;
     }
 
+    public Map<String, String> attachments(){
+        return attachments;
+    }
+
+    public void attachments(Map<String, String> attachments){
+        this.attachments = attachments;
+    }
+
     @NonNull
     public Calendar timestamp(){
         return timestamp;
@@ -63,8 +76,10 @@ public class MessageInfo extends GuildEntity{
     @Override
     public String toString(){
         return "MessageInfo{" +
-               "userId='" + userId + '\'' +
+               "messageId='" + messageId + '\'' +
+               ", userId='" + userId + '\'' +
                ", content='" + content + '\'' +
+               ", attachments=" + attachments +
                ", timestamp=" + timestamp +
                "} " + super.toString();
     }
