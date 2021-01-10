@@ -1,6 +1,5 @@
-package inside.common.services.impl;
+package inside.data.service.impl;
 
-import arc.util.Log;
 import discord4j.common.util.Snowflake;
 import discord4j.core.*;
 import discord4j.core.event.ReactiveEventAdapter;
@@ -10,7 +9,7 @@ import discord4j.core.shard.MemberRequestFilter;
 import discord4j.gateway.intent.*;
 import discord4j.rest.response.ResponseFunction;
 import inside.Settings;
-import inside.common.services.DiscordService;
+import inside.data.service.DiscordService;
 import inside.data.service.DiscordEntityRetrieveService;
 import inside.event.dispatcher.EventListener;
 import inside.event.dispatcher.*;
@@ -59,11 +58,11 @@ public class DiscordServiceImpl implements DiscordService{
 
         Flux.fromIterable(events)
             .filter(Objects::nonNull)
-            .subscribe(e -> eventListener.on(e).subscribe(), Log::err);
+            .subscribe(e -> eventListener.on(e).subscribe());
 
         Flux.fromIterable(handlers)
             .filter(Objects::nonNull)
-            .subscribe(e -> gateway.on(e).subscribe(), Log::err);
+            .subscribe(e -> gateway.on(e).subscribe());
     }
 
     @PreDestroy

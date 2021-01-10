@@ -3,14 +3,13 @@ package inside.data.service.impl;
 import arc.util.*;
 import com.google.common.cache.*;
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.entity.channel.*;
+import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.EmbedCreateSpec;
 import inside.Settings;
-import inside.common.services.ContextService;
 import inside.data.entity.MessageInfo;
 import inside.data.repository.MessageInfoRepository;
 import inside.data.service.MessageService;
-import inside.util.LocaleUtil;
+import inside.util.*;
 import org.joda.time.*;
 import org.slf4j.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.*;
 import reactor.core.scheduler.Schedulers;
+import reactor.util.context.ContextView;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -35,86 +35,67 @@ public class MessageServiceImpl implements MessageService{
     private ApplicationContext context;
 
     @Autowired
-    private ContextService contextService;
-
-    @Autowired
     private Settings settings;
 
-    private Cache<Snowflake, Boolean> deletedMessage = CacheBuilder.newBuilder()
+    private final Cache<Snowflake, Boolean> deletedMessage = CacheBuilder.newBuilder()
             .expireAfterWrite(5, TimeUnit.MINUTES)
             .build();
 
     @Override
-    public String get(String key){
+    public String get(ContextView ctx, String key){
         try{
-            return context.getMessage(key, null, contextService.locale());
+            return context.getMessage(key, null, ctx.get(ContextUtil.KEY_LOCALE));
         }catch(Throwable t){
             return "???" + key + "???";
         }
     }
 
     @Override
-    public String getCount(String key, long count){
-        String code = LocaleUtil.getCount(count, contextService.locale());
-        return get(String.format("%s.%s", key, code));
+    public String getCount(ContextView ctx, String key, long count){
+        String code = LocaleUtil.getCount(count, LocaleUtil.getDefaultLocale());
+        return get(ctx, String.format("%s.%s", key, code));
     }
 
     @Override
-    public String getEnum(Enum<?> type){
-        return get(String.format("%s.%s", type.getClass().getName(), type.name()));
+    public String getEnum(ContextView ctx, Enum<?> type){
+        return get(ctx, String.format("%s.%s", type.getClass().getName(), type.name()));
     }
 
     @Override
-    public String format(String key, Object... args){
-        return context.getMessage(key, args, contextService.locale());
+    public String format(ContextView ctx, String key, Object... args){
+        return context.getMessage(key, args, ctx.get(ContextUtil.KEY_LOCALE));
     }
 
     @Override
-    public Mono<Void> text(Mono<? extends MessageChannel> channel, String text, Object... args){
+    public Mono<Void> text(Mono<? extends MessageChannel> channel, String text){
         return channel.publishOn(Schedulers.boundedElastic())
-                      .doOnNext(c -> {
-                          if(c instanceof TextChannel t){ // todo так всё же нужна поддержка лс?
-                              contextService.init(t.getGuildId());
-                          }
-                      })
-                      .flatMap(c -> c.createMessage(Strings.format(text, args)))
-                      .then();
+                .flatMap(c -> c.createMessage(Strings.format(text)))
+                .then();
     }
 
     @Override
-    public Mono<Void> info(Mono<? extends MessageChannel> channel, String title, String text, Object... args){
-        return info(channel, e -> e.setColor(settings.normalColor).setTitle(title)
-                                   .setDescription(Strings.format(text, args)));
+    public Mono<Void> info(Mono<? extends MessageChannel> channel, String title, String text){
+        return info(channel, e -> e.setColor(settings.normalColor).setTitle(title).setDescription(text));
     }
 
     @Override
     public Mono<Void> info(Mono<? extends MessageChannel> channel, Consumer<EmbedCreateSpec> embed){
         return channel.publishOn(Schedulers.boundedElastic())
-                      .doOnNext(c -> {
-                          if(c instanceof TextChannel t){
-                              contextService.init(t.getGuildId());
-                          }
-                      })
-                      .flatMap(c -> c.createEmbed(embed))
-                      .then(Mono.fromRunnable(() -> contextService.reset()));
+                .flatMap(c -> c.createEmbed(embed))
+                .then();
     }
 
     @Override
-    public Mono<Void> err(Mono<? extends MessageChannel> channel, String text, Object... args){
-        return err(channel, get("message.error.general.title"), text, args);
+    public Mono<Void> err(Mono<? extends MessageChannel> channel, String text){
+        return Mono.deferContextual(ctx -> err(channel, get(ctx, "message.error.general.title"), text));
     }
 
     @Override
-    public Mono<Void> err(Mono<? extends MessageChannel> channel, String title, String text, Object... args){
+    public Mono<Void> err(Mono<? extends MessageChannel> channel, String title, String text){
         return channel.publishOn(Schedulers.boundedElastic())
-                      .doOnNext(c -> {
-                          if(c instanceof TextChannel t){
-                              contextService.init(t.getGuildId());
-                          }
-                      })
-                      .flatMap(c -> c.createEmbed(e -> e.setColor(settings.errorColor).setTitle(title)
-                                                        .setDescription(Strings.format(text, args))))
-                      .then(Mono.fromRunnable(() -> contextService.reset()));
+                .flatMap(c -> c.createEmbed(e -> e.setColor(settings.errorColor).setTitle(title)
+                        .setDescription(text)))
+                .then();
     }
 
     @Override
@@ -170,6 +151,6 @@ public class MessageServiceImpl implements MessageService{
         log.info("Audit cleanup started...");
         Flux.fromIterable(repository.findAll())
             .filter(m -> Weeks.weeksBetween(new DateTime(m.timestamp()), DateTime.now()).getWeeks() >= 4)
-            .subscribe(repository::delete, Log::err, () -> log.info("Audit cleanup finished, deleted {}", repository.count() - pre));
+            .subscribe(repository::delete, Log::err, () -> log.info("Audit cleanup finished, deleted {}", pre - repository.count()));
     }
 }

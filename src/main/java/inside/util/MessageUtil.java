@@ -8,6 +8,7 @@ import reactor.util.annotation.*;
 
 import java.time.*;
 import java.time.temporal.*;
+import java.util.Objects;
 import java.util.regex.*;
 
 import static java.util.regex.Pattern.compile;
@@ -39,7 +40,8 @@ public class MessageUtil{
         return text.length() >= maxLength ? (text.substring(0, maxLength - 4) + "...") : text;
     }
 
-    public static String effectiveContent(@NonNull Message message){
+    public static String effectiveContent(Message message){
+        Objects.requireNonNull(message, "message");
         StringBuilder builder = new StringBuilder(message.getContent());
         if(!message.getAttachments().isEmpty()){
             builder.append("\n---\n");

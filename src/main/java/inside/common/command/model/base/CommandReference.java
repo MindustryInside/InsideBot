@@ -7,21 +7,26 @@ import discord4j.core.spec.*;
 import inside.data.entity.*;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.*;
+import reactor.util.context.ContextView;
 
 import java.util.Objects;
 import java.util.function.*;
 
 public class CommandReference implements CommandRequest, CommandResponse{
     private final MessageCreateEvent event;
+    private final ContextView context;
     private final Supplier<Mono<? extends MessageChannel>> replyChannel;
     private final Scheduler replyScheduler;
     private final LocalMember localMember;
 
-    public CommandReference(MessageCreateEvent event, LocalMember localMember, Supplier<Mono<? extends MessageChannel>> replyChannel, Scheduler replyScheduler){
+    public CommandReference(MessageCreateEvent event, ContextView context,
+                            Supplier<Mono<? extends MessageChannel>> replyChannel,
+                            Scheduler replyScheduler, LocalMember localMember){
         this.event = event;
-        this.localMember = localMember;
+        this.context = context;
         this.replyChannel = replyChannel;
         this.replyScheduler = replyScheduler;
+        this.localMember = localMember;
     }
 
     public static Builder builder(){
@@ -31,6 +36,11 @@ public class CommandReference implements CommandRequest, CommandResponse{
     @Override
     public MessageCreateEvent event(){
         return event;
+    }
+
+    @Override
+    public ContextView context(){
+        return context;
     }
 
     @Override
@@ -50,17 +60,17 @@ public class CommandReference implements CommandRequest, CommandResponse{
 
     @Override
     public CommandResponse withDirectMessage(){
-        return new CommandReference(event, localMember, () -> getPrivateChannel().cast(MessageChannel.class), replyScheduler);
+        return new CommandReference(event, context, () -> getPrivateChannel().cast(MessageChannel.class), replyScheduler, localMember);
     }
 
     @Override
     public CommandResponse withReplyChannel(Mono<? extends MessageChannel> channelSource){
-        return new CommandReference(event, localMember, () -> channelSource, replyScheduler);
+        return new CommandReference(event, context, () -> channelSource, replyScheduler, localMember);
     }
 
     @Override
     public CommandResponse withScheduler(Scheduler scheduler){
-        return new CommandReference(event, localMember, replyChannel, scheduler);
+        return new CommandReference(event, context, replyChannel, scheduler, localMember);
     }
 
     @Override
@@ -81,12 +91,18 @@ public class CommandReference implements CommandRequest, CommandResponse{
 
     public static class Builder{
         private MessageCreateEvent event;
+        private ContextView contextView;
         private LocalMember localMember;
         private Supplier<Mono<? extends MessageChannel>> channel;
         private Scheduler scheduler;
 
         public Builder event(MessageCreateEvent event){
             this.event = event;
+            return this;
+        }
+
+        public Builder context(ContextView context){
+            this.contextView = context;
             return this;
         }
 
@@ -107,6 +123,7 @@ public class CommandReference implements CommandRequest, CommandResponse{
 
         public CommandReference build(){
             Objects.requireNonNull(event, "event");
+            Objects.requireNonNull(contextView, "context");
             Objects.requireNonNull(localMember, "localMember");
             if(channel == null){
                 channel = () -> event.getMessage().getChannel();
@@ -114,7 +131,7 @@ public class CommandReference implements CommandRequest, CommandResponse{
             if(scheduler == null){
                 scheduler = Schedulers.boundedElastic();
             }
-            return new CommandReference(event, localMember, channel, scheduler);
+            return new CommandReference(event, contextView, channel, scheduler, localMember);
         }
     }
 }

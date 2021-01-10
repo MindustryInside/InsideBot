@@ -1,4 +1,4 @@
-package inside.common.services;
+package inside.data.service;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;

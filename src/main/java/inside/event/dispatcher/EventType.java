@@ -9,9 +9,6 @@ import reactor.util.annotation.*;
 
 import java.util.*;
 
-/**
- * Все внутренние ивенты
- */
 public final class EventType{
 
     public static class MessageClearEvent extends BaseEvent{

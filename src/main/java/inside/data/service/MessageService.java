@@ -6,30 +6,31 @@ import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.discordjson.json.*;
 import inside.data.entity.MessageInfo;
 import reactor.core.publisher.Mono;
+import reactor.util.context.ContextView;
 
 import java.util.function.Consumer;
 
 public interface MessageService{
 
     //bundle
-    String get(String key);
+    String get(ContextView ctx, String key);
 
-    String getCount(String key, long count);
+    String getCount(ContextView ctx, String key, long count);
 
-    String getEnum(Enum<?> type);
+    String getEnum(ContextView ctx, Enum<?> type);
 
-    String format(String key, Object... args);
+    String format(ContextView ctx, String key, Object... args);
 
     //send
-    Mono<Void> text(Mono<? extends MessageChannel> channel, String text, Object... args);
+    Mono<Void> text(Mono<? extends MessageChannel> channel, String text);
 
-    Mono<Void> info(Mono<? extends MessageChannel> channel, String title, String text, Object... args);
+    Mono<Void> info(Mono<? extends MessageChannel> channel, String title, String text);
 
     Mono<Void> info(Mono<? extends MessageChannel> channel, Consumer<EmbedCreateSpec> embed);
 
-    Mono<Void> err(Mono<? extends MessageChannel> channel, String text, Object... args);
+    Mono<Void> err(Mono<? extends MessageChannel> channel, String text);
 
-    Mono<Void> err(Mono<? extends MessageChannel> channel, String title, String text, Object... args);
+    Mono<Void> err(Mono<? extends MessageChannel> channel, String title, String text);
 
     //data
     boolean isCleared(Snowflake messageId);

@@ -1,5 +1,6 @@
 package inside.event;
 
+import discord4j.common.LogUtil;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.*;
@@ -22,22 +23,17 @@ import org.slf4j.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
-import reactor.util.context.Context;
+import reactor.util.context.*;
 
 import java.util.*;
 import java.util.function.Consumer;
 
 import static inside.event.audit.AuditEventType.*;
+import static inside.util.ContextUtil.*;
 
 @Component
 public class MessageEventHandler extends AuditEventHandler{
     private static final Logger log = LoggerFactory.getLogger(MessageEventHandler.class);
-
-    public static final String KEY_GUILD_ID = "inside.guild";
-
-    public static final String KEY_LOCALE = "inside.locale";
-
-    public static final String KEY_TIMEZONE = "inside.timezone";
 
     @Autowired
     private AdminService adminService;
@@ -82,8 +78,6 @@ public class MessageEventHandler extends AuditEventHandler{
             discordEntityRetrieveService.save(guildConfig);
         }
 
-        context.init(guildId);
-
         if(!MessageUtil.isEmpty(message) && !message.isTts() && message.getEmbeds().isEmpty()){
             MessageInfo info = new MessageInfo();
             info.userId(userId);
@@ -94,17 +88,19 @@ public class MessageEventHandler extends AuditEventHandler{
             messageService.save(info);
         }
 
+        context = Context.of(KEY_GUILD_ID, guildId,
+                             KEY_LOCALE, discordEntityRetrieveService.locale(guildId),
+                             KEY_TIMEZONE, discordEntityRetrieveService.timeZone(guildId));
+
         CommandReference reference = CommandReference.builder()
                 .event(event)
+                .context(context)
                 .localMember(localMember)
                 .channel(() -> channel)
                 .build();
 
         if(adminService.isAdmin(member)){
-            Context context = Context.of(KEY_GUILD_ID, guildId,
-                                         KEY_LOCALE, discordEntityRetrieveService.locale(guildId),
-                                         KEY_TIMEZONE, discordEntityRetrieveService.timeZone(guildId));
-            return commandHandler.handleMessage(text, reference).contextWrite(ctx -> context);
+            return commandHandler.handleMessage(text, reference).contextWrite(context);
         }
         return Mono.empty();
     }
@@ -112,10 +108,15 @@ public class MessageEventHandler extends AuditEventHandler{
     @Override
     public Publisher<?> onMessageUpdate(MessageUpdateEvent event){
         Message message = event.getMessage().block();
-        if(message == null || message.getChannel().map(Channel::getType).block() != Type.GUILD_TEXT) return Mono.empty();
+        if(message == null || message.getChannel().map(Channel::getType).block() != Type.GUILD_TEXT){
+            return Mono.empty();
+        }
+
         User user = message.getAuthor().orElse(null);
         TextChannel c = message.getChannel().cast(TextChannel.class).block();
-        if(DiscordUtil.isBot(user) || c == null || !messageService.exists(message.getId())) return Mono.empty();
+        if(DiscordUtil.isBot(user) || c == null || !messageService.exists(message.getId())){
+            return Mono.empty();
+        }
 
         MessageInfo info = messageService.getById(event.getMessageId());
 
@@ -123,22 +124,27 @@ public class MessageEventHandler extends AuditEventHandler{
         String newContent = MessageUtil.effectiveContent(message);
         boolean under = newContent.length() >= Field.MAX_VALUE_LENGTH || oldContent.length() >= Field.MAX_VALUE_LENGTH;
 
-        if(message.isPinned() || newContent.equals(oldContent)) return Mono.empty();
+        if(message.isPinned() || newContent.equals(oldContent)){
+            return Mono.empty();
+        }
 
-        context.init(info.guildId());
+        Snowflake guildId = info.guildId();
+        context = Context.of(KEY_GUILD_ID, guildId,
+                             KEY_LOCALE, discordEntityRetrieveService.locale(guildId),
+                             KEY_TIMEZONE, discordEntityRetrieveService.timeZone(guildId));
 
         Consumer<EmbedCreateSpec> e = embed -> {
             embed.setColor(messageEdit.color);
             embed.setAuthor(user.getUsername(), null, user.getAvatarUrl());
-            embed.setTitle(messageService.format("audit.message.edit.title", c.getName()));
-            embed.setDescription(messageService.format("audit.message.edit.description",
+            embed.setTitle(messageService.format(context, "audit.message.edit.title", c.getName()));
+            embed.setDescription(messageService.format(context, "audit.message.edit.description",
                                                        c.getGuildId().asString(),
                                                        c.getId().asString(),
                                                        message.getId().asString()));
 
-            embed.addField(messageService.get("audit.message.old-content.title"),
+            embed.addField(messageService.get(context, "audit.message.old-content.title"),
                            MessageUtil.substringTo(oldContent, Field.MAX_VALUE_LENGTH), false);
-            embed.addField(messageService.get("audit.message.new-content.title"),
+            embed.addField(messageService.get(context, "audit.message.new-content.title"),
                            MessageUtil.substringTo(newContent, Field.MAX_VALUE_LENGTH), true);
 
             embed.setFooter(timestamp(), null);
@@ -146,12 +152,12 @@ public class MessageEventHandler extends AuditEventHandler{
 
         if(under){
             stringInputStream.writeString(String.format("%s:%n%s%n%n%s:%n%s",
-                    messageService.get("audit.message.old-content.title"), oldContent,
-                    messageService.get("audit.message.new-content.title"), newContent)
+                    messageService.get(context, "audit.message.old-content.title"), oldContent,
+                    messageService.get(context, "audit.message.new-content.title"), newContent)
             );
         }
 
-        return log(c.getGuildId(), e, under).then(Mono.fromRunnable(() -> {
+        return log(c.getGuildId(), e, under).contextWrite(context).then(Mono.fromRunnable(() -> {
             info.content(newContent);
             messageService.save(info);
         }));
@@ -160,11 +166,17 @@ public class MessageEventHandler extends AuditEventHandler{
     @Override
     public Publisher<?> onMessageDelete(MessageDeleteEvent event){
         Message message = event.getMessage().orElse(null);
-        if(message == null || event.getChannel().map(Channel::getType).map(t -> t != Type.GUILD_TEXT).blockOptional().orElse(true)) return Mono.empty();
+        if(message == null || event.getChannel().map(Channel::getType).map(t -> t != Type.GUILD_TEXT).blockOptional().orElse(true)){
+            return Mono.empty();
+        }
+
         Guild guild = message.getGuild().block();
         User user = message.getAuthor().orElse(null);
         TextChannel channel =  event.getChannel().cast(TextChannel.class).block();
-        if(guild == null || channel == null || user == null) return Mono.empty();
+        if(guild == null || channel == null || user == null){
+            return Mono.empty();
+        }
+
         if(Objects.equals(channel.getId(), discordEntityRetrieveService.logChannelId(guild.getId())) && !message.getEmbeds().isEmpty()){ /* =) */
             return guild.getAuditLog(a -> a.setActionType(ActionType.MESSAGE_DELETE)).next().doOnNext(a -> {
                 log.warn("Member '{}' deleted log message in guild '{}'",
@@ -172,26 +184,31 @@ public class MessageEventHandler extends AuditEventHandler{
                          guild.getName());
             }).then();
         }
-        if(!messageService.exists(message.getId()) || messageService.isCleared(message.getId())) return Mono.empty();
+        if(!messageService.exists(message.getId()) || messageService.isCleared(message.getId())){
+            return Mono.empty();
+        }
 
         MessageInfo info = messageService.getById(message.getId());
         String content = info.content();
         boolean under = content.length() >= Field.MAX_VALUE_LENGTH;
 
-        context.init(guild.getId());
+        context = Context.of(KEY_GUILD_ID, guild.getId(),
+                             KEY_LOCALE, discordEntityRetrieveService.locale(guild.getId()),
+                             KEY_TIMEZONE, discordEntityRetrieveService.timeZone(guild.getId()));
 
         Consumer<EmbedCreateSpec> e = embed -> {
             embed.setColor(messageDelete.color);
             embed.setAuthor(user.getUsername(), null, user.getAvatarUrl());
-            embed.setTitle(messageService.format("audit.message.delete.title", channel.getName()));
+            embed.setTitle(messageService.format(context, "audit.message.delete.title", channel.getName()));
             embed.setFooter(timestamp(), null);
-            embed.addField(messageService.get("audit.message.deleted-content.title"), MessageUtil.substringTo(content, Field.MAX_VALUE_LENGTH), true);
+            embed.addField(messageService.get(context, "audit.message.deleted-content.title"),
+                           MessageUtil.substringTo(content, Field.MAX_VALUE_LENGTH), true);
         };
 
         if(under){
-            stringInputStream.writeString(String.format("%s:%n%s", messageService.get("audit.message.deleted-content.title"), content));
+            stringInputStream.writeString(String.format("%s:%n%s", messageService.get(context, "audit.message.deleted-content.title"), content));
         }
 
-        return log(guild.getId(), e, under).then(Mono.fromRunnable(() -> messageService.delete(info)));
+        return log(guild.getId(), e, under).contextWrite(context).then(Mono.fromRunnable(() -> messageService.delete(info)));
     }
 }

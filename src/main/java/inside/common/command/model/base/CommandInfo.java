@@ -43,7 +43,9 @@ public class CommandInfo{
                     throw new IllegalArgumentException("Malformed param '" + param + "'");
                 }
 
-                if(optional) hadOptional = true;
+                if(optional){
+                    hadOptional = true;
+                }
 
                 String fname = param.substring(1, param.length() - 1);
                 if(fname.endsWith("...")){

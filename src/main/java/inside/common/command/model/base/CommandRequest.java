@@ -7,12 +7,15 @@ import discord4j.core.object.entity.channel.*;
 import discord4j.rest.util.PermissionSet;
 import inside.data.entity.LocalMember;
 import reactor.core.publisher.Mono;
+import reactor.util.context.ContextView;
 
 import java.util.Optional;
 
 public interface CommandRequest{
 
     MessageCreateEvent event();
+
+    ContextView context();
 
     LocalMember localMember();
 
@@ -33,7 +36,7 @@ public interface CommandRequest{
     }
 
     default Member getAuthorAsMember(){
-        return event().getMember().orElseThrow(() -> new RuntimeException("Member is null"));
+        return event().getMember().orElseThrow(RuntimeException::new);
     }
 
     default Mono<Boolean> hasPermission(PermissionSet requiredPermissions){

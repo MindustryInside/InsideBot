@@ -8,7 +8,7 @@ import org.reactivestreams.Publisher;
 import org.springframework.stereotype.Component;
 
 @Component
-public class CommonMessageEventHandler extends AuditEventHandler{
+public class MiscMessageEventHandler extends AuditEventHandler{
     private static final String egg = "\uD83E\uDD5A";
 
     @Override
@@ -19,7 +19,7 @@ public class CommonMessageEventHandler extends AuditEventHandler{
         if(text.contains("egg")){
             return message.addReaction(ReactionEmoji.unicode(egg));
         }
-        //
+
         return super.onMessageCreate(event);
     }
 }

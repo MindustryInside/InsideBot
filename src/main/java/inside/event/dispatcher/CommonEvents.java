@@ -18,6 +18,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import static inside.event.audit.AuditEventType.*;
+import static inside.util.ContextUtil.*;
 
 @Service
 public class CommonEvents extends Events{
@@ -34,12 +35,12 @@ public class CommonEvents extends Events{
     public Publisher<?> onMessageClear(MessageClearEvent event){
         StringBuffer builder = new StringBuffer();
         DateTimeFormatter formatter = DateTimeFormat.forPattern("MM-dd-yyyy HH:mm:ss")
-                                                    .withLocale(context.locale())
-                                                    .withZone(context.zone());
+                .withLocale(context.get(KEY_LOCALE))
+                .withZone(context.get(KEY_TIMEZONE));
 
         Consumer<Message> appendInfo = m -> {
             Member member = m.getAuthorAsMember().block();
-            builder.append('[').append(formatter.print(m.getTimestamp().toEpochMilli())).append("] ");
+            builder.append("[").append(formatter.print(m.getTimestamp().toEpochMilli())).append("] ");
             if(DiscordUtil.isBot(member)){
                 builder.append("[BOT] ");
             }
@@ -49,18 +50,17 @@ public class CommonEvents extends Events{
                 Embed e = m.getEmbeds().get(i);
                 builder.append("\n[embed-").append(i).append(']');
                 if(e.getDescription().isPresent()){
-                    builder.append('\n').append(e.getDescription().get());
+                    builder.append("\n").append(e.getDescription().get());
                 }else{
                     builder.append("<empty>");
                 }
             }
-            builder.append('\n');
+            builder.append("\n");
         };
 
         Mono<Void> publishLog = event.channel.map(GuildChannel::getName).flatMap(c -> log(event.guild().getId(), embed -> {
-            context.init(event.guild.getId());
-            embed.setTitle(messageService.format("audit.message.clear.title", event.count, c));
-            embed.setDescription(messageService.format("audit.message.clear.description", event.member.getUsername(), event.count, c));
+            embed.setTitle(messageService.format(context, "audit.message.clear.title", event.count, c));
+            embed.setDescription(messageService.format(context, "audit.message.clear.description", event.member.getUsername(), event.count, c));
             embed.setFooter(timestamp(), null);
             embed.setColor(messageClear.color);
         }, true));
@@ -68,7 +68,7 @@ public class CommonEvents extends Events{
         return event.history
                 .filter(Objects::nonNull)
                 .publishOn(Schedulers.boundedElastic())
-                .doOnError(e -> {})
+                .onErrorResume(__ -> Mono.empty())
                 .flatMap(m -> Mono.fromRunnable(() -> {
                     messageService.putMessage(m.getId());
                     appendInfo.accept(m);
@@ -89,8 +89,8 @@ public class CommonEvents extends Events{
                     });
 
                     Mono<Void> publishLog = log(member.getGuildId(), embed -> {
-                        embed.setTitle(messageService.get("audit.member.unmute.title"));
-                        embed.setDescription(messageService.format("audit.member.unmute.description", member.getUsername()));
+                        embed.setTitle(messageService.get(context, "audit.member.unmute.title"));
+                        embed.setDescription(messageService.format(context, "audit.member.unmute.description", member.getUsername()));
                         embed.setFooter(timestamp(), null);
                         embed.setColor(userUnmute.color);
                     });
@@ -102,8 +102,8 @@ public class CommonEvents extends Events{
     @Override
     public Publisher<?> onMemberMute(MemberMuteEvent event){
         DateTimeFormatter formatter = DateTimeFormat.shortDateTime()
-                                                    .withLocale(context.locale())
-                                                    .withZone(context.zone());
+                                                    .withLocale(context.get(KEY_LOCALE))
+                                                    .withZone(context.get(KEY_TIMEZONE));
         LocalMember local = event.target;
         Guild guild = event.guild();
         return guild.getMemberById(local.userId())
@@ -112,16 +112,16 @@ public class CommonEvents extends Events{
                     Mono<Member> admin = guild.getMemberById(event.admin.userId());
 
                     Mono<Void> mute = Mono.fromRunnable(() -> {
-                        adminService.mute(event.admin, local, event.delay.toCalendar(context.locale()), event.reason().orElse(null)).block();
+                        adminService.mute(event.admin, local, event.delay.toCalendar(context.get(KEY_LOCALE)), event.reason().orElse(null)).block();
                         member.addRole(discordEntityRetrieveService.muteRoleId(member.getGuildId())).block();
                     });
 
                     Mono<Void> publishLog = admin.map(Member::getUsername).flatMap(username -> log(member.getGuildId(), embed -> {
-                        embed.setTitle(messageService.get("audit.member.mute.title"));
+                        embed.setTitle(messageService.get(context, "audit.member.mute.title"));
                         embed.setDescription(String.format("%s%n%s%n%s",
-                        messageService.format("audit.member.mute.description", member.getUsername(), username),
-                        messageService.format("common.reason", event.reason().orElse(messageService.get("common.not-defined"))),
-                        messageService.format("audit.member.mute.delay", formatter.print(event.delay))
+                        messageService.format(context, "audit.member.mute.description", member.getUsername(), username),
+                        messageService.format(context, "common.reason", event.reason().orElse(messageService.get(context, "common.not-defined"))),
+                        messageService.format(context, "audit.member.mute.delay", formatter.print(event.delay))
                         ));
                         embed.setFooter(timestamp(), null);
                         embed.setColor(userMute.color);
