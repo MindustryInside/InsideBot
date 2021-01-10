@@ -13,7 +13,7 @@ repositories{
 ext{
     discord4j_version  = '3.1.3'
     arc_version        = 'v115'
-    joba_version       = 'v2.10.8'
+    joda_version       = 'v2.10.8'
     caffeine_version   = '2.8.8'
 
     jaxb_version       = '2.3.1'
@@ -35,7 +35,7 @@ project.ext.mainClassName = "insidebot.InsideBot"
 dependencies{
     implementation "com.discord4j:discord4j-core:$discord4j_version"
     implementation "com.github.Anuken.Arc:arc-core:$arc_version"
-    implementation "com.github.JodaOrg:joda-time:$joba_version"
+    implementation "com.github.JodaOrg:joda-time:$joda_version"
     implementation "com.github.ben-manes.caffeine:caffeine:$caffeine_version"
 
     // data dependencies
