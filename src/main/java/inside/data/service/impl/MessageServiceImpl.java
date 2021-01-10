@@ -1,7 +1,7 @@
 package inside.data.service.impl;
 
 import arc.util.*;
-import com.google.common.cache.*;
+import com.github.benmanes.caffeine.cache.*;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.EmbedCreateSpec;
@@ -37,7 +37,7 @@ public class MessageServiceImpl implements MessageService{
     @Autowired
     private Settings settings;
 
-    private final Cache<Snowflake, Boolean> deletedMessage = CacheBuilder.newBuilder()
+    private final Cache<Snowflake, Boolean> deletedMessage = Caffeine.newBuilder()
             .expireAfterWrite(5, TimeUnit.MINUTES)
             .build();
 
