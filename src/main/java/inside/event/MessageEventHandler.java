@@ -1,10 +1,7 @@
 package inside.event;
 
-import arc.files.*;
-import arc.util.Strings;
 import arc.util.io.*;
 import arc.util.serialization.Base64Coder;
-import com.fasterxml.jackson.databind.ser.Serializers;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.*;
@@ -31,7 +28,7 @@ import reactor.util.context.Context;
 import reactor.util.function.*;
 
 import java.io.*;
-import java.net.*;
+import java.net.URL;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -165,10 +162,15 @@ public class MessageEventHandler extends AuditEventHandler{
                                                       c.getId().asString(),
                                                       message.getId().asString()));
 
-            spec.addField(messageService.get(context, "audit.message.old-content.title"),
-                           MessageUtil.substringTo(oldContent, Field.MAX_VALUE_LENGTH), false);
-            spec.addField(messageService.get(context, "audit.message.new-content.title"),
-                           MessageUtil.substringTo(newContent, Field.MAX_VALUE_LENGTH), true);
+            if(oldContent.length() > 0){
+                spec.addField(messageService.get(context, "audit.message.old-content.title"),
+                              MessageUtil.substringTo(oldContent, Field.MAX_VALUE_LENGTH), false);
+            }
+
+            if(newContent.length() > 0){
+                spec.addField(messageService.get(context, "audit.message.new-content.title"),
+                              MessageUtil.substringTo(newContent, Field.MAX_VALUE_LENGTH), true);
+            }
 
             spec.setFooter(timestamp(), null);
         };
@@ -257,8 +259,11 @@ public class MessageEventHandler extends AuditEventHandler{
             spec.setAuthor(user.getUsername(), null, user.getAvatarUrl());
             spec.setTitle(messageService.format(context, "audit.message.delete.title", channel.getName()));
             spec.setFooter(timestamp(), null);
-            spec.addField(messageService.get(context, "audit.message.deleted-content.title"),
-                           MessageUtil.substringTo(content, Field.MAX_VALUE_LENGTH), true);
+
+            if(content.length() > 0){
+                spec.addField(messageService.get(context, "audit.message.deleted-content.title"),
+                              MessageUtil.substringTo(content, Field.MAX_VALUE_LENGTH), true);
+            }
         };
 
         MessageCreateSpec spec = new MessageCreateSpec().setEmbed(embed);
