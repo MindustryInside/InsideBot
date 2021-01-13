@@ -58,7 +58,7 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     public String getEnum(ContextView ctx, Enum<?> type){
-        return get(ctx, String.format("%s.%s", type.getClass().getName(), type.name()));
+        return get(ctx, String.format("%s.%s", type.getClass().getCanonicalName(), type.name()));
     }
 
     @Override
@@ -145,12 +145,10 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     @Transactional
-    @Scheduled(cron = "0 0 */2 * * *") // каждые 2 часа
+    @Scheduled(cron = "0 0 */4 * * *")
     public void cleanUp(){
-        long pre = repository.count();
-        log.info("Audit cleanup started...");
         Flux.fromIterable(repository.findAll())
-            .filter(m -> Weeks.weeksBetween(new DateTime(m.timestamp()), DateTime.now()).getWeeks() >= 4)
-            .subscribe(repository::delete, Log::err, () -> log.info("Audit cleanup finished, deleted {}", pre - repository.count()));
+            .filter(m -> Weeks.weeksBetween(new DateTime(m.timestamp()), DateTime.now()).getWeeks() >= 3)
+            .subscribe(repository::delete);
     }
 }
