@@ -16,3 +16,7 @@ spring:
     url:
     password:
     username:
+  task:
+    scheduling:
+      pool:
+        size: 3
