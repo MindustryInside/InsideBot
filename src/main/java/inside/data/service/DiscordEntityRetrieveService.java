@@ -6,7 +6,7 @@ import inside.data.entity.*;
 import org.joda.time.DateTimeZone;
 import reactor.core.publisher.Flux;
 
-import java.util.Locale;
+import java.util.*;
 import java.util.function.Supplier;
 
 public interface DiscordEntityRetrieveService{
@@ -44,6 +44,8 @@ public interface DiscordEntityRetrieveService{
     boolean activeUserDisabled(Snowflake guildId);
 
     // member
+
+    List<LocalMember> getAllMembers();
 
     LocalMember getMember(Member member);
 

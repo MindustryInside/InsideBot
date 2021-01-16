@@ -90,22 +90,24 @@ public class MessageEventHandler extends AuditEventHandler{
             info.messageId(message.getId());
             info.guildId(guildId);
             info.timestamp(Calendar.getInstance());
-            info.content(message.getContent());
-            Map<String, String> attachments = Flux.fromIterable(message.getAttachments())
-                    .flatMap(attachment ->
-                            Flux.using(() -> new URL(attachment.getUrl()).openConnection().getInputStream(),
-                                       input -> Mono.fromCallable(() -> {
-                                           try{
-                                               return Tuples.of(attachment.getFilename(), Base64Coder.encodeLines(input.readAllBytes()));
-                                           }catch(IOException e){
-                                               log.warn("Failed to download file '{}'; skipping...", attachment.getFilename());
-                                               return null;
-                                           }
-                                       }), Streams::close))
-                    .collect(Collectors.toMap(Tuple2::getT1, Tuple2::getT2))
-                    .block();
+            info.content(MessageUtil.effectiveContent(message));
+            if(false){
+                Map<String, String> attachments = Flux.fromIterable(message.getAttachments())
+                        .flatMap(attachment ->
+                                         Flux.using(() -> new URL(attachment.getUrl()).openConnection().getInputStream(),
+                                                    input -> Mono.fromCallable(() -> {
+                                                        try{
+                                                            return Tuples.of(attachment.getFilename(), Base64Coder.encodeLines(input.readAllBytes()));
+                                                        }catch(IOException e){
+                                                            log.warn("Failed to download file '{}'; skipping...", attachment.getFilename());
+                                                            return null;
+                                                        }
+                                                    }), Streams::close))
+                        .collect(Collectors.toMap(Tuple2::getT1, Tuple2::getT2))
+                        .block();
 
-            info.attachments(attachments);
+                info.attachments(attachments);
+            }
             messageService.save(info);
         }
 
@@ -141,7 +143,7 @@ public class MessageEventHandler extends AuditEventHandler{
 
         MessageInfo info = messageService.getById(event.getMessageId());
         String oldContent = info.content();
-        String newContent = message.getContent();
+        String newContent = MessageUtil.effectiveContent(message);
         boolean under = newContent.length() >= Field.MAX_VALUE_LENGTH || oldContent.length() >= Field.MAX_VALUE_LENGTH;
 
         if(message.isPinned() || newContent.equals(oldContent)){
@@ -184,35 +186,36 @@ public class MessageEventHandler extends AuditEventHandler{
             spec.addFile("message.txt", stringInputStream);
         }
 
-        //todo
-        if(info.attachments().size() > 1){
-            try(ByteArrayOutputStream zip = new ByteArrayOutputStream();
-                ZipOutputStream out = new ZipOutputStream(zip)){
+        if(false){
+            if(info.attachments().size() > 1){
+                try(ByteArrayOutputStream zip = new ByteArrayOutputStream();
+                    ZipOutputStream out = new ZipOutputStream(zip)){
 
+                    info.attachments().forEach((key, value) -> {
+                        try(ByteArrayOutputStream o = new ReusableByteOutStream()){
+                            o.writeBytes(Base64Coder.decodeLines(value));
+                            ZipEntry entry = new ZipEntry(key);
+                            entry.setSize(o.size());
+                            out.putNextEntry(entry);
+                            Streams.copy(new ByteArrayInputStream(o.toByteArray()), out);
+                            out.closeEntry();
+                        }catch(IOException e){
+                            throw new RuntimeException(e);
+                        }
+                    });
+
+                    out.finish();
+                    spec.addFile("attachments.zip", new ByteArrayInputStream(zip.toByteArray()));
+                }catch(IOException e){
+                    throw new RuntimeException(e);
+                }
+            }else if(info.attachments().size() == 1){
+                //todo this is terrible...
                 info.attachments().forEach((key, value) -> {
-                    try(ByteArrayOutputStream o = new ReusableByteOutStream()){
-                        o.writeBytes(Base64Coder.decodeLines(value));
-                        ZipEntry entry = new ZipEntry(key);
-                        entry.setSize(o.size());
-                        out.putNextEntry(entry);
-                        Streams.copy(new ByteArrayInputStream(o.toByteArray()), out);
-                        out.closeEntry();
-                    }catch(IOException e){
-                        throw new RuntimeException(e);
-                    }
+                    stringInputStream.setBytes(Base64Coder.decodeLines(value));
+                    spec.addFile(key, stringInputStream);
                 });
-
-                out.finish();
-                spec.addFile("attachments.zip", new ByteArrayInputStream(zip.toByteArray()));
-            }catch(IOException e){
-                throw new RuntimeException(e);
             }
-        }else if(info.attachments().size() == 1){
-            //todo this is terrible...
-            info.attachments().forEach((key, value) -> {
-                stringInputStream.setBytes(Base64Coder.decodeLines(value));
-                spec.addFile(key, stringInputStream);
-            });
         }
 
         return log(c.getGuildId(), spec).contextWrite(context).then(Mono.fromRunnable(() -> {
@@ -272,34 +275,36 @@ public class MessageEventHandler extends AuditEventHandler{
             spec.addFile("message.txt", stringInputStream);
         }
 
-        if(info.attachments().size() > 1){
-            try(ByteArrayOutputStream zip = new ByteArrayOutputStream();
-                ZipOutputStream out = new ZipOutputStream(zip)){
+        if(false){
+            if(info.attachments().size() > 1){
+                try(ByteArrayOutputStream zip = new ByteArrayOutputStream();
+                    ZipOutputStream out = new ZipOutputStream(zip)){
 
+                    info.attachments().forEach((key, value) -> {
+                        try(ByteArrayOutputStream o = new ReusableByteOutStream()){
+                            o.writeBytes(Base64Coder.decodeLines(value));
+                            ZipEntry entry = new ZipEntry(key);
+                            entry.setSize(o.size());
+                            out.putNextEntry(entry);
+                            Streams.copy(new ByteArrayInputStream(o.toByteArray()), out);
+                            out.closeEntry();
+                        }catch(IOException e){
+                            throw new RuntimeException(e);
+                        }
+                    });
+
+                    out.finish();
+                    spec.addFile("attachments.zip", new ByteArrayInputStream(zip.toByteArray()));
+                }catch(IOException e){
+                    throw new RuntimeException(e);
+                }
+            }else if(info.attachments().size() == 1){
+                //todo this is terrible...
                 info.attachments().forEach((key, value) -> {
-                    try(ByteArrayOutputStream o = new ReusableByteOutStream()){
-                        o.writeBytes(Base64Coder.decodeLines(value));
-                        ZipEntry entry = new ZipEntry(key);
-                        entry.setSize(o.size());
-                        out.putNextEntry(entry);
-                        Streams.copy(new ByteArrayInputStream(o.toByteArray()), out);
-                        out.closeEntry();
-                    }catch(IOException e){
-                        throw new RuntimeException(e);
-                    }
+                    stringInputStream.setBytes(Base64Coder.decodeLines(value));
+                    spec.addFile(key, stringInputStream);
                 });
-
-                out.finish();
-                spec.addFile("attachments.zip", new ByteArrayInputStream(zip.toByteArray()));
-            }catch(IOException e){
-                throw new RuntimeException(e);
             }
-        }else if(info.attachments().size() == 1){
-            //todo this is terrible...
-            info.attachments().forEach((key, value) -> {
-                stringInputStream.setBytes(Base64Coder.decodeLines(value));
-                spec.addFile(key, stringInputStream);
-            });
         }
 
         return log(guild.getId(), spec).contextWrite(context).then(Mono.fromRunnable(() -> messageService.delete(info)));

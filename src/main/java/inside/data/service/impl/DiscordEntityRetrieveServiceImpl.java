@@ -127,6 +127,12 @@ public class DiscordEntityRetrieveServiceImpl implements DiscordEntityRetrieveSe
 
     @Override
     @Transactional(readOnly = true)
+    public List<LocalMember> getAllMembers(){
+        return memberRepository.findAll();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public LocalMember getMember(Member member){
         return getMemberById(member.getGuildId(), member.getId());
     }

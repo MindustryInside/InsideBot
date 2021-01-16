@@ -26,12 +26,6 @@ tasks.withType(JavaCompile){
     options.compilerArgs += ["--enable-preview"]
 }
 
-tasks.withType(JavaExec) {
-    jvmArgs += ["--enable-preview"]
-}
-
-project.ext.mainClassName = "insidebot.InsideBot"
-
 dependencies{
     implementation "com.discord4j:discord4j-core:$discord4j_version"
     implementation "com.github.Anuken.Arc:arc-core:$arc_version"
