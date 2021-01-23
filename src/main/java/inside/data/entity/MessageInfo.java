@@ -22,9 +22,9 @@ public class MessageInfo extends GuildEntity{
     @Column(length = 2000)
     private String content;
 
-    @Type(type = "jsonb")
-    @Column(columnDefinition = "json")
-    private Map<String, String> attachments = new HashMap<>();
+    // @Type(type = "jsonb")
+    // @Column(columnDefinition = "json")
+    // private Map<String, String> attachments = new HashMap<>();
 
     @Column
     private Calendar timestamp;
@@ -56,13 +56,13 @@ public class MessageInfo extends GuildEntity{
         this.content = content;
     }
 
-    public Map<String, String> attachments(){
-        return attachments;
-    }
+    // public Map<String, String> attachments(){
+    //     return attachments;
+    // }
 
-    public void attachments(Map<String, String> attachments){
-        this.attachments = attachments;
-    }
+    // public void attachments(Map<String, String> attachments){
+    //     this.attachments = attachments;
+    // }
 
     @NonNull
     public Calendar timestamp(){
@@ -79,7 +79,7 @@ public class MessageInfo extends GuildEntity{
                "messageId='" + messageId + '\'' +
                ", userId='" + userId + '\'' +
                ", content='" + content + '\'' +
-               ", attachments=" + attachments +
+               // ", attachments=" + attachments +
                ", timestamp=" + timestamp +
                "} " + super.toString();
     }

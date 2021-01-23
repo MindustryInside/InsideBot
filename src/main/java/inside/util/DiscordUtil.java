@@ -2,7 +2,7 @@ package inside.util;
 
 import discord4j.core.object.entity.*;
 
-public class DiscordUtil{
+public abstract class DiscordUtil{
 
     private DiscordUtil(){}
 

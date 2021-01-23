@@ -7,7 +7,7 @@ import discord4j.core.object.Region;
 import java.util.*;
 import java.util.regex.Pattern;
 
-public class LocaleUtil{
+public abstract class LocaleUtil{
 
     private LocaleUtil(){}
 

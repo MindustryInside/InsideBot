@@ -13,6 +13,7 @@ import inside.Settings;
 import inside.data.entity.*;
 import inside.data.repository.LocalMemberRepository;
 import inside.data.service.*;
+import inside.event.StartupEventHandler;
 import inside.event.dispatcher.EventListener;
 import inside.event.dispatcher.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +50,11 @@ public class DiscordServiceImpl implements DiscordService{
                 .build()
                 .gateway()
                 .setMemberRequestFilter(MemberRequestFilter.all())
+                .withEventDispatcher(dispatcher -> handlers.stream()
+                        .filter(adapter -> adapter instanceof StartupEventHandler).findFirst()
+                        .map(dispatcher::on)
+                        .orElse(Flux.empty())
+                )
                 .setEnabledIntents(IntentSet.of(
                         Intent.GUILDS,
                         Intent.GUILD_MEMBERS,

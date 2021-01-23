@@ -103,6 +103,14 @@ public class Commands{
         }
     }
 
+    @DiscordCommand(key = "1337", params = "<text...>", description = "command.1337.description")
+    public class LeetCommand extends Command{
+        @Override
+        public Mono<Void> execute(CommandReference ref, String[] args){
+            return messageService.text(ref.getReplyChannel(), MessageUtil.leeted(args[0]));
+        }
+    }
+
     // @DiscordCommand(key = "config", params = "[add/set/remove] [name] [value...]", description = "commands.config.description")
     // public class ConfigCommand extends CommandRunner{
     //     public final List<String> allowedKeys = List.of("guildID", "id");

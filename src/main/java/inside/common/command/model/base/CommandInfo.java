@@ -27,7 +27,9 @@ public class CommandInfo{
             for(int i = 0; i < params.length; i++){
                 String param = psplit[i];
 
-                if(param.length() <= 2) throw new IllegalArgumentException("Malformed param '" + param + "'");
+                if(param.length() <= 2){
+                    throw new IllegalArgumentException("Malformed param '" + param + "'");
+                }
 
                 char l = param.charAt(0), r = param.charAt(param.length() - 1);
                 boolean optional, variadic = false;

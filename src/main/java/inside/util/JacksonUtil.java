@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import java.util.*;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class JacksonUtil{
+public abstract class JacksonUtil{
     public static final ObjectMapper mapper = new ObjectMapper();
 
     static{

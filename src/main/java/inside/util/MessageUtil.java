@@ -1,19 +1,59 @@
 package inside.util;
 
+import arc.struct.*;
 import arc.util.Strings;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import org.joda.time.DateTime;
 import reactor.util.annotation.*;
+import reactor.util.function.Tuple2;
 
 import java.time.*;
 import java.time.temporal.*;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.regex.*;
 
 import static java.util.regex.Pattern.compile;
 
-public class MessageUtil{
+public abstract class MessageUtil{
+
+    public static StringMap leetSpeak = StringMap.of(
+            "а", "4", "a", "4",
+            "б", "6", "b", "8",
+            "в", "8", "c", "c",
+            "г", "g", "d", "d",
+            "д", "d", "e", "3",
+            "е", "3", "f", "ph",
+            "ё", "3", "g", "9",
+            "ж", "zh", "h", "h",
+            "з", "e", "i", "1",
+            "и", "i", "j", "g",
+            "й", "\\`i", "k", "k",
+            "к", "k", "l", "l",
+            "л", "l", "m", "m",
+            "м", "m", "n", "n",
+            "н", "n", "o", "0",
+            "о", "0", "p", "p",
+            "п", "p", "q", "q",
+            "р", "r", "r", "r",
+            "с", "c", "s", "5",
+            "т", "7", "t", "7",
+            "у", "y", "u", "u",
+            "ф", "f", "v", "v",
+            "х", "x", "w", "w",
+            "ц", "u,", "x", "x",
+            "ч", "ch", "y", "y",
+            "ш", "w", "z", "2",
+            "щ", "w,",
+            "ъ", "\\`ь",
+            "ы", "ьi",
+            "ь", "ь",
+            "э", "э",
+            "ю", "10",
+            "я", "9"
+    );
 
     private static final Pattern timeUnitPattern = compile(
             "^" +
@@ -34,6 +74,37 @@ public class MessageUtil{
 
     public static boolean isEmpty(Message message) {
         return message == null || effectiveContent(message).isEmpty();
+    }
+
+    public static String leeted(String text){
+        Objects.requireNonNull(text, "text");
+        Function<String, String> get = s -> {
+            String result = leetSpeak.get(s.toLowerCase());
+            return result == null ? "" : (Character.isUpperCase(s.charAt(0)) ? (result.charAt(0) + "").toUpperCase() + (result.length() > 1 ? result.substring(1) : "") : result);
+        };
+
+        int len = text.length();
+        if(len == 0) {
+            return text;
+        }
+        if(len == 1){
+            return get.apply(text);
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for(int i = 0; i < len;){
+            String c = text.substring(i, i <= len - 2 ? i + 2 : i + 1);
+            String leeted = get.apply(c);
+            if(isEmpty(leeted)){
+                leeted = get.apply(c.charAt(0) + "");
+                sb.append(isEmpty(leeted) ? c.charAt(0) : leeted);
+                i++;
+            }else{
+                sb.append(leeted);
+                i += 2;
+            }
+        }
+        return sb.toString();
     }
 
     public static String substringTo(@NonNull String text, int maxLength){
