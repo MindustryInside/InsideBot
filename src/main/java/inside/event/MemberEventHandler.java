@@ -97,7 +97,11 @@ public class MemberEventHandler extends AuditEventHandler{
     public Publisher<?> onMemberUpdate(MemberUpdateEvent event){
         return event.getMember()
                     .filter(DiscordUtil::isNotBot)
-                    .doOnNext(member -> discordEntityRetrieveService.save(discordEntityRetrieveService.getMember(member, () -> new LocalMember(member))))
+                    .doOnNext(member -> {
+                        LocalMember localMember = discordEntityRetrieveService.getMember(member, () -> new LocalMember(member));
+                        event.getCurrentNickname().ifPresent(localMember::effectiveName);
+                        discordEntityRetrieveService.save(localMember);
+                    })
                     .then();
     }
 }
