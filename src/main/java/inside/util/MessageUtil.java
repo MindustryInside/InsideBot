@@ -55,6 +55,44 @@ public abstract class MessageUtil{
             "я", "9"
     );
 
+    public static StringMap translit = StringMap.of(
+            "a", "а",
+            "b", "б",
+            "v", "в",
+            "g", "г",
+            "d", "д",
+            "e", "е",
+            "yo", "ё",
+            "zh", "ж",
+            "z", "з",
+            "i", "и",
+            "j", "й",
+            "k", "к",
+            "l", "л",
+            "m", "м",
+            "n", "н",
+            "o", "о",
+            "p", "п",
+            "r", "р",
+            "s", "с",
+            "t", "т",
+            "u", "у",
+            "f", "ф",
+            "h", "х",
+            "ts", "ц",
+            "ch", "ч",
+            "sh", "ш",
+            "`", "ъ",
+            "y", "у",
+            "'", "ь",
+            "yu", "ю",
+            "ya", "я",
+            "x", "кс",
+            "w", "в",
+            "q", "к",
+            "iy", "ий"
+    );
+
     private static final Pattern timeUnitPattern = compile(
             "^" +
             "((\\d+)(y|year|years|г|год|года|лет))?" +
@@ -81,6 +119,38 @@ public abstract class MessageUtil{
         Function<String, String> get = s -> {
             String result = leetSpeak.get(s.toLowerCase());
             String alter = leetSpeak.findKey(s, false);
+            return result == null ? alter != null ? alter : "" : (Character.isUpperCase(s.charAt(0)) ? (result.charAt(0) + "").toUpperCase() + (result.length() > 1 ? result.substring(1) : "") : result);
+        };
+
+        int len = text.length();
+        if(len == 0) {
+            return text;
+        }
+        if(len == 1){
+            return get.apply(text);
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for(int i = 0; i < len;){
+            String c = text.substring(i, i <= len - 2 ? i + 2 : i + 1);
+            String leeted = get.apply(c);
+            if(isEmpty(leeted)){
+                leeted = get.apply(c.charAt(0) + "");
+                sb.append(isEmpty(leeted) ? c.charAt(0) : leeted);
+                i++;
+            }else{
+                sb.append(leeted);
+                i += 2;
+            }
+        }
+        return sb.toString();
+    }
+
+    public static String translit(String text){
+        Objects.requireNonNull(text, "text");
+        Function<String, String> get = s -> {
+            String result = translit.get(s.toLowerCase());
+            String alter = translit.findKey(s, false);
             return result == null ? alter != null ? alter : "" : (Character.isUpperCase(s.charAt(0)) ? (result.charAt(0) + "").toUpperCase() + (result.length() > 1 ? result.substring(1) : "") : result);
         };
 

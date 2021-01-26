@@ -19,7 +19,7 @@ public class CommandReference implements CommandRequest, CommandResponse{
     private final Scheduler replyScheduler;
     private final LocalMember localMember;
 
-    public CommandReference(MessageCreateEvent event, ContextView context,
+    CommandReference(MessageCreateEvent event, ContextView context,
                             Supplier<Mono<? extends MessageChannel>> replyChannel,
                             Scheduler replyScheduler, LocalMember localMember){
         this.event = event;
@@ -76,17 +76,17 @@ public class CommandReference implements CommandRequest, CommandResponse{
     @Override
     public Mono<Void> sendMessage(Consumer<? super MessageCreateSpec> spec){
         return replyChannel.get()
-                           .publishOn(replyScheduler)
-                           .flatMap(channel -> channel.createMessage(spec))
-                           .then();
+                .publishOn(replyScheduler)
+                .flatMap(channel -> channel.createMessage(spec))
+                .then();
     }
 
     @Override
     public Mono<Void> sendEmbed(Consumer<? super EmbedCreateSpec> spec){
         return replyChannel.get()
-                           .publishOn(replyScheduler)
-                           .flatMap(channel -> channel.createEmbed(spec))
-                           .then();
+                .publishOn(replyScheduler)
+                .flatMap(channel -> channel.createEmbed(spec))
+                .then();
     }
 
     public static class Builder{

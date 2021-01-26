@@ -111,6 +111,14 @@ public class Commands{
         }
     }
 
+    @DiscordCommand(key = "tr", params = "<text...>", description = "command.translit.description")
+    public class TranslitCommand extends Command{
+        @Override
+        public Mono<Void> execute(CommandReference ref, String[] args){
+            return messageService.text(ref.getReplyChannel(), MessageUtil.translit(args[0]));
+        }
+    }
+
     // @DiscordCommand(key = "config", params = "[add/set/remove] [name] [value...]", description = "commands.config.description")
     // public class ConfigCommand extends CommandRunner{
     //     public final List<String> allowedKeys = List.of("guildID", "id");
@@ -304,7 +312,9 @@ public class Commands{
             Flux<Message> history = channel.flatMapMany(c -> c.getMessagesBefore(ref.getMessage().getId()))
                                            .limitRequest(number);
 
-            return author.getGuild().flatMap(g -> Mono.fromRunnable(() -> discordService.eventListener().publish(new MessageClearEvent(g, history, author, channel, number))));
+            return author.getGuild().flatMap(g -> Mono.fromRunnable(() -> discordService.eventListener().publish(
+                    new MessageClearEvent(g, history, author, channel, number)
+            )));
         }
     }
 
