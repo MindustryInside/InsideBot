@@ -106,8 +106,8 @@ public class CommonEvents extends Events{
     @Override
     public Publisher<?> onMemberMute(MemberMuteEvent event){
         DateTimeFormatter formatter = DateTimeFormat.shortDateTime()
-                                                    .withLocale(context.get(KEY_LOCALE))
-                                                    .withZone(context.get(KEY_TIMEZONE));
+                .withLocale(context.get(KEY_LOCALE))
+                .withZone(context.get(KEY_TIMEZONE));
         LocalMember local = event.target;
         Guild guild = event.guild();
         return guild.getMemberById(local.userId())
