@@ -32,10 +32,10 @@ public abstract class AuditEventHandler extends ReactiveEventAdapter{
 
     public Mono<Void> log(Snowflake guildId, MessageCreateSpec message){
         return discordService.getLogChannel(guildId)
-                             .publishOn(Schedulers.boundedElastic())
-                             .flatMap(c -> c.getRestChannel().createMessage(message.asRequest()))
-                             .contextWrite(ContextUtil.reset())
-                             .then();
+                .publishOn(Schedulers.boundedElastic())
+                .flatMap(c -> c.getRestChannel().createMessage(message.asRequest()))
+                .contextWrite(ContextUtil.reset())
+                .then();
     }
 
     public Mono<Void> log(Snowflake guildId, Consumer<EmbedCreateSpec> embed){
@@ -53,9 +53,9 @@ public abstract class AuditEventHandler extends ReactiveEventAdapter{
 
     public String timestamp(){
         return DateTimeFormat.longDateTime()
-                             .withLocale(context.get(KEY_LOCALE))
-                             .withZone(context.get(KEY_TIMEZONE))
-                             .print(DateTime.now());
+                .withLocale(context.get(KEY_LOCALE))
+                .withZone(context.get(KEY_TIMEZONE))
+                .print(DateTime.now());
     }
 
     //todo
