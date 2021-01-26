@@ -66,6 +66,7 @@ public interface EventListener{
     void shutdown();
 
     interface Builder{
+
         DefaultEventListener.Builder eventProcessor(FluxProcessor<BaseEvent, BaseEvent> eventProcessor);
 
         DefaultEventListener.Builder overflowStrategy(OverflowStrategy overflowStrategy);

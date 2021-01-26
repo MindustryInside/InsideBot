@@ -97,17 +97,17 @@ public class CommandReference implements CommandRequest, CommandResponse{
         private Scheduler scheduler;
 
         public Builder event(MessageCreateEvent event){
-            this.event = event;
+            this.event = Objects.requireNonNull(event, "event");
             return this;
         }
 
         public Builder context(ContextView context){
-            this.contextView = context;
+            this.contextView = Objects.requireNonNull(context, "context");
             return this;
         }
 
         public Builder localMember(LocalMember localMember){
-            this.localMember = localMember;
+            this.localMember = Objects.requireNonNull(localMember, "localMember");
             return this;
         }
 
@@ -122,9 +122,6 @@ public class CommandReference implements CommandRequest, CommandResponse{
         }
 
         public CommandReference build(){
-            Objects.requireNonNull(event, "event");
-            Objects.requireNonNull(contextView, "context");
-            Objects.requireNonNull(localMember, "localMember");
             if(channel == null){
                 channel = () -> event.getMessage().getChannel();
             }

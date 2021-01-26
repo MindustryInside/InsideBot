@@ -50,19 +50,19 @@ public class DefaultEventListener implements EventListener{
 
         @Override
         public Builder eventProcessor(FluxProcessor<BaseEvent, BaseEvent> eventProcessor){
-            this.eventProcessor = Objects.requireNonNull(eventProcessor);
+            this.eventProcessor = Objects.requireNonNull(eventProcessor, "eventProcessor");
             return this;
         }
 
         @Override
         public Builder overflowStrategy(OverflowStrategy overflowStrategy){
-            this.overflowStrategy = Objects.requireNonNull(overflowStrategy);
+            this.overflowStrategy = Objects.requireNonNull(overflowStrategy, "overflowStrategy");
             return this;
         }
 
         @Override
         public Builder eventScheduler(Scheduler eventScheduler){
-            this.eventScheduler = Objects.requireNonNull(eventScheduler);
+            this.eventScheduler = Objects.requireNonNull(eventScheduler, "eventScheduler");
             return this;
         }
 
