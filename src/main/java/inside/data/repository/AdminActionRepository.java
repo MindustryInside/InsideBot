@@ -12,6 +12,9 @@ import java.util.List;
 
 @Repository
 public interface AdminActionRepository extends GuildRepository<AdminAction>{
+    @Query("select a from AdminAction a where a.type = :type")
+    List<AdminAction> findAllByType(@Param("type") AdminActionType type);
+
     @Query("select a from AdminAction a where a.guildId = :#{#guildId?.asString()} and a.target.userId = :#{#targetId?.asString()}")
     List<AdminAction> findAdminActionsByTargetId(@Param("guildId") Snowflake guildId, @Param("targetId") Snowflake targetId);
 

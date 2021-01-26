@@ -344,7 +344,7 @@ public class Commands{
                                      return messageService.err(channel, messageService.get(ref.context(), "command.admin.warn.self-user"));
                                  }
 
-                                 if(reason != null && !reason.isBlank() && reason.length() > 1000){
+                                 if(!MessageUtil.isEmpty(reason) && reason.length() >= 1000){
                                      return messageService.err(channel, messageService.format(ref.context(), "common.string-limit", 1000));
                                  }
 
@@ -388,14 +388,14 @@ public class Commands{
                                                         .withLocale(ref.context().get(KEY_LOCALE))
                                                         .withZone(ref.context().get(KEY_TIMEZONE));
 
-                                                AdminAction w = t.getT2();
+                                                AdminAction warn = t.getT2();
                                                 embed.setColor(settings.normalColor);
                                                 embed.setTitle(messageService.format(ref.context(), "command.admin.warnings.title", local.effectiveName()));
-                                                String title = String.format("%2s. %s", t.getT1() + 1, formatter.print(new DateTime(w.timestamp())));
+                                                String title = String.format("%2s. %s", t.getT1() + 1, formatter.print(new DateTime(warn.timestamp())));
 
                                                 String description = String.format("%s%n%s",
-                                                messageService.format(ref.context(), "common.admin", w.admin().effectiveName()),
-                                                messageService.format(ref.context(), "common.reason", w.reason().orElse(messageService.get(ref.context(), "common.not-defined"))));
+                                                messageService.format(ref.context(), "common.admin", warn.admin().effectiveName()),
+                                                messageService.format(ref.context(), "common.reason", warn.reason().orElse(messageService.get(ref.context(), "common.not-defined"))));
                                                 embed.addField(title, description, true);
                                             })
                                         )));
@@ -452,11 +452,10 @@ public class Commands{
 
             return target.map(member -> discordEntityRetrieveService.getMember(member, () -> new LocalMember(member)))
                     .flatMap(local -> adminService.isMuted(local.guildId(), local.userId())
-                            .filterWhen(b -> b ? ref.event()
-                                    .getGuild().flatMap(g -> Mono.fromRunnable(() -> discordService.eventListener().publish(new MemberUnmuteEvent(g, local)))).then(Mono.just(true))
-                                               : target.flatMap(m -> messageService.err(channel, messageService.format(ref.context(), "audit.member.unmute.is-not-muted", m.getUsername())).then(Mono.just(false)))
+                            .flatMap(bool -> bool ? ref.event()
+                                    .getGuild().flatMap(g -> Mono.fromRunnable(() -> discordService.eventListener().publish(new MemberUnmuteEvent(g, local))))
+                                            : target.flatMap(member -> messageService.err(channel, messageService.format(ref.context(), "audit.member.unmute.is-not-muted", member.getUsername())))
                             )
-                            .then()
                     );
         }
     }

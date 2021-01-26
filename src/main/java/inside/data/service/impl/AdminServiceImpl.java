@@ -6,12 +6,14 @@ import discord4j.rest.util.Permission;
 import inside.data.entity.*;
 import inside.data.repository.AdminActionRepository;
 import inside.data.service.*;
+import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.*;
 
-import java.util.Calendar;
+import java.util.*;
 
 @Service
 public class AdminServiceImpl implements AdminService{
@@ -97,8 +99,8 @@ public class AdminServiceImpl implements AdminService{
                 .admin(admin)
                 .target(target)
                 .timestamp(Calendar.getInstance())
+                .end(DateTime.now().plusDays(20).toCalendar(Locale.getDefault())) // todo а вот это не очень
                 .reason(reason);
-        //todo логгирование
         return Mono.just(action).doOnNext(repository::save).then();
     }
 
@@ -113,6 +115,14 @@ public class AdminServiceImpl implements AdminService{
     @Transactional(readOnly = true)
     public Flux<AdminAction> warnings(Snowflake guildId, Snowflake targetId){
         return get(AdminActionType.warn, guildId, targetId);
+    }
+
+    @Override
+    @Scheduled(cron = "0 */3 * * * *")
+    public void monitor(){
+        Flux.fromIterable(repository.findAllByType(AdminActionType.warn))
+                .filter(AdminAction::isEnd)
+                .subscribe(repository::delete);
     }
 
     @Override

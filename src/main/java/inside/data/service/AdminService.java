@@ -30,6 +30,8 @@ public interface AdminService{
 
     Flux<AdminAction> warnings(Snowflake guildId, Snowflake targetId);
 
+    void monitor();
+
     boolean isAdmin(Member member);
 
     boolean isOwner(Member member);
