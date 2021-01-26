@@ -109,7 +109,7 @@ public class MemberEventHandler extends AuditEventHandler{
                 .then()
                 .switchIfEmpty(log);
 
-        Mono<Void> ban = event.getGuild().flatMapMany(guild -> guild.getAuditLog(q -> q.setActionType(ActionType.MEMBER_BAN_ADD)))
+        return event.getGuild().flatMapMany(guild -> guild.getAuditLog(q -> q.setActionType(ActionType.MEMBER_BAN_ADD)))
                 .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(2500)))
                 .flatMap(entry -> event.getGuild().flatMap(guild -> guild.getMemberById(entry.getResponsibleUserId()))
                         .flatMap(admin -> log(event.getGuildId(), embed -> {
@@ -124,8 +124,6 @@ public class MemberEventHandler extends AuditEventHandler{
                         })))
                 .then()
                 .switchIfEmpty(kick);
-
-        return ban;
     }
 
     @Override
