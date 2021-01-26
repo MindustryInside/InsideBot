@@ -80,7 +80,8 @@ public abstract class MessageUtil{
         Objects.requireNonNull(text, "text");
         Function<String, String> get = s -> {
             String result = leetSpeak.get(s.toLowerCase());
-            return result == null ? "" : (Character.isUpperCase(s.charAt(0)) ? (result.charAt(0) + "").toUpperCase() + (result.length() > 1 ? result.substring(1) : "") : result);
+            String alter = leetSpeak.findKey(s, false);
+            return result == null ? alter != null ? alter : "" : (Character.isUpperCase(s.charAt(0)) ? (result.charAt(0) + "").toUpperCase() + (result.length() > 1 ? result.substring(1) : "") : result);
         };
 
         int len = text.length();
