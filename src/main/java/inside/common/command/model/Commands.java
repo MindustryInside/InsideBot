@@ -234,10 +234,10 @@ public class Commands{
                             }
 
                             if(!MessageUtil.isEmpty(args[0])){
-                                Locale l = LocaleUtil.getOrDefault(args[0]);
-                                guildConfig.locale(l);
+                                Locale locale = LocaleUtil.getOrDefault(args[0]);
+                                guildConfig.locale(locale);
                                 discordEntityRetrieveService.save(guildConfig);
-                                ((Context)ref.context()).put(KEY_LOCALE, l);
+                                ((Context)ref.context()).put(KEY_LOCALE, locale);
                                 return messageService.text(channel, messageService.format(ref.context(), "command.config.locale-updated", r.get()));
                             }
                         }
@@ -420,12 +420,11 @@ public class Commands{
 
             return adminService.get(AdminActionType.warn, guildId, targetId).count().flatMap(count -> {
                 int warn = args.length > 1 ? Strings.parseInt(args[1]) : 1;
-                boolean under = warn > count;
                 if(count == 0){
                     return messageService.text(channel, messageService.get(ref.context(), "command.admin.warnings.empty"));
                 }
 
-                if(under){
+                if(warn > count){
                     return messageService.err(channel, messageService.get(ref.context(), "command.incorrect-number"));
                 }
 
