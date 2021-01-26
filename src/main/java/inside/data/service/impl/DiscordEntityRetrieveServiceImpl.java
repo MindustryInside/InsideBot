@@ -8,18 +8,18 @@ import inside.data.repository.*;
 import inside.data.service.*;
 import inside.util.LocaleUtil;
 import org.joda.time.DateTimeZone;
-import org.slf4j.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
+import reactor.util.*;
 
 import java.util.*;
 import java.util.function.Supplier;
 
 @Service
 public class DiscordEntityRetrieveServiceImpl implements DiscordEntityRetrieveService{
-    private static final Logger log = LoggerFactory.getLogger(DiscordEntityRetrieveService.class);
+    private static final Logger log = Loggers.getLogger(DiscordEntityRetrieveService.class);
 
     private final Settings settings;
 

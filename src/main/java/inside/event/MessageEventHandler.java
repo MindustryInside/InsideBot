@@ -18,10 +18,10 @@ import inside.data.service.*;
 import inside.event.audit.AuditEventHandler;
 import inside.util.*;
 import org.reactivestreams.Publisher;
-import org.slf4j.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import reactor.util.*;
 import reactor.util.context.Context;
 
 import java.util.*;
@@ -32,7 +32,7 @@ import static inside.util.ContextUtil.*;
 
 @Component
 public class MessageEventHandler extends AuditEventHandler{
-    private static final Logger log = LoggerFactory.getLogger(MessageEventHandler.class);
+    private static final Logger log = Loggers.getLogger(MessageEventHandler.class);
 
     @Autowired
     private AdminService adminService;

@@ -3,14 +3,14 @@ package inside.event.dispatcher;
 import inside.event.audit.*;
 import inside.event.dispatcher.EventType.*;
 import org.reactivestreams.Publisher;
-import org.slf4j.*;
 import reactor.core.publisher.Mono;
+import reactor.util.*;
 import reactor.util.context.Context;
 
 import static inside.util.ContextUtil.*;
 
 public abstract class Events extends AuditEventHandler{
-    protected static final Logger log = LoggerFactory.getLogger(Events.class);
+    protected static final Logger log = Loggers.getLogger(Events.class);
 
     public Publisher<?> onMessageClear(MessageClearEvent event){
         return Mono.empty();

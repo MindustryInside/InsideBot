@@ -11,7 +11,6 @@ import inside.data.repository.MessageInfoRepository;
 import inside.data.service.MessageService;
 import inside.util.*;
 import org.joda.time.*;
-import org.slf4j.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -19,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.*;
 import reactor.core.scheduler.Schedulers;
+import reactor.util.*;
 import reactor.util.context.ContextView;
 
 import java.util.concurrent.TimeUnit;
@@ -26,7 +26,7 @@ import java.util.function.Consumer;
 
 @Service
 public class MessageServiceImpl implements MessageService{
-    private static final Logger log = LoggerFactory.getLogger(MessageService.class);
+    private static final Logger log = Loggers.getLogger(MessageService.class);
 
     @Autowired
     private MessageInfoRepository repository;
