@@ -115,7 +115,7 @@ public class CommonEvents extends Events{
                 .flatMap(member -> {
                     Mono<Member> admin = guild.getMemberById(event.admin.userId());
 
-                    Mono<Void> mute = adminService.isMuted(member.getGuildId(), member.getId()).flatMap(b -> b ? Mono.empty() : Mono.fromRunnable(() -> {
+                    Mono<Void> mute = adminService.isMuted(member.getGuildId(), member.getId()).flatMap(b -> b ? member.addRole(discordEntityRetrieveService.muteRoleId(member.getGuildId())) : Mono.fromRunnable(() -> {
                         adminService.mute(event.admin, local, event.delay.toCalendar(context.get(KEY_LOCALE)), event.reason().orElse(null)).block();
                         member.addRole(discordEntityRetrieveService.muteRoleId(member.getGuildId())).block();
                     }));
