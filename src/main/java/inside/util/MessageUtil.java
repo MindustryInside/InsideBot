@@ -162,13 +162,13 @@ public abstract class MessageUtil{
         StringBuilder sb = new StringBuilder();
         for(int i = 0; i < len;){
             String c = text.substring(i, i <= len - 2 ? i + 2 : i + 1);
-            String leeted = get.apply(c);
-            if(isEmpty(leeted)){
-                leeted = get.apply(c.charAt(0) + "");
-                sb.append(isEmpty(leeted) ? c.charAt(0) : leeted);
+            String translited = get.apply(c);
+            if(isEmpty(translited)){
+                translited = get.apply(c.charAt(0) + "");
+                sb.append(isEmpty(translited) ? c.charAt(0) : translited);
                 i++;
             }else{
-                sb.append(leeted);
+                sb.append(translited);
                 i += 2;
             }
         }

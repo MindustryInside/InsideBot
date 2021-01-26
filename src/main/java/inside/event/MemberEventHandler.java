@@ -6,7 +6,9 @@ import discord4j.core.object.entity.*;
 import inside.event.audit.*;
 import inside.data.entity.*;
 import inside.data.service.*;
+import inside.event.dispatcher.EventType;
 import inside.util.*;
+import org.joda.time.DateTime;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -24,6 +26,9 @@ public class MemberEventHandler extends AuditEventHandler{
 
     @Autowired
     private DiscordEntityRetrieveService discordEntityRetrieveService;
+
+    @Autowired
+    private AdminService adminService;
 
     @Override
     public Publisher<?> onBan(BanEvent event){ // не триггерится, баг д4ж текущей версии
@@ -51,14 +56,26 @@ public class MemberEventHandler extends AuditEventHandler{
                              KEY_LOCALE, discordEntityRetrieveService.locale(event.getGuildId()),
                              KEY_TIMEZONE, discordEntityRetrieveService.timeZone(event.getGuildId()));
 
-        discordEntityRetrieveService.getMember(member, () -> new LocalMember(member));
+        LocalMember localMember = discordEntityRetrieveService.getMember(member, () -> new LocalMember(member));
 
-        return log(event.getGuildId(), embed -> {
+        Mono<Long> warns = adminService.warnings(localMember.guildId(), localMember.userId()).count();
+        Mono<Void> evade = Mono.defer(() -> adminService.get(AdminService.AdminActionType.mute, localMember.guildId(), localMember.userId()).next())
+                .zipWith(warns)
+                .flatMap(t -> t.getT2() >= 3
+                              ? adminService.warn(localMember, localMember, messageService.get(context, "audit.member.warn.evade"))
+                              : member.getGuild().flatMap(guild -> Mono.fromRunnable(() -> discordService.eventListener().publish(
+                                    new EventType.MemberMuteEvent(guild, t.getT1().admin(), localMember, messageService.get(context, "audit.member.mute.evade"), new DateTime(t.getT1().end()))
+                              )))
+                );
+
+        Mono<Void> log = log(event.getGuildId(), embed -> {
             embed.setColor(userJoin.color);
             embed.setTitle(messageService.get(context, "audit.member.join.title"));
             embed.setDescription(messageService.format(context, "audit.member.join.description", member.getUsername()));
             embed.setFooter(timestamp(), null);
         });
+
+        return log.then(evade);
     }
 
     @Override
