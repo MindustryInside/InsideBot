@@ -1,13 +1,10 @@
 package inside.util;
 
-import arc.struct.*;
+import arc.struct.StringMap;
 import arc.util.Strings;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import org.joda.time.DateTime;
-import reactor.util.annotation.*;
-import reactor.util.function.Tuple2;
 
 import java.time.*;
 import java.time.temporal.*;
@@ -178,8 +175,9 @@ public abstract class MessageUtil{
         return sb.toString();
     }
 
-    public static String substringTo(@NonNull String text, int maxLength){
-        return text.length() >= maxLength ? (text.substring(0, maxLength - 4) + "...") : text;
+    public static String substringTo(String message, int maxLength){
+        Objects.requireNonNull(message, "message");
+        return message.length() >= maxLength ? (message.substring(0, maxLength - 4) + "...") : message;
     }
 
     public static String effectiveContent(Message message){
@@ -205,25 +203,34 @@ public abstract class MessageUtil{
         }
     }
 
-    public static Snowflake parseUserId(@NonNull String message){
+    public static Snowflake parseUserId(String message){
+        Objects.requireNonNull(message, "message");
         message = message.replaceAll("[<>@!]", "");
         return canParseId(message) ? Snowflake.of(message) : null;
     }
 
-    public static Snowflake parseRoleId(@NonNull String message){
+    public static Snowflake parseRoleId(String message){
+        Objects.requireNonNull(message, "message");
         message = message.replaceAll("[<>@&]", "");
         return canParseId(message) ? Snowflake.of(message) : null;
     }
 
-    public static Snowflake parseChannelId(@NonNull String message){
+    public static Snowflake parseChannelId(String message){
+        Objects.requireNonNull(message, "message");
         message = message.replaceAll("[<>#]", "");
         return canParseId(message) ? Snowflake.of(message) : null;
     }
 
     public static DateTime parseTime(String message){
-        if(message == null) return null;
+        if(message == null){
+            return null;
+        }
+
         Matcher matcher = timeUnitPattern.matcher(message.toLowerCase());
-        if(!matcher.matches()) return null;
+        if(!matcher.matches()){
+            return null;
+        }
+
         LocalDateTime offsetDateTime = LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC);
         offsetDateTime = addUnit(offsetDateTime, ChronoUnit.YEARS, matcher.group(2));
         offsetDateTime = addUnit(offsetDateTime, ChronoUnit.MONTHS, matcher.group(5));
