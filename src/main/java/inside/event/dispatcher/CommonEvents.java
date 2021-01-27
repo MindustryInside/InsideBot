@@ -29,7 +29,7 @@ public class CommonEvents extends Events{
     private MessageService messageService;
 
     @Autowired
-    private DiscordEntityRetrieveService discordEntityRetrieveService;
+    private EntityRetriever entityRetriever;
 
     @Override
     public Publisher<?> onMessageClear(MessageClearEvent event){
@@ -85,11 +85,11 @@ public class CommonEvents extends Events{
     public Publisher<?> onMemberUnmute(MemberUnmuteEvent event){
         LocalMember local = event.localMember;
         return event.guild().getMemberById(local.userId())
-                .filter(member -> !discordEntityRetrieveService.muteDisabled(member.getGuildId()))
+                .filter(member -> !entityRetriever.muteDisabled(member.getGuildId()))
                 .flatMap(member -> {
                     Mono<Void> unmute = Mono.fromRunnable(() -> {
                         adminService.unmute(local.guildId(), local.userId()).block();
-                        member.removeRole(discordEntityRetrieveService.muteRoleId(member.getGuildId())).block();
+                        member.removeRole(entityRetriever.muteRoleId(member.getGuildId())).block();
                     });
 
                     Mono<Void> publishLog = log(member.getGuildId(), embed -> {
@@ -111,13 +111,13 @@ public class CommonEvents extends Events{
         LocalMember local = event.target;
         Guild guild = event.guild();
         return guild.getMemberById(local.userId())
-                .filter(member -> !discordEntityRetrieveService.muteDisabled(member.getGuildId()))
+                .filter(member -> !entityRetriever.muteDisabled(member.getGuildId()))
                 .flatMap(member -> {
                     Mono<Member> admin = guild.getMemberById(event.admin.userId());
 
-                    Mono<Void> mute = adminService.isMuted(member.getGuildId(), member.getId()).flatMap(b -> b ? member.addRole(discordEntityRetrieveService.muteRoleId(member.getGuildId())) : Mono.fromRunnable(() -> {
+                    Mono<Void> mute = adminService.isMuted(member.getGuildId(), member.getId()).flatMap(b -> b ? member.addRole(entityRetriever.muteRoleId(member.getGuildId())) : Mono.fromRunnable(() -> {
                         adminService.mute(event.admin, local, event.delay.toCalendar(context.get(KEY_LOCALE)), event.reason().orElse(null)).block();
-                        member.addRole(discordEntityRetrieveService.muteRoleId(member.getGuildId())).block();
+                        member.addRole(entityRetriever.muteRoleId(member.getGuildId())).block();
                     }));
 
                     Mono<Void> publishLog = admin.map(Member::getUsername).flatMap(username -> log(member.getGuildId(), embed -> {

@@ -24,8 +24,8 @@ public class VoiceEventHandler extends AuditEventHandler{
         VoiceState state = event.getOld().orElse(null);
         Snowflake guildId = event.getCurrent().getGuildId();
         context = Context.of(KEY_GUILD_ID, guildId,
-                             KEY_LOCALE, discordEntityRetrieveService.locale(guildId),
-                             KEY_TIMEZONE, discordEntityRetrieveService.timeZone(guildId));
+                             KEY_LOCALE, entityRetriever.locale(guildId),
+                             KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
         Boolf<VoiceState> ignore = s -> s.isSelfDeaf() || s.isDeaf() || s.isMuted() || s.isSelfStreaming() ||
                                         s.isSelfVideoEnabled() || s.isSuppressed();

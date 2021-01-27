@@ -26,8 +26,8 @@ public abstract class Events extends AuditEventHandler{
 
     public final Publisher<?> hookOnEvent(BaseEvent event){
         context = Context.of(KEY_GUILD_ID, event.guild.getId(),
-                             KEY_LOCALE, discordEntityRetrieveService.locale(event.guild.getId()),
-                             KEY_TIMEZONE, discordEntityRetrieveService.timeZone(event.guild.getId()));
+                             KEY_LOCALE, entityRetriever.locale(event.guild.getId()),
+                             KEY_TIMEZONE, entityRetriever.timeZone(event.guild.getId()));
 
         if (event instanceof MessageClearEvent e) return onMessageClear(e);
         else if (event instanceof MemberUnmuteEvent e) return onMemberUnmute(e);

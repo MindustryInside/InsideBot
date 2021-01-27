@@ -20,11 +20,11 @@ public class AdminServiceImpl implements AdminService{
 
     private final AdminActionRepository repository;
 
-    private final DiscordEntityRetrieveService discordEntityRetrieveService;
+    private final EntityRetriever entityRetriever;
 
-    public AdminServiceImpl(@Autowired AdminActionRepository repository, @Autowired DiscordEntityRetrieveService discordEntityRetrieveService){
+    public AdminServiceImpl(@Autowired AdminActionRepository repository, @Autowired EntityRetriever entityRetriever){
         this.repository = repository;
-        this.discordEntityRetrieveService = discordEntityRetrieveService;
+        this.entityRetriever = entityRetriever;
     }
 
     @Override
@@ -128,7 +128,7 @@ public class AdminServiceImpl implements AdminService{
     @Override
     public boolean isAdmin(Member member){
         if(member == null) return false;
-        GuildConfig config = discordEntityRetrieveService.getGuildById(member.getGuildId());
+        GuildConfig config = entityRetriever.getGuildById(member.getGuildId());
 
         boolean permissed = !config.adminRoleIdsAsList().isEmpty() &&
                             member.getRoles().map(Role::getId)

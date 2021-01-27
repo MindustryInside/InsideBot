@@ -38,7 +38,7 @@ public class Commands{
     private AdminService adminService;
 
     @Autowired
-    private DiscordEntityRetrieveService discordEntityRetrieveService;
+    private EntityRetriever entityRetriever;
 
     @Autowired
     private CommandHandler handler;
@@ -52,7 +52,7 @@ public class Commands{
         public Mono<Void> execute(CommandReference ref, String[] args){
             StringBuffer builder = new StringBuffer();
             Snowflake guildId = ref.getAuthorAsMember().getGuildId();
-            String prefix = discordEntityRetrieveService.prefix(guildId);
+            String prefix = entityRetriever.prefix(guildId);
 
             handler.commandList().forEach(command -> {
                 builder.append(prefix);
@@ -194,7 +194,7 @@ public class Commands{
             Member member = ref.getAuthorAsMember();
             Mono<MessageChannel> channel = ref.event().getMessage().getChannel();
 
-            return member.getGuild().map(guild -> discordEntityRetrieveService.getGuild(guild))
+            return member.getGuild().map(guild -> entityRetriever.getGuild(guild))
                     .flatMap(guildConfig -> {
                         if(args.length == 0){
                             return messageService.text(channel, messageService.format(ref.context(), "command.config.prefix", guildConfig.prefix()));
@@ -205,7 +205,7 @@ public class Commands{
 
                             if(!MessageUtil.isEmpty(args[0])){
                                 guildConfig.prefix(args[0]);
-                                discordEntityRetrieveService.save(guildConfig);
+                                entityRetriever.save(guildConfig);
                                 return messageService.text(channel, messageService.format(ref.context(), "command.config.prefix-updated", guildConfig.prefix()));
                             }
                         }
@@ -222,7 +222,7 @@ public class Commands{
             Member member = ref.getAuthorAsMember();
             Mono<MessageChannel> channel = ref.getReplyChannel();
 
-            return member.getGuild().map(guild -> discordEntityRetrieveService.getGuild(guild))
+            return member.getGuild().map(guild -> entityRetriever.getGuild(guild))
                     .flatMap(guildConfig -> {
                         Supplier<String> r = () -> Objects.equals(ref.context().get(KEY_LOCALE), Locale.ROOT) ? messageService.get(ref.context(), "common.default") : ref.context().get(KEY_LOCALE).toString();
 
@@ -236,7 +236,7 @@ public class Commands{
                             if(!MessageUtil.isEmpty(args[0])){
                                 Locale locale = LocaleUtil.getOrDefault(args[0]);
                                 guildConfig.locale(locale);
-                                discordEntityRetrieveService.save(guildConfig);
+                                entityRetriever.save(guildConfig);
                                 ((Context)ref.context()).put(KEY_LOCALE, locale);
                                 return messageService.text(channel, messageService.format(ref.context(), "command.config.locale-updated", r.get()));
                             }
@@ -267,7 +267,7 @@ public class Commands{
             }
 
             return discordService.gateway().getMemberById(guildId, targetId)
-                    .flatMap(target -> Mono.just(discordEntityRetrieveService.getMember(target, () -> new LocalMember(target)))
+                    .flatMap(target -> Mono.just(entityRetriever.getMember(target, () -> new LocalMember(target)))
                             .filterWhen(local -> adminService.isMuted(guildId, target.getId())
                                     .flatMap(b -> b ? messageService.err(channel, messageService.get(ref.context(), "command.admin.mute.already-muted")).then(Mono.just(false)) : Mono.just(true)))
                             .flatMap(local -> {
@@ -332,7 +332,7 @@ public class Commands{
             }
 
             return discordService.gateway().getMemberById(guildId, targetId)
-                    .flatMap(target -> Mono.just(discordEntityRetrieveService.getMember(target, () -> new LocalMember(target)))
+                    .flatMap(target -> Mono.just(entityRetriever.getMember(target, () -> new LocalMember(target)))
                              .flatMap(local -> {
                                  String reason = args.length > 1 ? args[1].trim() : null;
 
@@ -376,7 +376,7 @@ public class Commands{
             }
 
             return discordService.gateway().getMemberById(guildId, targetId)
-                    .flatMap(target -> Mono.just(discordEntityRetrieveService.getMember(target, () -> new LocalMember(target)))
+                    .flatMap(target -> Mono.just(entityRetriever.getMember(target, () -> new LocalMember(target)))
                             .flatMap(local -> {
                                 Flux<AdminAction> warnings = adminService.warnings(local.guildId(), local.userId()).limitRequest(21);
 
@@ -429,7 +429,7 @@ public class Commands{
                 }
 
                 return discordService.gateway().getMemberById(guildId, targetId)
-                        .map(target -> discordEntityRetrieveService.getMember(target, () -> new LocalMember(target)))
+                        .map(target -> entityRetriever.getMember(target, () -> new LocalMember(target)))
                                 .flatMap(local -> messageService.text(channel, messageService.format(ref.context(), "command.admin.unwarn", local.effectiveName(), warn))
                                         .then(adminService.unwarn(local.guildId(), local.userId(), warn - 1)));
             });
@@ -450,7 +450,7 @@ public class Commands{
 
             Mono<Member> target = discordService.gateway().getMemberById(guildId, targetId);
 
-            return target.map(member -> discordEntityRetrieveService.getMember(member, () -> new LocalMember(member)))
+            return target.map(member -> entityRetriever.getMember(member, () -> new LocalMember(member)))
                     .flatMap(local -> adminService.isMuted(local.guildId(), local.userId())
                             .flatMap(bool -> bool ? ref.event()
                                     .getGuild().flatMap(g -> Mono.fromRunnable(() -> discordService.eventListener().publish(new MemberUnmuteEvent(g, local))))

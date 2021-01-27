@@ -3,14 +3,12 @@ package inside.common.command.service;
 import arc.util.Strings;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
-import discord4j.rest.util.*;
 import inside.common.command.model.base.*;
 import inside.util.MessageUtil;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class CommandHandler extends BaseCommandHandler{
@@ -21,7 +19,7 @@ public class CommandHandler extends BaseCommandHandler{
         Mono<TextChannel> channel = ref.getReplyChannel().cast(TextChannel.class);
         Member self = guild.flatMap(Guild::getSelfMember).blockOptional().orElseThrow(RuntimeException::new);
 
-        String[] prefix = {discordEntityRetrieveService.prefix(self.getGuildId())};
+        String[] prefix = {entityRetriever.prefix(self.getGuildId())};
 
         if(ref.event().getMessage().getUserMentions().map(User::getId).any(u -> u.equals(self.getId())).blockOptional().orElse(false)){
             prefix[0] = self.getNicknameMention() + " "; //todo не очень нравится

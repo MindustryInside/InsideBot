@@ -24,7 +24,7 @@ public abstract class AuditEventHandler extends ReactiveEventAdapter{
     protected DiscordService discordService;
 
     @Autowired
-    protected DiscordEntityRetrieveService discordEntityRetrieveService;
+    protected EntityRetriever entityRetriever;
 
     protected Context context;
 
@@ -43,12 +43,12 @@ public abstract class AuditEventHandler extends ReactiveEventAdapter{
     }
 
     public Mono<Void> log(Snowflake guildId, Consumer<EmbedCreateSpec> embed, boolean file){
-        if(discordEntityRetrieveService.auditDisabled(guildId)){
+        if(entityRetriever.auditDisabled(guildId)){
             return Mono.empty();
         }
 
-        MessageCreateSpec m = new MessageCreateSpec().setEmbed(embed);
-        return log(guildId, file ? m.addFile("message.txt", stringInputStream) : m);
+        MessageCreateSpec spec = new MessageCreateSpec().setEmbed(embed);
+        return log(guildId, file ? spec.addFile("message.txt", stringInputStream) : spec);
     }
 
     public String timestamp(){

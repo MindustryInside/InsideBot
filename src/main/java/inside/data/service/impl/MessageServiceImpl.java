@@ -148,7 +148,7 @@ public class MessageServiceImpl implements MessageService{
     @Scheduled(cron = "0 0 */4 * * *")
     public void cleanUp(){
         Flux.fromIterable(repository.findAll())
-            .filter(m -> Weeks.weeksBetween(new DateTime(m.timestamp()), DateTime.now()).getWeeks() >= 3)
+            .filter(messageInfo -> Weeks.weeksBetween(new DateTime(messageInfo.timestamp()), DateTime.now()).getWeeks() >= 3)
             .subscribe(repository::delete);
     }
 }

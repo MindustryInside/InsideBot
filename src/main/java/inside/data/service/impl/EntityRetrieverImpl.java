@@ -18,8 +18,8 @@ import java.util.*;
 import java.util.function.Supplier;
 
 @Service
-public class DiscordEntityRetrieveServiceImpl implements DiscordEntityRetrieveService{
-    private static final Logger log = Loggers.getLogger(DiscordEntityRetrieveService.class);
+public class EntityRetrieverImpl implements EntityRetriever{
+    private static final Logger log = Loggers.getLogger(EntityRetriever.class);
 
     private final Settings settings;
 
@@ -29,8 +29,8 @@ public class DiscordEntityRetrieveServiceImpl implements DiscordEntityRetrieveSe
 
     private final Object $lock = new Object[0];
 
-    public DiscordEntityRetrieveServiceImpl(@Autowired Settings settings, @Autowired GuildConfigRepository guildRepository,
-                                            @Autowired LocalMemberRepository memberRepository){
+    public EntityRetrieverImpl(@Autowired Settings settings, @Autowired GuildConfigRepository guildRepository,
+                               @Autowired LocalMemberRepository memberRepository){
         this.settings = settings;
         this.guildRepository = guildRepository;
         this.memberRepository = memberRepository;
@@ -122,8 +122,6 @@ public class DiscordEntityRetrieveServiceImpl implements DiscordEntityRetrieveSe
     public boolean activeUserDisabled(Snowflake guildId){
         return activeUserRoleId(guildId) == null;
     }
-
-    //
 
     @Override
     @Transactional(readOnly = true)

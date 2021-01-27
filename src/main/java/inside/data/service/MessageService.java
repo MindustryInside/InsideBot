@@ -3,7 +3,6 @@ package inside.data.service;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.EmbedCreateSpec;
-import discord4j.discordjson.json.*;
 import inside.data.entity.MessageInfo;
 import reactor.core.publisher.Mono;
 import reactor.util.context.ContextView;
@@ -13,6 +12,7 @@ import java.util.function.Consumer;
 public interface MessageService{
 
     //bundle
+
     String get(ContextView ctx, String key);
 
     String getCount(ContextView ctx, String key, long count);
@@ -22,6 +22,7 @@ public interface MessageService{
     String format(ContextView ctx, String key, Object... args);
 
     //send
+
     Mono<Void> text(Mono<? extends MessageChannel> channel, String text);
 
     Mono<Void> info(Mono<? extends MessageChannel> channel, String title, String text);
@@ -33,6 +34,7 @@ public interface MessageService{
     Mono<Void> err(Mono<? extends MessageChannel> channel, String title, String text);
 
     //data
+
     boolean isCleared(Snowflake messageId);
 
     void putMessage(Snowflake messageId);

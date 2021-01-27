@@ -9,7 +9,7 @@ import reactor.core.publisher.Flux;
 import java.util.*;
 import java.util.function.Supplier;
 
-public interface DiscordEntityRetrieveService{
+public interface EntityRetriever{
 
     // guild
 

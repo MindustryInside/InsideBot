@@ -1,7 +1,6 @@
 package inside.event;
 
 import discord4j.common.util.Snowflake;
-import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.*;
 import discord4j.core.object.Embed.Field;
 import discord4j.core.object.Region;
@@ -41,7 +40,7 @@ public class MessageEventHandler extends AuditEventHandler{
     private CommandHandler commandHandler;
 
     @Autowired
-    private DiscordEntityRetrieveService discordEntityRetrieveService;
+    private EntityRetriever entityRetriever;
 
     @Autowired
     private Settings settings;
@@ -57,19 +56,19 @@ public class MessageEventHandler extends AuditEventHandler{
         Snowflake guildId = event.getGuildId().orElse(null);
         if(DiscordUtil.isBot(user) || guildId == null) return Mono.empty();
         Snowflake userId = user.getId();
-        LocalMember localMember = discordEntityRetrieveService.getMember(member, () -> new LocalMember(member));
+        LocalMember localMember = entityRetriever.getMember(member, () -> new LocalMember(member));
 
         localMember.addToSeq();
         localMember.lastSentMessage(Calendar.getInstance());
-        discordEntityRetrieveService.save(localMember);
+        entityRetriever.save(localMember);
 
-        if(!discordEntityRetrieveService.existsGuildById(guildId)){
+        if(!entityRetriever.existsGuildById(guildId)){
             Region region = event.getGuild().flatMap(Guild::getRegion).block();
             GuildConfig guildConfig = new GuildConfig(guildId);
             guildConfig.locale(LocaleUtil.get(region));
             guildConfig.prefix(settings.prefix);
             guildConfig.timeZone(TimeZone.getTimeZone("Etc/Greenwich"));
-            discordEntityRetrieveService.save(guildConfig);
+            entityRetriever.save(guildConfig);
         }
 
         if(!MessageUtil.isEmpty(message) && !message.isTts() && message.getEmbeds().isEmpty()){
@@ -100,8 +99,8 @@ public class MessageEventHandler extends AuditEventHandler{
         }
 
         context = Context.of(KEY_GUILD_ID, guildId,
-                             KEY_LOCALE, discordEntityRetrieveService.locale(guildId),
-                             KEY_TIMEZONE, discordEntityRetrieveService.timeZone(guildId));
+                             KEY_LOCALE, entityRetriever.locale(guildId),
+                             KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
         CommandReference reference = CommandReference.builder()
                 .event(event)
@@ -140,8 +139,8 @@ public class MessageEventHandler extends AuditEventHandler{
 
         Snowflake guildId = info.guildId();
         context = Context.of(KEY_GUILD_ID, guildId,
-                             KEY_LOCALE, discordEntityRetrieveService.locale(guildId),
-                             KEY_TIMEZONE, discordEntityRetrieveService.timeZone(guildId));
+                             KEY_LOCALE, entityRetriever.locale(guildId),
+                             KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
         Consumer<EmbedCreateSpec> embed = spec -> {
             spec.setColor(messageEdit.color);
@@ -226,7 +225,7 @@ public class MessageEventHandler extends AuditEventHandler{
             return Mono.empty();
         }
 
-        if(Objects.equals(channel.getId(), discordEntityRetrieveService.logChannelId(guild.getId())) && !message.getEmbeds().isEmpty()){ /* =) */
+        if(Objects.equals(channel.getId(), entityRetriever.logChannelId(guild.getId())) && !message.getEmbeds().isEmpty()){ /* =) */
             return guild.getAuditLog(a -> a.setActionType(ActionType.MESSAGE_DELETE)).next().doOnNext(a -> {
                 log.warn("Member '{}' deleted log message in guild '{}'",
                          guild.getMemberById(a.getResponsibleUserId()).map(Member::getUsername).block(),
@@ -242,8 +241,8 @@ public class MessageEventHandler extends AuditEventHandler{
         boolean under = content.length() >= Field.MAX_VALUE_LENGTH;
 
         context = Context.of(KEY_GUILD_ID, guild.getId(),
-                             KEY_LOCALE, discordEntityRetrieveService.locale(guild.getId()),
-                             KEY_TIMEZONE, discordEntityRetrieveService.timeZone(guild.getId()));
+                             KEY_LOCALE, entityRetriever.locale(guild.getId()),
+                             KEY_TIMEZONE, entityRetriever.timeZone(guild.getId()));
 
         Consumer<EmbedCreateSpec> embed = spec -> {
             spec.setColor(messageDelete.color);

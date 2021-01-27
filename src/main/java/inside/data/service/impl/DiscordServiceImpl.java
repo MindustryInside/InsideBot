@@ -29,7 +29,7 @@ public class DiscordServiceImpl implements DiscordService{
     private Settings settings;
 
     @Autowired
-    private DiscordEntityRetrieveService discordEntityRetrieveService;
+    private EntityRetriever retriever;
 
     @Autowired
     private AdminService adminService;
@@ -98,7 +98,7 @@ public class DiscordServiceImpl implements DiscordService{
 
     @Override
     public Mono<TextChannel> getLogChannel(Snowflake guildId){
-        return getTextChannelById(discordEntityRetrieveService.logChannelId(guildId));
+        return getTextChannelById(retriever.logChannelId(guildId));
     }
 
     @Override
@@ -119,36 +119,34 @@ public class DiscordServiceImpl implements DiscordService{
     @Transactional
     @Scheduled(cron = "0 */2 * * * *")
     public void unmuteUsers(){
-        Flux.fromIterable(discordEntityRetrieveService.getAllMembers())
-                .filter(m -> !discordEntityRetrieveService.muteDisabled(m.guildId()))
-                .filter(this::isMuteEnd)
-                .subscribe(l -> {
-                    eventListener.publish(new EventType.MemberUnmuteEvent(gateway.getGuildById(l.guildId()).block(), l));
-                }, Log::err);
+        Flux.fromIterable(retriever.getAllMembers())
+                .filter(localMember -> !retriever.muteDisabled(localMember.guildId()))
+                .filterWhen(this::isMuteEnd)
+                .subscribe(localMember -> eventListener.publish(new EventType.MemberUnmuteEvent(gateway.getGuildById(localMember.guildId()).block(), localMember)), Log::err);
     }
 
     @Transactional
     @Scheduled(cron = "0 */2 * * * *")
     public void activeUsers(){
-        Flux.fromIterable(discordEntityRetrieveService.getAllMembers())
-                .filter(m -> !discordEntityRetrieveService.activeUserDisabled(m.guildId()))
-                .filterWhen(l -> discordEntityRetrieveService.existsMemberById(l.guildId(), l.userId()) ? Mono.just(true) : Mono.fromRunnable(() -> discordEntityRetrieveService.deleteMember(l)))
-                .subscribe(l -> {
-                    Member member = gateway.getMemberById(l.guildId(), l.userId()).block();
+        Flux.fromIterable(retriever.getAllMembers())
+                .filter(localMember -> !retriever.activeUserDisabled(localMember.guildId()))
+                .subscribe(localMember -> {
+                    Member member = gateway.getMemberById(localMember.guildId(), localMember.userId()).block();
                     if(member == null) return; // нереально
-                    Snowflake roleId = discordEntityRetrieveService.activeUserRoleId(member.getGuildId());
-                    if(l.isActiveUser()){
+                    Snowflake roleId = retriever.activeUserRoleId(member.getGuildId());
+                    if(localMember.isActiveUser()){
                         member.addRole(roleId).block();
                     }else{
                         member.removeRole(roleId).block();
-                        l.messageSeq(0);
-                        discordEntityRetrieveService.save(l);
+                        localMember.messageSeq(0);
+                        retriever.save(localMember);
                     }
                 }, Log::err);
     }
 
-    protected boolean isMuteEnd(LocalMember member){
-        AdminAction action = adminService.get(AdminService.AdminActionType.mute, member.guildId(), member.userId()).blockFirst();
-        return action != null && action.isEnd();
+    protected Mono<Boolean> isMuteEnd(LocalMember member){
+        return adminService.get(AdminService.AdminActionType.mute, member.guildId(), member.userId())
+                .next()
+                .map(AdminAction::isEnd);
     }
 }

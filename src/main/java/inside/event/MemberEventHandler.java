@@ -1,11 +1,11 @@
 package inside.event;
 
 import discord4j.core.event.domain.guild.*;
-import discord4j.core.object.audit.*;
+import discord4j.core.object.audit.ActionType;
 import discord4j.core.object.entity.*;
-import inside.event.audit.*;
-import inside.data.entity.*;
+import inside.data.entity.LocalMember;
 import inside.data.service.*;
+import inside.event.audit.AuditEventHandler;
 import inside.event.dispatcher.EventType;
 import inside.util.*;
 import org.joda.time.DateTime;
@@ -16,7 +16,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.Optional;
 
 import static inside.event.audit.AuditEventType.*;
 import static inside.util.ContextUtil.*;
@@ -25,7 +25,7 @@ import static inside.util.ContextUtil.*;
 public class MemberEventHandler extends AuditEventHandler{
 
     @Autowired
-    private DiscordEntityRetrieveService discordEntityRetrieveService;
+    private EntityRetriever entityRetriever;
 
     @Autowired
     private AdminService adminService;
@@ -36,8 +36,8 @@ public class MemberEventHandler extends AuditEventHandler{
         if(DiscordUtil.isBot(user)) return Mono.empty();
 
         context = Context.of(KEY_GUILD_ID, event.getGuildId(),
-                             KEY_LOCALE, discordEntityRetrieveService.locale(event.getGuildId()),
-                             KEY_TIMEZONE, discordEntityRetrieveService.timeZone(event.getGuildId()));
+                             KEY_LOCALE, entityRetriever.locale(event.getGuildId()),
+                             KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
 
         return log(event.getGuildId(), embed -> {
             embed.setColor(userBan.color);
@@ -53,10 +53,10 @@ public class MemberEventHandler extends AuditEventHandler{
         if(DiscordUtil.isBot(member)) return Mono.empty();
 
         context = Context.of(KEY_GUILD_ID, event.getGuildId(),
-                             KEY_LOCALE, discordEntityRetrieveService.locale(event.getGuildId()),
-                             KEY_TIMEZONE, discordEntityRetrieveService.timeZone(event.getGuildId()));
+                             KEY_LOCALE, entityRetriever.locale(event.getGuildId()),
+                             KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
 
-        LocalMember localMember = discordEntityRetrieveService.getMember(member, () -> new LocalMember(member));
+        LocalMember localMember = entityRetriever.getMember(member, () -> new LocalMember(member));
 
         Mono<Long> warns = adminService.warnings(localMember.guildId(), localMember.userId()).count();
         Mono<Void> evade = Mono.defer(() -> adminService.get(AdminService.AdminActionType.mute, localMember.guildId(), localMember.userId()).next())
@@ -83,8 +83,8 @@ public class MemberEventHandler extends AuditEventHandler{
         User user = event.getUser();
         if(DiscordUtil.isBot(user)) return Mono.empty();
         context = Context.of(KEY_GUILD_ID, event.getGuildId(),
-                             KEY_LOCALE, discordEntityRetrieveService.locale(event.getGuildId()),
-                             KEY_TIMEZONE, discordEntityRetrieveService.timeZone(event.getGuildId()));
+                             KEY_LOCALE, entityRetriever.locale(event.getGuildId()),
+                             KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
 
         Mono<Void> log = log(event.getGuildId(), embed -> {
             embed.setColor(userLeave.color);
@@ -131,9 +131,9 @@ public class MemberEventHandler extends AuditEventHandler{
         return event.getMember()
                     .filter(DiscordUtil::isNotBot)
                     .doOnNext(member -> {
-                        LocalMember localMember = discordEntityRetrieveService.getMember(member, () -> new LocalMember(member));
+                        LocalMember localMember = entityRetriever.getMember(member, () -> new LocalMember(member));
                         event.getCurrentNickname().ifPresent(localMember::effectiveName);
-                        discordEntityRetrieveService.save(localMember);
+                        entityRetriever.save(localMember);
                     })
                     .then();
     }

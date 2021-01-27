@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 public abstract class BaseCommandHandler{
     @Autowired
-    protected DiscordEntityRetrieveService discordEntityRetrieveService;
+    protected EntityRetriever entityRetriever;
 
     @Autowired
     protected DiscordService discordService;
