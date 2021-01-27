@@ -15,7 +15,7 @@ public abstract class DiscordUtil{
     }
 
     public static String detailName(Member member){
-        if(member == null) return null;
+        if(member == null) return "<unknown>";
         String name = member.getUsername();
         if(member.getNickname().isPresent()){
             name += String.format(" (%s)", member.getNickname().get());

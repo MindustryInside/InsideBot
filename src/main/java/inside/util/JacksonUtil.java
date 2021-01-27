@@ -11,7 +11,7 @@ public abstract class JacksonUtil{
     public static final ObjectMapper mapper = new ObjectMapper();
 
     static{
-        mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+        mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
     }
 
     public static ObjectMapper mapper(){
@@ -51,24 +51,18 @@ public abstract class JacksonUtil{
     }
 
     public static List mapJsonToObjectList(String json, Class clazz){
-        List list;
-        TypeFactory type = TypeFactory.defaultInstance();
         try{
-            list = mapper.readValue(json, type.constructCollectionType(ArrayList.class, clazz));
+            return mapper.readValue(json, TypeFactory.defaultInstance().constructCollectionType(ArrayList.class, clazz));
         }catch(Throwable t){
             throw new RuntimeException(t);
         }
-        return list;
     }
 
     public static Map mapJsonToMap(String json, Class keyClass, Class valueClass){
-        Map map;
-        TypeFactory type = TypeFactory.defaultInstance();
         try{
-            map = mapper.readValue(json, type.constructMapType(HashMap.class, keyClass, valueClass));
+            return mapper.readValue(json, TypeFactory.defaultInstance().constructMapType(HashMap.class, keyClass, valueClass));
         }catch(Throwable t){
             throw new RuntimeException(t);
         }
-        return map;
     }
 }
