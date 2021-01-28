@@ -7,7 +7,7 @@ import org.joda.time.*;
 import reactor.util.annotation.*;
 
 import javax.persistence.*;
-import java.util.Calendar;
+import java.util.*;
 
 @Entity
 @Table(name = "local_member")
@@ -48,18 +48,16 @@ public class LocalMember extends GuildEntity{
         return diff < 3 && messageSeq() >= 75;
     }
 
-    @NonNull
     public Snowflake userId(){
         return Snowflake.of(userId);
     }
 
-    @NonNull
     public String effectiveName(){
         return effectiveName;
     }
 
-    public void effectiveName(@NonNull String effectiveName){
-        this.effectiveName = effectiveName;
+    public void effectiveName(String effectiveName){
+        this.effectiveName = Objects.requireNonNull(effectiveName, "effectiveName");
     }
 
     public long messageSeq(){

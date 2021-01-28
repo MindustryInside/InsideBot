@@ -151,7 +151,7 @@ public abstract class MessageUtil{
         Objects.requireNonNull(text, "text");
         Function<String, String> get = s -> {
             String result = translit.get(s.toLowerCase());
-            String alter = translit.findKey(s, false);
+            String alter = translit.findKey(s.toLowerCase(), false);
             return result == null ? alter != null ? alter : "" : (Character.isUpperCase(s.charAt(0)) ? (result.charAt(0) + "").toUpperCase() + (result.length() > 1 ? result.substring(1) : "") : result);
         };
 

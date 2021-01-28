@@ -45,33 +45,30 @@ public class AdminAction extends GuildEntity{
         guildId(guildId);
     }
 
-    @NonNull
     public AdminActionType type(){
         return type;
     }
 
-    public AdminAction type(@NonNull AdminActionType type){
-        this.type = type;
+    public AdminAction type(AdminActionType type){
+        this.type = Objects.requireNonNull(type, "type");
         return this;
     }
 
-    @NonNull
     public LocalMember admin(){
         return admin;
     }
 
-    public AdminAction admin(@NonNull LocalMember admin){
-        this.admin = admin;
+    public AdminAction admin(LocalMember admin){
+        this.admin = Objects.requireNonNull(admin, "admin");
         return this;
     }
 
-    @NonNull
     public LocalMember target(){
         return target;
     }
 
-    public AdminAction target(@NonNull LocalMember target){
-        this.target = target;
+    public AdminAction target(LocalMember target){
+        this.target = Objects.requireNonNull(target, "target");
         return this;
     }
 
@@ -84,13 +81,12 @@ public class AdminAction extends GuildEntity{
         return this;
     }
 
-    @NonNull
     public Calendar timestamp(){
         return timestamp;
     }
 
-    public AdminAction timestamp(@NonNull Calendar timestamp){
-        this.timestamp = timestamp;
+    public AdminAction timestamp(Calendar timestamp){
+        this.timestamp = Objects.requireNonNull(timestamp, "timestamp");
         return this;
     }
 

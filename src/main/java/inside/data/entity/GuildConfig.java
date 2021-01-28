@@ -42,31 +42,28 @@ public class GuildConfig extends GuildEntity{
         guildId(guildId);
     }
 
-    @NonNull
     public String prefix(){
         return prefix;
     }
 
-    public void prefix(@NonNull String prefix){
-        this.prefix = prefix;
+    public void prefix(String prefix){
+        this.prefix = Objects.requireNonNull(prefix, "prefix");
     }
 
-    @NonNull
     public Locale locale(){
         return locale;
     }
 
-    public void locale(@NonNull Locale locale){
-        this.locale = locale;
+    public void locale(Locale locale){
+        this.locale = Objects.requireNonNull(locale, "locale");
     }
 
-    @NonNull
     public TimeZone timeZone(){
         return timeZone;
     }
 
-    public void timeZone(@NonNull TimeZone timeZone){
-        this.timeZone = timeZone;
+    public void timeZone(TimeZone timeZone){
+        this.timeZone = Objects.requireNonNull(timeZone, "timeZone");
     }
 
     public Snowflake logChannelId(){

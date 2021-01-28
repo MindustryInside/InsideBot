@@ -13,19 +13,17 @@ public abstract class GuildEntity extends BaseEntity{
     @Column(name = "guild_id")
     protected String guildId;
 
-    @NonNull
     @Transient
     public Snowflake guildId(){
         return Snowflake.of(guildId);
     }
 
-    @NonNull
     public String getGuildId(){
         return guildId;
     }
 
-    public void guildId(@NonNull Snowflake guildId){
-        this.guildId = guildId.asString();
+    public void guildId(Snowflake guildId){
+        this.guildId = Objects.requireNonNull(guildId, "guildId").asString();
     }
 
     @Override

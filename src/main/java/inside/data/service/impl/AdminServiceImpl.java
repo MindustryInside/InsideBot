@@ -42,6 +42,7 @@ public class AdminServiceImpl implements AdminService{
                 .target(target)
                 .timestamp(Calendar.getInstance())
                 .reason(reason);
+
         return Mono.just(action).doOnNext(repository::save).then();
     }
 
@@ -53,8 +54,8 @@ public class AdminServiceImpl implements AdminService{
                 .admin(admin)
                 .target(target)
                 .timestamp(Calendar.getInstance())
-                //может сделать авторазбан?
                 .reason(reason);
+
         return Mono.just(action).doOnNext(repository::save).then();
     }
 
@@ -75,7 +76,7 @@ public class AdminServiceImpl implements AdminService{
                 .timestamp(Calendar.getInstance())
                 .end(end)
                 .reason(reason);
-        //todo
+
         return Mono.just(action).doOnNext(repository::save).then();
     }
 
@@ -101,6 +102,7 @@ public class AdminServiceImpl implements AdminService{
                 .timestamp(Calendar.getInstance())
                 .end(DateTime.now().plusDays(20).toCalendar(Locale.getDefault())) // todo а вот это не очень
                 .reason(reason);
+
         return Mono.just(action).doOnNext(repository::save).then();
     }
 

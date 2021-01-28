@@ -19,12 +19,10 @@ public abstract class BaseEntity implements Serializable{
     @GeneratedValue(generator = "snowflake")
     protected String id;
 
-    @NonNull
     public String getId(){
         return id;
     }
 
-    @NonNull
     @Transient
     public Snowflake id(){
         return Snowflake.of(id);

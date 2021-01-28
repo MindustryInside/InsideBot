@@ -29,31 +29,28 @@ public class MessageInfo extends GuildEntity{
     @Column
     private Calendar timestamp;
 
-    @NonNull
     public Snowflake messageId(){
         return Snowflake.of(messageId);
     }
 
-    public void messageId(@NonNull Snowflake messageId){
-        this.messageId = messageId.asString();
+    public void messageId(Snowflake messageId){
+        this.messageId = Objects.requireNonNull(messageId, "messageId").asString();
     }
 
-    @NonNull
     public Snowflake userId(){
         return Snowflake.of(userId);
     }
 
-    public void userId(@NonNull Snowflake userId){
-        this.userId = userId.asString();
+    public void userId(Snowflake userId){
+        this.userId = Objects.requireNonNull(userId, "userId").asString();
     }
 
-    @NonNull
     public String content(){
         return content;
     }
 
-    public void content(@NonNull String content){
-        this.content = content;
+    public void content(String content){
+        this.content = Objects.requireNonNull(content, "content");
     }
 
     // public Map<String, String> attachments(){
@@ -64,13 +61,12 @@ public class MessageInfo extends GuildEntity{
     //     this.attachments = attachments;
     // }
 
-    @NonNull
     public Calendar timestamp(){
         return timestamp;
     }
 
-    public void timestamp(@NonNull Calendar timestamp){
-        this.timestamp = timestamp;
+    public void timestamp(Calendar timestamp){
+        this.timestamp = Objects.requireNonNull(timestamp, "timestamp");
     }
 
     @Override

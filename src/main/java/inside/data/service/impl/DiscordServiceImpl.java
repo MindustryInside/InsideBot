@@ -93,7 +93,7 @@ public class DiscordServiceImpl implements DiscordService{
 
     @Override
     public Mono<TextChannel> getTextChannelById(Snowflake channelId){
-        return gateway.getChannelById(channelId).cast(TextChannel.class);
+        return gateway.getChannelById(channelId).ofType(TextChannel.class);
     }
 
     @Override
@@ -103,7 +103,7 @@ public class DiscordServiceImpl implements DiscordService{
 
     @Override
     public Mono<VoiceChannel> getVoiceChannelById(Snowflake channelId){
-        return gateway.getChannelById(channelId).cast(VoiceChannel.class);
+        return gateway.getChannelById(channelId).ofType(VoiceChannel.class);
     }
 
     @Override
