@@ -18,7 +18,7 @@ public abstract class JacksonUtil{
         return mapper;
     }
 
-    public static <T> T fromString(String string, Class<T> clazz){
+    public static <T> T fromJson(String string, Class<T> clazz){
         try{
             return mapper.readValue(string, clazz);
         }catch(Throwable t){
@@ -47,10 +47,10 @@ public abstract class JacksonUtil{
     }
 
     public static <T> T clone(T value){
-        return fromString(toString(value), (Class<T>)value.getClass());
+        return fromJson(toString(value), (Class<T>)value.getClass());
     }
 
-    public static List mapJsonToObjectList(String json, Class clazz){
+    public static List list(String json, Class clazz){
         try{
             return mapper.readValue(json, TypeFactory.defaultInstance().constructCollectionType(ArrayList.class, clazz));
         }catch(Throwable t){
@@ -58,7 +58,15 @@ public abstract class JacksonUtil{
         }
     }
 
-    public static Map mapJsonToMap(String json, Class keyClass, Class valueClass){
+    public static Set set(String json, Class clazz){
+        try{
+            return mapper.readValue(json, TypeFactory.defaultInstance().constructCollectionType(HashSet.class, clazz));
+        }catch(Throwable t){
+            throw new RuntimeException(t);
+        }
+    }
+
+    public static Map map(String json, Class keyClass, Class valueClass){
         try{
             return mapper.readValue(json, TypeFactory.defaultInstance().constructMapType(HashMap.class, keyClass, valueClass));
         }catch(Throwable t){

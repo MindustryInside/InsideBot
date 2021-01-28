@@ -10,7 +10,7 @@ import inside.util.*;
 import org.joda.time.format.*;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.*;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 import static inside.event.audit.AuditEventType.*;
 import static inside.util.ContextUtil.*;
 
-@Service
+@Component
 public class CommonEvents extends Events{
     @Autowired
     private AdminService adminService;
@@ -108,6 +108,7 @@ public class CommonEvents extends Events{
         DateTimeFormatter formatter = DateTimeFormat.shortDateTime()
                 .withLocale(context.get(KEY_LOCALE))
                 .withZone(context.get(KEY_TIMEZONE));
+
         LocalMember local = event.target;
         Guild guild = event.guild();
         return guild.getMemberById(local.userId())

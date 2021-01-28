@@ -19,6 +19,7 @@ import inside.util.*;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 import reactor.util.*;
 import reactor.util.context.Context;
@@ -46,6 +47,7 @@ public class MessageEventHandler extends AuditEventHandler{
     private Settings settings;
 
     @Override
+    @Transactional
     public Publisher<?> onMessageCreate(MessageCreateEvent event){
         Message message = event.getMessage();
         String text = message.getContent().trim();

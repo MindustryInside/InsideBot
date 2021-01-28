@@ -13,16 +13,16 @@ public class JsonBinarySqlTypeDescriptor extends AbstractJsonSqlTypeDescriptor{
     public static final JsonBinarySqlTypeDescriptor instance = new JsonBinarySqlTypeDescriptor();
 
     @Override
-    public <X> ValueBinder<X> getBinder(JavaTypeDescriptor<X> javaTypeDescriptor){
-        return new BasicBinder<>(javaTypeDescriptor, this){
+    public <X> ValueBinder<X> getBinder(JavaTypeDescriptor<X> descriptor){
+        return new BasicBinder<>(descriptor, this){
             @Override
             protected void doBind(PreparedStatement st, X value, int index, WrapperOptions options) throws SQLException{
-                st.setObject(index, javaTypeDescriptor.unwrap(value, JsonNode.class, options), getSqlType());
+                st.setObject(index, descriptor.unwrap(value, JsonNode.class, options), getSqlType());
             }
 
             @Override
             protected void doBind(CallableStatement st, X value, String name, WrapperOptions options) throws SQLException{
-                st.setObject(name, javaTypeDescriptor.unwrap(value, JsonNode.class, options), getSqlType());
+                st.setObject(name, descriptor.unwrap(value, JsonNode.class, options), getSqlType());
             }
         };
     }

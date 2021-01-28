@@ -13,8 +13,7 @@ import java.util.*;
 public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implements DynamicParameterizedType{
     private static final long serialVersionUID = -4842954367890483417L;
 
-    private Class<?> jsonObjectClass;
-
+    private Class<?> clazz;
     private Type type;
 
     public JsonTypeDescriptor(){
@@ -30,7 +29,7 @@ public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implement
 
     @Override
     public void setParameterValues(Properties parameters){
-        jsonObjectClass = ((ParameterType)parameters.get(PARAMETER_TYPE)).getReturnedClass();
+        clazz = ((ParameterType)parameters.get(PARAMETER_TYPE)).getReturnedClass();
         try{
             Field typeField = JavaXMember.class.getDeclaredField("type");
             if(!typeField.isAccessible()){
@@ -43,10 +42,10 @@ public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implement
     }
 
     @Override
-    public boolean areEqual(Object one, Object another){
-        if(one == another) return true;
-        if(one == null || another == null) return false;
-        return JacksonUtil.toJsonNode(JacksonUtil.toString(one)).equals(JacksonUtil.toJsonNode(JacksonUtil.toString(another)));
+    public boolean areEqual(Object a, Object b){
+        if(a == b) return true;
+        if(a == null || b == null) return false;
+        return JacksonUtil.toJsonNode(JacksonUtil.toString(a)).equals(JacksonUtil.toJsonNode(JacksonUtil.toString(b)));
     }
 
     @Override
@@ -58,13 +57,14 @@ public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implement
     public Object fromString(String string){
         if(type instanceof ParameterizedType pType){
             if(List.class.isAssignableFrom((Class)pType.getRawType())){
-                return JacksonUtil.mapJsonToObjectList(string, (Class)pType.getActualTypeArguments()[0]);
-            }
-            if(Map.class.isAssignableFrom((Class)pType.getRawType())){
-                return JacksonUtil.mapJsonToMap(string, (Class)pType.getActualTypeArguments()[0], (Class)pType.getActualTypeArguments()[1]);
+                return JacksonUtil.list(string, (Class)pType.getActualTypeArguments()[0]);
+            }else if(Map.class.isAssignableFrom((Class)pType.getRawType())){
+                return JacksonUtil.map(string, (Class)pType.getActualTypeArguments()[0], (Class)pType.getActualTypeArguments()[1]);
+            }else if(Set.class.isAssignableFrom((Class)pType.getRawType())){
+                return JacksonUtil.list(string, (Class)pType.getActualTypeArguments()[0]);
             }
         }
-        return JacksonUtil.fromString(string, jsonObjectClass);
+        return JacksonUtil.fromJson(string, clazz);
     }
 
     @Override
