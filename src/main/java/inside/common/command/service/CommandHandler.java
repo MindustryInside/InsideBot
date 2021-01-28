@@ -3,12 +3,14 @@ package inside.common.command.service;
 import arc.util.Strings;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
+import discord4j.rest.util.*;
 import inside.common.command.model.base.*;
 import inside.util.MessageUtil;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class CommandHandler extends BaseCommandHandler{
@@ -46,8 +48,8 @@ public class CommandHandler extends BaseCommandHandler{
             while(true){
                 if(index >= command.params.length && !argstr.isEmpty()){
                     return messageService.err(channel, messageService.get(ref.context(), "command.response.many-arguments.title"),
-                                       messageService.format(ref.context(), "command.response.many-arguments.description",
-                                                             prefix[0], command.text, command.paramText));
+                                              messageService.format(ref.context(), "command.response.many-arguments.description",
+                                                                    prefix[0], command.text, command.paramText));
                 }else if(argstr.isEmpty()){
                     break;
                 }
@@ -85,34 +87,34 @@ public class CommandHandler extends BaseCommandHandler{
                                                                 prefix[0], command.text));
             }
 
-            //todo сделать полностью реактивно и с учётом контекста
-            // if(command.permissions != null  && !command.permissions.isEmpty()){
-            //     PermissionSet selfPermissions = channel.flatMap(t -> t.getEffectivePermissions(self.getId()))
-            //                                            .blockOptional()
-            //                                            .orElse(PermissionSet.none());
-            //     List<Permission> permissions = Flux.fromIterable(command.permissions)
-            //             .filterWhen(p -> channel.flatMap(c -> c.getEffectivePermissions(self.getId()).map(r -> !r.contains(p))))
-            //             .collectList()
-            //             .blockOptional()
-            //             .orElse(Collections.emptyList());
+            if(command.permissions != null && !command.permissions.isEmpty()){
+                PermissionSet selfPermissions = channel.flatMap(t -> t.getEffectivePermissions(self.getId()))
+                        .blockOptional()
+                        .orElse(PermissionSet.none());
 
-            //     if(!permissions.isEmpty()){
-            //         String bundled = permissions.stream().map(p -> messageService.getEnum(p)).collect(Collectors.joining("\n"));
-            //         if(selfPermissions.contains(Permission.SEND_MESSAGES)){
-            //             if(selfPermissions.contains(Permission.EMBED_LINKS)){
-            //                 return messageService.info(
-            //                         channel,
-            //                         messageService.get("message.error.permission-denied.title"),
-            //                         messageService.format("message.error.permission-denied.description", bundled)
-            //                 );
-            //             }
-            //             return messageService.text(channel, String.format("%s%n%n%s",
-            //                     messageService.get("message.error.permission-denied.title"),
-            //                     messageService.format("message.error.permission-denied.description", bundled)
-            //             ));
-            //         }
-            //     }
-            // }
+                List<Permission> permissions = Flux.fromIterable(command.permissions)
+                        .filterWhen(p -> channel.flatMap(c -> c.getEffectivePermissions(self.getId()).map(r -> !r.contains(p))))
+                        .collectList()
+                        .blockOptional()
+                        .orElse(Collections.emptyList());
+
+                if(!permissions.isEmpty()){
+                    String bundled = permissions.stream().map(p -> messageService.getEnum(ref.context(), p)).collect(Collectors.joining("\n"));
+                    if(selfPermissions.contains(Permission.SEND_MESSAGES)){
+                        if(selfPermissions.contains(Permission.EMBED_LINKS)){
+                            return messageService.info(
+                                    channel,
+                                    messageService.get(ref.context(), "message.error.permission-denied.title"),
+                                    messageService.format(ref.context(), "message.error.permission-denied.description", bundled)
+                            );
+                        }
+                        return messageService.text(channel, String.format("%s%n%n%s",
+                                messageService.get(ref.context(), "message.error.permission-denied.title"),
+                                messageService.format(ref.context(), "message.error.permission-denied.description", bundled)
+                        ));
+                    }
+                }
+            }
 
             return cmd.execute(ref, result.toArray(new String[0]));
         }else{
