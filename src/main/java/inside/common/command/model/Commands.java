@@ -62,11 +62,11 @@ public class Commands{
                 if(command.params.length > 0){
                     builder.append(" *");
                     builder.append(command.paramText);
-                    builder.append('*');
+                    builder.append("*");
                 }
                 builder.append(" - ");
                 builder.append(messageService.get(ref.context(), command.description));
-                builder.append('\n');
+                builder.append("\n");
             });
             builder.append(messageService.get(ref.context(), "command.help.disclaimer.user"));
 
@@ -234,7 +234,12 @@ public class Commands{
                             }
 
                             if(!MessageUtil.isEmpty(args[0])){
-                                Locale locale = LocaleUtil.getOrDefault(args[0]);
+                                Locale locale = LocaleUtil.get(args[0]);
+                                if(locale == null){
+                                    String all = Strings.join("\n", LocaleUtil.locales.values().toSeq().map(Locale::toString));
+                                    return messageService.text(channel, messageService.format(ref.context(), "command.config.unknown", all));
+                                }
+
                                 guildConfig.locale(locale);
                                 entityRetriever.save(guildConfig);
                                 ((Context)ref.context()).put(KEY_LOCALE, locale);
