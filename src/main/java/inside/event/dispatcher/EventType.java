@@ -59,8 +59,8 @@ public final class EventType{
     public static class MemberMuteEvent extends BaseEvent{
         public final LocalMember admin;
         public final LocalMember target;
-        private final @Nullable String reason;
         public final DateTime delay;
+        private final @Nullable String reason;
 
         public MemberMuteEvent(Guild guild, LocalMember admin, LocalMember target, @Nullable String reason, DateTime delay){
             super(guild);

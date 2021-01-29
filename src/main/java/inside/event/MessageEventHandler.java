@@ -1,5 +1,6 @@
 package inside.event;
 
+import arc.util.io.ReusableByteInStream;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.*;
 import discord4j.core.object.Embed.Field;
@@ -16,6 +17,7 @@ import inside.data.entity.*;
 import inside.data.service.*;
 import inside.event.audit.AuditEventHandler;
 import inside.util.*;
+import javassist.bytecode.ByteArray;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -24,6 +26,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.*;
 import reactor.util.context.Context;
 
+import java.io.InputStream;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -124,7 +127,7 @@ public class MessageEventHandler extends AuditEventHandler{
         }
 
         User user = message.getAuthor().orElse(null);
-        TextChannel c = message.getChannel().cast(TextChannel.class).block();
+        TextChannel c = message.getChannel().ofType(TextChannel.class).block();
         if(DiscordUtil.isBot(user) || c == null || !messageService.exists(message.getId())){
             return Mono.empty();
         }
@@ -167,11 +170,12 @@ public class MessageEventHandler extends AuditEventHandler{
 
         MessageCreateSpec spec = new MessageCreateSpec().setEmbed(embed);
         if(under){
-            stringInputStream.writeString(String.format("%s:%n%s%n%n%s:%n%s",
+            StringInputStream input = new StringInputStream();
+            input.writeString(String.format("%s:%n%s%n%n%s:%n%s",
                     messageService.get(context, "audit.message.old-content.title"), oldContent,
                     messageService.get(context, "audit.message.new-content.title"), newContent)
             );
-            spec.addFile("message.txt", stringInputStream);
+            spec.addFile("message.txt", input);
         }
 
         // if(false){

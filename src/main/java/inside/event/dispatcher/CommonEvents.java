@@ -87,10 +87,8 @@ public class CommonEvents extends Events{
         return event.guild().getMemberById(local.userId())
                 .filter(member -> !entityRetriever.muteDisabled(member.getGuildId()))
                 .flatMap(member -> {
-                    Mono<Void> unmute = Mono.fromRunnable(() -> {
-                        adminService.unmute(local.guildId(), local.userId()).block();
-                        member.removeRole(entityRetriever.muteRoleId(member.getGuildId())).block();
-                    });
+                    Mono<Void> unmute = adminService.unmute(local.guildId(), local.userId())
+                            .then(member.removeRole(entityRetriever.muteRoleId(member.getGuildId())));
 
                     Mono<Void> publishLog = log(member.getGuildId(), embed -> {
                         embed.setTitle(messageService.get(context, "audit.member.unmute.title"));
