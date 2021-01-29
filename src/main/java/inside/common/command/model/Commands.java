@@ -458,7 +458,7 @@ public class Commands{
             return target.map(member -> entityRetriever.getMember(member, () -> new LocalMember(member)))
                     .flatMap(local -> adminService.isMuted(local.guildId(), local.userId())
                             .flatMap(bool -> bool ? ref.event()
-                                    .getGuild().flatMap(g -> Mono.fromRunnable(() -> discordService.eventListener().publish(new MemberUnmuteEvent(g, local))))
+                                    .getGuild().flatMap(guild -> Mono.fromRunnable(() -> discordService.eventListener().publish(new MemberUnmuteEvent(guild, local))))
                                             : target.flatMap(member -> messageService.err(channel, messageService.format(ref.context(), "audit.member.unmute.is-not-muted", member.getUsername())))
                             )
                     );

@@ -1,6 +1,5 @@
 package inside.data.service.impl;
 
-import arc.util.Log;
 import discord4j.common.util.Snowflake;
 import discord4j.core.*;
 import discord4j.core.event.ReactiveEventAdapter;
@@ -41,7 +40,7 @@ public class DiscordServiceImpl implements DiscordService{
     @Autowired(required = false)
     public void init(List<ReactiveEventAdapter> handlers, List<Events> events){
         String token = settings.token;
-        Objects.requireNonNull(token, "Discord token not provided");
+        Objects.requireNonNull(token, "token");
 
         gateway = DiscordClientBuilder.create(token)
                 .onClientResponse(ResponseFunction.emptyIfNotFound())
@@ -122,7 +121,7 @@ public class DiscordServiceImpl implements DiscordService{
         Flux.fromIterable(retriever.getAllMembers())
                 .filter(localMember -> !retriever.muteDisabled(localMember.guildId()))
                 .filterWhen(this::isMuteEnd)
-                .subscribe(localMember -> eventListener.publish(new EventType.MemberUnmuteEvent(gateway.getGuildById(localMember.guildId()).block(), localMember)), Log::err);
+                .subscribe(localMember -> eventListener.publish(new EventType.MemberUnmuteEvent(gateway.getGuildById(localMember.guildId()).block(), localMember)));
     }
 
     @Transactional
@@ -141,7 +140,7 @@ public class DiscordServiceImpl implements DiscordService{
                         localMember.messageSeq(0);
                         retriever.save(localMember);
                     }
-                }, Log::err);
+                });
     }
 
     protected Mono<Boolean> isMuteEnd(LocalMember member){
