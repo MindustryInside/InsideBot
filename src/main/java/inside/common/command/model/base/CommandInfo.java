@@ -54,7 +54,6 @@ public class CommandInfo{
                     if(i != params.length - 1){
                         throw new IllegalArgumentException("A variadic parameter should be the last parameter!");
                     }
-
                     fname = fname.substring(0, fname.length() - 3);
                     variadic = true;
                 }

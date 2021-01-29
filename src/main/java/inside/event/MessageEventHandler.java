@@ -47,7 +47,6 @@ public class MessageEventHandler extends AuditEventHandler{
     private Settings settings;
 
     @Override
-    @Transactional
     public Publisher<?> onMessageCreate(MessageCreateEvent event){
         Message message = event.getMessage();
         String text = message.getContent().trim();
@@ -227,13 +226,6 @@ public class MessageEventHandler extends AuditEventHandler{
             return Mono.empty();
         }
 
-        if(Objects.equals(channel.getId(), entityRetriever.logChannelId(guild.getId())) && !message.getEmbeds().isEmpty()){ /* =) */
-            return guild.getAuditLog(a -> a.setActionType(ActionType.MESSAGE_DELETE)).next().doOnNext(a -> {
-                log.warn("Member '{}' deleted log message in guild '{}'",
-                         guild.getMemberById(a.getResponsibleUserId()).map(Member::getUsername).block(),
-                         guild.getName());
-            }).then();
-        }
         if(!messageService.exists(message.getId()) || messageService.isCleared(message.getId())){
             return Mono.empty();
         }

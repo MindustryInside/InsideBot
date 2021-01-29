@@ -20,8 +20,8 @@ public class CommandReference implements CommandRequest, CommandResponse{
     private final LocalMember localMember;
 
     CommandReference(MessageCreateEvent event, ContextView context,
-                            Supplier<Mono<? extends MessageChannel>> replyChannel,
-                            Scheduler replyScheduler, LocalMember localMember){
+                     Supplier<Mono<? extends MessageChannel>> replyChannel,
+                     Scheduler replyScheduler, LocalMember localMember){
         this.event = event;
         this.context = context;
         this.replyChannel = replyChannel;

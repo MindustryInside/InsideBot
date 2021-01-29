@@ -2,7 +2,7 @@ package inside.common.command.service;
 
 import arc.util.Strings;
 import discord4j.core.object.entity.*;
-import discord4j.core.object.entity.channel.TextChannel;
+import discord4j.core.object.entity.channel.*;
 import discord4j.rest.util.*;
 import inside.common.command.model.base.*;
 import inside.util.MessageUtil;
@@ -17,15 +17,15 @@ public class CommandHandler extends BaseCommandHandler{
 
     @Override
     public Mono<Void> handleMessage(String message, CommandReference ref){
-        Mono<Guild> guild = ref.event().getGuild();
-        Mono<TextChannel> channel = ref.getReplyChannel().cast(TextChannel.class);
-        Member self = guild.flatMap(Guild::getSelfMember).blockOptional().orElseThrow(RuntimeException::new);
+        // Mono<Guild> guild = ref.event().getGuild();
+        Mono<TextChannel> channel = ref.getReplyChannel().ofType(TextChannel.class);
+        // Member self = guild.flatMap(Guild::getSelfMember).blockOptional().orElseThrow(RuntimeException::new);
 
-        String[] prefix = {entityRetriever.prefix(self.getGuildId())};
+        String[] prefix = {entityRetriever.prefix(ref.event().getGuildId().get())}; // todo fix this
 
-        if(ref.event().getMessage().getUserMentions().map(User::getId).any(u -> u.equals(self.getId())).blockOptional().orElse(false)){
-            prefix[0] = self.getNicknameMention() + " "; //todo не очень нравится
-        }
+        // if(ref.event().getMessage().getUserMentions().map(User::getId).any(u -> u.equals(self.getId())).blockOptional().orElse(false)){
+        //     prefix[0] = self.getNicknameMention() + " "; //todo не очень нравится
+        // }
 
         if(MessageUtil.isEmpty(message) || !message.startsWith(prefix[0])){
             return Mono.empty();
@@ -87,36 +87,20 @@ public class CommandHandler extends BaseCommandHandler{
                                                                 prefix[0], command.text));
             }
 
-            if(command.permissions != null && !command.permissions.isEmpty()){
-                PermissionSet selfPermissions = channel.flatMap(t -> t.getEffectivePermissions(self.getId()))
-                        .blockOptional()
-                        .orElse(PermissionSet.none());
-
-                List<Permission> permissions = Flux.fromIterable(command.permissions)
-                        .filterWhen(p -> channel.flatMap(c -> c.getEffectivePermissions(self.getId()).map(r -> !r.contains(p))))
-                        .collectList()
-                        .blockOptional()
-                        .orElse(Collections.emptyList());
-
-                if(!permissions.isEmpty()){
-                    String bundled = permissions.stream().map(p -> messageService.getEnum(ref.context(), p)).collect(Collectors.joining("\n"));
-                    if(selfPermissions.contains(Permission.SEND_MESSAGES)){
-                        if(selfPermissions.contains(Permission.EMBED_LINKS)){
-                            return messageService.info(
-                                    channel,
+            return Flux.fromIterable(command.permissions != null ? command.permissions : PermissionSet.none())
+                    .filterWhen(permission -> channel.zipWith(ref.getClient().getSelf().map(User::getId))
+                            .flatMap(t -> t.getT1().getEffectivePermissions(t.getT2()))
+                            .map(set -> !set.contains(permission)))
+                    .map(permission -> messageService.getEnum(ref.context(), permission))
+                    .collect(Collectors.joining("\n"))
+                    .flatMap(s -> s.isEmpty() ? cmd.execute(ref, result.toArray(new String[0])) : messageService.text(channel, String.format("%s%n%n%s",
+                            messageService.get(ref.context(), "message.error.permission-denied.title"),
+                            messageService.format(ref.context(), "message.error.permission-denied.description", s)))
+                            .onErrorResume(__ -> ref.getMessage().getGuild()
+                                    .flatMap(guild -> guild.getOwner().flatMap(User::getPrivateChannel))
+                                    .flatMap(c -> c.createMessage(String.format("%s%n%n%s",
                                     messageService.get(ref.context(), "message.error.permission-denied.title"),
-                                    messageService.format(ref.context(), "message.error.permission-denied.description", bundled)
-                            );
-                        }
-                        return messageService.text(channel, String.format("%s%n%n%s",
-                                messageService.get(ref.context(), "message.error.permission-denied.title"),
-                                messageService.format(ref.context(), "message.error.permission-denied.description", bundled)
-                        ));
-                    }
-                }
-            }
-
-            return cmd.execute(ref, result.toArray(new String[0]));
+                                    messageService.format(ref.context(), "message.error.permission-denied.description", s)))).then()));
         }else{
             int min = 0;
             CommandInfo closest = null;

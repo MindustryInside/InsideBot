@@ -79,15 +79,15 @@ public class Commands{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             Mono<MessageChannel> channel = ref.getReplyChannel();
-            Snowflake targetId = args.length > 0 ? MessageUtil.parseUserId(args[0]) : ref.getAuthor().map(User::getId).orElseThrow(RuntimeException::new);
+            Snowflake targetId = args.length > 0 ? MessageUtil.parseUserId(args[0]) : ref.getAuthorAsMember().getId();
             if(targetId == null || !discordService.exists(targetId)){
                 return messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name"));
             }
 
-            return discordService.gateway().getUserById(targetId).flatMap(u -> messageService.info(channel, embed -> {
+            return discordService.gateway().getUserById(targetId).flatMap(user -> messageService.info(channel, embed -> {
                 embed.setColor(settings.normalColor);
-                embed.setImage(u.getAvatarUrl() + "?size=512");
-                embed.setDescription(messageService.format(ref.context(), "command.avatar.text", u.getUsername()));
+                embed.setImage(user.getAvatarUrl() + "?size=512");
+                embed.setDescription(messageService.format(ref.context(), "command.avatar.text", user.getUsername()));
             }));
         }
     }

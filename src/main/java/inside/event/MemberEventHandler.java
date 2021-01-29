@@ -31,6 +31,7 @@ public class MemberEventHandler extends AuditEventHandler{
     private AdminService adminService;
 
     @Override
+    @Deprecated
     public Publisher<?> onBan(BanEvent event){ // не триггерится, баг д4ж текущей версии
         User user = event.getUser();
         if(DiscordUtil.isBot(user)) return Mono.empty();
