@@ -45,5 +45,5 @@ public abstract class BaseCommandHandler{
         return handlers.stream().map(Command::compile).collect(Collectors.toUnmodifiableList());
     }
 
-    public abstract Mono<Void> handleMessage(String message, CommandReference reference);
+    public abstract Mono<Void> handleMessage(final String message, final CommandReference reference);
 }

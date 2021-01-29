@@ -2,122 +2,114 @@ package inside.common.command.service;
 
 import arc.util.Strings;
 import discord4j.core.object.entity.*;
-import discord4j.core.object.entity.channel.*;
-import discord4j.rest.util.*;
+import discord4j.core.object.entity.channel.TextChannel;
+import discord4j.rest.util.PermissionSet;
 import inside.common.command.model.base.*;
-import inside.util.MessageUtil;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
+import reactor.util.function.Tuple2;
 
-import java.util.*;
+import java.util.LinkedList;
 import java.util.stream.Collectors;
 
 @Service
 public class CommandHandler extends BaseCommandHandler{
 
     @Override
-    public Mono<Void> handleMessage(String message, CommandReference ref){
-        // Mono<Guild> guild = ref.event().getGuild();
+    public Mono<Void> handleMessage(final String message, final CommandReference ref){
+        Mono<Guild> guild = ref.event().getGuild();
         Mono<TextChannel> channel = ref.getReplyChannel().ofType(TextChannel.class);
-        // Member self = guild.flatMap(Guild::getSelfMember).blockOptional().orElseThrow(RuntimeException::new);
+        Mono<User> self = ref.getClient().getSelf();
 
-        String[] prefix = {entityRetriever.prefix(ref.event().getGuildId().get())}; // todo fix this
+        final String prefix = entityRetriever.prefix(ref.getAuthorAsMember().getGuildId());
 
-        // if(ref.event().getMessage().getUserMentions().map(User::getId).any(u -> u.equals(self.getId())).blockOptional().orElse(false)){
-        //     prefix[0] = self.getNicknameMention() + " "; //todo не очень нравится
-        // }
+        Mono<Tuple2<String, String>> text = Mono.justOrEmpty(prefix).filter(message::startsWith)
+                .map(s -> message.substring(s.length()).trim())
+                .zipWhen(s -> Mono.justOrEmpty(s.contains(" ") ? s.substring(0, s.indexOf(" ")) : s));
 
-        if(MessageUtil.isEmpty(message) || !message.startsWith(prefix[0])){
-            return Mono.empty();
-        }
-
-        message = message.substring(prefix[0].length()).trim();
-
-        String commandstr = message.contains(" ") ? message.substring(0, message.indexOf(" ")) : message;
-        String argstr = message.contains(" ") ? message.substring(commandstr.length() + 1) : "";
-
-        LinkedList<String> result = new LinkedList<>();
-
-        Command cmd = commands.get(commandstr);
-
-        if(cmd != null){
-            CommandInfo command = cmd.compile();
-            int index = 0;
-            boolean satisfied = false;
-
-            while(true){
-                if(index >= command.params.length && !argstr.isEmpty()){
-                    return messageService.err(channel, messageService.get(ref.context(), "command.response.many-arguments.title"),
-                                              messageService.format(ref.context(), "command.response.many-arguments.description",
-                                                                    prefix[0], command.text, command.paramText));
-                }else if(argstr.isEmpty()){
-                    break;
-                }
-
-                if(command.params[index].optional || index >= command.params.length - 1 || command.params[index + 1].optional){
-                    satisfied = true;
-                }
-
-                if(command.params[index].variadic){
-                    result.add(argstr);
-                    break;
-                }
-
-                int next = argstr.indexOf(" ");
-                if(next == -1){
-                    if(!satisfied){
-                        return messageService.err(channel, messageService.get(ref.context(), "command.response.few-arguments.title"),
-                                                  messageService.format(ref.context(), "command.response.few-arguments.description",
-                                                                        prefix[0], command.text));
-                    }
-                    result.add(argstr);
-                    break;
-                }else{
-                    String arg = argstr.substring(0, next);
-                    argstr = argstr.substring(arg.length() + 1);
-                    result.add(arg);
-                }
-
-                index++;
-            }
-
-            if(!satisfied && command.params.length > 0 && !command.params[0].optional){
-                return messageService.err(channel, messageService.get(ref.context(), "command.response.few-arguments.title"),
-                                          messageService.format(ref.context(), "command.response.few-arguments.description",
-                                                                prefix[0], command.text));
-            }
-
-            return Flux.fromIterable(command.permissions != null ? command.permissions : PermissionSet.none())
-                    .filterWhen(permission -> channel.zipWith(ref.getClient().getSelf().map(User::getId))
-                            .flatMap(t -> t.getT1().getEffectivePermissions(t.getT2()))
-                            .map(set -> !set.contains(permission)))
-                    .map(permission -> messageService.getEnum(ref.context(), permission))
-                    .collect(Collectors.joining("\n"))
-                    .flatMap(s -> s.isEmpty() ? cmd.execute(ref, result.toArray(new String[0])) : messageService.text(channel, String.format("%s%n%n%s",
-                            messageService.get(ref.context(), "message.error.permission-denied.title"),
-                            messageService.format(ref.context(), "message.error.permission-denied.description", s)))
-                            .onErrorResume(__ -> ref.getMessage().getGuild()
-                                    .flatMap(guild -> guild.getOwner().flatMap(User::getPrivateChannel))
-                                    .flatMap(c -> c.createMessage(String.format("%s%n%n%s",
-                                    messageService.get(ref.context(), "message.error.permission-denied.title"),
-                                    messageService.format(ref.context(), "message.error.permission-denied.description", s)))).then()));
-        }else{
+        Mono<Void> suggestion = text.flatMap(t -> {
             int min = 0;
             CommandInfo closest = null;
 
             for(CommandInfo c : commandList()){
-                int dst = Strings.levenshtein(c.text, commandstr);
+                int dst = Strings.levenshtein(c.text, t.getT1());
                 if(dst < 3 && (closest == null || dst < min)){
                     min = dst;
                     closest = c;
                 }
             }
 
-
             if(closest != null){
                 return messageService.err(channel, messageService.format(ref.context(), "command.response.found-closest", closest.text));
             }
-            return messageService.err(channel, messageService.format(ref.context(), "command.response.unknown", prefix[0]));
-        }
+            return messageService.err(channel, messageService.format(ref.context(), "command.response.unknown", prefix));
+        });
+
+        return text.flatMap(t -> Mono.defer(() -> commands.containsKey(t.getT2()) ? Mono.just(commands.get(t.getT2())) : suggestion)
+                .ofType(Command.class)
+                .flatMap(command -> {
+                    CommandInfo commandInfo = command.compile();
+                    LinkedList<String> result = new LinkedList<>();
+                    String argstr = t.getT1().contains(" ") ? t.getT1().substring(t.getT2().length() + 1) : "";
+                    int index = 0;
+                    boolean satisfied = false;
+
+                    while(true){
+                        if(index >= commandInfo.params.length && !argstr.isEmpty()){
+                            return messageService.err(channel, messageService.get(ref.context(), "command.response.many-arguments.title"),
+                                                      messageService.format(ref.context(), "command.response.many-arguments.description",
+                                                                            prefix, commandInfo.text, commandInfo.paramText));
+                        }else if(argstr.isEmpty()){
+                            break;
+                        }
+
+                        if(commandInfo.params[index].optional || index >= commandInfo.params.length - 1 || commandInfo.params[index + 1].optional){
+                            satisfied = true;
+                        }
+
+                        if(commandInfo.params[index].variadic){
+                            result.add(argstr);
+                            break;
+                        }
+
+                        int next = argstr.indexOf(" ");
+                        if(next == -1){
+                            if(!satisfied){
+                                return messageService.err(channel, messageService.get(ref.context(), "command.response.few-arguments.title"),
+                                                          messageService.format(ref.context(), "command.response.few-arguments.description",
+                                                                                prefix, commandInfo.text));
+                            }
+                            result.add(argstr);
+                            break;
+                        }else{
+                            String arg = argstr.substring(0, next);
+                            argstr = argstr.substring(arg.length() + 1);
+                            result.add(arg);
+                        }
+
+                        index++;
+                    }
+
+                    if(!satisfied && commandInfo.params.length > 0 && !commandInfo.params[0].optional){
+                        return messageService.err(channel, messageService.get(ref.context(), "command.response.few-arguments.title"),
+                                                  messageService.format(ref.context(), "command.response.few-arguments.description",
+                                                                        prefix, commandInfo.text));
+                    }
+
+                    return Flux.fromIterable(commandInfo.permissions != null ? commandInfo.permissions : PermissionSet.none())
+                            .filterWhen(permission -> channel.zipWith(self.map(User::getId))
+                                    .flatMap(tuple -> tuple.getT1().getEffectivePermissions(tuple.getT2()))
+                                    .map(set -> !set.contains(permission)))
+                            .map(permission -> messageService.getEnum(ref.context(), permission))
+                            .collect(Collectors.joining("\n"))
+                            .flatMap(s -> s.isEmpty() ? command.execute(ref, result.toArray(new String[0])) : messageService.text(channel, String.format("%s%n%n%s",
+                                    messageService.get(ref.context(), "message.error.permission-denied.title"),
+                                    messageService.format(ref.context(), "message.error.permission-denied.description", s)))
+                                    .onErrorResume(__ -> guild.flatMap(g -> g.getOwner().flatMap(User::getPrivateChannel))
+                                            .flatMap(c -> c.createMessage(String.format("%s%n%n%s",
+                                            messageService.get(ref.context(), "message.error.permission-denied.title"),
+                                            messageService.format(ref.context(), "message.error.permission-denied.description", s))))
+                                            .then()));
+                }));
     }
 }
