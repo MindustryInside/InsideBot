@@ -3,9 +3,9 @@ package inside.event.audit;
 import discord4j.rest.util.Color;
 
 public enum AuditEventType{
-    messageEdit(0x33cc33),
-    messageClear(0xff2400),
-    messageDelete(0xff2400),
+    messageEdit(0x32cd32ff),
+    messageClear(0xdc143cff),
+    messageDelete(0xff341cff),
 
     voiceJoin(0xff33cc),
     voiceLeave(0x9900cc),
