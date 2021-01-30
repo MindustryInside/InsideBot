@@ -7,7 +7,9 @@ import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
 import discord4j.core.shard.MemberRequestFilter;
 import discord4j.gateway.intent.*;
+import discord4j.rest.request.RouteMatcher;
 import discord4j.rest.response.ResponseFunction;
+import discord4j.rest.route.Routes;
 import inside.Settings;
 import inside.data.entity.*;
 import inside.data.service.*;
@@ -44,6 +46,7 @@ public class DiscordServiceImpl implements DiscordService{
 
         gateway = DiscordClientBuilder.create(token)
                 .onClientResponse(ResponseFunction.emptyIfNotFound())
+                .onClientResponse(ResponseFunction.emptyOnErrorStatus(RouteMatcher.route(Routes.REACTION_CREATE), 400))
                 .build()
                 .gateway()
                 .setMemberRequestFilter(MemberRequestFilter.all())
