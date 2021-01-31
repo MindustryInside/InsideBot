@@ -1,11 +1,9 @@
 package inside.event;
 
-import arc.util.io.ReusableByteInStream;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.*;
 import discord4j.core.object.Embed.Field;
 import discord4j.core.object.Region;
-import discord4j.core.object.audit.ActionType;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
 import discord4j.core.object.entity.channel.Channel.Type;
@@ -17,16 +15,13 @@ import inside.data.entity.*;
 import inside.data.service.*;
 import inside.event.audit.AuditEventHandler;
 import inside.util.*;
-import javassist.bytecode.ByteArray;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 import reactor.util.*;
 import reactor.util.context.Context;
 
-import java.io.InputStream;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -236,7 +231,6 @@ public class MessageEventHandler extends AuditEventHandler{
 
         MessageInfo info = messageService.getById(message.getId());
         String content = info.content();
-        boolean under = content.length() >= Field.MAX_VALUE_LENGTH;
 
         context = Context.of(KEY_GUILD_ID, guild.getId(),
                              KEY_LOCALE, entityRetriever.locale(guild.getId()),
@@ -255,9 +249,10 @@ public class MessageEventHandler extends AuditEventHandler{
         };
 
         MessageCreateSpec spec = new MessageCreateSpec().setEmbed(embed);
-        if(under){
-            stringInputStream.writeString(String.format("%s:%n%s", messageService.get(context, "audit.message.deleted-content.title"), content));
-            spec.addFile("message.txt", stringInputStream);
+        if(content.length() >= Field.MAX_VALUE_LENGTH){
+            StringInputStream input = new StringInputStream();
+            input.writeString(String.format("%s:%n%s", messageService.get(context, "audit.message.deleted-content.title"), content));
+            spec.addFile("message.txt", input);
         }
 
         // if(false){

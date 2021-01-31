@@ -76,6 +76,7 @@ public class DiscordServiceImpl implements DiscordService{
     @PreDestroy
     public void destroy(){
         gateway.logout().block();
+        eventListener.shutdown();
     }
 
     @Override

@@ -23,14 +23,14 @@ public interface EventListener{
 
     static EventListener withEarliestEvents(int bufferSize){
         return builder().eventProcessor(EmitterProcessor.create(bufferSize, false))
-                        .overflowStrategy(OverflowStrategy.DROP)
-                        .build();
+                .overflowStrategy(OverflowStrategy.DROP)
+                .build();
     }
 
     static EventListener withLatestEvents(int bufferSize){
         return builder().eventProcessor(EmitterProcessor.create(bufferSize, false))
-                        .overflowStrategy(OverflowStrategy.LATEST)
-                        .build();
+                .overflowStrategy(OverflowStrategy.LATEST)
+                .build();
     }
 
     static EventListener replayingWithTimeout(Duration maxAge){
@@ -57,8 +57,8 @@ public interface EventListener{
 
     default Flux<BaseEvent> on(Events adapter){
         return on(BaseEvent.class).flatMap(event -> Flux.defer(() -> adapter.hookOnEvent(event))
-                                  .onErrorResume(t -> Mono.empty())
-                                  .then(Mono.just(event)));
+                .onErrorResume(t -> Mono.empty())
+                .then(Mono.just(event)));
     }
 
     void publish(BaseEvent event);
