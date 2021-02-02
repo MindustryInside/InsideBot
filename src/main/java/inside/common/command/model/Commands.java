@@ -337,7 +337,7 @@ public class Commands{
 
             return discordService.gateway().getMemberById(guildId, targetId)
                     .flatMap(target -> Mono.just(entityRetriever.getMember(target, () -> new LocalMember(target)))
-                             .flatMap(local -> {
+                            .flatMap(local -> {
                                  String reason = args.length > 1 ? args[1].trim() : null;
 
                                  if(adminService.isAdmin(target) && !adminService.isOwner(author)){

@@ -14,7 +14,7 @@ import org.springframework.stereotype.*;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 
 import static inside.event.audit.AuditEventType.*;
@@ -38,20 +38,20 @@ public class CommonEvents extends Events{
                 .withLocale(context.get(KEY_LOCALE))
                 .withZone(context.get(KEY_TIMEZONE));
 
-        Consumer<Message> appendInfo = m -> {
-            Member member = m.getAuthorAsMember().block();
-            builder.append("[").append(formatter.print(m.getTimestamp().toEpochMilli())).append("] ");
+        Consumer<Message> appendInfo = message -> {
+            Member member = message.getAuthorAsMember().block();
+            builder.append("[").append(formatter.print(message.getTimestamp().toEpochMilli())).append("] ");
             if(DiscordUtil.isBot(member)){
                 builder.append("[BOT] ");
             }
 
             builder.append(DiscordUtil.detailName(member)).append(" > ");
-            if(!MessageUtil.isEmpty(m)){
-                builder.append(MessageUtil.effectiveContent(m));
+            if(!MessageUtil.isEmpty(message)){
+                builder.append(MessageUtil.effectiveContent(message));
             }
 
-            for(int i = 0; i < m.getEmbeds().size(); i++){
-                Embed e = m.getEmbeds().get(i);
+            for(int i = 0; i < message.getEmbeds().size(); i++){
+                Embed e = message.getEmbeds().get(i);
                 builder.append("\n[embed-").append(i).append(']');
                 if(e.getDescription().isPresent()){
                     builder.append("\n").append(e.getDescription().get());
@@ -69,6 +69,7 @@ public class CommonEvents extends Events{
 
         return event.history
                 .filter(Objects::nonNull)
+                .sort(Comparator.comparing(Message::getId))
                 .publishOn(Schedulers.boundedElastic())
                 .onErrorResume(__ -> Mono.empty())
                 .flatMap(m -> Mono.fromRunnable(() -> {

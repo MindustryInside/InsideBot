@@ -66,8 +66,8 @@ public final class EventType{
             super(guild);
             this.admin = Objects.requireNonNull(admin, "admin");
             this.target = Objects.requireNonNull(target, "target");
-            this.reason = reason;
             this.delay = Objects.requireNonNull(delay, "delay");
+            this.reason = reason;
         }
 
         public Optional<String> reason(){

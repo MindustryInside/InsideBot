@@ -7,6 +7,7 @@ import discord4j.rest.util.PermissionSet;
 import inside.common.command.model.base.*;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
+import reactor.function.TupleUtils;
 import reactor.util.function.Tuple2;
 
 import java.util.LinkedList;
@@ -98,7 +99,7 @@ public class CommandHandler extends BaseCommandHandler{
 
                     return Flux.fromIterable(commandInfo.permissions != null ? commandInfo.permissions : PermissionSet.none())
                             .filterWhen(permission -> channel.zipWith(self.map(User::getId))
-                                    .flatMap(tuple -> tuple.getT1().getEffectivePermissions(tuple.getT2()))
+                                    .flatMap(TupleUtils.function((targetChannel, selfId) -> targetChannel.getEffectivePermissions(selfId)))
                                     .map(set -> !set.contains(permission)))
                             .map(permission -> messageService.getEnum(ref.context(), permission))
                             .collect(Collectors.joining("\n"))
