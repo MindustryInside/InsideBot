@@ -40,12 +40,10 @@ public class MemberEventHandler extends AuditEventHandler{
                              KEY_LOCALE, entityRetriever.locale(event.getGuildId()),
                              KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
 
-        return log(event.getGuildId(), embed -> {
-            embed.setColor(userBan.color);
-            embed.setTitle(messageService.get(context, "audit.member.ban.title"));
-            embed.setDescription(messageService.format(context, "audit.member.ban.description", user.getUsername()));
-            embed.setFooter(timestamp(), null);
-        });
+        return log(event.getGuildId(), embed -> embed.setColor(userBan.color)
+                .setTitle(messageService.get(context, "audit.member.ban.title"))
+                .setDescription(messageService.format(context, "audit.member.ban.description", user.getUsername()))
+                .setFooter(timestamp(), null));
     }
 
     @Override
@@ -69,12 +67,10 @@ public class MemberEventHandler extends AuditEventHandler{
                               )))
                 );
 
-        Mono<Void> log = log(event.getGuildId(), embed -> {
-            embed.setColor(userJoin.color);
-            embed.setTitle(messageService.get(context, "audit.member.join.title"));
-            embed.setDescription(messageService.format(context, "audit.member.join.description", member.getUsername()));
-            embed.setFooter(timestamp(), null);
-        });
+        Mono<Void> log = log(event.getGuildId(), embed -> embed.setColor(userJoin.color)
+                .setTitle(messageService.get(context, "audit.member.join.title"))
+                .setDescription(messageService.format(context, "audit.member.join.description", member.getUsername()))
+                .setFooter(timestamp(), null));
 
         return log.then(evade);
     }
@@ -87,12 +83,10 @@ public class MemberEventHandler extends AuditEventHandler{
                              KEY_LOCALE, entityRetriever.locale(event.getGuildId()),
                              KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
 
-        Mono<Void> log = log(event.getGuildId(), embed -> {
-            embed.setColor(userLeave.color);
-            embed.setTitle(messageService.get(context, "audit.member.leave.title"));
-            embed.setDescription(messageService.format(context, "audit.member.leave.description", user.getUsername()));
-            embed.setFooter(timestamp(), null);
-        });
+        Mono<Void> log = log(event.getGuildId(), embed -> embed.setColor(userLeave.color)
+                .setTitle(messageService.get(context, "audit.member.leave.title"))
+                .setDescription(messageService.format(context, "audit.member.leave.description", user.getUsername()))
+                .setFooter(timestamp(), null));
 
         Mono<Void> kick = event.getGuild().flatMapMany(g -> g.getAuditLog(q -> q.setActionType(ActionType.MEMBER_KICK)))
                 .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(2500)))
@@ -130,12 +124,12 @@ public class MemberEventHandler extends AuditEventHandler{
     @Override
     public Publisher<?> onMemberUpdate(MemberUpdateEvent event){
         return event.getMember()
-                    .filter(DiscordUtil::isNotBot)
-                    .doOnNext(member -> {
-                        LocalMember localMember = entityRetriever.getMember(member, () -> new LocalMember(member));
-                        event.getCurrentNickname().ifPresent(localMember::effectiveName);
-                        entityRetriever.save(localMember);
-                    })
-                    .then();
+                .filter(DiscordUtil::isNotBot)
+                .doOnNext(member -> {
+                    LocalMember localMember = entityRetriever.getMember(member, () -> new LocalMember(member));
+                    event.getCurrentNickname().ifPresent(localMember::effectiveName);
+                    entityRetriever.save(localMember);
+                })
+                .then();
     }
 }

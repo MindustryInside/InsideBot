@@ -1,9 +1,7 @@
 package inside.data.entity.base;
 
-import discord4j.common.util.Snowflake;
 import inside.data.type.JsonBinaryType;
 import org.hibernate.annotations.*;
-import reactor.util.annotation.NonNull;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -21,11 +19,6 @@ public abstract class BaseEntity implements Serializable{
 
     public String getId(){
         return id;
-    }
-
-    @Transient
-    public Snowflake id(){
-        return Snowflake.of(id);
     }
 
     @Override

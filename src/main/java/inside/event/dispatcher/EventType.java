@@ -14,12 +14,12 @@ public final class EventType{
     private EventType(){}
 
     public static class MessageClearEvent extends BaseEvent{
-        public final Flux<Message> history;
-        public final Mono<TextChannel> channel;
+        public final List<Message> history;
+        public final TextChannel channel;
         public final Member member;
         public final int count;
 
-        public MessageClearEvent(Guild guild, Flux<Message> history, Member member, Mono<TextChannel> channel, int count){
+        public MessageClearEvent(Guild guild, List<Message> history, Member member, TextChannel channel, int count){
             super(guild);
             this.history = Objects.requireNonNull(history, "history");
             this.channel = Objects.requireNonNull(channel, "channel");

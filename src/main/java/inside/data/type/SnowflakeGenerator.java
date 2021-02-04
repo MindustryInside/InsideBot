@@ -11,6 +11,7 @@ import java.time.Instant;
 /**
  * Генератор снежинкоподобных id
  */
+@SuppressWarnings("unused")
 public class SnowflakeGenerator implements IdentifierGenerator{
     @Override
     public Serializable generate(SharedSessionContractImplementor session, Object obj) throws HibernateException{

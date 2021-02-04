@@ -10,8 +10,8 @@ import inside.util.*;
 import org.joda.time.format.*;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.*;
-import reactor.core.publisher.Mono;
+import org.springframework.stereotype.Component;
+import reactor.core.publisher.*;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.*;
@@ -60,22 +60,19 @@ public class CommonEvents extends Events{
             builder.append("\n");
         };
 
-        Mono<Void> publishLog = event.channel.map(GuildChannel::getName).flatMap(c -> log(event.guild().getId(), embed -> {
-            embed.setTitle(messageService.format(context, "audit.message.clear.title", event.count, c));
-            embed.setDescription(messageService.format(context, "audit.message.clear.description", event.member.getUsername(), event.count, messageService.getCount(context, "common.plurals.message", event.count), c));
+        Mono<Void> publishLog = log(event.guild().getId(), embed -> {
+            embed.setTitle(messageService.format(context, "audit.message.clear.title", event.count, event.channel.getName()));
+            embed.setDescription(messageService.format(context, "audit.message.clear.description", event.member.getUsername(), event.count, messageService.getCount(context, "common.plurals.message", event.count), event.channel.getName()));
             embed.setFooter(timestamp(), null);
             embed.setColor(messageClear.color);
-        }, true));
+        }, true);
 
-        return event.history.filter(Objects::nonNull)
-                .sort(Comparator.comparing(Message::getId))
-                .publishOn(Schedulers.boundedElastic())
+        return Flux.fromIterable(event.history)
                 .onErrorResume(__ -> Mono.empty())
-                .flatMap(m -> Mono.fromRunnable(() -> {
+                .flatMap(m -> m.delete().then(Mono.fromRunnable(() -> {
                     messageService.putMessage(m.getId());
                     appendInfo.accept(m);
-                    m.delete().block();
-                }))
+                })))
                 .then(Mono.fromRunnable(() -> stringInputStream.writeString(builder.toString())).then(publishLog));
     }
 
@@ -88,12 +85,10 @@ public class CommonEvents extends Events{
                     Mono<Void> unmute = adminService.unmute(local.guildId(), local.userId())
                             .then(member.removeRole(entityRetriever.muteRoleId(member.getGuildId())));
 
-                    Mono<Void> publishLog = log(member.getGuildId(), embed -> {
-                        embed.setTitle(messageService.get(context, "audit.member.unmute.title"));
-                        embed.setDescription(messageService.format(context, "audit.member.unmute.description", member.getUsername()));
-                        embed.setFooter(timestamp(), null);
-                        embed.setColor(userUnmute.color);
-                    });
+                    Mono<Void> publishLog = log(member.getGuildId(), embed -> embed.setTitle(messageService.get(context, "audit.member.unmute.title"))
+                            .setDescription(messageService.format(context, "audit.member.unmute.description", member.getUsername()))
+                            .setFooter(timestamp(), null)
+                            .setColor(userUnmute.color));
 
                     return unmute.then(publishLog);
                 });

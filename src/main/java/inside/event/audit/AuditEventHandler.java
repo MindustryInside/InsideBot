@@ -57,6 +57,4 @@ public abstract class AuditEventHandler extends ReactiveEventAdapter{
                 .withZone(context.get(KEY_TIMEZONE))
                 .print(DateTime.now());
     }
-
-    //todo
 }

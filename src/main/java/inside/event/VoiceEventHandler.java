@@ -27,7 +27,7 @@ public class VoiceEventHandler extends AuditEventHandler{
                              KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
         Boolf<VoiceState> ignore = voiceState -> voiceState.isSelfDeaf() || voiceState.isDeaf() || voiceState.isMuted() || voiceState.isSelfStreaming() ||
-                                        voiceState.isSelfVideoEnabled() || voiceState.isSuppressed();
+                                                 voiceState.isSelfVideoEnabled() || voiceState.isSuppressed();
         if(state != null){
             if(ignore.get(state)) return Mono.empty();
             return Mono.zip(state.getChannel(), state.getUser())

@@ -18,10 +18,12 @@ import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
+import reactor.function.TupleUtils;
 import reactor.util.context.Context;
 
 import java.util.*;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static inside.util.ContextUtil.*;
 
@@ -303,21 +305,22 @@ public class Commands{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             Member author = ref.getAuthorAsMember();
-            Mono<TextChannel> channel = ref.getReplyChannel().cast(TextChannel.class);
+            Mono<TextChannel> reply = ref.getReplyChannel().cast(TextChannel.class);
             if(!MessageUtil.canParseInt(args[0])){
-                return messageService.err(channel, messageService.get(ref.context(), "command.incorrect-number"));
+                return messageService.err(reply, messageService.get(ref.context(), "command.incorrect-number"));
             }
 
             int number = Strings.parseInt(args[0]);
             if(number >= 100){
-                return messageService.err(channel, messageService.format(ref.context(), "common.limit-number", 100));
+                return messageService.err(reply, messageService.format(ref.context(), "common.limit-number", 100));
             }
 
-            Flux<Message> history = channel.flatMapMany(c -> c.getMessagesBefore(ref.getMessage().getId()))
-                                           .limitRequest(number);
+            Mono<List<Message>> history = reply.flatMapMany(channel -> channel.getMessagesBefore(ref.getMessage().getId()))
+                    .limitRequest(number)
+                    .collectSortedList(Comparator.comparing(Message::getId));
 
-            return author.getGuild().flatMap(g -> Mono.fromRunnable(() -> discordService.eventListener().publish(
-                    new MessageClearEvent(g, history, author, channel, number)
+            return Mono.zip(reply, author.getGuild(), history).flatMap(TupleUtils.function((channel, guild, messages) -> Mono.fromRunnable(() ->
+                    discordService.eventListener().publish(new MessageClearEvent(guild, messages, author, channel, number))
             )));
         }
     }
