@@ -61,10 +61,10 @@ public class MemberEventHandler extends AuditEventHandler{
 
         Mono<Void> warn = adminService.warnings(localMember.guildId(), localMember.userId()).count()
                 .filter(c -> c >= 3)
-                .zipWith(member.getGuild().flatMap(Guild::getOwner).map(owner -> entityRetriever.getMember(owner, () -> new LocalMember(owner))))
-                .flatMap(TupleUtils.function((count, owner) -> Mono.fromRunnable(() ->
+                .flatMap(__ -> member.getGuild().flatMap(Guild::getOwner).map(owner -> entityRetriever.getMember(owner, () -> new LocalMember(owner))))
+                .flatMap(owner -> Mono.fromRunnable(() ->
                         adminService.warn(owner, localMember, messageService.get(context, "audit.member.warn.evade"))
-                )));
+                ));
 
         Mono<Void> muteEvade = adminService.isMuted(member.getGuildId(), member.getId())
                 .zipWith(member.getGuild().flatMap(Guild::getOwner).map(owner -> entityRetriever.getMember(owner, () -> new LocalMember(owner))))
