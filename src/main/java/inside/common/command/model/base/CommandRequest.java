@@ -41,8 +41,8 @@ public interface CommandRequest{
 
     default Mono<Boolean> hasPermission(PermissionSet requiredPermissions){
         return Mono.justOrEmpty(getAuthor().map(User::getId))
-                   .flatMap(authorId -> getMessage().getChannel().ofType(GuildChannel.class)
-                                                    .flatMap(channel -> channel.getEffectivePermissions(authorId))
-                                                    .map(set -> set.containsAll(requiredPermissions)));
+                .flatMap(authorId -> getMessage().getChannel().ofType(GuildChannel.class)
+                        .flatMap(channel -> channel.getEffectivePermissions(authorId))
+                        .map(set -> set.containsAll(requiredPermissions)));
     }
 }

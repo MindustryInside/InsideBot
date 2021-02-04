@@ -29,7 +29,8 @@ public class EntityRetrieverImpl implements EntityRetriever{
 
     private final Object $lock = new Object[0];
 
-    public EntityRetrieverImpl(@Autowired Settings settings, @Autowired GuildConfigRepository guildRepository,
+    public EntityRetrieverImpl(@Autowired Settings settings,
+                               @Autowired GuildConfigRepository guildRepository,
                                @Autowired LocalMemberRepository memberRepository){
         this.settings = settings;
         this.guildRepository = guildRepository;

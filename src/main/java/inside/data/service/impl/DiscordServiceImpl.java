@@ -20,6 +20,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.*;
+import reactor.function.TupleUtils;
 
 import javax.annotation.PreDestroy;
 import java.util.*;
@@ -64,13 +65,9 @@ public class DiscordServiceImpl implements DiscordService{
 
         eventListener = EventListener.buffering();
 
-        Flux.fromIterable(events)
-            .filter(Objects::nonNull)
-            .subscribe(e -> eventListener.on(e).subscribe());
+        Flux.fromIterable(events).subscribe(e -> eventListener.on(e).subscribe());
 
-        Flux.fromIterable(handlers)
-            .filter(Objects::nonNull)
-            .subscribe(e -> gateway.on(e).subscribe());
+        Flux.fromIterable(handlers).subscribe(e -> gateway.on(e).subscribe());
     }
 
     @PreDestroy
@@ -111,12 +108,12 @@ public class DiscordServiceImpl implements DiscordService{
 
     @Override
     public boolean exists(Snowflake userId){
-        return gateway.getUserById(userId).map(Objects::nonNull).blockOptional().orElse(false);
+        return gateway.getUserById(userId).hasElement().blockOptional().orElse(false);
     }
 
     @Override
     public boolean exists(Snowflake guildId, Snowflake userId){
-        return gateway.getMemberById(guildId, userId).map(Objects::nonNull).blockOptional().orElse(false);
+        return gateway.getMemberById(guildId, userId).hasElement().blockOptional().orElse(false);
     }
 
     @Transactional
@@ -133,18 +130,20 @@ public class DiscordServiceImpl implements DiscordService{
     public void activeUsers(){
         Flux.fromIterable(retriever.getAllMembers())
                 .filter(localMember -> !retriever.activeUserDisabled(localMember.guildId()))
-                .subscribe(localMember -> {
-                    Member member = gateway.getMemberById(localMember.guildId(), localMember.userId()).block();
-                    if(member == null) return; // нереально
+                .filter(localMember -> exists(localMember.guildId(), localMember.userId()))
+                .flatMap(localMember -> Mono.zip(Mono.just(localMember), gateway.getMemberById(localMember.guildId(), localMember.userId())))
+                .flatMap(TupleUtils.function((localMember, member) -> {
                     Snowflake roleId = retriever.activeUserRoleId(member.getGuildId());
                     if(localMember.isActiveUser()){
-                        member.addRole(roleId).block();
+                        return member.addRole(roleId);
                     }else{
-                        member.removeRole(roleId).block();
-                        localMember.messageSeq(0);
-                        retriever.save(localMember);
+                        return member.removeRole(roleId).then(Mono.fromRunnable(() -> {
+                            localMember.messageSeq(0);
+                            retriever.save(localMember);
+                        }));
                     }
-                });
+                }))
+                .subscribe();
     }
 
     protected Mono<Boolean> isMuteEnd(LocalMember member){

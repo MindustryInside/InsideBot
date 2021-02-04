@@ -3,7 +3,6 @@ package inside.common.command.service;
 import arc.util.Strings;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
-import discord4j.rest.util.PermissionSet;
 import inside.common.command.model.base.*;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
@@ -97,7 +96,7 @@ public class CommandHandler extends BaseCommandHandler{
                                                                         prefix, commandInfo.text));
                     }
 
-                    return Flux.fromIterable(commandInfo.permissions != null ? commandInfo.permissions : PermissionSet.none())
+                    return Flux.fromIterable(commandInfo.permissions)
                             .filterWhen(permission -> channel.zipWith(self.map(User::getId))
                                     .flatMap(TupleUtils.function((targetChannel, selfId) -> targetChannel.getEffectivePermissions(selfId)))
                                     .map(set -> !set.contains(permission)))

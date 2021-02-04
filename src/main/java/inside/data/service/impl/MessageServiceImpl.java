@@ -28,18 +28,23 @@ import java.util.function.Consumer;
 public class MessageServiceImpl implements MessageService{
     private static final Logger log = Loggers.getLogger(MessageService.class);
 
-    @Autowired
-    private MessageInfoRepository repository;
+    private final MessageInfoRepository repository;
 
-    @Autowired
-    private ApplicationContext context;
+    private final ApplicationContext context;
 
-    @Autowired
-    private Settings settings;
+    private final Settings settings;
 
     private final Cache<Snowflake, Boolean> deletedMessage = Caffeine.newBuilder()
             .expireAfterWrite(5, TimeUnit.MINUTES)
             .build();
+
+    public MessageServiceImpl(@Autowired MessageInfoRepository repository,
+                              @Autowired ApplicationContext context,
+                              @Autowired Settings settings){
+        this.repository = repository;
+        this.context = context;
+        this.settings = settings;
+    }
 
     @Override
     public String get(ContextView ctx, String key){

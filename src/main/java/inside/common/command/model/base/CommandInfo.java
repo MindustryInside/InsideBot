@@ -3,18 +3,20 @@ package inside.common.command.model.base;
 import discord4j.rest.util.*;
 import inside.common.command.model.base.CommandParam;
 
+import java.util.Objects;
+
 public class CommandInfo{
     public final String text;
     public final String paramText;
     public final CommandParam[] params;
-    public PermissionSet permissions;
+    public final PermissionSet permissions;
     public String description;
 
     public CommandInfo(String text, String paramText, String description, Permission[] permissions){
-        this.text = text;
-        this.paramText = paramText;
-        this.description = description;
-        this.permissions = PermissionSet.of(permissions);
+        this.text = Objects.requireNonNull(text, "text");
+        this.paramText = Objects.requireNonNull(paramText, "paramText");
+        this.description = Objects.requireNonNull(description, "description");
+        this.permissions = PermissionSet.of(Objects.requireNonNull(permissions, "permissions"));
 
         String[] psplit = paramText.split("\\s+");
         if(paramText.length() == 0){
