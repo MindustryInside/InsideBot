@@ -24,6 +24,7 @@ import static inside.util.ContextUtil.*;
 
 @Component
 public class MemberEventHandler extends AuditEventHandler{
+    public static final long TIMEOUT_MILLIS = 2500L;
 
     @Autowired
     private EntityRetriever entityRetriever;
@@ -94,34 +95,30 @@ public class MemberEventHandler extends AuditEventHandler{
                 .setFooter(timestamp(), null));
 
         Mono<Void> kick = event.getGuild().flatMapMany(g -> g.getAuditLog(q -> q.setActionType(ActionType.MEMBER_KICK)))
-                .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(2500)))
+                .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)))
                 .flatMap(entry -> event.getGuild().flatMap(guild -> guild.getMemberById(entry.getResponsibleUserId()))
-                        .flatMap(admin -> log(event.getGuildId(), embed -> {
-                            embed.setColor(userKick.color);
-                            embed.setTitle(messageService.get(context, "audit.member.kick.title"));
-                            StringBuilder desc = new StringBuilder();
-                            desc.append(messageService.format(context, "audit.member.kick.description", user.getUsername(), admin.getUsername()));
-                            Optional<String> reason = entry.getReason();
-                            desc.append("\n").append(messageService.format(context, "common.reason", reason.filter(MessageUtil::isNotEmpty).map(String::trim).orElse(messageService.get(context, "common.not-defined"))));
-                            embed.setDescription(desc.toString());
-                            embed.setFooter(timestamp(), null);
-                        })))
+                        .flatMap(admin -> log(event.getGuildId(), embed -> embed.setColor(userKick.color)
+                                .setTitle(messageService.get(context, "audit.member.kick.title"))
+                                .setDescription(String.format("%s%n%s",
+                                messageService.format(context, "audit.member.kick.description", user.getUsername(), admin.getUsername()),
+                                messageService.format(context, "common.reason", entry.getReason().filter(MessageUtil::isNotEmpty).map(String::trim).orElse(messageService.get(context, "common.not-defined")))
+                                ))
+                                .setFooter(timestamp(), null)
+                        )))
                 .then()
                 .switchIfEmpty(log);
 
         return event.getGuild().flatMapMany(guild -> guild.getAuditLog(q -> q.setActionType(ActionType.MEMBER_BAN_ADD)))
-                .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(2500)))
+                .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)))
                 .flatMap(entry -> event.getGuild().flatMap(guild -> guild.getMemberById(entry.getResponsibleUserId()))
-                        .flatMap(admin -> log(event.getGuildId(), embed -> {
-                            embed.setColor(userKick.color);
-                            embed.setTitle(messageService.get(context, "audit.member.ban.title"));
-                            StringBuilder desc = new StringBuilder();
-                            desc.append(messageService.format(context, "audit.member.ban.description", user.getUsername(), admin.getUsername()));
-                            Optional<String> reason = entry.getReason();
-                            desc.append("\n").append(messageService.format(context, "common.reason", reason.filter(MessageUtil::isNotEmpty).map(String::trim).orElse(messageService.get(context, "common.not-defined"))));
-                            embed.setDescription(desc.toString());
-                            embed.setFooter(timestamp(), null);
-                        })))
+                        .flatMap(admin -> log(event.getGuildId(), embed -> embed.setColor(userKick.color)
+                                .setTitle(messageService.get(context, "audit.member.ban.title"))
+                                .setDescription(String.format("%s%n%s",
+                                messageService.format(context, "audit.member.ban.description", user.getUsername(), admin.getUsername()),
+                                messageService.format(context, "common.reason", entry.getReason().filter(MessageUtil::isNotEmpty).map(String::trim).orElse(messageService.get(context, "common.not-defined")))
+                                ))
+                                .setFooter(timestamp(), null)
+                        )))
                 .then()
                 .switchIfEmpty(kick);
     }
