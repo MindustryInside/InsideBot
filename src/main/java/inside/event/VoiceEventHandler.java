@@ -1,16 +1,15 @@
 package inside.event;
 
-import arc.func.*;
+import arc.func.Boolf;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.VoiceStateUpdateEvent;
 import discord4j.core.object.VoiceState;
-import discord4j.core.object.entity.User;
-import discord4j.core.object.entity.channel.VoiceChannel;
 import inside.event.audit.AuditEventHandler;
-import inside.util.*;
+import inside.util.DiscordUtil;
 import org.reactivestreams.Publisher;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import reactor.function.TupleUtils;
 import reactor.util.context.Context;
 
 import static inside.event.audit.AuditEventType.*;
@@ -27,29 +26,25 @@ public class VoiceEventHandler extends AuditEventHandler{
                              KEY_LOCALE, entityRetriever.locale(guildId),
                              KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
-        Boolf<VoiceState> ignore = s -> s.isSelfDeaf() || s.isDeaf() || s.isMuted() || s.isSelfStreaming() ||
-                                        s.isSelfVideoEnabled() || s.isSuppressed();
+        Boolf<VoiceState> ignore = voiceState -> voiceState.isSelfDeaf() || voiceState.isDeaf() || voiceState.isMuted() || voiceState.isSelfStreaming() ||
+                                        voiceState.isSelfVideoEnabled() || voiceState.isSuppressed();
         if(state != null){
             if(ignore.get(state)) return Mono.empty();
-            Mono<VoiceChannel> channel = state.getChannel();
-            Mono<User> user = state.getUser();
-            return Mono.zip(channel, user).filter(t -> DiscordUtil.isNotBot(t.getT2())).flatMap(t -> log(guildId, embed -> {
-                embed.setColor(voiceLeave.color);
-                embed.setTitle(messageService.get(context, "audit.voice.leave.title"));
-                embed.setDescription(messageService.format(context, "audit.voice.leave.description", t.getT2().getUsername(), t.getT1().getName()));
-                embed.setFooter(timestamp(), null);
-            }));
+            return Mono.zip(state.getChannel(), state.getUser())
+                    .filter(TupleUtils.predicate((channel, user) -> DiscordUtil.isNotBot(user)))
+                    .flatMap(TupleUtils.function((channel, user) -> log(guildId, embed -> embed.setColor(voiceLeave.color)
+                            .setTitle(messageService.get(context, "audit.voice.leave.title"))
+                            .setDescription(messageService.format(context, "audit.voice.leave.description", user.getUsername(), channel.getName()))
+                            .setFooter(timestamp(), null))));
         }else{
             VoiceState current = event.getCurrent();
             if(ignore.get(current)) return Mono.empty();
-            Mono<VoiceChannel> channel = current.getChannel();
-            Mono<User> user = current.getUser();
-            return Mono.zip(channel, user).filter(t -> DiscordUtil.isNotBot(t.getT2())).flatMap(t -> log(guildId, embed -> {
-                embed.setColor(voiceJoin.color);
-                embed.setTitle(messageService.get(context, "audit.voice.join.title"));
-                embed.setDescription(messageService.format(context, "audit.voice.join.description", t.getT2().getUsername(), t.getT1().getName()));
-                embed.setFooter(timestamp(), null);
-            }));
+            return Mono.zip(current.getChannel(), current.getUser())
+                    .filter(TupleUtils.predicate((channel, user) -> DiscordUtil.isNotBot(user)))
+                    .flatMap(TupleUtils.function((channel, user) -> log(guildId, embed -> embed.setColor(voiceJoin.color)
+                            .setTitle(messageService.get(context, "audit.voice.join.title"))
+                            .setDescription(messageService.format(context, "audit.voice.join.description", user.getUsername(), channel.getName()))
+                            .setFooter(timestamp(), null))));
         }
     }
 }

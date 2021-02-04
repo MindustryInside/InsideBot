@@ -6,6 +6,7 @@ import discord4j.core.object.reaction.ReactionEmoji;
 import inside.event.audit.AuditEventHandler;
 import org.reactivestreams.Publisher;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 @Component
 public class MiscMessageEventHandler extends AuditEventHandler{
@@ -20,6 +21,6 @@ public class MiscMessageEventHandler extends AuditEventHandler{
             return message.addReaction(ReactionEmoji.unicode(egg));
         }
 
-        return super.onMessageCreate(event);
+        return Mono.empty();
     }
 }
