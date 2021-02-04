@@ -51,11 +51,9 @@ public class CommonEvents extends Events{
             }
 
             for(int i = 0; i < message.getEmbeds().size(); i++){
-                Embed e = message.getEmbeds().get(i);
-                builder.append("\n[embed-").append(i).append(']');
-                if(e.getDescription().isPresent()){
-                    builder.append("\n").append(e.getDescription().get());
-                }
+                Embed embed = message.getEmbeds().get(i);
+                builder.append("\n[embed-").append(i + 1).append(']');
+                embed.getDescription().ifPresent(s -> builder.append("\n").append(s));
             }
             builder.append("\n");
         };
@@ -69,9 +67,9 @@ public class CommonEvents extends Events{
 
         return Flux.fromIterable(event.history)
                 .onErrorResume(__ -> Mono.empty())
-                .flatMap(m -> m.delete().then(Mono.fromRunnable(() -> {
-                    messageService.putMessage(m.getId());
-                    appendInfo.accept(m);
+                .flatMap(message -> message.delete().then(Mono.fromRunnable(() -> {
+                    messageService.putMessage(message.getId());
+                    appendInfo.accept(message);
                 })))
                 .then(Mono.fromRunnable(() -> stringInputStream.writeString(builder.toString())).then(publishLog));
     }
@@ -107,10 +105,9 @@ public class CommonEvents extends Events{
                 .flatMap(member -> {
                     Mono<Member> admin = guild.getMemberById(event.admin.userId());
 
-                    Mono<Void> mute = adminService.isMuted(member.getGuildId(), member.getId()).flatMap(b -> b ? member.addRole(entityRetriever.muteRoleId(member.getGuildId())) : Mono.fromRunnable(() -> {
-                        adminService.mute(event.admin, local, event.delay.toCalendar(context.get(KEY_LOCALE)), event.reason().orElse(null)).block();
-                        member.addRole(entityRetriever.muteRoleId(member.getGuildId())).block();
-                    }));
+                    Mono<Void> mute = adminService.isMuted(member.getGuildId(), member.getId())
+                            .flatMap(bool -> !bool ? adminService.mute(event.admin, local, event.delay.toCalendar(context.get(KEY_LOCALE)), event.reason().orElse(null)) : Mono.just(false))
+                            .then(member.addRole(entityRetriever.muteRoleId(member.getGuildId())));
 
                     Mono<Void> publishLog = admin.map(Member::getUsername).flatMap(username -> log(member.getGuildId(), embed -> {
                         embed.setTitle(messageService.get(context, "audit.member.mute.title"));

@@ -13,6 +13,7 @@ import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import reactor.function.TupleUtils;
 import reactor.util.context.Context;
 
 import java.time.Instant;
@@ -57,22 +58,26 @@ public class MemberEventHandler extends AuditEventHandler{
 
         LocalMember localMember = entityRetriever.getMember(member, () -> new LocalMember(member));
 
-        Mono<Long> warns = adminService.warnings(localMember.guildId(), localMember.userId()).count();
-        Mono<Void> evade = Mono.defer(() -> adminService.get(AdminService.AdminActionType.mute, localMember.guildId(), localMember.userId()).next())
-                .zipWith(warns)
-                .flatMap(t -> t.getT2() >= 3
-                              ? adminService.warn(localMember, localMember, messageService.get(context, "audit.member.warn.evade"))
-                              : member.getGuild().flatMap(guild -> Mono.fromRunnable(() -> discordService.eventListener().publish(
-                                    new EventType.MemberMuteEvent(guild, t.getT1().admin(), localMember, messageService.get(context, "audit.member.mute.evade"), new DateTime(t.getT1().end()))
-                              )))
-                );
+        Mono<Void> warn = adminService.warnings(localMember.guildId(), localMember.userId()).count()
+                .filter(c -> c >= 3)
+                .zipWith(member.getGuild().flatMap(Guild::getOwner).map(owner -> entityRetriever.getMember(owner, () -> new LocalMember(owner))))
+                .flatMap(TupleUtils.function((count, owner) -> Mono.fromRunnable(() ->
+                        adminService.warn(owner, localMember, messageService.get(context, "audit.member.warn.evade"))
+                )));
 
-        Mono<Void> log = log(event.getGuildId(), embed -> embed.setColor(userJoin.color)
+        Mono<Void> muteEvade = adminService.isMuted(member.getGuildId(), member.getId())
+                .zipWith(member.getGuild().flatMap(Guild::getOwner).map(owner -> entityRetriever.getMember(owner, () -> new LocalMember(owner))))
+                .flatMap(TupleUtils.function((bool, owner) -> bool ? member.getGuild().flatMap(guild -> Mono.fromRunnable(() -> discordService.eventListener().publish(
+                        new EventType.MemberMuteEvent(guild, owner, localMember, messageService.get(context, "audit.member.mute.evade"), DateTime.now().plusDays(10))
+                ))) : Mono.empty()))
+                .switchIfEmpty(warn)
+                .then();
+
+        return log(event.getGuildId(), embed -> embed.setColor(userJoin.color)
                 .setTitle(messageService.get(context, "audit.member.join.title"))
                 .setDescription(messageService.format(context, "audit.member.join.description", member.getUsername()))
-                .setFooter(timestamp(), null));
-
-        return log.then(evade);
+                .setFooter(timestamp(), null))
+                .then(muteEvade);
     }
 
     @Override
