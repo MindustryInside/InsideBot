@@ -62,13 +62,12 @@ public class CommonEvents extends Events{
 
         Mono<Void> publishLog = event.channel.map(GuildChannel::getName).flatMap(c -> log(event.guild().getId(), embed -> {
             embed.setTitle(messageService.format(context, "audit.message.clear.title", event.count, c));
-            embed.setDescription(messageService.format(context, "audit.message.clear.description", event.member.getUsername(), event.count, c));
+            embed.setDescription(messageService.format(context, "audit.message.clear.description", event.member.getUsername(), event.count, messageService.getCount(context, "common.plurals.message", event.count), c));
             embed.setFooter(timestamp(), null);
             embed.setColor(messageClear.color);
         }, true));
 
-        return event.history
-                .filter(Objects::nonNull)
+        return event.history.filter(Objects::nonNull)
                 .sort(Comparator.comparing(Message::getId))
                 .publishOn(Schedulers.boundedElastic())
                 .onErrorResume(__ -> Mono.empty())
