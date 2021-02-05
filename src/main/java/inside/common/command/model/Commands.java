@@ -59,7 +59,7 @@ public class Commands{
                 builder.append("**");
                 builder.append(command.text);
                 builder.append("**");
-                if(command.params.length > 0){
+                if(command.params.length > 0 && MessageUtil.isNotEmpty(command.paramText)){
                     builder.append(" *");
                     builder.append(command.paramText);
                     builder.append("*");
@@ -84,11 +84,10 @@ public class Commands{
                 return messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name"));
             }
 
-            return discordService.gateway().getUserById(targetId).flatMap(user -> messageService.info(channel, embed -> {
-                embed.setColor(settings.normalColor);
-                embed.setImage(user.getAvatarUrl() + "?size=512");
-                embed.setDescription(messageService.format(ref.context(), "command.avatar.text", user.getUsername()));
-            }));
+            return discordService.gateway().getUserById(targetId)
+                    .flatMap(user -> messageService.info(channel, embed -> embed.setColor(settings.normalColor)
+                            .setImage(user.getAvatarUrl() + "?size=512")
+                            .setDescription(messageService.format(ref.context(), "command.avatar.text", user.getUsername()))));
         }
     }
 
@@ -223,10 +222,13 @@ public class Commands{
 
             return member.getGuild().map(guild -> entityRetriever.getGuild(guild))
                     .flatMap(guildConfig -> {
-                        Supplier<String> r = () -> Objects.equals(ref.context().get(KEY_LOCALE), Locale.ROOT) ? messageService.get(ref.context(), "common.default") : ref.context().get(KEY_LOCALE).toString();
+                        Supplier<String> formatter = () -> ref.context().<Locale>getOrEmpty(KEY_LOCALE)
+                                .filter(locale -> !locale.equals(Locale.ROOT))
+                                .map(Locale::toString)
+                                .orElse(messageService.get(ref.context(), "common.default"));
 
                         if(args.length == 0){
-                            return messageService.text(channel, messageService.format(ref.context(), "command.config.locale", r.get()));
+                            return messageService.text(channel, messageService.format(ref.context(), "command.config.locale", formatter.get()));
                         }else{
                             if(!adminService.isOwner(member)){
                                 return messageService.err(channel, messageService.get(ref.context(), "command.owner-only"));
@@ -235,14 +237,14 @@ public class Commands{
                             if(!MessageUtil.isEmpty(args[0])){
                                 Locale locale = LocaleUtil.get(args[0]);
                                 if(locale == null){
-                                    String all = Strings.join("\n", LocaleUtil.locales.values().toSeq().map(Locale::toString));
+                                    String all = Strings.join(", ", LocaleUtil.locales.values().toSeq().map(Locale::toString));
                                     return messageService.text(channel, messageService.format(ref.context(), "command.config.unknown", all));
                                 }
 
                                 guildConfig.locale(locale);
                                 entityRetriever.save(guildConfig);
                                 ((Context)ref.context()).put(KEY_LOCALE, locale);
-                                return messageService.text(channel, messageService.format(ref.context(), "command.config.locale-updated", r.get()));
+                                return messageService.text(channel, messageService.format(ref.context(), "command.config.locale-updated", formatter.get()));
                             }
                         }
 
@@ -273,7 +275,7 @@ public class Commands{
             return discordService.gateway().getMemberById(guildId, targetId)
                     .flatMap(target -> Mono.just(entityRetriever.getMember(target, () -> new LocalMember(target)))
                             .filterWhen(local -> adminService.isMuted(guildId, target.getId())
-                                    .flatMap(b -> b ? messageService.err(channel, messageService.get(ref.context(), "command.admin.mute.already-muted")).then(Mono.just(false)) : Mono.just(true)))
+                                    .flatMap(bool -> bool ? messageService.err(channel, messageService.get(ref.context(), "command.admin.mute.already-muted")).then(Mono.just(false)) : Mono.just(true)))
                             .flatMap(local -> {
                                 String reason = args.length > 2 ? args[2].trim() : null;
 
@@ -289,9 +291,9 @@ public class Commands{
                                     return messageService.err(channel, messageService.format(ref.context(), "common.string-limit", 1000));
                                 }
 
-                                return Mono.fromRunnable(() -> discordService.eventListener().publish(
-                                        new MemberMuteEvent(target.getGuild().block(), ref.localMember(), local, reason, delay)
-                                ));
+                                return target.getGuild().flatMap(guild -> Mono.fromRunnable(() -> discordService.eventListener().publish(
+                                        new MemberMuteEvent(guild, ref.localMember(), local, reason, delay)
+                                )));
                             })
             );
         }
@@ -354,16 +356,16 @@ public class Commands{
                                  }
 
                                  return adminService.warn(ref.localMember(), local, reason)
-                                        .then(Mono.defer(() -> adminService.warnings(local.guildId(), local.userId()).count())
-                                                .flatMap(count -> {
-                                                    Mono<Void> publisher = messageService.text(channel, messageService.format(ref.context(), "message.admin.warn", target.getUsername(), count));
+                                         .then(adminService.warnings(local.guildId(), local.userId()).count())
+                                         .flatMap(count -> {
+                                             Mono<Void> message = messageService.text(channel, messageService.format(ref.context(), "message.admin.warn", target.getUsername(), count));
 
-                                                    if(count >= 3){
-                                                        return publisher.then(author.getGuild().flatMap(g -> g.ban(target.getId(), b -> b.setDeleteMessageDays(0))));
-                                                    }
-                                                    return publisher;
-                                                }));
-                             })
+                                             if(count >= 3){
+                                                 return message.then(author.getGuild().flatMap(guild -> guild.ban(target.getId(), b -> b.setDeleteMessageDays(0))));
+                                             }
+                                             return message;
+                                         });
+                            })
                     );
         }
     }
@@ -380,6 +382,10 @@ public class Commands{
                 return messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name"));
             }
 
+            final DateTimeFormatter formatter = DateTimeFormat.shortDateTime()
+                    .withLocale(ref.context().get(KEY_LOCALE))
+                    .withZone(ref.context().get(KEY_TIMEZONE));
+
             return discordService.gateway().getMemberById(guildId, targetId)
                     .flatMap(target -> Mono.just(entityRetriever.getMember(target, () -> new LocalMember(target)))
                             .flatMap(local -> {
@@ -387,22 +393,12 @@ public class Commands{
 
                                 return warnings.hasElements().flatMap(b -> !b ? messageService.text(channel, messageService.get(ref.context(), "command.admin.warnings.empty")) :
                                         Mono.defer(() -> messageService.info(channel, embed ->
-                                            warnings.index().subscribe(t -> {
-                                                DateTimeFormatter formatter = DateTimeFormat
-                                                        .shortDateTime()
-                                                        .withLocale(ref.context().get(KEY_LOCALE))
-                                                        .withZone(ref.context().get(KEY_TIMEZONE));
-
-                                                AdminAction warn = t.getT2();
-                                                embed.setColor(settings.normalColor);
-                                                embed.setTitle(messageService.format(ref.context(), "command.admin.warnings.title", local.effectiveName()));
-                                                String title = String.format("%2s. %s", t.getT1() + 1, formatter.print(new DateTime(warn.timestamp())));
-
-                                                String description = String.format("%s%n%s",
-                                                messageService.format(ref.context(), "common.admin", warn.admin().effectiveName()),
-                                                messageService.format(ref.context(), "common.reason", warn.reason().orElse(messageService.get(ref.context(), "common.not-defined"))));
-                                                embed.addField(title, description, true);
-                                            })
+                                            warnings.index().subscribe(TupleUtils.consumer((index, warn) -> embed.setColor(settings.normalColor)
+                                                    .setTitle(messageService.format(ref.context(), "command.admin.warnings.title", local.effectiveName()))
+                                                    .addField(String.format("%2s. %s", index + 1, formatter.print(new DateTime(warn.timestamp()))), String.format("%s%n%s",
+                                                            messageService.format(ref.context(), "common.admin", warn.admin().effectiveName()),
+                                                            messageService.format(ref.context(), "common.reason", warn.reason().orElse(messageService.get(ref.context(), "common.not-defined")))
+                                                    ), true)))
                                         )));
                             }));
         }

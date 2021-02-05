@@ -4,6 +4,7 @@ import arc.util.Strings;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
 import inside.common.command.model.base.*;
+import inside.util.MessageUtil;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
@@ -57,7 +58,7 @@ public class CommandHandler extends BaseCommandHandler{
                     while(true){
                         if(index >= commandInfo.params.length && !argstr.isEmpty()){
                             return messageService.err(channel, messageService.get(ref.context(), "command.response.many-arguments.title"),
-                                                      messageService.format(ref.context(), "command.response.many-arguments.description",
+                                                      messageService.format(ref.context(), MessageUtil.isEmpty(commandInfo.paramText) ? "command.response.few-arguments.description" : "command.response.many-arguments.description",
                                                                             prefix, commandInfo.text, commandInfo.paramText));
                         }else if(argstr.isEmpty()){
                             break;
