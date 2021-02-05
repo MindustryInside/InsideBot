@@ -96,10 +96,9 @@ public class Commands{
     public class PingCommand extends Command{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
-            return Mono.just(System.currentTimeMillis())
-                    .timestamp().flatMap(t ->
-                            messageService.text(ref.getReplyChannel(), messageService.format(ref.context(), "command.ping", t.getT1() - t.getT2()))
-                    );
+            return Mono.just("").elapsed().flatMap(t ->
+                    messageService.text(ref.getReplyChannel(), messageService.format(ref.context(), "command.ping", t.getT1()))
+            );
         }
     }
 
