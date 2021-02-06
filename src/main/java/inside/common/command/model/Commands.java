@@ -4,6 +4,7 @@ import arc.util.Strings;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
+import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.rest.util.Permission;
 import inside.Settings;
 import inside.common.command.model.base.*;
@@ -84,7 +85,7 @@ public class Commands{
                 return messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name"));
             }
 
-            return discordService.gateway().getUserById(targetId)
+            return discordService.gateway().withRetrievalStrategy(EntityRetrievalStrategy.REST).getUserById(targetId)
                     .flatMap(user -> messageService.info(channel, embed -> embed.setColor(settings.normalColor)
                             .setImage(user.getAvatarUrl() + "?size=512")
                             .setDescription(messageService.format(ref.context(), "command.avatar.text", user.getUsername()))));

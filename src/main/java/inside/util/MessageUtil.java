@@ -125,7 +125,7 @@ public abstract class MessageUtil{
 
         int len = text.length();
         if(len == 0) {
-            return text;
+            return "";
         }
         if(len == 1){
             return get.apply(text);
@@ -157,7 +157,7 @@ public abstract class MessageUtil{
 
         int len = text.length();
         if(len == 0) {
-            return text;
+            return "";
         }
         if(len == 1){
             return get.apply(text);
@@ -190,7 +190,7 @@ public abstract class MessageUtil{
 
     public static String effectiveContent(Message message){
         Objects.requireNonNull(message, "message");
-        if(MessageUtil.isEmpty(message.getContent())){
+        if(isEmpty(message.getContent())){
             return "";
         }
 

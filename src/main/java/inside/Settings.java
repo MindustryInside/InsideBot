@@ -11,7 +11,7 @@ public class Settings{
 
     public String prefix = "$";
 
-    public Color normalColor = Color.of(0xC4F5B7);
+    public Color normalColor = Color.of(0xc4f5b7);
 
     public Color errorColor = Color.of(0xff3838);
 }
