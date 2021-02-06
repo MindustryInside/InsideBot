@@ -355,16 +355,16 @@ public class Commands{
                                      return messageService.err(channel, messageService.format(ref.context(), "common.string-limit", 1000));
                                  }
 
-                                 return adminService.warn(ref.localMember(), local, reason)
-                                         .then(adminService.warnings(local.guildId(), local.userId()).count())
-                                         .flatMap(count -> {
-                                             Mono<Void> message = messageService.text(channel, messageService.format(ref.context(), "message.admin.warn", target.getUsername(), count));
+                                 Mono<Void> warnings = Mono.defer(() -> adminService.warnings(local.guildId(), local.userId()).count()).flatMap(count -> {
+                                     Mono<Void> message = messageService.text(channel, messageService.format(ref.context(), "message.admin.warn", target.getUsername(), count));
 
-                                             if(count >= 3){
-                                                 return message.then(author.getGuild().flatMap(guild -> guild.ban(target.getId(), b -> b.setDeleteMessageDays(0))));
-                                             }
-                                             return message;
-                                         });
+                                     if(count >= 3){
+                                         return message.then(author.getGuild().flatMap(guild -> guild.ban(target.getId(), b -> b.setDeleteMessageDays(0))));
+                                     }
+                                     return message;
+                                 });
+
+                                 return adminService.warn(ref.localMember(), local, reason).then(warnings);
                             })
                     );
         }
