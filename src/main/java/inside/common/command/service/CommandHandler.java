@@ -46,12 +46,12 @@ public class CommandHandler extends BaseCommandHandler{
             return messageService.err(channel, messageService.format(ref.context(), "command.response.unknown", prefix));
         });
 
-        return text.flatMap(t -> Mono.defer(() -> commands.containsKey(t.getT2()) ? Mono.just(commands.get(t.getT2())) : suggestion)
+        return text.flatMap(TupleUtils.function((commandstr, cmd) -> Mono.defer(() -> commands.containsKey(cmd) ? Mono.just(commands.get(cmd)) : suggestion)
                 .ofType(Command.class)
                 .flatMap(command -> {
                     CommandInfo commandInfo = command.compile();
                     LinkedList<String> result = new LinkedList<>();
-                    String argstr = t.getT1().contains(" ") ? t.getT1().substring(t.getT2().length() + 1) : "";
+                    String argstr = commandstr.contains(" ") ? commandstr.substring(commandstr.length() + 1) : "";
                     int index = 0;
                     boolean satisfied = false;
 
@@ -111,6 +111,6 @@ public class CommandHandler extends BaseCommandHandler{
                                             messageService.get(ref.context(), "message.error.permission-denied.title"),
                                             messageService.format(ref.context(), "message.error.permission-denied.description", s))))
                                             .then()));
-                }));
+                })));
     }
 }
