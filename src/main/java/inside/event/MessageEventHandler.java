@@ -19,6 +19,7 @@ import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import reactor.function.TupleUtils;
 import reactor.util.*;
 import reactor.util.context.Context;
 
@@ -173,14 +174,13 @@ public class MessageEventHandler extends AuditEventHandler{
     @Override
     public Publisher<?> onMessageDelete(MessageDeleteEvent event){
         Message message = event.getMessage().orElse(null);
-        if(message == null || event.getChannel().map(Channel::getType).map(t -> t != Type.GUILD_TEXT).blockOptional().orElse(true)){
+        if(message == null){
             return Mono.empty();
         }
 
-        Guild guild = message.getGuild().block();
         User user = message.getAuthor().orElse(null);
-        TextChannel channel =  event.getChannel().cast(TextChannel.class).block();
-        if(guild == null || channel == null || user == null){
+        Snowflake guildId = event.getGuildId().orElse(null);
+        if(DiscordUtil.isBot(user) || guildId == null){
             return Mono.empty();
         }
 
@@ -191,29 +191,34 @@ public class MessageEventHandler extends AuditEventHandler{
         MessageInfo info = messageService.getById(message.getId());
         String content = info.content();
 
-        context = Context.of(KEY_GUILD_ID, guild.getId(),
-                             KEY_LOCALE, entityRetriever.locale(guild.getId()),
-                             KEY_TIMEZONE, entityRetriever.timeZone(guild.getId()));
+        context = Context.of(KEY_GUILD_ID, guildId,
+                             KEY_LOCALE, entityRetriever.locale(guildId),
+                             KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
-        Consumer<EmbedCreateSpec> embed = spec -> {
-            spec.setColor(messageDelete.color);
-            spec.setAuthor(user.getUsername(), null, user.getAvatarUrl());
-            spec.setTitle(messageService.format(context, "audit.message.delete.title", channel.getName()));
-            spec.setFooter(timestamp(), null);
+        Mono<MessageCreateSpec> spec = Mono.zip(event.getGuild(), event.getChannel().ofType(TextChannel.class))
+                .map(TupleUtils.function((guild, channel) -> {
+                    Consumer<EmbedCreateSpec> embedSpec = embed -> {
+                        embed.setColor(messageDelete.color);
+                        embed.setAuthor(user.getUsername(), null, user.getAvatarUrl());
+                        embed.setTitle(messageService.format(context, "audit.message.delete.title", channel.getName()));
+                        embed.setFooter(timestamp(), null);
 
-            if(content.length() > 0){
-                spec.addField(messageService.get(context, "audit.message.deleted-content.title"),
-                              MessageUtil.substringTo(content, Field.MAX_VALUE_LENGTH), true);
-            }
-        };
+                        if(content.length() > 0){
+                            embed.addField(messageService.get(context, "audit.message.deleted-content.title"),
+                                          MessageUtil.substringTo(content, Field.MAX_VALUE_LENGTH), true);
+                        }
+                    };
 
-        MessageCreateSpec spec = new MessageCreateSpec().setEmbed(embed);
-        if(content.length() >= Field.MAX_VALUE_LENGTH){
-            StringInputStream input = new StringInputStream();
-            input.writeString(String.format("%s:%n%s", messageService.get(context, "audit.message.deleted-content.title"), content));
-            spec.addFile("message.txt", input);
-        }
+                    MessageCreateSpec messageSpec = new MessageCreateSpec().setEmbed(embedSpec);
+                    if(content.length() >= Field.MAX_VALUE_LENGTH){
+                        StringInputStream input = new StringInputStream();
+                        input.writeString(String.format("%s:%n%s", messageService.get(context, "audit.message.deleted-content.title"), content));
+                        messageSpec.addFile("message.txt", input);
+                    }
 
-        return log(guild.getId(), spec).contextWrite(context).then(Mono.fromRunnable(() -> messageService.delete(info)));
+                    return messageSpec;
+                }));
+
+        return spec.flatMap(messageSpec -> log(guildId, messageSpec).contextWrite(context).then(Mono.fromRunnable(() -> messageService.delete(info))));
     }
 }

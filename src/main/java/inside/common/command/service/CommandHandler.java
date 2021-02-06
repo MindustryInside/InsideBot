@@ -51,7 +51,7 @@ public class CommandHandler extends BaseCommandHandler{
                 .flatMap(command -> {
                     CommandInfo commandInfo = command.compile();
                     LinkedList<String> result = new LinkedList<>();
-                    String argstr = commandstr.contains(" ") ? commandstr.substring(commandstr.length() + 1) : "";
+                    String argstr = commandstr.contains(" ") ? commandstr.substring(cmd.length() + 1) : "";
                     int index = 0;
                     boolean satisfied = false;
 
