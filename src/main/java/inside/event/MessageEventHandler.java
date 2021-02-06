@@ -22,6 +22,7 @@ import reactor.core.publisher.Mono;
 import reactor.function.TupleUtils;
 import reactor.util.*;
 import reactor.util.context.Context;
+import reactor.util.function.Tuples;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -108,67 +109,63 @@ public class MessageEventHandler extends AuditEventHandler{
 
     @Override
     public Publisher<?> onMessageUpdate(MessageUpdateEvent event){
-        Message message = event.getMessage().block();
-        if(message == null || message.getChannel().map(Channel::getType).block() != Type.GUILD_TEXT){
-            return Mono.empty();
-        }
-
-        User user = message.getAuthor().orElse(null);
-        TextChannel c = message.getChannel().ofType(TextChannel.class).block();
-        if(DiscordUtil.isBot(user) || c == null || !messageService.exists(message.getId())){
+        Snowflake guildId = event.getGuildId().orElse(null);
+        if(guildId == null || !event.isContentChanged() || !messageService.exists(event.getMessageId())){
             return Mono.empty();
         }
 
         MessageInfo info = messageService.getById(event.getMessageId());
         String oldContent = info.content();
-        String newContent = MessageUtil.effectiveContent(message);
-        boolean under = newContent.length() >= Field.MAX_VALUE_LENGTH || oldContent.length() >= Field.MAX_VALUE_LENGTH;
 
-        if(message.isPinned() || newContent.equals(oldContent)){
-            return Mono.empty();
-        }
-
-        Snowflake guildId = info.guildId();
         context = Context.of(KEY_GUILD_ID, guildId,
                              KEY_LOCALE, entityRetriever.locale(guildId),
                              KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
-        Consumer<EmbedCreateSpec> embed = spec -> {
-            spec.setColor(messageEdit.color);
-            spec.setAuthor(user.getUsername(), null, user.getAvatarUrl());
-            spec.setTitle(messageService.format(context, "audit.message.edit.title", c.getName()));
-            spec.setDescription(messageService.format(context, "audit.message.edit.description",
-                                                      c.getGuildId().asString(),
-                                                      c.getId().asString(),
-                                                      message.getId().asString()));
+        Mono<MessageCreateSpec> messageSpec = Mono.zip(event.getMessage(), event.getChannel().ofType(TextChannel.class))
+                .filter(TupleUtils.predicate((message, channel) -> !message.isTts() && !message.isPinned()))
+                .zipWhen(tuple -> Mono.justOrEmpty(tuple.getT1().getAuthor()), (tuple, user) -> Tuples.of(tuple.getT1(), tuple.getT2(), user))
+                .filter(TupleUtils.predicate((message, channel, user) -> DiscordUtil.isNotBot(user)))
+                .map(TupleUtils.function((message, channel, user) -> {
+                    String newContent = MessageUtil.effectiveContent(message);
+                    info.content(newContent);
+                    messageService.save(info);
 
-            if(oldContent.length() > 0){
-                spec.addField(messageService.get(context, "audit.message.old-content.title"),
-                              MessageUtil.substringTo(oldContent, Field.MAX_VALUE_LENGTH), false);
-            }
+                    Consumer<EmbedCreateSpec> embed = spec -> {
+                        spec.setColor(messageEdit.color);
+                        spec.setAuthor(user.getUsername(), null, user.getAvatarUrl());
+                        spec.setTitle(messageService.format(context, "audit.message.edit.title", channel.getName()));
+                        spec.setDescription(messageService.format(context, "audit.message.edit.description",
+                                                                  channel.getGuildId().asString(),
+                                                                  channel.getId().asString(),
+                                                                  message.getId().asString()));
 
-            if(newContent.length() > 0){
-                spec.addField(messageService.get(context, "audit.message.new-content.title"),
-                              MessageUtil.substringTo(newContent, Field.MAX_VALUE_LENGTH), true);
-            }
+                        if(oldContent.length() > 0){
+                            spec.addField(messageService.get(context, "audit.message.old-content.title"),
+                                          MessageUtil.substringTo(oldContent, Field.MAX_VALUE_LENGTH), false);
+                        }
 
-            spec.setFooter(timestamp(), null);
-        };
+                        if(newContent.length() > 0){
+                            spec.addField(messageService.get(context, "audit.message.new-content.title"),
+                                          MessageUtil.substringTo(newContent, Field.MAX_VALUE_LENGTH), true);
+                        }
 
-        MessageCreateSpec spec = new MessageCreateSpec().setEmbed(embed);
-        if(under){
-            StringInputStream input = new StringInputStream();
-            input.writeString(String.format("%s:%n%s%n%n%s:%n%s",
-                    messageService.get(context, "audit.message.old-content.title"), oldContent,
-                    messageService.get(context, "audit.message.new-content.title"), newContent)
-            );
-            spec.addFile("message.txt", input);
-        }
+                        spec.setFooter(timestamp(), null);
+                    };
 
-        return log(c.getGuildId(), spec).contextWrite(context).then(Mono.fromRunnable(() -> {
-            info.content(newContent);
-            messageService.save(info);
-        }));
+                    MessageCreateSpec spec = new MessageCreateSpec().setEmbed(embed);
+                    if(newContent.length() >= Field.MAX_VALUE_LENGTH || oldContent.length() >= Field.MAX_VALUE_LENGTH){
+                        StringInputStream input = new StringInputStream();
+                        input.writeString(String.format("%s:%n%s%n%n%s:%n%s",
+                                                        messageService.get(context, "audit.message.old-content.title"), oldContent,
+                                                        messageService.get(context, "audit.message.new-content.title"), newContent)
+                        );
+                        spec.addFile("message.txt", input);
+                    }
+
+                    return spec;
+                }));
+
+        return messageSpec.flatMap(spec -> log(guildId, spec).contextWrite(context));
     }
 
     @Override

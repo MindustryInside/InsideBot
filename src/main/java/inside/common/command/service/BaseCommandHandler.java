@@ -31,9 +31,9 @@ public abstract class BaseCommandHandler{
     @Autowired(required = false)
     public void init(List<Command> commands){
         handlers = commands;
-        commands.forEach(c -> {
-            CommandInfo command = c.compile();
-            this.commands.put(command.text, c);
+        commands.forEach(cmd -> {
+            CommandInfo command = cmd.compile();
+            this.commands.put(command.text, cmd);
         });
     }
 

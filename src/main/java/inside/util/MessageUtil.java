@@ -131,20 +131,20 @@ public abstract class MessageUtil{
             return get.apply(text);
         }
 
-        StringBuilder sb = new StringBuilder();
+        StringBuilder result = new StringBuilder();
         for(int i = 0; i < len;){
             String c = text.substring(i, i <= len - 2 ? i + 2 : i + 1);
             String leeted = get.apply(c);
             if(isEmpty(leeted)){
                 leeted = get.apply(c.charAt(0) + "");
-                sb.append(isEmpty(leeted) ? c.charAt(0) : leeted);
+                result.append(isEmpty(leeted) ? c.charAt(0) : leeted);
                 i++;
             }else{
-                sb.append(leeted);
+                result.append(leeted);
                 i += 2;
             }
         }
-        return sb.toString();
+        return result.toString();
     }
 
     public static String translit(String text){
@@ -163,20 +163,20 @@ public abstract class MessageUtil{
             return get.apply(text);
         }
 
-        StringBuilder sb = new StringBuilder();
+        StringBuilder result = new StringBuilder();
         for(int i = 0; i < len;){
             String c = text.substring(i, i <= len - 2 ? i + 2 : i + 1);
             String translited = get.apply(c);
             if(isEmpty(translited)){
                 translited = get.apply(c.charAt(0) + "");
-                sb.append(isEmpty(translited) ? c.charAt(0) : translited);
+                result.append(isEmpty(translited) ? c.charAt(0) : translited);
                 i++;
             }else{
-                sb.append(translited);
+                result.append(translited);
                 i += 2;
             }
         }
-        return sb.toString();
+        return result.toString();
     }
 
     public static boolean range(long length, long fromIndex, long toIndex){
@@ -206,7 +206,7 @@ public abstract class MessageUtil{
         try{
             Snowflake.of(message);
             return true;
-        }catch(Exception e){
+        }catch(Throwable t){
             return false;
         }
     }
