@@ -47,13 +47,19 @@ public class MessageEventHandler extends AuditEventHandler{
     @Override
     public Publisher<?> onMessageCreate(MessageCreateEvent event){
         Message message = event.getMessage();
-        String text = message.getContent().trim();
+        String text = message.getContent();
         Member member = event.getMember().orElse(null);
-        if(member == null || message.getType() != Message.Type.DEFAULT || message.getChannel().map(Channel::getType).block() != Type.GUILD_TEXT) return Mono.empty();
-        Mono<TextChannel> channel = message.getChannel().cast(TextChannel.class);
+        if(member == null || message.getType() != Message.Type.DEFAULT){
+            return Mono.empty();
+        }
+
+        Mono<TextChannel> channel = message.getChannel().ofType(TextChannel.class);
         User user = message.getAuthor().orElse(null);
         Snowflake guildId = event.getGuildId().orElse(null);
-        if(DiscordUtil.isBot(user) || guildId == null) return Mono.empty();
+        if(DiscordUtil.isBot(user) || guildId == null){
+            return Mono.empty();
+        }
+
         Snowflake userId = user.getId();
         LocalMember localMember = entityRetriever.getMember(member, () -> new LocalMember(member));
 
@@ -61,41 +67,27 @@ public class MessageEventHandler extends AuditEventHandler{
         localMember.lastSentMessage(Calendar.getInstance());
         entityRetriever.save(localMember);
 
-        if(!entityRetriever.existsGuildById(guildId)){
-            Region region = event.getGuild().flatMap(Guild::getRegion).block();
-            GuildConfig guildConfig = new GuildConfig(guildId);
-            guildConfig.locale(LocaleUtil.get(region));
-            guildConfig.prefix(settings.prefix);
-            guildConfig.timeZone(TimeZone.getTimeZone("Etc/Greenwich"));
-            entityRetriever.save(guildConfig);
-        }
+        Mono<Void> config = Mono.justOrEmpty(entityRetriever.getGuildById(guildId))
+                .switchIfEmpty(event.getGuild().flatMap(Guild::getRegion).flatMap(region -> Mono.fromRunnable(() -> {
+                    GuildConfig guildConfig = new GuildConfig(guildId);
+                    guildConfig.locale(LocaleUtil.get(region));
+                    guildConfig.prefix(settings.prefix);
+                    guildConfig.timeZone(TimeZone.getTimeZone("Etc/Greenwich"));
+                    entityRetriever.save(guildConfig);
+                })))
+                .then();
 
-        if(!MessageUtil.isEmpty(message) && !message.isTts() && message.getEmbeds().isEmpty()){
-            MessageInfo info = new MessageInfo();
-            info.userId(userId);
-            info.messageId(message.getId());
-            info.guildId(guildId);
-            info.timestamp(Calendar.getInstance());
-            info.content(MessageUtil.effectiveContent(message));
-            // if(false){
-            //     Map<String, String> attachments = Flux.fromIterable(message.getAttachments())
-            //             .flatMap(attachment ->
-            //                              Flux.using(() -> new URL(attachment.getUrl()).openConnection().getInputStream(),
-            //                                         input -> Mono.fromCallable(() -> {
-            //                                             try{
-            //                                                 return Tuples.of(attachment.getFilename(), Base64Coder.encodeLines(input.readAllBytes()));
-            //                                             }catch(IOException e){
-            //                                                 log.warn("Failed to download file '{}'; skipping...", attachment.getFilename());
-            //                                                 return null;
-            //                                             }
-            //                                         }), Streams::close))
-            //             .collect(Collectors.toMap(Tuple2::getT1, Tuple2::getT2))
-            //             .block();
-            //
-            //     info.attachments(attachments);
-            // }
-            messageService.save(info);
-        }
+        Mono<?> messageInfo = channel.filter(textChannel -> textChannel.getType() == Type.GUILD_TEXT)
+                .filter(__ -> !MessageUtil.isEmpty(message) && !message.isTts() && message.getEmbeds().isEmpty())
+                .doOnNext(signal -> {
+                    MessageInfo info = new MessageInfo();
+                    info.userId(userId);
+                    info.messageId(message.getId());
+                    info.guildId(guildId);
+                    info.timestamp(Calendar.getInstance());
+                    info.content(MessageUtil.effectiveContent(message));
+                    messageService.save(info);
+                });
 
         context = Context.of(KEY_GUILD_ID, guildId,
                              KEY_LOCALE, entityRetriever.locale(guildId),
@@ -108,10 +100,9 @@ public class MessageEventHandler extends AuditEventHandler{
                 .channel(() -> channel)
                 .build();
 
-        if(adminService.isAdmin(member)){
-            return commandHandler.handleMessage(text, reference).contextWrite(context);
-        }
-        return Mono.empty();
+        Mono<Void> handle = adminService.isAdmin(member) ? commandHandler.handleMessage(text, reference).contextWrite(context) : Mono.empty();
+
+        return messageInfo.flatMap(__ -> Mono.when(config, handle));
     }
 
     @Override
@@ -172,38 +163,6 @@ public class MessageEventHandler extends AuditEventHandler{
             );
             spec.addFile("message.txt", input);
         }
-
-        // if(false){
-        //     if(info.attachments().size() > 1){
-        //         try(ByteArrayOutputStream zip = new ByteArrayOutputStream();
-        //             ZipOutputStream out = new ZipOutputStream(zip)){
-        //
-        //             info.attachments().forEach((key, value) -> {
-        //                 try(ByteArrayOutputStream o = new ReusableByteOutStream()){
-        //                     o.writeBytes(Base64Coder.decodeLines(value));
-        //                     ZipEntry entry = new ZipEntry(key);
-        //                     entry.setSize(o.size());
-        //                     out.putNextEntry(entry);
-        //                     Streams.copy(new ByteArrayInputStream(o.toByteArray()), out);
-        //                     out.closeEntry();
-        //                 }catch(IOException e){
-        //                     throw new RuntimeException(e);
-        //                 }
-        //             });
-        //
-        //             out.finish();
-        //             spec.addFile("attachments.zip", new ByteArrayInputStream(zip.toByteArray()));
-        //         }catch(IOException e){
-        //             throw new RuntimeException(e);
-        //         }
-        //     }else if(info.attachments().size() == 1){
-        //         //todo this is terrible...
-        //         info.attachments().forEach((key, value) -> {
-        //             stringInputStream.setBytes(Base64Coder.decodeLines(value));
-        //             spec.addFile(key, stringInputStream);
-        //         });
-        //     }
-        // }
 
         return log(c.getGuildId(), spec).contextWrite(context).then(Mono.fromRunnable(() -> {
             info.content(newContent);

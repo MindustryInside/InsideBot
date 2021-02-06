@@ -49,7 +49,7 @@ public class CommonEvents extends Events{
 
             for(int i = 0; i < message.getEmbeds().size(); i++){
                 Embed embed = message.getEmbeds().get(i);
-                builder.append("\n[embed-").append(i + 1).append(']');
+                builder.append("\n[embed-").append(i + 1).append("]");
                 embed.getDescription().ifPresent(s -> builder.append("\n").append(s));
             }
             builder.append("\n");

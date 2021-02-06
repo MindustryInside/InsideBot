@@ -100,7 +100,7 @@ public class AdminServiceImpl implements AdminService{
                 .admin(admin)
                 .target(target)
                 .timestamp(Calendar.getInstance())
-                .end(DateTime.now().plusDays(20).toCalendar(Locale.getDefault())) // todo а вот это не очень
+                .end(DateTime.now().plusDays(20).toCalendar(entityRetriever.locale(admin.guildId())))
                 .reason(reason);
 
         return Mono.just(action).doOnNext(repository::save).then();
@@ -129,7 +129,7 @@ public class AdminServiceImpl implements AdminService{
 
     @Override
     public boolean isAdmin(Member member){
-        if(member == null) return false;
+        if(member == null || entityRetriever.existsGuildById(member.getGuildId())) return false;
         GuildConfig config = entityRetriever.getGuildById(member.getGuildId());
 
         boolean permissed = !config.adminRoleIdsAsList().isEmpty() &&

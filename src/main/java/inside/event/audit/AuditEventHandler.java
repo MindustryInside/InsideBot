@@ -33,7 +33,7 @@ public abstract class AuditEventHandler extends ReactiveEventAdapter{
     public Mono<Void> log(Snowflake guildId, MessageCreateSpec message){
         return discordService.getLogChannel(guildId)
                 .publishOn(Schedulers.boundedElastic())
-                .flatMap(c -> c.getRestChannel().createMessage(message.asRequest()))
+                .flatMap(channel -> channel.getRestChannel().createMessage(message.asRequest()))
                 .contextWrite(ContextUtil.reset())
                 .then();
     }
