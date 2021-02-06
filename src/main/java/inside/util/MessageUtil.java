@@ -190,6 +190,10 @@ public abstract class MessageUtil{
 
     public static String effectiveContent(Message message){
         Objects.requireNonNull(message, "message");
+        if(MessageUtil.isEmpty(message.getContent())){
+            return "";
+        }
+
         StringBuilder builder = new StringBuilder(message.getContent());
         if(!message.getAttachments().isEmpty()){
             builder.append("\n---\n");
