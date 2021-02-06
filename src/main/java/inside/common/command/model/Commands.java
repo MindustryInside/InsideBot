@@ -391,7 +391,7 @@ public class Commands{
                             .flatMap(local -> {
                                 Flux<AdminAction> warnings = adminService.warnings(local.guildId(), local.userId()).limitRequest(21);
 
-                                return warnings.hasElements().flatMap(b -> !b ? messageService.text(channel, messageService.get(ref.context(), "command.admin.warnings.empty")) :
+                                return warnings.hasElements().flatMap(bool -> !bool ? messageService.text(channel, messageService.get(ref.context(), "command.admin.warnings.empty")) :
                                         Mono.defer(() -> messageService.info(channel, embed ->
                                             warnings.index().subscribe(TupleUtils.consumer((index, warn) -> embed.setColor(settings.normalColor)
                                                     .setTitle(messageService.format(ref.context(), "command.admin.warnings.title", local.effectiveName()))
@@ -452,12 +452,10 @@ public class Commands{
             Mono<Member> target = discordService.gateway().getMemberById(guildId, targetId);
 
             return target.map(member -> entityRetriever.getMember(member, () -> new LocalMember(member)))
-                    .flatMap(local -> adminService.isMuted(local.guildId(), local.userId())
-                            .flatMap(bool -> bool ? ref.event()
-                                    .getGuild().flatMap(guild -> Mono.fromRunnable(() -> discordService.eventListener().publish(new MemberUnmuteEvent(guild, local))))
-                                            : target.flatMap(member -> messageService.err(channel, messageService.format(ref.context(), "audit.member.unmute.is-not-muted", member.getUsername())))
-                            )
-                    );
+                    .filterWhen(local -> adminService.isMuted(local.guildId(), local.userId()))
+                    .flatMap(local -> ref.event().getGuild().flatMap(guild -> Mono.fromRunnable(() -> discordService.eventListener().publish(new MemberUnmuteEvent(guild, local)))))
+                    .then()
+                    .switchIfEmpty(target.flatMap(member -> messageService.err(channel, messageService.format(ref.context(), "audit.member.unmute.is-not-muted", member.getUsername()))));
         }
     }
 }
