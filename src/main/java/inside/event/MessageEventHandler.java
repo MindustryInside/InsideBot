@@ -214,38 +214,6 @@ public class MessageEventHandler extends AuditEventHandler{
             spec.addFile("message.txt", input);
         }
 
-        // if(false){
-        //     if(info.attachments().size() > 1){
-        //         try(ByteArrayOutputStream zip = new ByteArrayOutputStream();
-        //             ZipOutputStream out = new ZipOutputStream(zip)){
-        //
-        //             info.attachments().forEach((key, value) -> {
-        //                 try(ByteArrayOutputStream o = new ReusableByteOutStream()){
-        //                     o.writeBytes(Base64Coder.decodeLines(value));
-        //                     ZipEntry entry = new ZipEntry(key);
-        //                     entry.setSize(o.size());
-        //                     out.putNextEntry(entry);
-        //                     Streams.copy(new ByteArrayInputStream(o.toByteArray()), out);
-        //                     out.closeEntry();
-        //                 }catch(IOException e){
-        //                     throw new RuntimeException(e);
-        //                 }
-        //             });
-        //
-        //             out.finish();
-        //             spec.addFile("attachments.zip", new ByteArrayInputStream(zip.toByteArray()));
-        //         }catch(IOException e){
-        //             throw new RuntimeException(e);
-        //         }
-        //     }else if(info.attachments().size() == 1){
-        //         //todo this is terrible...
-        //         info.attachments().forEach((key, value) -> {
-        //             stringInputStream.setBytes(Base64Coder.decodeLines(value));
-        //             spec.addFile(key, stringInputStream);
-        //         });
-        //     }
-        // }
-
         return log(guild.getId(), spec).contextWrite(context).then(Mono.fromRunnable(() -> messageService.delete(info)));
     }
 }

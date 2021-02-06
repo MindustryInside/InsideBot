@@ -147,8 +147,6 @@ public class DiscordServiceImpl implements DiscordService{
     }
 
     protected Mono<Boolean> isMuteEnd(LocalMember member){
-        return adminService.get(AdminService.AdminActionType.mute, member.guildId(), member.userId())
-                .next()
-                .map(AdminAction::isEnd);
+        return adminService.get(AdminService.AdminActionType.mute, member.guildId(), member.userId()).any(AdminAction::isEnd);
     }
 }

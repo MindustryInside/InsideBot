@@ -15,7 +15,7 @@ public class MiscMessageEventHandler extends AuditEventHandler{
     @Override
     public Publisher<?> onMessageCreate(MessageCreateEvent event){
         Message message = event.getMessage();
-        String text = message.getContent().toLowerCase().trim();
+        String text = message.getContent().toLowerCase();
 
         if(text.contains("egg")){
             return message.addReaction(ReactionEmoji.unicode(egg));

@@ -82,7 +82,7 @@ public class AdminServiceImpl implements AdminService{
 
     @Override
     public Mono<Boolean> isMuted(Snowflake guildId, Snowflake targetId){
-        return get(AdminActionType.mute, guildId, targetId).count().map(c -> c > 0);
+        return get(AdminActionType.mute, guildId, targetId).hasElements();
     }
 
     @Override
@@ -129,7 +129,7 @@ public class AdminServiceImpl implements AdminService{
 
     @Override
     public boolean isAdmin(Member member){
-        if(member == null || entityRetriever.existsGuildById(member.getGuildId())) return false;
+        if(member == null || !entityRetriever.existsGuildById(member.getGuildId())) return false;
         GuildConfig config = entityRetriever.getGuildById(member.getGuildId());
 
         boolean permissed = !config.adminRoleIdsAsList().isEmpty() &&

@@ -41,8 +41,10 @@ public abstract class LocaleUtil{
     }
 
     public static Locale get(Region region){
-        for(Entry<String, Locale> e : locales){
-            if(e.key.equalsIgnoreCase(region.getName().substring(0, 2))) return e.value;
+        for(Entry<String, Locale> entry : locales){
+            if(entry.key.equalsIgnoreCase(region.getName().substring(0, 2))){
+                return entry.value;
+            }
         }
         return getDefaultLocale();
     }

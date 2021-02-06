@@ -45,7 +45,7 @@ public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implement
     public boolean areEqual(Object a, Object b){
         if(a == b) return true;
         if(a == null || b == null) return false;
-        return JacksonUtil.toJsonNode(JacksonUtil.toString(a)).equals(JacksonUtil.toJsonNode(JacksonUtil.toString(b)));
+        return JacksonUtil.toJsonNode(a).equals(JacksonUtil.toJsonNode(b));
     }
 
     @Override
@@ -71,7 +71,7 @@ public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implement
     public <X> X unwrap(Object value, Class<X> type, WrapperOptions options){
         if(value == null) return null;
         else if(String.class.isAssignableFrom(type)) return (X)toString(value);
-        else if(Object.class.isAssignableFrom(type)) return (X)JacksonUtil.toJsonNode(toString(value));
+        else if(Object.class.isAssignableFrom(type)) return (X)JacksonUtil.toJsonNode(value);
         else throw unknownUnwrap(type);
     }
 
