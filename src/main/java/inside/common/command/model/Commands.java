@@ -23,7 +23,7 @@ import reactor.function.TupleUtils;
 import reactor.util.context.Context;
 
 import java.util.*;
-import java.util.function.Supplier;
+import java.util.function.*;
 
 import static inside.util.ContextUtil.*;
 
@@ -275,8 +275,7 @@ public class Commands{
 
             return discordService.gateway().getMemberById(guildId, targetId)
                     .flatMap(target -> Mono.just(entityRetriever.getMember(target, () -> new LocalMember(target)))
-                            .filterWhen(local -> adminService.isMuted(guildId, target.getId())
-                                    .flatMap(bool -> bool ? messageService.err(channel, messageService.get(ref.context(), "command.admin.mute.already-muted")).then(Mono.just(false)) : Mono.just(true)))
+                            .filterWhen(local -> adminService.isMuted(guildId, target.getId()).map(bool -> !bool))
                             .flatMap(local -> {
                                 String reason = args.length > 2 ? args[2].trim() : null;
 
@@ -294,9 +293,10 @@ public class Commands{
 
                                 return target.getGuild().flatMap(guild -> Mono.fromRunnable(() -> discordService.eventListener().publish(
                                         new MemberMuteEvent(guild, ref.localMember(), local, reason, delay)
-                                )));
+                                ))).thenReturn(local);
                             })
-            );
+                            .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.admin.mute.already-muted")).then(Mono.empty()))
+                            .then());
         }
     }
 
@@ -452,11 +452,11 @@ public class Commands{
 
             Mono<Member> target = discordService.gateway().getMemberById(guildId, targetId);
 
-            return target.map(member -> entityRetriever.getMember(member, () -> new LocalMember(member)))
+            return target.flatMap(member -> Mono.just(entityRetriever.getMember(member, () -> new LocalMember(member)))
                     .filterWhen(local -> adminService.isMuted(local.guildId(), local.userId()))
-                    .flatMap(local -> ref.event().getGuild().flatMap(guild -> Mono.fromRunnable(() -> discordService.eventListener().publish(new MemberUnmuteEvent(guild, local)))))
-                    .then()
-                    .switchIfEmpty(target.flatMap(member -> messageService.err(channel, messageService.format(ref.context(), "audit.member.unmute.is-not-muted", member.getUsername()))));
+                    .flatMap(local -> ref.event().getGuild().flatMap(guild -> Mono.fromRunnable(() -> discordService.eventListener().publish(new MemberUnmuteEvent(guild, local)))).thenReturn(member))
+                    .switchIfEmpty(messageService.err(channel, messageService.format(ref.context(), "audit.member.unmute.is-not-muted", member.getUsername())).then(Mono.empty())))
+                    .then();
         }
     }
 }

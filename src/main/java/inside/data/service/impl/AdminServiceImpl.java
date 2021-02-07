@@ -22,7 +22,8 @@ public class AdminServiceImpl implements AdminService{
 
     private final EntityRetriever entityRetriever;
 
-    public AdminServiceImpl(@Autowired AdminActionRepository repository, @Autowired EntityRetriever entityRetriever){
+    public AdminServiceImpl(@Autowired AdminActionRepository repository,
+                            @Autowired EntityRetriever entityRetriever){
         this.repository = repository;
         this.entityRetriever = entityRetriever;
     }

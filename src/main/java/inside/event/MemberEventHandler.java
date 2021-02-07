@@ -1,7 +1,7 @@
 package inside.event;
 
 import discord4j.core.event.domain.guild.*;
-import discord4j.core.object.audit.ActionType;
+import discord4j.core.object.audit.*;
 import discord4j.core.object.entity.*;
 import inside.data.entity.LocalMember;
 import inside.data.service.*;
@@ -12,12 +12,11 @@ import org.joda.time.DateTime;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
 import reactor.util.context.Context;
 
 import java.time.Instant;
-import java.util.Optional;
 
 import static inside.event.audit.AuditEventType.*;
 import static inside.util.ContextUtil.*;
@@ -59,20 +58,18 @@ public class MemberEventHandler extends AuditEventHandler{
 
         LocalMember localMember = entityRetriever.getMember(member, () -> new LocalMember(member));
 
-        Mono<Void> warn = adminService.warnings(localMember.guildId(), localMember.userId()).count()
-                .filter(c -> c >= 3)
+        Mono<Void> warn = adminService.warnings(localMember.guildId(), localMember.userId()).count().filter(c -> c >= 3)
                 .flatMap(__ -> member.getGuild().flatMap(Guild::getOwner).map(owner -> entityRetriever.getMember(owner, () -> new LocalMember(owner))))
                 .flatMap(owner -> Mono.fromRunnable(() ->
                         adminService.warn(owner, localMember, messageService.get(context, "audit.member.warn.evade"))
                 ));
 
-        Mono<Void> muteEvade = adminService.isMuted(member.getGuildId(), member.getId())
+        Mono<?> muteEvade = adminService.isMuted(member.getGuildId(), member.getId())
                 .zipWith(member.getGuild().flatMap(Guild::getOwner).map(owner -> entityRetriever.getMember(owner, () -> new LocalMember(owner))))
                 .flatMap(TupleUtils.function((bool, owner) -> bool ? member.getGuild().flatMap(guild -> Mono.fromRunnable(() -> discordService.eventListener().publish(
                         new EventType.MemberMuteEvent(guild, owner, localMember, messageService.get(context, "audit.member.mute.evade"), DateTime.now().plusDays(10))
-                ))) : Mono.empty()))
-                .switchIfEmpty(warn)
-                .then();
+                ))).thenReturn(owner) : Mono.empty()))
+                .switchIfEmpty(warn.then(Mono.empty()));
 
         return log(event.getGuildId(), embed -> embed.setColor(userJoin.color)
                 .setTitle(messageService.get(context, "audit.member.join.title"))
@@ -103,12 +100,12 @@ public class MemberEventHandler extends AuditEventHandler{
                                 messageService.format(context, "audit.member.kick.description", user.getUsername(), admin.getUsername()),
                                 messageService.format(context, "common.reason", entry.getReason().filter(MessageUtil::isNotEmpty).map(String::trim).orElse(messageService.get(context, "common.not-defined")))
                                 ))
-                                .setFooter(timestamp(), null)
-                        )))
-                .then()
-                .switchIfEmpty(log);
+                                .setFooter(timestamp(), null)))
+                        .thenReturn(entry))
+                .switchIfEmpty(log.then(Mono.empty()))
+                .then();
 
-        return event.getGuild().flatMapMany(guild -> guild.getAuditLog(q -> q.setActionType(ActionType.MEMBER_BAN_ADD)))
+        return event.getGuild().flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MEMBER_BAN_ADD)))
                 .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)))
                 .flatMap(entry -> event.getGuild().flatMap(guild -> guild.getMemberById(entry.getResponsibleUserId()))
                         .flatMap(admin -> log(event.getGuildId(), embed -> embed.setColor(userKick.color)
@@ -117,10 +114,9 @@ public class MemberEventHandler extends AuditEventHandler{
                                 messageService.format(context, "audit.member.ban.description", user.getUsername(), admin.getUsername()),
                                 messageService.format(context, "common.reason", entry.getReason().filter(MessageUtil::isNotEmpty).map(String::trim).orElse(messageService.get(context, "common.not-defined")))
                                 ))
-                                .setFooter(timestamp(), null)
-                        )))
-                .then()
-                .switchIfEmpty(kick);
+                                .setFooter(timestamp(), null)))
+                        .thenReturn(entry))
+                .switchIfEmpty(kick.then(Mono.empty()));
     }
 
     @Override

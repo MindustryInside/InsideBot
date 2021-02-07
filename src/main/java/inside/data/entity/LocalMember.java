@@ -7,11 +7,13 @@ import org.joda.time.*;
 import reactor.util.annotation.*;
 
 import javax.persistence.*;
+import java.io.Serial;
 import java.util.*;
 
 @Entity
 @Table(name = "local_member")
 public class LocalMember extends GuildEntity{
+    @Serial
     private static final long serialVersionUID = -9169934990408633927L;
 
     @Column(name = "user_id")

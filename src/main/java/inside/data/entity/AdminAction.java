@@ -10,11 +10,13 @@ import reactor.util.annotation.*;
 import javax.persistence.*;
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import java.io.Serial;
 import java.util.*;
 
 @Entity
 @Table(name = "admin_action")
 public class AdminAction extends GuildEntity{
+    @Serial
     private static final long serialVersionUID = 5778834003599760075L;
 
     @Enumerated(EnumType.STRING)

@@ -8,11 +8,14 @@ import reactor.core.publisher.Flux;
 import reactor.util.annotation.NonNull;
 
 import javax.persistence.*;
+import java.io.Serial;
 import java.util.*;
 
 @Entity
 @Table(name = "guild_config")
 public class GuildConfig extends GuildEntity{
+    @Serial
+    private static final long serialVersionUID = 2454633035779855973L;
 
     @Column
     private String prefix;

@@ -4,10 +4,12 @@ import discord4j.common.util.Snowflake;
 import reactor.util.annotation.NonNull;
 
 import javax.persistence.*;
+import java.io.Serial;
 import java.util.Objects;
 
 @MappedSuperclass
 public abstract class GuildEntity extends BaseEntity{
+    @Serial
     private static final long serialVersionUID = 7731061101796511964L;
 
     @Column(name = "guild_id")

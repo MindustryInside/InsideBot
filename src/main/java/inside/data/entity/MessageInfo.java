@@ -6,11 +6,13 @@ import org.hibernate.annotations.Type;
 import reactor.util.annotation.NonNull;
 
 import javax.persistence.*;
+import java.io.Serial;
 import java.util.*;
 
 @Entity
 @Table(name = "message_info")
 public class MessageInfo extends GuildEntity{
+    @Serial
     private static final long serialVersionUID = -7977287922184407665L;
 
     @Column(name = "message_id")

@@ -4,12 +4,13 @@ import inside.data.type.JsonBinaryType;
 import org.hibernate.annotations.*;
 
 import javax.persistence.*;
-import java.io.Serializable;
+import java.io.*;
 import java.util.Objects;
 
 @TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)
 @MappedSuperclass
 public abstract class BaseEntity implements Serializable{
+    @Serial
     private static final long serialVersionUID = 1337L;
 
     @Id
