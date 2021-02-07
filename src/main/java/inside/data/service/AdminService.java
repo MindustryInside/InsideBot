@@ -12,6 +12,8 @@ public interface AdminService{
 
     Flux<AdminAction> get(AdminActionType type, Snowflake guildId, Snowflake targetId);
 
+    Flux<AdminAction> getAll(AdminActionType type);
+
     Mono<Void> kick(LocalMember admin, LocalMember target, @Nullable String reason);
 
     Mono<Void> ban(LocalMember admin, LocalMember target, @Nullable String reason);
@@ -31,6 +33,8 @@ public interface AdminService{
     Flux<AdminAction> warnings(Snowflake guildId, Snowflake targetId);
 
     void monitor();
+
+    void unmuteUsers();
 
     boolean isAdmin(Member member);
 

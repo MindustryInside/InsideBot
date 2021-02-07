@@ -6,6 +6,7 @@ import discord4j.rest.util.Permission;
 import inside.data.entity.*;
 import inside.data.repository.AdminActionRepository;
 import inside.data.service.*;
+import inside.event.dispatcher.EventType;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,16 +23,26 @@ public class AdminServiceImpl implements AdminService{
 
     private final EntityRetriever entityRetriever;
 
+    private final DiscordService discordService;
+
     public AdminServiceImpl(@Autowired AdminActionRepository repository,
-                            @Autowired EntityRetriever entityRetriever){
+                            @Autowired EntityRetriever entityRetriever,
+                            @Autowired DiscordService discordService){
         this.repository = repository;
         this.entityRetriever = entityRetriever;
+        this.discordService = discordService;
     }
 
     @Override
     @Transactional(readOnly = true)
     public Flux<AdminAction> get(AdminActionType type, Snowflake guildId, Snowflake targetId){
         return Flux.fromIterable(repository.findAdminActionsByTypeAndTargetId(type, guildId, targetId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Flux<AdminAction> getAll(AdminActionType type){
+        return Flux.fromIterable(repository.findAllByType(type));
     }
 
     @Override
@@ -126,6 +137,16 @@ public class AdminServiceImpl implements AdminService{
         Flux.fromIterable(repository.findAllByType(AdminActionType.warn))
                 .filter(AdminAction::isEnd)
                 .subscribe(repository::delete);
+    }
+
+    @Transactional
+    @Scheduled(cron = "0 * * * * *")
+    public void unmuteUsers(){
+        getAll(AdminService.AdminActionType.mute)
+                .filter(AdminAction::isEnd)
+                .subscribe(adminAction -> discordService.eventListener().publish(
+                        new EventType.MemberUnmuteEvent(discordService.gateway().getGuildById(adminAction.guildId()).block(), adminAction.target())
+                ));
     }
 
     @Override

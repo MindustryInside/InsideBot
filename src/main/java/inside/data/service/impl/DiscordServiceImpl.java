@@ -11,7 +11,6 @@ import discord4j.rest.request.RouteMatcher;
 import discord4j.rest.response.ResponseFunction;
 import discord4j.rest.route.Routes;
 import inside.Settings;
-import inside.data.entity.*;
 import inside.data.service.*;
 import inside.event.dispatcher.EventListener;
 import inside.event.dispatcher.*;
@@ -118,15 +117,6 @@ public class DiscordServiceImpl implements DiscordService{
 
     @Transactional
     @Scheduled(cron = "0 */2 * * * *")
-    public void unmuteUsers(){
-        Flux.fromIterable(retriever.getAllMembers())
-                .filter(localMember -> !retriever.muteDisabled(localMember.guildId()))
-                .filterWhen(this::isMuteEnd)
-                .subscribe(localMember -> eventListener.publish(new EventType.MemberUnmuteEvent(gateway.getGuildById(localMember.guildId()).block(), localMember)));
-    }
-
-    @Transactional
-    @Scheduled(cron = "0 */2 * * * *")
     public void activeUsers(){
         Flux.fromIterable(retriever.getAllMembers())
                 .filter(localMember -> !retriever.activeUserDisabled(localMember.guildId()) && exists(localMember.guildId(), localMember.userId()))
@@ -143,9 +133,5 @@ public class DiscordServiceImpl implements DiscordService{
                     }
                 }))
                 .subscribe();
-    }
-
-    protected Mono<Boolean> isMuteEnd(LocalMember member){
-        return adminService.get(AdminService.AdminActionType.mute, member.guildId(), member.userId()).any(AdminAction::isEnd);
     }
 }
