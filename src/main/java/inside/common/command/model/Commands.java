@@ -254,6 +254,11 @@ public class Commands{
             Member author = ref.getAuthorAsMember();
             Snowflake targetId = MessageUtil.parseUserId(args[0]);
             Snowflake guildId = author.getGuildId();
+
+            if(entityRetriever.muteDisabled(guildId)){
+                return messageService.err(channel, messageService.get(ref.context(), "command.disabled.mute"));
+            }
+
             if(targetId == null || !discordService.exists(guildId, targetId)){
                 return messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name"));
             }
@@ -266,15 +271,15 @@ public class Commands{
             return discordService.gateway().getMemberById(guildId, targetId)
                     .flatMap(target -> Mono.just(entityRetriever.getMember(target, () -> new LocalMember(target)))
                             .filterWhen(local -> adminService.isMuted(guildId, target.getId()).map(bool -> !bool))
-                            .flatMap(local -> {
+                            .flatMap(local -> Mono.defer(() -> {
                                 String reason = args.length > 2 ? args[2].trim() : null;
-
-                                if(adminService.isAdmin(target) && !adminService.isOwner(author)){
-                                    return messageService.err(channel, messageService.get(ref.context(), "command.admin.user-is-admin"));
-                                }
 
                                 if(Objects.equals(author, target)){
                                     return messageService.err(channel, messageService.get(ref.context(), "command.admin.mute.self-user"));
+                                }
+
+                                if(adminService.isAdmin(target) && !adminService.isOwner(author)){
+                                    return messageService.err(channel, messageService.get(ref.context(), "command.admin.user-is-admin"));
                                 }
 
                                 if(reason != null && !reason.isBlank() && reason.length() > 1000){
@@ -283,8 +288,8 @@ public class Commands{
 
                                 return target.getGuild().flatMap(guild -> Mono.fromRunnable(() -> discordService.eventListener().publish(
                                         new MemberMuteEvent(guild, ref.localMember(), local, reason, delay)
-                                ))).thenReturn(local);
-                            })
+                                )));
+                            }).thenReturn(local))
                             .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.admin.mute.already-muted")).then(Mono.empty()))
                             .then());
         }
@@ -332,30 +337,30 @@ public class Commands{
             return discordService.gateway().getMemberById(guildId, targetId)
                     .flatMap(target -> Mono.just(entityRetriever.getMember(target, () -> new LocalMember(target)))
                             .flatMap(local -> {
-                                 String reason = args.length > 1 ? args[1].trim() : null;
+                                String reason = args.length > 1 ? args[1].trim() : null;
 
-                                 if(adminService.isAdmin(target) && !adminService.isOwner(author)){
+                                if(Objects.equals(author, target)){
+                                    return messageService.err(channel, messageService.get(ref.context(), "command.admin.warn.self-user"));
+                                }
+
+                                if(adminService.isAdmin(target) && !adminService.isOwner(author)){
                                      return messageService.err(channel, messageService.get(ref.context(), "command.admin.user-is-admin"));
-                                 }
+                                }
 
-                                 if(Objects.equals(author, target)){
-                                     return messageService.err(channel, messageService.get(ref.context(), "command.admin.warn.self-user"));
-                                 }
+                                if(!MessageUtil.isEmpty(reason) && reason.length() >= 1000){
+                                    return messageService.err(channel, messageService.format(ref.context(), "common.string-limit", 1000));
+                                }
 
-                                 if(!MessageUtil.isEmpty(reason) && reason.length() >= 1000){
-                                     return messageService.err(channel, messageService.format(ref.context(), "common.string-limit", 1000));
-                                 }
+                                Mono<Void> warnings = Mono.defer(() -> adminService.warnings(local.guildId(), local.userId()).count()).flatMap(count -> {
+                                    Mono<Void> message = messageService.text(channel, messageService.format(ref.context(), "message.admin.warn", target.getUsername(), count));
 
-                                 Mono<Void> warnings = Mono.defer(() -> adminService.warnings(local.guildId(), local.userId()).count()).flatMap(count -> {
-                                     Mono<Void> message = messageService.text(channel, messageService.format(ref.context(), "message.admin.warn", target.getUsername(), count));
+                                    if(count >= 3){
+                                        return message.then(author.getGuild().flatMap(guild -> guild.ban(target.getId(), b -> b.setDeleteMessageDays(0))));
+                                    }
+                                    return message;
+                                });
 
-                                     if(count >= 3){
-                                         return message.then(author.getGuild().flatMap(guild -> guild.ban(target.getId(), b -> b.setDeleteMessageDays(0))));
-                                     }
-                                     return message;
-                                 });
-
-                                 return adminService.warn(ref.localMember(), local, reason).then(warnings);
+                                return adminService.warn(ref.localMember(), local, reason).then(warnings);
                             })
                     );
         }
@@ -436,6 +441,11 @@ public class Commands{
             Mono<MessageChannel> channel = ref.getReplyChannel();
             Snowflake targetId = MessageUtil.parseUserId(args[0]);
             Snowflake guildId = ref.localMember().guildId();
+
+            if(entityRetriever.muteDisabled(guildId)){
+                return messageService.err(channel, messageService.get(ref.context(), "command.disabled.mute"));
+            }
+
             if(targetId == null || !discordService.exists(guildId, targetId)){
                 return messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name"));
             }
