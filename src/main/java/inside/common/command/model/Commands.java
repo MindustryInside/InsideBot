@@ -92,16 +92,6 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "ping", description = "command.ping.description")
-    public class PingCommand extends Command{
-        @Override
-        public Mono<Void> execute(CommandReference ref, String[] args){
-            return Mono.just("").elapsed().flatMap(t ->
-                    messageService.text(ref.getReplyChannel(), messageService.format(ref.context(), "command.ping", t.getT1()))
-            );
-        }
-    }
-
     @DiscordCommand(key = "1337", params = "<text...>", description = "command.1337.description")
     public class LeetCommand extends Command{
         @Override
