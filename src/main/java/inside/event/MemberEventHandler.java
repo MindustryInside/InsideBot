@@ -91,7 +91,7 @@ public class MemberEventHandler extends AuditEventHandler{
                 .setDescription(messageService.format(context, "audit.member.leave.description", user.getUsername()))
                 .setFooter(timestamp(), null));
 
-        Mono<Void> kick = event.getGuild().flatMapMany(g -> g.getAuditLog(q -> q.setActionType(ActionType.MEMBER_KICK)))
+        Mono<Void> kick = event.getGuild().flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MEMBER_KICK)))
                 .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)))
                 .flatMap(entry -> event.getGuild().flatMap(guild -> guild.getMemberById(entry.getResponsibleUserId()))
                         .flatMap(admin -> log(event.getGuildId(), embed -> embed.setColor(userKick.color)

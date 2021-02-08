@@ -31,9 +31,9 @@ public class LocalMember extends GuildEntity{
     public LocalMember(){}
 
     public LocalMember(Member member){
-        guildId(member.getGuildId());
-        userId = member.getId().asString();
-        effectiveName(member.getDisplayName());
+        this.guildId = member.getGuildId().asString();
+        this.userId = member.getId().asString();
+        this.effectiveName = member.getDisplayName();
     }
 
     @Transient

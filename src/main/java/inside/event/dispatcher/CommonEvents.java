@@ -103,13 +103,13 @@ public class CommonEvents extends Events{
                     Mono<Member> admin = guild.getMemberById(event.admin.userId());
 
                     Mono<Void> mute = adminService.isMuted(member.getGuildId(), member.getId())
-                            .flatMap(bool -> !bool ? adminService.mute(event.admin, local, event.delay.toCalendar(context.get(KEY_LOCALE)), event.reason().orElse(null)) : Mono.just(false))
+                            .flatMap(bool -> !bool ? adminService.mute(event.admin, local, event.delay.toCalendar(context.get(KEY_LOCALE)), event.reason().orElse(null)) : Mono.empty())
                             .then(member.addRole(entityRetriever.muteRoleId(member.getGuildId())));
 
-                    Mono<Void> publishLog = admin.map(Member::getUsername).flatMap(username -> log(member.getGuildId(), embed -> {
+                    Mono<Void> publishLog = admin.flatMap(adminMember -> log(member.getGuildId(), embed -> {
                         embed.setTitle(messageService.get(context, "audit.member.mute.title"));
                         embed.setDescription(String.format("%s%n%s%n%s",
-                        messageService.format(context, "audit.member.mute.description", member.getUsername(), username),
+                        messageService.format(context, "audit.member.mute.description", member.getUsername(), adminMember.getUsername()),
                         messageService.format(context, "common.reason", event.reason().orElse(messageService.get(context, "common.not-defined"))),
                         messageService.format(context, "audit.member.mute.delay", formatter.print(event.delay))
                         ));

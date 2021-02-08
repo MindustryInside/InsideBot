@@ -5,9 +5,11 @@ import org.hibernate.type.descriptor.*;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
 import org.hibernate.type.descriptor.sql.BasicBinder;
 
+import java.io.Serial;
 import java.sql.*;
 
 public class JsonBinarySqlTypeDescriptor extends AbstractJsonSqlTypeDescriptor{
+    @Serial
     private static final long serialVersionUID = 925608129281277893L;
 
     public static final JsonBinarySqlTypeDescriptor instance = new JsonBinarySqlTypeDescriptor();

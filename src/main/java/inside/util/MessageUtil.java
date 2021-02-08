@@ -179,10 +179,6 @@ public abstract class MessageUtil{
         return result.toString();
     }
 
-    public static boolean range(long length, long fromIndex, long toIndex){
-        return fromIndex <= toIndex && fromIndex >= 0 && toIndex <= length;
-    }
-
     public static String substringTo(String message, int maxLength){
         Objects.requireNonNull(message, "message");
         return message.length() >= maxLength ? (message.substring(0, maxLength - 4) + "...") : message;

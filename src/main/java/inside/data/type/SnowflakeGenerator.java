@@ -8,9 +8,6 @@ import org.hibernate.id.IdentifierGenerator;
 import java.io.Serializable;
 import java.time.Instant;
 
-/**
- * Генератор снежинкоподобных id
- */
 @SuppressWarnings("unused")
 public class SnowflakeGenerator implements IdentifierGenerator{
     @Override

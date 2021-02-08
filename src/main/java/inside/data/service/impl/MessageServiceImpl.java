@@ -80,7 +80,7 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     public Mono<Void> info(Mono<? extends MessageChannel> channel, String title, String text){
-        return info(channel, e -> e.setColor(settings.normalColor).setTitle(title).setDescription(text));
+        return info(channel, embed -> embed.setColor(settings.normalColor).setTitle(title).setDescription(text));
     }
 
     @Override

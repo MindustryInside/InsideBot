@@ -4,9 +4,11 @@ import org.hibernate.type.descriptor.*;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;
 import org.hibernate.type.descriptor.sql.*;
 
+import java.io.Serial;
 import java.sql.*;
 
 public abstract class AbstractJsonSqlTypeDescriptor implements SqlTypeDescriptor{
+    @Serial
     private static final long serialVersionUID = -8941996480499577393L;
 
     @Override

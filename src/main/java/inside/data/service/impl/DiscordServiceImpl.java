@@ -26,18 +26,19 @@ import java.util.*;
 
 @Service
 public class DiscordServiceImpl implements DiscordService{
-    @Autowired
-    private Settings settings;
+    private final Settings settings;
 
-    @Autowired
-    private EntityRetriever retriever;
-
-    @Autowired
-    private AdminService adminService;
+    private final EntityRetriever retriever;
 
     protected GatewayDiscordClient gateway;
 
     protected EventListener eventListener;
+
+    public DiscordServiceImpl(@Autowired Settings settings,
+                              @Autowired EntityRetriever retriever){
+        this.settings = settings;
+        this.retriever = retriever;
+    }
 
     @Autowired(required = false)
     public void init(List<ReactiveEventAdapter> handlers, List<Events> events){

@@ -6,11 +6,13 @@ import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.*;
 import org.hibernate.usertype.DynamicParameterizedType;
 
+import java.io.Serial;
 import java.lang.reflect.*;
 import java.util.*;
 
 @SuppressWarnings({"unchecked", "deprecation", "rawtypes"})
 public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implements DynamicParameterizedType{
+    @Serial
     private static final long serialVersionUID = -4842954367890483417L;
 
     private Class<?> clazz;
@@ -18,6 +20,7 @@ public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implement
 
     public JsonTypeDescriptor(){
         super(Object.class, new MutableMutabilityPlan<>(){
+            @Serial
             private static final long serialVersionUID = 1606718143878984537L;
 
             @Override
@@ -61,7 +64,7 @@ public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implement
             }else if(Map.class.isAssignableFrom((Class)pType.getRawType())){
                 return JacksonUtil.map(string, (Class)pType.getActualTypeArguments()[0], (Class)pType.getActualTypeArguments()[1]);
             }else if(Set.class.isAssignableFrom((Class)pType.getRawType())){
-                return JacksonUtil.list(string, (Class)pType.getActualTypeArguments()[0]);
+                return JacksonUtil.set(string, (Class)pType.getActualTypeArguments()[0]);
             }
         }
         return JacksonUtil.fromJson(string, clazz);
