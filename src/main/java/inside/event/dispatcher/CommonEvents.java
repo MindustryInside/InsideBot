@@ -11,6 +11,7 @@ import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.*;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.function.Consumer;
 
@@ -63,6 +64,7 @@ public class CommonEvents extends Events{
         }, true);
 
         return Flux.fromIterable(event.history)
+                .publishOn(Schedulers.boundedElastic())
                 .onErrorResume(__ -> Mono.empty())
                 .flatMap(message -> message.delete().then(Mono.fromRunnable(() -> {
                     messageService.putMessage(message.getId());

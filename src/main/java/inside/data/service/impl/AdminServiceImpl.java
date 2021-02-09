@@ -139,7 +139,7 @@ public class AdminServiceImpl implements AdminService{
                 .subscribe(repository::delete);
     }
 
-    @Transactional
+    @Override
     @Scheduled(cron = "0 * * * * *")
     public void unmuteUsers(){
         getAll(AdminService.AdminActionType.mute)
