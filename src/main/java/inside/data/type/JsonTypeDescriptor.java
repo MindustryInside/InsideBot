@@ -25,7 +25,7 @@ public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implement
 
             @Override
             protected Object deepCopyNotNull(Object value){
-                return JacksonUtil.clone(value);
+                return JacksonUtil.copy(value);
             }
         });
     }
@@ -53,7 +53,7 @@ public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implement
 
     @Override
     public String toString(Object value){
-        return JacksonUtil.toString(value);
+        return JacksonUtil.toJson(value);
     }
 
     @Override

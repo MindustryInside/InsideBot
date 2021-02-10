@@ -156,9 +156,9 @@ public class MessageEventHandler extends AuditEventHandler{
                     if(newContent.length() >= Field.MAX_VALUE_LENGTH || oldContent.length() >= Field.MAX_VALUE_LENGTH){
                         StringInputStream input = new StringInputStream();
                         input.writeString(String.format("%s:%n%s%n%n%s:%n%s",
-                                                        messageService.get(context, "audit.message.old-content.title"), oldContent,
-                                                        messageService.get(context, "audit.message.new-content.title"), newContent)
-                        );
+                                messageService.get(context, "audit.message.old-content.title"), oldContent,
+                                messageService.get(context, "audit.message.new-content.title"), newContent
+                        ));
                         spec.addFile("message.txt", input);
                     }
 

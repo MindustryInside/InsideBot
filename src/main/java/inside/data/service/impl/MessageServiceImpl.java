@@ -98,8 +98,7 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public Mono<Void> err(Mono<? extends MessageChannel> channel, String title, String text){
         return channel.publishOn(Schedulers.boundedElastic())
-                .flatMap(c -> c.createEmbed(e -> e.setColor(settings.errorColor).setTitle(title)
-                        .setDescription(text)))
+                .flatMap(c -> c.createEmbed(e -> e.setColor(settings.errorColor).setTitle(title).setDescription(text)))
                 .then();
     }
 

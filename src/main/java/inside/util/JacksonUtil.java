@@ -26,7 +26,7 @@ public abstract class JacksonUtil{
         }
     }
 
-    public static String toString(Object value){
+    public static String toJson(Object value){
         try{
             return mapper.writeValueAsString(value);
         }catch(Throwable t){
@@ -35,7 +35,7 @@ public abstract class JacksonUtil{
     }
 
     public static JsonNode toJsonNode(Object value){
-        return toJsonNode(toString(value));
+        return toJsonNode(toJson(value));
     }
 
     public static JsonNode toJsonNode(String value){
@@ -46,8 +46,8 @@ public abstract class JacksonUtil{
         }
     }
 
-    public static <T> T clone(T value){
-        return fromJson(toString(value), (Class<T>)value.getClass());
+    public static <T> T copy(T value){
+        return fromJson(toJson(value), (Class<T>)value.getClass());
     }
 
     public static List list(String json, Class clazz){

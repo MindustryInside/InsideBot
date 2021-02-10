@@ -116,7 +116,6 @@ public class DiscordServiceImpl implements DiscordService{
         return gateway.getMemberById(guildId, userId).hasElement().blockOptional().orElse(false);
     }
 
-    @Transactional
     @Scheduled(cron = "0 */2 * * * *")
     public void activeUsers(){
         Flux.fromIterable(retriever.getAllMembers())
@@ -127,10 +126,9 @@ public class DiscordServiceImpl implements DiscordService{
                     if(localMember.isActiveUser()){
                         return member.addRole(roleId);
                     }else{
-                        return member.removeRole(roleId).then(Mono.fromRunnable(() -> {
-                            localMember.messageSeq(0);
-                            retriever.save(localMember);
-                        }));
+                        localMember.messageSeq(0);
+                        retriever.save(localMember);
+                        return member.removeRole(roleId);
                     }
                 }))
                 .subscribe();

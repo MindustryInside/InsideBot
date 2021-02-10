@@ -5,6 +5,7 @@ import arc.util.Strings;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import org.joda.time.DateTime;
+import reactor.util.annotation.Nullable;
 
 import java.time.*;
 import java.time.temporal.*;
@@ -211,6 +212,7 @@ public abstract class MessageUtil{
         }
     }
 
+    @Nullable
     public static Snowflake parseUserId(String message){
         Objects.requireNonNull(message, "message");
         message = message.replaceAll("[<>@!]", "");
