@@ -24,6 +24,8 @@ import reactor.util.context.ContextView;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import static inside.util.ContextUtil.KEY_LOCALE;
+
 @Service
 public class MessageServiceImpl implements MessageService{
     private static final Logger log = Loggers.getLogger(MessageService.class);
@@ -49,7 +51,7 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public String get(ContextView ctx, String key){
         try{
-            return context.getMessage(key, null, ctx.get(ContextUtil.KEY_LOCALE));
+            return context.getMessage(key, null, ctx.get(KEY_LOCALE));
         }catch(Throwable t){
             return "???" + key + "???";
         }
@@ -57,7 +59,7 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     public String getCount(ContextView ctx, String key, long count){
-        String code = LocaleUtil.getCount(count, LocaleUtil.getDefaultLocale());
+        String code = LocaleUtil.getCount(count, ctx.get(KEY_LOCALE));
         return get(ctx, String.format("%s.%s", key, code));
     }
 
@@ -68,7 +70,7 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     public String format(ContextView ctx, String key, Object... args){
-        return context.getMessage(key, args, ctx.get(ContextUtil.KEY_LOCALE));
+        return context.getMessage(key, args, ctx.get(KEY_LOCALE));
     }
 
     @Override
