@@ -20,8 +20,8 @@ public abstract class LocaleUtil{
     static{
         locales = ObjectMap.of(
                 ruLocale, Locale.forLanguageTag(ruLocale),
-                enLocale, Locale.US,
-                defaultLocale, Locale.US
+                enLocale, Locale.forLanguageTag(enLocale),
+                defaultLocale, Locale.forLanguageTag(defaultLocale)
         );
 
         pluralRules = ObjectMap.of(
