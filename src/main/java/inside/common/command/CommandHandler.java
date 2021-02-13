@@ -88,7 +88,7 @@ public class CommandHandler{
                     String argstr = commandstr.contains(" ") ? commandstr.substring(cmd.length() + 1) : "";
                     int index = 0;
                     boolean satisfied = false;
-                    String argsres = commandInfo.paramText.isBlank() ? "command.response.incorrect-arguments.empty" : "command.response.incorrect-arguments";
+                    String argsres = commandInfo.paramText.isEmpty() ? "command.response.incorrect-arguments.empty" : "command.response.incorrect-arguments";
 
                     while(true){
                         if(index >= commandInfo.params.length && !argstr.isEmpty()){
@@ -111,7 +111,7 @@ public class CommandHandler{
                         if(next == -1){
                             if(!satisfied){
                                 return messageService.err(channel, messageService.get(ref.context(), "command.response.few-arguments.title"),
-                                                          messageService.format(ref.context(), argsres, prefix, commandInfo.text));
+                                                          messageService.format(ref.context(), argsres, prefix, commandInfo.text, commandInfo.paramText));
                             }
                             result.add(argstr);
                             break;
@@ -126,7 +126,7 @@ public class CommandHandler{
 
                     if(!satisfied && commandInfo.params.length > 0 && !commandInfo.params[0].optional){
                         return messageService.err(channel, messageService.get(ref.context(), "command.response.few-arguments.title"),
-                                                  messageService.format(ref.context(), argsres, prefix, commandInfo.text));
+                                                  messageService.format(ref.context(), argsres, prefix, commandInfo.text, commandInfo.paramText));
                     }
 
                     return Flux.fromIterable(commandInfo.permissions)
