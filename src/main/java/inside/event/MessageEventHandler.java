@@ -102,7 +102,7 @@ public class MessageEventHandler extends AuditEventHandler{
                 .channel(() -> channel)
                 .build();
 
-        Mono<Void> handle = adminService.isAdmin(member) ? commandHandler.handleMessage(text, reference).contextWrite(context) : Mono.empty();
+        Mono<Void> handle = adminService.isAdmin(member).flatMap(bool -> bool ? commandHandler.handleMessage(text, reference).contextWrite(context) : Mono.empty());
 
         return messageInfo.flatMap(__ -> Mono.when(config, handle));
     }

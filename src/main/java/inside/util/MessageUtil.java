@@ -113,7 +113,7 @@ public abstract class MessageUtil{
     }
 
     public static boolean isEmpty(Message message) {
-        return message == null || effectiveContent(message).isEmpty();
+        return message == null || effectiveContent(message).isBlank();
     }
 
     public static String leeted(String text){

@@ -36,9 +36,9 @@ public interface AdminService{
 
     void unmuteUsers();
 
-    boolean isAdmin(Member member);
+    Mono<Boolean> isAdmin(Member member);
 
-    boolean isOwner(Member member);
+    Mono<Boolean> isOwner(Member member);
 
     enum AdminActionType{
         warn,

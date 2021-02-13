@@ -44,7 +44,7 @@ public class AdminAction extends GuildEntity{
     public AdminAction(){}
 
     public AdminAction(Snowflake guildId){
-        guildId(guildId);
+        this.guildId = Objects.requireNonNull(guildId, "guildId").asString();
     }
 
     public AdminActionType type(){

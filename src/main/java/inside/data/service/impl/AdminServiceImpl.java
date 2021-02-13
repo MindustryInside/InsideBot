@@ -13,6 +13,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.*;
+import reactor.function.TupleUtils;
 
 import java.util.*;
 
@@ -150,26 +151,22 @@ public class AdminServiceImpl implements AdminService{
     }
 
     @Override
-    public boolean isAdmin(Member member){
-        if(member == null || !entityRetriever.existsGuildById(member.getGuildId())) return false;
+    public Mono<Boolean> isAdmin(Member member){
+        if(member == null || !entityRetriever.existsGuildById(member.getGuildId())) return Mono.empty();
         GuildConfig config = entityRetriever.getGuildById(member.getGuildId());
 
-        boolean permissed = !config.adminRoleIdsAsList().isEmpty() &&
-                            member.getRoles().map(Role::getId)
-                                  .any(r -> config.adminRoleIdsAsList().contains(r))
-                                  .blockOptional()
-                                  .orElse(false);
+        Mono<Boolean> isPermissed = member.getRoles().map(Role::getId)
+                .filterWhen(roleId -> config.adminRoleIDs().any(id -> id.equals(roleId)))
+                .hasElements();
 
-        boolean admin =  member.getRoles().map(Role::getPermissions)
-                               .any(r -> r.contains(Permission.ADMINISTRATOR))
-                               .blockOptional().orElse(false);
+        Mono<Boolean> isAdmin = member.getRoles().map(Role::getPermissions).any(set -> set.contains(Permission.ADMINISTRATOR));
 
-        return isOwner(member) || admin || permissed;
+        return Mono.zip(isOwner(member), isAdmin, isPermissed).map(TupleUtils.function((owner, admin, permissed) -> owner || admin || permissed));
     }
 
     @Override
-    public boolean isOwner(Member member){
-        return member != null && member.getGuild().map(Guild::getOwnerId).map(s -> member.getId().equals(s))
-                                       .blockOptional().orElse(false);
+    public Mono<Boolean> isOwner(Member member){
+        if(member == null) return Mono.empty();
+        return member.getGuild().map(Guild::getOwnerId).map(ownerId -> member.getId().equals(ownerId));
     }
 }

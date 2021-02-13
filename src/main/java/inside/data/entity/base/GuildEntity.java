@@ -1,7 +1,6 @@
 package inside.data.entity.base;
 
 import discord4j.common.util.Snowflake;
-import reactor.util.annotation.NonNull;
 
 import javax.persistence.*;
 import java.io.Serial;

@@ -65,7 +65,6 @@ public class CommonEvents extends Events{
 
         return Flux.fromIterable(event.history)
                 .publishOn(Schedulers.boundedElastic())
-                .onErrorResume(__ -> Mono.empty())
                 .flatMap(message -> message.delete().then(Mono.fromRunnable(() -> {
                     messageService.putMessage(message.getId());
                     appendInfo.accept(message);

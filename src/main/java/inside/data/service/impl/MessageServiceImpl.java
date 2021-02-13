@@ -37,7 +37,7 @@ public class MessageServiceImpl implements MessageService{
     private final Settings settings;
 
     private final Cache<Snowflake, Boolean> deletedMessage = Caffeine.newBuilder()
-            .expireAfterWrite(5, TimeUnit.MINUTES)
+            .expireAfterWrite(3, TimeUnit.MINUTES)
             .build();
 
     public MessageServiceImpl(@Autowired MessageInfoRepository repository,
