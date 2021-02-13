@@ -268,7 +268,7 @@ public class Commands{
                     .flatMap(target -> Mono.just(entityRetriever.getMember(target, () -> new LocalMember(target)))
                             .filterWhen(local -> adminService.isMuted(guildId, target.getId()).map(bool -> !bool))
                             .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.admin.mute.already-muted")).then(Mono.empty()))
-                            .filterWhen(local -> Mono.zip(adminService.isAdmin(target), adminService.isOwner(author)).map(TupleUtils.function((admin, owner) -> admin && !owner)))
+                            .filterWhen(local -> Mono.zip(adminService.isAdmin(target), adminService.isOwner(author)).map(TupleUtils.function((admin, owner) -> !(admin && !owner))))
                             .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.admin.user-is-admin")).then(Mono.empty()))
                             .flatMap(local -> Mono.defer(() -> {
                                 String reason = args.length > 2 ? args[2].trim() : null;
@@ -330,7 +330,7 @@ public class Commands{
 
             return discordService.gateway().getMemberById(guildId, targetId)
                     .flatMap(target -> Mono.just(entityRetriever.getMember(target, () -> new LocalMember(target)))
-                            .filterWhen(local -> Mono.zip(adminService.isAdmin(target), adminService.isOwner(author)).map(TupleUtils.function((admin, owner) -> admin && !owner)))
+                            .filterWhen(local -> Mono.zip(adminService.isAdmin(target), adminService.isOwner(author)).map(TupleUtils.function((admin, owner) -> !(admin && !owner))))
                             .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.admin.user-is-admin")).then(Mono.empty()))
                             .flatMap(local -> {
                                 String reason = args.length > 1 ? args[1].trim() : null;
