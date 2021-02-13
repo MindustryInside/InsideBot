@@ -51,7 +51,7 @@ public abstract class AuditEventHandler extends ReactiveEventAdapter{
         return log(guildId, file ? spec.addFile("message.txt", stringInputStream) : spec);
     }
 
-    public String timestamp(){
+    protected String timestamp(){
         return DateTimeFormat.longDateTime()
                 .withLocale(context.get(KEY_LOCALE))
                 .withZone(context.get(KEY_TIMEZONE))

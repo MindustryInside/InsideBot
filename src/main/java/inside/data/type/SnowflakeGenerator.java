@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.time.Instant;
 
 @SuppressWarnings("unused")
-public class SnowflakeGenerator implements IdentifierGenerator{
+public final class SnowflakeGenerator implements IdentifierGenerator{
     @Override
     public Serializable generate(SharedSessionContractImplementor session, Object obj) throws HibernateException{
         return Snowflake.of(Instant.now()).asString();

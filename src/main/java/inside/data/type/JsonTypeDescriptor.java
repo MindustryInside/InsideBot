@@ -60,11 +60,11 @@ public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implement
     public Object fromString(String string){
         if(type instanceof ParameterizedType pType){
             if(List.class.isAssignableFrom((Class)pType.getRawType())){
-                return JacksonUtil.list(string, (Class)pType.getActualTypeArguments()[0]);
+                return JacksonUtil.list(string, clazz, (Class)pType.getActualTypeArguments()[0]);
             }else if(Map.class.isAssignableFrom((Class)pType.getRawType())){
-                return JacksonUtil.map(string, (Class)pType.getActualTypeArguments()[0], (Class)pType.getActualTypeArguments()[1]);
+                return JacksonUtil.map(string, clazz, (Class)pType.getActualTypeArguments()[0], (Class)pType.getActualTypeArguments()[1]);
             }else if(Set.class.isAssignableFrom((Class)pType.getRawType())){
-                return JacksonUtil.set(string, (Class)pType.getActualTypeArguments()[0]);
+                return JacksonUtil.set(string, clazz, (Class)pType.getActualTypeArguments()[0]);
             }
         }
         return JacksonUtil.fromJson(string, clazz);

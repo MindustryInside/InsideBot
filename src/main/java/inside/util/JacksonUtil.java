@@ -50,25 +50,25 @@ public abstract class JacksonUtil{
         return fromJson(toJson(value), (Class<T>)value.getClass());
     }
 
-    public static List list(String json, Class clazz){
+    public static List list(String json, Class clazz, Class type){
         try{
-            return mapper.readValue(json, TypeFactory.defaultInstance().constructCollectionType(ArrayList.class, clazz));
+            return mapper.readValue(json, TypeFactory.defaultInstance().constructCollectionType(clazz.getConstructors().length != 0 ? clazz : ArrayList.class, type));
         }catch(Throwable t){
             throw new RuntimeException(t);
         }
     }
 
-    public static Set set(String json, Class clazz){
+    public static Set set(String json, Class clazz, Class type){
         try{
-            return mapper.readValue(json, TypeFactory.defaultInstance().constructCollectionType(HashSet.class, clazz));
+            return mapper.readValue(json, TypeFactory.defaultInstance().constructCollectionType(clazz.getConstructors().length != 0 ? clazz : HashSet.class, type));
         }catch(Throwable t){
             throw new RuntimeException(t);
         }
     }
 
-    public static Map map(String json, Class keyClass, Class valueClass){
+    public static Map map(String json, Class clazz, Class key, Class value){
         try{
-            return mapper.readValue(json, TypeFactory.defaultInstance().constructMapType(HashMap.class, keyClass, valueClass));
+            return mapper.readValue(json, TypeFactory.defaultInstance().constructMapType(clazz.getConstructors().length != 0 ? clazz : HashMap.class, key, value));
         }catch(Throwable t){
             throw new RuntimeException(t);
         }

@@ -7,8 +7,9 @@ import discord4j.core.object.entity.channel.*;
 import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.rest.util.Permission;
 import inside.Settings;
+import inside.common.Collector;
 import inside.common.command.model.base.*;
-import inside.common.command.service.CommandHandler;
+import inside.common.command.CommandHandler;
 import inside.data.entity.*;
 import inside.data.service.*;
 import inside.data.service.AdminService.AdminActionType;
@@ -27,7 +28,7 @@ import java.util.function.*;
 
 import static inside.util.ContextUtil.*;
 
-@Service
+@Collector
 public class Commands{
     @Autowired
     private DiscordService discordService;

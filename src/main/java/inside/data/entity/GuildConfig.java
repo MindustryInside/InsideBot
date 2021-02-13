@@ -1,11 +1,9 @@
 package inside.data.entity;
 
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.entity.Guild;
-import inside.data.entity.base.*;
+import inside.data.entity.base.GuildEntity;
 import org.hibernate.annotations.Type;
 import reactor.core.publisher.Flux;
-import reactor.util.annotation.NonNull;
 
 import javax.persistence.*;
 import java.io.Serial;
@@ -42,7 +40,7 @@ public class GuildConfig extends GuildEntity{
     public GuildConfig(){}
 
     public GuildConfig(Snowflake guildId){
-        guildId(guildId);
+        this.guildId = Objects.requireNonNull(guildId, "guildId").asString();
     }
 
     public String prefix(){
@@ -100,11 +98,8 @@ public class GuildConfig extends GuildEntity{
         return Flux.fromIterable(adminRoleIDs).map(Snowflake::of);
     }
 
-    public List<Snowflake> adminRoleIdsAsList(){
-        return adminRoleIDs().collectList().block();
-    }
-
     public void addAdminRole(Snowflake roleId){
+        Objects.requireNonNull(roleId, "roleId");
         if(adminRoleIDs == null){
             adminRoleIDs = new ArrayList<>();
         }
@@ -112,7 +107,7 @@ public class GuildConfig extends GuildEntity{
     }
 
     public void adminRoleIDs(List<String> adminRoleIDs){
-        this.adminRoleIDs = adminRoleIDs;
+        this.adminRoleIDs = Objects.requireNonNull(adminRoleIDs, "adminRoleIDs");
     }
 
     @Override

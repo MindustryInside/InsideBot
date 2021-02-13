@@ -1,22 +1,56 @@
-package inside.common.command.service;
+package inside.common.command;
 
+import arc.struct.ObjectMap;
 import arc.util.Strings;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
+import inside.Settings;
 import inside.common.command.model.base.*;
-import inside.util.MessageUtil;
+import inside.data.service.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
 import reactor.util.function.Tuple2;
 
-import java.util.LinkedList;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class CommandHandler extends BaseCommandHandler{
+public class CommandHandler{
+    @Autowired
+    protected EntityRetriever entityRetriever;
 
-    @Override
+    @Autowired
+    protected DiscordService discordService;
+
+    @Autowired
+    protected MessageService messageService;
+
+    @Autowired
+    protected Settings settings;
+
+    protected ObjectMap<String, Command> commands = new ObjectMap<>();
+
+    protected List<Command> handlers;
+
+    @Autowired(required = false)
+    public void init(List<Command> commands){
+        handlers = commands;
+        commands.forEach(cmd -> {
+            CommandInfo command = cmd.compile();
+            this.commands.put(command.text, cmd);
+        });
+    }
+
+    public ObjectMap<String, Command> commands(){
+        return commands;
+    }
+
+    public List<CommandInfo> commandList(){
+        return handlers.stream().map(Command::compile).collect(Collectors.toUnmodifiableList());
+    }
+
     public Mono<Void> handleMessage(final String message, final CommandReference ref){
         Mono<Guild> guild = ref.event().getGuild();
         Mono<TextChannel> channel = ref.getReplyChannel().ofType(TextChannel.class);
@@ -54,12 +88,12 @@ public class CommandHandler extends BaseCommandHandler{
                     String argstr = commandstr.contains(" ") ? commandstr.substring(cmd.length() + 1) : "";
                     int index = 0;
                     boolean satisfied = false;
+                    String argsres = commandInfo.paramText.isBlank() ? "command.response.incorrect-arguments.empty" : "command.response.incorrect-arguments";
 
                     while(true){
                         if(index >= commandInfo.params.length && !argstr.isEmpty()){
                             return messageService.err(channel, messageService.get(ref.context(), "command.response.many-arguments.title"),
-                                                      messageService.format(ref.context(), MessageUtil.isEmpty(commandInfo.paramText) ? "command.response.few-arguments.description" : "command.response.many-arguments.description",
-                                                                            prefix, commandInfo.text, commandInfo.paramText));
+                                                      messageService.format(ref.context(), argsres, prefix, commandInfo.text, commandInfo.paramText));
                         }else if(argstr.isEmpty()){
                             break;
                         }
@@ -77,8 +111,7 @@ public class CommandHandler extends BaseCommandHandler{
                         if(next == -1){
                             if(!satisfied){
                                 return messageService.err(channel, messageService.get(ref.context(), "command.response.few-arguments.title"),
-                                                          messageService.format(ref.context(), "command.response.few-arguments.description",
-                                                                                prefix, commandInfo.text));
+                                                          messageService.format(ref.context(), argsres, prefix, commandInfo.text));
                             }
                             result.add(argstr);
                             break;
@@ -93,8 +126,7 @@ public class CommandHandler extends BaseCommandHandler{
 
                     if(!satisfied && commandInfo.params.length > 0 && !commandInfo.params[0].optional){
                         return messageService.err(channel, messageService.get(ref.context(), "command.response.few-arguments.title"),
-                                                  messageService.format(ref.context(), "command.response.few-arguments.description",
-                                                                        prefix, commandInfo.text));
+                                                  messageService.format(ref.context(), argsres, prefix, commandInfo.text));
                     }
 
                     return Flux.fromIterable(commandInfo.permissions)
@@ -103,7 +135,7 @@ public class CommandHandler extends BaseCommandHandler{
                                     .map(set -> !set.contains(permission)))
                             .map(permission -> messageService.getEnum(ref.context(), permission))
                             .collect(Collectors.joining("\n"))
-                            .flatMap(s -> s.isEmpty() ? command.execute(ref, result.toArray(new String[0])) : messageService.text(channel, String.format("%s%n%n%s",
+                            .flatMap(s -> s.isBlank() ? command.execute(ref, result.toArray(new String[0])) : messageService.text(channel, String.format("%s%n%n%s",
                                     messageService.get(ref.context(), "message.error.permission-denied.title"),
                                     messageService.format(ref.context(), "message.error.permission-denied.description", s)))
                                     .onErrorResume(__ -> guild.flatMap(g -> g.getOwner().flatMap(User::getPrivateChannel))
