@@ -7,25 +7,22 @@ import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.Channel.Type;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.spec.*;
-import inside.Settings;
 import inside.common.command.CommandHandler;
-import inside.common.command.model.base.*;
+import inside.common.command.model.base.CommandReference;
 import inside.data.entity.*;
 import inside.data.service.*;
 import inside.event.audit.AuditEventHandler;
 import inside.util.*;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import reactor.function.TupleUtils;
-import reactor.util.*;
 import reactor.util.context.Context;
 import reactor.util.function.Tuples;
 
 import java.util.Calendar;
-import java.util.function.*;
+import java.util.function.Consumer;
 
 import static inside.event.audit.AuditEventType.*;
 import static inside.util.ContextUtil.*;
@@ -33,18 +30,10 @@ import static inside.util.ContextUtil.*;
 @Component
 public class MessageEventHandler extends AuditEventHandler{
     @Autowired
-    private AdminService adminService;
-
-    @Autowired
     private CommandHandler commandHandler;
 
     @Autowired
     private EntityRetriever entityRetriever;
-
-    @Bean
-    public Function<? super CommandRequest, Mono<Boolean>> filter(){
-        return req -> adminService.isAdmin(req.getAuthorAsMember());
-    }
 
     @Override
     public Publisher<?> onMessageCreate(MessageCreateEvent event){

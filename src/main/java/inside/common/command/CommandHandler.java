@@ -6,6 +6,7 @@ import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
 import inside.common.command.model.base.*;
 import inside.data.service.*;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
@@ -13,7 +14,6 @@ import reactor.function.TupleUtils;
 import reactor.util.function.Tuple2;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,8 +24,6 @@ public class CommandHandler{
     private final MessageService messageService;
 
     private final ObjectMap<String, Command> commands = new ObjectMap<>();
-
-    private Function<? super CommandRequest, Mono<Boolean>> filter;
 
     public CommandHandler(@Autowired EntityRetriever entityRetriever,
                           @Autowired MessageService messageService){
@@ -49,12 +47,7 @@ public class CommandHandler{
         return commands.values().toSeq().map(Command::compile);
     }
 
-    @Autowired
-    public void setFilter(Function<? super CommandRequest, Mono<Boolean>> filter){
-        this.filter = filter;
-    }
-
-    public Mono<Void> handleMessage(final String message, final CommandReference ref){
+    public Mono<?> handleMessage(final String message, final CommandReference ref){
         Mono<Guild> guild = ref.event().getGuild();
         Mono<TextChannel> channel = ref.getReplyChannel().ofType(TextChannel.class);
         Mono<User> self = ref.getClient().getSelf();
@@ -62,7 +55,6 @@ public class CommandHandler{
         final String prefix = entityRetriever.prefix(ref.getAuthorAsMember().getGuildId());
 
         Mono<Tuple2<String, String>> text = Mono.justOrEmpty(prefix)
-                .filterWhen(__ -> filter.apply(ref))
                 .filter(message::startsWith)
                 .map(s -> message.substring(s.length()).trim())
                 .zipWhen(s -> Mono.justOrEmpty(s.contains(" ") ? s.substring(0, s.indexOf(" ")) : s));
@@ -134,20 +126,28 @@ public class CommandHandler{
                                                   messageService.format(ref.context(), argsres, prefix, commandInfo.text, commandInfo.paramText));
                     }
 
+                    Mono<String> execute = Mono.just(command)
+                            .filterWhen(c -> c.apply(ref))
+                            .flatMap(c -> command.execute(ref, result.toArray(new String[0])))
+                            .then(Mono.empty());
+
                     return Flux.fromIterable(commandInfo.permissions)
                             .filterWhen(permission -> channel.zipWith(self.map(User::getId))
                                     .flatMap(TupleUtils.function((targetChannel, selfId) -> targetChannel.getEffectivePermissions(selfId)))
                                     .map(set -> !set.contains(permission)))
                             .map(permission -> messageService.getEnum(ref.context(), permission))
                             .collect(Collectors.joining("\n"))
-                            .flatMap(s -> s.isBlank() ? command.execute(ref, result.toArray(new String[0])) : messageService.text(channel, String.format("%s%n%n%s",
+                            .filter(s -> !s.isBlank())
+                            .flatMap(s -> messageService.text(channel, String.format("%s%n%n%s",
                                     messageService.get(ref.context(), "message.error.permission-denied.title"),
                                     messageService.format(ref.context(), "message.error.permission-denied.description", s)))
                                     .onErrorResume(__ -> guild.flatMap(g -> g.getOwner().flatMap(User::getPrivateChannel))
                                             .flatMap(c -> c.createMessage(String.format("%s%n%n%s",
                                             messageService.get(ref.context(), "message.error.permission-denied.title"),
                                             messageService.format(ref.context(), "message.error.permission-denied.description", s))))
-                                            .then()));
+                                            .then())
+                                    .thenReturn(s))
+                            .switchIfEmpty(execute);
                 })));
     }
 }

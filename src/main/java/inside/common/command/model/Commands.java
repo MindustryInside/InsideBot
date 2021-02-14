@@ -15,6 +15,7 @@ import inside.data.service.*;
 import inside.data.service.AdminService.AdminActionType;
 import inside.event.dispatcher.EventType.*;
 import inside.util.*;
+import org.dom4j.rule.Mode;
 import org.joda.time.DateTime;
 import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,13 @@ public class Commands{
 
     @Autowired
     private Settings settings;
+
+    public class ModeratorCommand extends Command{
+        @Override
+        public Mono<Boolean> apply(CommandRequest req){
+            return adminService.isAdmin(req.getAuthorAsMember());
+        }
+    }
 
     @DiscordCommand(key = "help", description = "command.help.description")
     public class HelpCommand extends Command{
@@ -243,7 +251,7 @@ public class Commands{
 
     @DiscordCommand(key = "mute", params = "<@user> <delay> [reason...]", description = "command.admin.mute.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_ROLES})
-    public class MuteCommand extends Command{
+    public class MuteCommand extends ModeratorCommand{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             Mono<MessageChannel> channel = ref.getReplyChannel();
@@ -268,7 +276,7 @@ public class Commands{
             return discordService.gateway().getMemberById(guildId, targetId)
                     .flatMap(target -> Mono.just(entityRetriever.getMember(target, () -> new LocalMember(target)))
                             .filterWhen(local -> adminService.isMuted(guildId, target.getId()).map(bool -> !bool))
-                            .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.admin.mute.already-muted")).then(Mono.empty()))
+                            .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.admin.mute.already-muted")).then(Mono.never()))
                             .filterWhen(local -> Mono.zip(adminService.isAdmin(target), adminService.isOwner(author)).map(TupleUtils.function((admin, owner) -> !(admin && !owner))))
                             .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.admin.user-is-admin")).then(Mono.empty()))
                             .flatMap(local -> Mono.defer(() -> {
@@ -292,7 +300,7 @@ public class Commands{
 
     @DiscordCommand(key = "delete", params = "<amount>", description = "command.admin.delete.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_MESSAGES, Permission.READ_MESSAGE_HISTORY})
-    public class DeleteCommand extends Command{
+    public class DeleteCommand extends ModeratorCommand{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             Member author = ref.getAuthorAsMember();
@@ -318,7 +326,7 @@ public class Commands{
 
     @DiscordCommand(key = "warn", params = "<@user> [reason...]", description = "command.admin.warn.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.BAN_MEMBERS})
-    public class WarnCommand extends Command{
+    public class WarnCommand extends ModeratorCommand{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             Member author = ref.getAuthorAsMember();
@@ -360,7 +368,7 @@ public class Commands{
     }
 
     @DiscordCommand(key = "warnings", params = "<@user>", description = "command.admin.warnings.description")
-    public class WarningsCommand extends Command{
+    public class WarningsCommand extends ModeratorCommand{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             Member author = ref.getAuthorAsMember();
@@ -395,7 +403,7 @@ public class Commands{
     }
 
     @DiscordCommand(key = "unwarn", params = "<@user> [number]", description = "command.admin.unwarn.description")
-    public class UnwarnCommand extends Command{
+    public class UnwarnCommand extends ModeratorCommand{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             Mono<MessageChannel> channel = ref.getReplyChannel();
@@ -429,7 +437,7 @@ public class Commands{
 
     @DiscordCommand(key = "unmute", params = "<@user>", description = "command.admin.unmute.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_ROLES})
-    public class UnmuteCommand extends Command{
+    public class UnmuteCommand extends ModeratorCommand{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             Mono<MessageChannel> channel = ref.getReplyChannel();
