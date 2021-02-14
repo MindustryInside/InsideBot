@@ -58,8 +58,4 @@ public interface EntityRetriever{
     LocalMember save(LocalMember member);
 
     boolean existsMemberById(Snowflake guildId, Snowflake userId);
-
-    void deleteMember(LocalMember member);
-
-    void deleteMemberById(Snowflake guildId, Snowflake userId);
 }

@@ -11,7 +11,17 @@ public class Settings{
 
     public String prefix = "$";
 
+    public String timeZone = "Etc/Greenwich";
+
     public Color normalColor = Color.of(0xc4f5b7);
 
     public Color errorColor = Color.of(0xff3838);
+
+    /* TODO: variable values */
+
+    @Deprecated(forRemoval = true)
+    public int maxWarnings = 3;
+
+    @Deprecated(forRemoval = true)
+    public int warnExpireDays = 20;
 }

@@ -33,6 +33,7 @@ public class GuildConfig extends GuildEntity{
     @Column(name = "active_user_role_id")
     private String activeUserRoleID;
 
+    /* lazy initializing */
     @Type(type = "jsonb")
     @Column(name = "admin_role_ids", columnDefinition = "json")
     private List<String> adminRoleIDs;

@@ -8,14 +8,15 @@ import discord4j.core.object.entity.channel.Channel.Type;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.spec.*;
 import inside.Settings;
-import inside.common.command.model.base.CommandReference;
 import inside.common.command.CommandHandler;
+import inside.common.command.model.base.*;
 import inside.data.entity.*;
 import inside.data.service.*;
 import inside.event.audit.AuditEventHandler;
 import inside.util.*;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import reactor.function.TupleUtils;
@@ -23,16 +24,14 @@ import reactor.util.*;
 import reactor.util.context.Context;
 import reactor.util.function.Tuples;
 
-import java.util.*;
-import java.util.function.Consumer;
+import java.util.Calendar;
+import java.util.function.*;
 
 import static inside.event.audit.AuditEventType.*;
 import static inside.util.ContextUtil.*;
 
 @Component
 public class MessageEventHandler extends AuditEventHandler{
-    private static final Logger log = Loggers.getLogger(MessageEventHandler.class);
-
     @Autowired
     private AdminService adminService;
 
@@ -42,8 +41,10 @@ public class MessageEventHandler extends AuditEventHandler{
     @Autowired
     private EntityRetriever entityRetriever;
 
-    @Autowired
-    private Settings settings;
+    @Bean
+    public Function<? super CommandRequest, Mono<Boolean>> filter(){
+        return req -> adminService.isAdmin(req.getAuthorAsMember());
+    }
 
     @Override
     public Publisher<?> onMessageCreate(MessageCreateEvent event){
@@ -68,16 +69,6 @@ public class MessageEventHandler extends AuditEventHandler{
         localMember.lastSentMessage(Calendar.getInstance());
         entityRetriever.save(localMember);
 
-        Mono<Void> config = Mono.justOrEmpty(entityRetriever.getGuildById(guildId))
-                .switchIfEmpty(event.getGuild().flatMap(Guild::getRegion).flatMap(region -> Mono.fromRunnable(() -> {
-                    GuildConfig guildConfig = new GuildConfig(guildId);
-                    guildConfig.locale(LocaleUtil.get(region));
-                    guildConfig.prefix(settings.prefix);
-                    guildConfig.timeZone(TimeZone.getTimeZone("Etc/Greenwich"));
-                    entityRetriever.save(guildConfig);
-                })))
-                .then();
-
         Mono<?> messageInfo = channel.filter(textChannel -> textChannel.getType() == Type.GUILD_TEXT)
                 .filter(__ -> !MessageUtil.isEmpty(message) && !message.isTts() && message.getEmbeds().isEmpty())
                 .doOnNext(signal -> {
@@ -101,9 +92,7 @@ public class MessageEventHandler extends AuditEventHandler{
                 .channel(() -> channel)
                 .build();
 
-        Mono<Void> handle = adminService.isAdmin(member).flatMap(bool -> bool ? commandHandler.handleMessage(text, reference).contextWrite(context) : Mono.empty());
-
-        return messageInfo.flatMap(__ -> Mono.when(config, handle));
+        return Mono.when(messageInfo, commandHandler.handleMessage(text, reference).contextWrite(context));
     }
 
     @Override

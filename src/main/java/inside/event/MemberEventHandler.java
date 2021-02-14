@@ -3,7 +3,8 @@ package inside.event;
 import discord4j.core.event.domain.guild.*;
 import discord4j.core.object.audit.*;
 import discord4j.core.object.entity.*;
-import inside.data.entity.LocalMember;
+import inside.Settings;
+import inside.data.entity.*;
 import inside.data.service.*;
 import inside.event.audit.AuditEventHandler;
 import inside.event.dispatcher.EventType;
@@ -17,6 +18,7 @@ import reactor.function.TupleUtils;
 import reactor.util.context.Context;
 
 import java.time.Instant;
+import java.util.TimeZone;
 
 import static inside.event.audit.AuditEventType.*;
 import static inside.util.ContextUtil.*;
@@ -31,9 +33,12 @@ public class MemberEventHandler extends AuditEventHandler{
     @Autowired
     private AdminService adminService;
 
+    @Autowired
+    private Settings settings;
+
     @Override
     @Deprecated
-    public Publisher<?> onBan(BanEvent event){ // не триггерится, баг д4ж текущей версии
+    public Publisher<?> onBan(BanEvent event){
         User user = event.getUser();
         if(DiscordUtil.isBot(user)) return Mono.empty();
 
@@ -58,11 +63,9 @@ public class MemberEventHandler extends AuditEventHandler{
 
         LocalMember localMember = entityRetriever.getMember(member, () -> new LocalMember(member));
 
-        Mono<Void> warn = adminService.warnings(localMember.guildId(), localMember.userId()).count().filter(c -> c >= 3)
-                .flatMap(__ -> member.getGuild().flatMap(Guild::getOwner).map(owner -> entityRetriever.getMember(owner, () -> new LocalMember(owner))))
-                .flatMap(owner -> Mono.fromRunnable(() ->
-                        adminService.warn(owner, localMember, messageService.get(context, "audit.member.warn.evade"))
-                ));
+        Mono<Void> warn = member.getGuild().flatMap(Guild::getOwner).map(owner -> entityRetriever.getMember(owner, () -> new LocalMember(owner)))
+                .filterWhen(owner -> adminService.warnings(localMember.guildId(), localMember.userId()).count().map(c -> c >= settings.maxWarnings))
+                .flatMap(owner -> adminService.warn(owner, localMember, messageService.get(context, "audit.member.warn.evade")));
 
         Mono<?> muteEvade = adminService.isMuted(member.getGuildId(), member.getId())
                 .zipWith(member.getGuild().flatMap(Guild::getOwner).map(owner -> entityRetriever.getMember(owner, () -> new LocalMember(owner))))
@@ -98,7 +101,7 @@ public class MemberEventHandler extends AuditEventHandler{
                                 .setTitle(messageService.get(context, "audit.member.kick.title"))
                                 .setDescription(String.format("%s%n%s",
                                 messageService.format(context, "audit.member.kick.description", user.getUsername(), admin.getUsername()),
-                                messageService.format(context, "common.reason", entry.getReason().filter(MessageUtil::isNotEmpty).map(String::trim).orElse(messageService.get(context, "common.not-defined")))
+                                messageService.format(context, "common.reason", entry.getReason().filter(MessageUtil::isNotEmpty).orElse(messageService.get(context, "common.not-defined")))
                                 ))
                                 .setFooter(timestamp(), null)))
                         .thenReturn(entry))
@@ -123,11 +126,24 @@ public class MemberEventHandler extends AuditEventHandler{
     public Publisher<?> onMemberUpdate(MemberUpdateEvent event){
         return event.getMember()
                 .filter(DiscordUtil::isNotBot)
-                .doOnNext(member -> {
-                    LocalMember localMember = entityRetriever.getMember(member, () -> new LocalMember(member));
-                    event.getCurrentNickname().ifPresent(localMember::effectiveName);
-                    entityRetriever.save(localMember);
-                })
-                .then();
+                .flatMap(member -> {
+                    Mono<Void> config = member.getGuild().filter(guild -> !entityRetriever.existsGuildById(guild.getId()))
+                            .flatMap(Guild::getRegion)
+                            .flatMap(region -> Mono.fromRunnable(() -> {
+                                GuildConfig guildConfig = new GuildConfig(member.getGuildId());
+                                guildConfig.locale(LocaleUtil.get(region));
+                                guildConfig.prefix(settings.prefix);
+                                guildConfig.timeZone(TimeZone.getTimeZone(settings.timeZone));
+                                entityRetriever.save(guildConfig);
+                            }));
+
+                    Mono<Void> local = Mono.fromRunnable(() -> {
+                        LocalMember localMember = entityRetriever.getMember(member, () -> new LocalMember(member));
+                        event.getCurrentNickname().ifPresent(localMember::effectiveName);
+                        entityRetriever.save(localMember);
+                    });
+
+                    return Mono.when(config, local);
+                });
     }
 }

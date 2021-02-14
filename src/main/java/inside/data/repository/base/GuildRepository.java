@@ -5,16 +5,8 @@ import inside.data.entity.base.GuildEntity;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.NoRepositoryBean;
 
-import java.util.List;
-
 @NoRepositoryBean
 public interface GuildRepository<T extends GuildEntity> extends JpaRepository<T, String>{
-
-    List<T> findAllByGuildId(String guildId);
-
-    default List<T> findAllByGuildId(Snowflake guildId){
-        return findAllByGuildId(guildId.asString());
-    }
 
     T findByGuildId(String guildId);
 

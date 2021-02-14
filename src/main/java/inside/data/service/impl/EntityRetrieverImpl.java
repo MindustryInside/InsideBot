@@ -11,7 +11,7 @@ import org.joda.time.DateTimeZone;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Flux;
+import reactor.core.publisher.*;
 import reactor.util.*;
 
 import java.util.*;
@@ -70,7 +70,7 @@ public class EntityRetrieverImpl implements EntityRetriever{
     @Override
     @Transactional(readOnly = true)
     public Flux<Snowflake> adminRolesIds(Snowflake guildId){
-        return getGuildById(guildId).adminRoleIDs();
+        return Mono.justOrEmpty(getGuildById(guildId)).flatMapMany(GuildConfig::adminRoleIDs);
     }
 
     @Override
@@ -88,7 +88,7 @@ public class EntityRetrieverImpl implements EntityRetriever{
     @Override
     @Transactional(readOnly = true)
     public DateTimeZone timeZone(Snowflake guildId){
-        return DateTimeZone.forTimeZone(guildRepository.findTimeZoneByGuildId(guildId).orElse(TimeZone.getTimeZone("UTC")));
+        return DateTimeZone.forTimeZone(guildRepository.findTimeZoneByGuildId(guildId).orElse(TimeZone.getTimeZone(settings.timeZone)));
     }
 
     @Override
@@ -173,22 +173,5 @@ public class EntityRetrieverImpl implements EntityRetriever{
     @Transactional(readOnly = true)
     public boolean existsMemberById(Snowflake guildId, Snowflake userId){
         return getMemberById(guildId, userId) != null;
-    }
-
-    @Override
-    @Transactional
-    public void deleteMember(LocalMember member){
-        memberRepository.delete(member);
-    }
-
-    @Override
-    @Transactional
-    public void deleteMemberById(Snowflake guildId, Snowflake userId){
-        LocalMember member = getMemberById(guildId, userId);
-        if(member != null){
-            memberRepository.delete(member);
-        }else{
-            log.warn("Member '{}' ({}) not found", userId.asString(), guildId.asString());
-        }
     }
 }

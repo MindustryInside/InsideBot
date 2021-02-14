@@ -15,9 +15,6 @@ public interface AdminActionRepository extends GuildRepository<AdminAction>{
     @Query("select a from AdminAction a where a.type = :type")
     List<AdminAction> findAllByType(@Param("type") AdminActionType type);
 
-    @Query("select a from AdminAction a where a.guildId = :#{#guildId?.asString()} and a.target.userId = :#{#targetId?.asString()}")
-    List<AdminAction> findAdminActionsByTargetId(@Param("guildId") Snowflake guildId, @Param("targetId") Snowflake targetId);
-
     @Query("select a from AdminAction a where a.guildId = :#{#guildId?.asString()} and a.target.userId = :#{#targetId?.asString()} and a.type = :type")
     List<AdminAction> findAdminActionsByTypeAndTargetId(@Param("type") AdminActionType type, @Param("guildId") Snowflake guildId, @Param("targetId") Snowflake targetId);
 }

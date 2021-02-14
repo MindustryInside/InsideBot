@@ -32,13 +32,13 @@ public interface AdminService{
 
     Flux<AdminAction> warnings(Snowflake guildId, Snowflake targetId);
 
-    void monitor();
-
-    void unmuteUsers();
+    Mono<Boolean> isOwner(Member member);
 
     Mono<Boolean> isAdmin(Member member);
 
-    Mono<Boolean> isOwner(Member member);
+    void warningsMonitor();
+
+    void mutesMonitor();
 
     enum AdminActionType{
         warn,

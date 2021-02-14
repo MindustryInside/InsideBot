@@ -135,7 +135,9 @@ public class MessageServiceImpl implements MessageService{
     @Override
     @Transactional
     public void delete(MessageInfo message){
-        repository.delete(message);
+        if(message != null){
+            repository.delete(message);
+        }
     }
 
     @Override
@@ -144,8 +146,6 @@ public class MessageServiceImpl implements MessageService{
         MessageInfo message = getById(messageId);
         if(message != null){
             repository.delete(message);
-        }else{
-            log.warn("Message with id '{}' not found", messageId.asString());
         }
     }
 

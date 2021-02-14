@@ -54,14 +54,14 @@ public class Commands{
         public Mono<Void> execute(CommandReference ref, String[] args){
             StringBuffer builder = new StringBuffer();
             Snowflake guildId = ref.getAuthorAsMember().getGuildId();
-            String prefix = entityRetriever.prefix(guildId);
+            final String prefix = entityRetriever.prefix(guildId);
 
             handler.commandList().forEach(command -> {
                 builder.append(prefix);
                 builder.append("**");
                 builder.append(command.text);
                 builder.append("**");
-                if(command.params.length > 0 && MessageUtil.isNotEmpty(command.paramText)){
+                if(command.params.length > 0){
                     builder.append(" *");
                     builder.append(command.paramText);
                     builder.append("*");
@@ -191,7 +191,7 @@ public class Commands{
                         if(args.length == 0){
                             return messageService.text(channel, messageService.format(ref.context(), "command.config.prefix", guildConfig.prefix()));
                         }else{
-                            if(!MessageUtil.isEmpty(args[0])){
+                            if(!args[0].isBlank()){
                                 guildConfig.prefix(args[0]);
                                 entityRetriever.save(guildConfig);
                                 return messageService.text(channel, messageService.format(ref.context(), "command.config.prefix-updated", guildConfig.prefix()));
@@ -222,7 +222,7 @@ public class Commands{
                         if(args.length == 0){
                             return messageService.text(channel, messageService.format(ref.context(), "command.config.locale", formatter.get()));
                         }else{
-                            if(!MessageUtil.isEmpty(args[0])){
+                            if(!args[0].isBlank()){
                                 Locale locale = LocaleUtil.get(args[0]);
                                 if(locale == null){
                                     String all = Strings.join(", ", LocaleUtil.locales.values().toSeq().map(Locale::toString));
@@ -347,7 +347,7 @@ public class Commands{
                                 Mono<Void> warnings = Mono.defer(() -> adminService.warnings(local.guildId(), local.userId()).count()).flatMap(count -> {
                                     Mono<Void> message = messageService.text(channel, messageService.format(ref.context(), "message.admin.warn", target.getUsername(), count));
 
-                                    if(count >= 3){
+                                    if(count >= settings.maxWarnings){
                                         return message.then(author.getGuild().flatMap(guild -> guild.ban(target.getId(), b -> b.setDeleteMessageDays(0))));
                                     }
                                     return message;

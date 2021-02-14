@@ -36,13 +36,6 @@ public interface CommandRequest{
     }
 
     default Member getAuthorAsMember(){
-        return event().getMember().orElseThrow(RuntimeException::new);
-    }
-
-    default Mono<Boolean> hasPermission(PermissionSet requiredPermissions){
-        return Mono.justOrEmpty(getAuthor().map(User::getId))
-                .flatMap(authorId -> getMessage().getChannel().ofType(GuildChannel.class)
-                        .flatMap(channel -> channel.getEffectivePermissions(authorId))
-                        .map(set -> set.containsAll(requiredPermissions)));
+        return event().getMember().orElse(null);
     }
 }

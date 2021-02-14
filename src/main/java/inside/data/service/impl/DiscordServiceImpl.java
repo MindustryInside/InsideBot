@@ -29,9 +29,9 @@ public class DiscordServiceImpl implements DiscordService{
 
     private final EntityRetriever retriever;
 
-    protected GatewayDiscordClient gateway;
+    private GatewayDiscordClient gateway;
 
-    protected EventListener eventListener;
+    private EventListener eventListener;
 
     public DiscordServiceImpl(@Autowired Settings settings,
                               @Autowired EntityRetriever retriever){
@@ -115,7 +115,7 @@ public class DiscordServiceImpl implements DiscordService{
         return gateway.getMemberById(guildId, userId).hasElement().blockOptional().orElse(false);
     }
 
-    @Scheduled(cron = "0 */2 * * * *")
+    @Scheduled(cron = "0 */4 * * * *")
     public void activeUsers(){
         Flux.fromIterable(retriever.getAllMembers())
                 .filter(localMember -> !retriever.activeUserDisabled(localMember.guildId()) && exists(localMember.guildId(), localMember.userId()))

@@ -3,6 +3,7 @@ package inside.data.service.impl;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import discord4j.rest.util.Permission;
+import inside.Settings;
 import inside.data.entity.*;
 import inside.data.repository.AdminActionRepository;
 import inside.data.service.*;
@@ -26,12 +27,16 @@ public class AdminServiceImpl implements AdminService{
 
     private final DiscordService discordService;
 
+    private final Settings settings;
+
     public AdminServiceImpl(@Autowired AdminActionRepository repository,
                             @Autowired EntityRetriever entityRetriever,
-                            @Autowired DiscordService discordService){
+                            @Autowired DiscordService discordService,
+                            @Autowired Settings settings){
         this.repository = repository;
         this.entityRetriever = entityRetriever;
         this.discordService = discordService;
+        this.settings = settings;
     }
 
     @Override
@@ -113,7 +118,7 @@ public class AdminServiceImpl implements AdminService{
                 .admin(admin)
                 .target(target)
                 .timestamp(Calendar.getInstance())
-                .end(DateTime.now().plusDays(20).toCalendar(entityRetriever.locale(admin.guildId())))
+                .end(DateTime.now().plusDays(settings.warnExpireDays).toCalendar(entityRetriever.locale(admin.guildId())))
                 .reason(reason);
 
         return Mono.just(action).doOnNext(repository::save).then();
@@ -133,30 +138,18 @@ public class AdminServiceImpl implements AdminService{
     }
 
     @Override
-    @Scheduled(cron = "0 */3 * * * *")
-    public void monitor(){
-        Flux.fromIterable(repository.findAllByType(AdminActionType.warn))
-                .filter(AdminAction::isEnd)
-                .subscribe(repository::delete);
-    }
-
-    @Override
-    @Scheduled(cron = "0 * * * * *")
-    public void unmuteUsers(){
-        getAll(AdminService.AdminActionType.mute)
-                .filter(AdminAction::isEnd)
-                .subscribe(adminAction -> discordService.eventListener().publish(
-                        new EventType.MemberUnmuteEvent(discordService.gateway().getGuildById(adminAction.guildId()).block(), adminAction.target())
-                ));
+    public Mono<Boolean> isOwner(Member member){
+        if(member == null) return Mono.empty();
+        return member.getGuild().map(Guild::getOwnerId).map(ownerId -> member.getId().equals(ownerId));
     }
 
     @Override
     public Mono<Boolean> isAdmin(Member member){
-        if(member == null || !entityRetriever.existsGuildById(member.getGuildId())) return Mono.empty();
-        GuildConfig config = entityRetriever.getGuildById(member.getGuildId());
+        if(member == null) return Mono.empty();
+        Flux<Snowflake> roles = entityRetriever.adminRolesIds(member.getGuildId());
 
         Mono<Boolean> isPermissed = member.getRoles().map(Role::getId)
-                .filterWhen(roleId -> config.adminRoleIDs().any(id -> id.equals(roleId)))
+                .filterWhen(roleId -> roles.any(id -> id.equals(roleId)))
                 .hasElements();
 
         Mono<Boolean> isAdmin = member.getRoles().map(Role::getPermissions).any(set -> set.contains(Permission.ADMINISTRATOR));
@@ -165,8 +158,20 @@ public class AdminServiceImpl implements AdminService{
     }
 
     @Override
-    public Mono<Boolean> isOwner(Member member){
-        if(member == null) return Mono.empty();
-        return member.getGuild().map(Guild::getOwnerId).map(ownerId -> member.getId().equals(ownerId));
+    @Scheduled(cron = "0 */3 * * * *")
+    public void warningsMonitor(){
+        Flux.fromIterable(repository.findAllByType(AdminActionType.warn))
+                .filter(AdminAction::isEnd)
+                .subscribe(repository::delete);
+    }
+
+    @Override
+    @Scheduled(cron = "0 * * * * *")
+    public void mutesMonitor(){
+        getAll(AdminService.AdminActionType.mute)
+                .filter(AdminAction::isEnd)
+                .subscribe(adminAction -> discordService.eventListener().publish(
+                        new EventType.MemberUnmuteEvent(discordService.gateway().getGuildById(adminAction.guildId()).block(), adminAction.target())
+                ));
     }
 }

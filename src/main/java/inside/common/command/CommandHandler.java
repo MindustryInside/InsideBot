@@ -4,7 +4,6 @@ import arc.struct.ObjectMap;
 import arc.util.Strings;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
-import inside.Settings;
 import inside.common.command.model.base.*;
 import inside.data.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,29 +13,28 @@ import reactor.function.TupleUtils;
 import reactor.util.function.Tuple2;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
 public class CommandHandler{
-    @Autowired
-    protected EntityRetriever entityRetriever;
 
-    @Autowired
-    protected DiscordService discordService;
+    private final EntityRetriever entityRetriever;
 
-    @Autowired
-    protected MessageService messageService;
+    private final MessageService messageService;
 
-    @Autowired
-    protected Settings settings;
+    private final ObjectMap<String, Command> commands = new ObjectMap<>();
 
-    protected ObjectMap<String, Command> commands = new ObjectMap<>();
+    private Function<? super CommandRequest, Mono<Boolean>> filter;
 
-    protected List<Command> handlers;
+    public CommandHandler(@Autowired EntityRetriever entityRetriever,
+                          @Autowired MessageService messageService){
+        this.entityRetriever = entityRetriever;
+        this.messageService = messageService;
+    }
 
     @Autowired(required = false)
     public void init(List<Command> commands){
-        handlers = commands;
         commands.forEach(cmd -> {
             CommandInfo command = cmd.compile();
             this.commands.put(command.text, cmd);
@@ -47,8 +45,13 @@ public class CommandHandler{
         return commands;
     }
 
-    public List<CommandInfo> commandList(){
-        return handlers.stream().map(Command::compile).collect(Collectors.toUnmodifiableList());
+    public Iterable<CommandInfo> commandList(){
+        return commands.values().toSeq().map(Command::compile);
+    }
+
+    @Autowired
+    public void setFilter(Function<? super CommandRequest, Mono<Boolean>> filter){
+        this.filter = filter;
     }
 
     public Mono<Void> handleMessage(final String message, final CommandReference ref){
@@ -58,7 +61,9 @@ public class CommandHandler{
 
         final String prefix = entityRetriever.prefix(ref.getAuthorAsMember().getGuildId());
 
-        Mono<Tuple2<String, String>> text = Mono.justOrEmpty(prefix).filter(message::startsWith)
+        Mono<Tuple2<String, String>> text = Mono.justOrEmpty(prefix)
+                .filterWhen(__ -> filter.apply(ref))
+                .filter(message::startsWith)
                 .map(s -> message.substring(s.length()).trim())
                 .zipWhen(s -> Mono.justOrEmpty(s.contains(" ") ? s.substring(0, s.indexOf(" ")) : s));
 
