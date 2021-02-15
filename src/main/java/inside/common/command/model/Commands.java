@@ -2,6 +2,7 @@ package inside.common.command.model;
 
 import arc.util.Strings;
 import discord4j.common.util.Snowflake;
+import discord4j.core.object.Embed;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
 import discord4j.core.retriever.EntityRetrievalStrategy;
@@ -60,7 +61,7 @@ public class Commands{
     public class HelpCommand extends Command{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
-            StringBuffer builder = new StringBuffer();
+            StringBuilder builder = new StringBuilder();
             Snowflake guildId = ref.getAuthorAsMember().getGuildId();
             final String prefix = entityRetriever.prefix(guildId);
 
@@ -286,8 +287,8 @@ public class Commands{
                                     return messageService.err(channel, messageService.get(ref.context(), "command.admin.mute.self-user"));
                                 }
 
-                                if(reason != null && !reason.isBlank() && reason.length() > 1000){
-                                    return messageService.err(channel, messageService.format(ref.context(), "common.string-limit", 1000));
+                                if(reason != null && !reason.isBlank() && reason.length() > 512){
+                                    return messageService.err(channel, messageService.format(ref.context(), "common.string-limit", 512));
                                 }
 
                                 return target.getGuild().flatMap(guild -> Mono.fromRunnable(() -> discordService.eventListener().publish(
@@ -310,8 +311,8 @@ public class Commands{
             }
 
             int number = Strings.parseInt(args[0]);
-            if(number >= 100){
-                return messageService.err(reply, messageService.format(ref.context(), "common.limit-number", 100));
+            if(number >= settings.maxClearedCount){
+                return messageService.err(reply, messageService.format(ref.context(), "common.limit-number", settings.maxClearedCount));
             }
 
             Mono<List<Message>> history = reply.flatMapMany(channel -> channel.getMessagesBefore(ref.getMessage().getId()))
@@ -348,8 +349,8 @@ public class Commands{
                                     return messageService.err(channel, messageService.get(ref.context(), "command.admin.warn.self-user"));
                                 }
 
-                                if(!MessageUtil.isEmpty(reason) && reason.length() >= 1000){
-                                    return messageService.err(channel, messageService.format(ref.context(), "common.string-limit", 1000));
+                                if(!MessageUtil.isEmpty(reason) && reason.length() >= 512){
+                                    return messageService.err(channel, messageService.format(ref.context(), "common.string-limit", 512));
                                 }
 
                                 Mono<Void> warnings = Mono.defer(() -> adminService.warnings(local.guildId(), local.userId()).count()).flatMap(count -> {

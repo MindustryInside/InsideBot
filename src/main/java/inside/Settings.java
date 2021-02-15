@@ -24,4 +24,7 @@ public class Settings{
 
     @Deprecated(forRemoval = true)
     public int warnExpireDays = 20;
+
+    @Deprecated(forRemoval = true)
+    public int maxClearedCount = 100;
 }

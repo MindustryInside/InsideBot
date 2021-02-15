@@ -6,7 +6,6 @@ import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
 import inside.common.command.model.base.*;
 import inside.data.service.*;
-import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
@@ -81,7 +80,7 @@ public class CommandHandler{
                 .ofType(Command.class)
                 .flatMap(command -> {
                     CommandInfo commandInfo = command.compile();
-                    LinkedList<String> result = new LinkedList<>();
+                    List<String> result = new ArrayList<>();
                     String argstr = commandstr.contains(" ") ? commandstr.substring(cmd.length() + 1) : "";
                     int index = 0;
                     boolean satisfied = false;

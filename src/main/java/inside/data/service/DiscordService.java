@@ -24,5 +24,5 @@ public interface DiscordService{
 
     boolean exists(Snowflake guildId, Snowflake userId);
 
-    void activeUsers();
+    void activeUsersMonitor();
 }

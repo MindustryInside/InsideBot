@@ -3,7 +3,7 @@ package inside.data.service.impl;
 import discord4j.common.util.Snowflake;
 import discord4j.core.*;
 import discord4j.core.event.ReactiveEventAdapter;
-import discord4j.core.object.entity.User;
+import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
 import discord4j.core.shard.MemberRequestFilter;
 import discord4j.gateway.intent.*;
@@ -116,7 +116,7 @@ public class DiscordServiceImpl implements DiscordService{
     }
 
     @Scheduled(cron = "0 */4 * * * *")
-    public void activeUsers(){
+    public void activeUsersMonitor(){
         Flux.fromIterable(retriever.getAllMembers())
                 .filter(localMember -> !retriever.activeUserDisabled(localMember.guildId()) && exists(localMember.guildId(), localMember.userId()))
                 .flatMap(localMember -> Mono.zip(Mono.just(localMember), gateway.getMemberById(localMember.guildId(), localMember.userId())))
