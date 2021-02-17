@@ -93,35 +93,20 @@ public class EntityRetrieverImpl implements EntityRetriever{
 
     @Override
     @Transactional(readOnly = true)
-    public Snowflake logChannelId(Snowflake guildId){
-        return guildRepository.findLogChannelIdByGuildId(guildId).map(Snowflake::of).orElse(null);
+    public Optional<Snowflake> logChannelId(Snowflake guildId){
+        return guildRepository.findLogChannelIdByGuildId(guildId).map(Snowflake::of);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Snowflake muteRoleId(Snowflake guildId){
-        return guildRepository.findMuteRoleIdIdByGuildId(guildId).map(Snowflake::of).orElse(null);
+    public Optional<Snowflake> muteRoleId(Snowflake guildId){
+        return guildRepository.findMuteRoleIdIdByGuildId(guildId).map(Snowflake::of);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Snowflake activeUserRoleId(Snowflake guildId){
-        return guildRepository.findActiveUserIdByGuildId(guildId).map(Snowflake::of).orElse(null);
-    }
-
-    @Override
-    public boolean auditDisabled(Snowflake guildId){
-        return logChannelId(guildId) == null;
-    }
-
-    @Override
-    public boolean muteDisabled(Snowflake guildId){
-        return muteRoleId(guildId) == null;
-    }
-
-    @Override
-    public boolean activeUserDisabled(Snowflake guildId){
-        return activeUserRoleId(guildId) == null;
+    public Optional<Snowflake> activeUserRoleId(Snowflake guildId){
+        return guildRepository.findActiveUserIdByGuildId(guildId).map(Snowflake::of);
     }
 
     @Override

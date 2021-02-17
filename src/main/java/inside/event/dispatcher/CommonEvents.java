@@ -79,7 +79,7 @@ public class CommonEvents extends Events{
                 .filter(member -> !entityRetriever.muteDisabled(member.getGuildId()))
                 .flatMap(member -> {
                     Mono<Void> unmute = adminService.unmute(local.guildId(), local.userId())
-                            .then(member.removeRole(entityRetriever.muteRoleId(member.getGuildId())));
+                            .then(member.removeRole(entityRetriever.muteRoleId(member.getGuildId()).orElseThrow(IllegalStateException::new)));
 
                     Mono<Void> publishLog = log(member.getGuildId(), embed -> embed.setTitle(messageService.get(context, "audit.member.unmute.title"))
                             .setDescription(messageService.format(context, "audit.member.unmute.description", member.getUsername()))
@@ -105,7 +105,7 @@ public class CommonEvents extends Events{
 
                     Mono<Void> mute = adminService.isMuted(member.getGuildId(), member.getId())
                             .flatMap(bool -> !bool ? adminService.mute(event.admin, local, event.delay.toCalendar(context.get(KEY_LOCALE)), event.reason().orElse(null)) : Mono.empty())
-                            .then(member.addRole(entityRetriever.muteRoleId(member.getGuildId())));
+                            .then(member.addRole(entityRetriever.muteRoleId(member.getGuildId()).orElseThrow(IllegalStateException::new)));
 
                     Mono<Void> publishLog = admin.flatMap(adminMember -> log(member.getGuildId(), embed -> {
                         embed.setTitle(messageService.get(context, "audit.member.mute.title"));

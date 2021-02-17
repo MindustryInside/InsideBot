@@ -115,13 +115,15 @@ public class DiscordServiceImpl implements DiscordService{
         return gateway.getMemberById(guildId, userId).hasElement().blockOptional().orElse(false);
     }
 
+    /* Legacy feature */
+    @Deprecated
     @Scheduled(cron = "0 */4 * * * *")
     public void activeUsersMonitor(){
         Flux.fromIterable(retriever.getAllMembers())
                 .filter(localMember -> !retriever.activeUserDisabled(localMember.guildId()) && exists(localMember.guildId(), localMember.userId()))
                 .flatMap(localMember -> Mono.zip(Mono.just(localMember), gateway.getMemberById(localMember.guildId(), localMember.userId())))
                 .flatMap(TupleUtils.function((localMember, member) -> {
-                    Snowflake roleId = retriever.activeUserRoleId(member.getGuildId());
+                    Snowflake roleId = retriever.activeUserRoleId(member.getGuildId()).orElseThrow(IllegalStateException::new);
                     if(localMember.isActiveUser()){
                         return member.addRole(roleId);
                     }else{

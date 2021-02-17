@@ -31,17 +31,23 @@ public interface EntityRetriever{
 
     DateTimeZone timeZone(Snowflake guildId);
 
-    Snowflake logChannelId(Snowflake guildId);
+    Optional<Snowflake> logChannelId(Snowflake guildId);
 
-    Snowflake muteRoleId(Snowflake guildId);
+    Optional<Snowflake> muteRoleId(Snowflake guildId);
 
-    Snowflake activeUserRoleId(Snowflake guildId);
+    Optional<Snowflake> activeUserRoleId(Snowflake guildId);
 
-    boolean auditDisabled(Snowflake guildId);
+    default boolean auditDisabled(Snowflake guildId){
+        return activeUserRoleId(guildId).isEmpty();
+    }
 
-    boolean muteDisabled(Snowflake guildId);
+    default boolean muteDisabled(Snowflake guildId){
+        return muteRoleId(guildId).isEmpty();
+    }
 
-    boolean activeUserDisabled(Snowflake guildId);
+    default boolean activeUserDisabled(Snowflake guildId){
+        return activeUserRoleId(guildId).isEmpty();
+    }
 
     // member
 
