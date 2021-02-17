@@ -7,6 +7,7 @@ import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.Channel.Type;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.spec.*;
+import inside.Settings;
 import inside.common.command.CommandHandler;
 import inside.common.command.model.base.CommandReference;
 import inside.data.entity.*;
@@ -21,7 +22,7 @@ import reactor.function.TupleUtils;
 import reactor.util.context.Context;
 import reactor.util.function.Tuples;
 
-import java.util.Calendar;
+import java.util.*;
 import java.util.function.Consumer;
 
 import static inside.event.audit.AuditEventType.*;
@@ -34,6 +35,9 @@ public class MessageEventHandler extends AuditEventHandler{
 
     @Autowired
     private EntityRetriever entityRetriever;
+
+    @Autowired
+    private Settings settings;
 
     @Override
     public Publisher<?> onMessageCreate(MessageCreateEvent event){
@@ -58,6 +62,16 @@ public class MessageEventHandler extends AuditEventHandler{
         localMember.lastSentMessage(Calendar.getInstance());
         entityRetriever.save(localMember);
 
+        Mono<?> guildConfig = member.getGuild().filter(guild -> !entityRetriever.existsGuildById(guild.getId()))
+                .flatMap(Guild::getRegion)
+                .flatMap(region -> Mono.fromRunnable(() -> {
+                    GuildConfig config = new GuildConfig(member.getGuildId());
+                    config.locale(LocaleUtil.get(region));
+                    config.prefix(settings.prefix);
+                    config.timeZone(TimeZone.getTimeZone(settings.timeZone));
+                    entityRetriever.save(config);
+                }));
+
         Mono<?> messageInfo = channel.filter(textChannel -> textChannel.getType() == Type.GUILD_TEXT)
                 .filter(__ -> !MessageUtil.isEmpty(message) && !message.isTts() && message.getEmbeds().isEmpty())
                 .doOnNext(signal -> {
@@ -81,7 +95,7 @@ public class MessageEventHandler extends AuditEventHandler{
                 .channel(() -> channel)
                 .build();
 
-        return Mono.when(messageInfo, commandHandler.handleMessage(text, reference).contextWrite(context));
+        return Mono.when(messageInfo, guildConfig, commandHandler.handleMessage(text, reference).contextWrite(context));
     }
 
     @Override
