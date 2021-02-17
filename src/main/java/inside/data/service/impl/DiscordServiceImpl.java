@@ -97,7 +97,7 @@ public class DiscordServiceImpl implements DiscordService{
 
     @Override
     public Mono<TextChannel> getLogChannel(Snowflake guildId){
-        return getTextChannelById(retriever.logChannelId(guildId));
+        return Mono.justOrEmpty(retriever.logChannelId(guildId)).flatMap(this::getTextChannelById);
     }
 
     @Override
