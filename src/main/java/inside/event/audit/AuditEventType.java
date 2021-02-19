@@ -3,19 +3,19 @@ package inside.event.audit;
 import discord4j.rest.util.Color;
 
 public enum AuditEventType{
-    messageEdit(0x32cd32),
-    messageClear(0xdc143c),
-    messageDelete(0xff341c),
+    MESSAGE_EDIT(0x32cd32),
+    MESSAGE_CLEAR(0xdc143c),
+    MESSAGE_DELETE(0xff341c),
 
-    voiceJoin(0xff33cc),
-    voiceLeave(0x9900cc),
+    VOICE_JOIN(0xff33cc),
+    VOICE_LEAVE(0x9900cc),
 
-    userJoin(0x6666cc),
-    userLeave(0x6633cc),
-    userKick(0xffd37f),
-    userMute(0xffca59),
-    userUnmute(0x85ea88),
-    userBan(0xffcc00);
+    USER_JOIN(0x6666cc),
+    USER_LEAVE(0x6633cc),
+    USER_KICK(0xffd37f),
+    USER_MUTE(0xffca59),
+    USER_UNMUTE(0x85ea88),
+    USER_BAN(0xffcc00);
 
     public final Color color;
 

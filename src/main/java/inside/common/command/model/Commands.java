@@ -88,7 +88,7 @@ public class Commands{
         public Mono<Void> execute(CommandReference ref, String[] args){
             Mono<MessageChannel> channel = ref.getReplyChannel();
             Snowflake targetId = args.length > 0 ? MessageUtil.parseUserId(args[0]) : ref.getAuthorAsMember().getId();
-            if(targetId == null || !discordService.exists(targetId)){
+            if(targetId == null || !discordService.existsUserById(targetId)){
                 return messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name"));
             }
 
@@ -258,11 +258,11 @@ public class Commands{
             Snowflake targetId = MessageUtil.parseUserId(args[0]);
             Snowflake guildId = author.getGuildId();
 
-            if(entityRetriever.muteDisabled(guildId)){
+            if(entityRetriever.muteRoleId(guildId).isEmpty()){
                 return messageService.err(channel, messageService.get(ref.context(), "command.disabled.mute"));
             }
 
-            if(targetId == null || !discordService.exists(guildId, targetId)){
+            if(targetId == null || !discordService.existsMemberById(guildId, targetId)){
                 return messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name"));
             }
 
@@ -272,7 +272,7 @@ public class Commands{
             }
 
             return discordService.gateway().getMemberById(guildId, targetId)
-                    .flatMap(target -> Mono.just(entityRetriever.getMember(target, () -> new LocalMember(target)))
+                    .flatMap(target -> Mono.just(entityRetriever.getMember(target))
                             .filterWhen(local -> adminService.isMuted(guildId, target.getId()).map(bool -> !bool))
                             .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.admin.mute.already-muted")).then(Mono.never()))
                             .filterWhen(local -> Mono.zip(adminService.isAdmin(target), adminService.isOwner(author)).map(TupleUtils.function((admin, owner) -> !(admin && !owner))))
@@ -331,12 +331,12 @@ public class Commands{
             Mono<MessageChannel> channel = ref.getReplyChannel();
             Snowflake targetId = MessageUtil.parseUserId(args[0]);
             Snowflake guildId = author.getGuildId();
-            if(targetId == null || !discordService.exists(guildId, targetId)){
+            if(targetId == null || !discordService.existsMemberById(guildId, targetId)){
                 return messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name"));
             }
 
             return discordService.gateway().getMemberById(guildId, targetId)
-                    .flatMap(target -> Mono.just(entityRetriever.getMember(target, () -> new LocalMember(target)))
+                    .flatMap(target -> Mono.just(entityRetriever.getMember(target))
                             .filterWhen(local -> Mono.zip(adminService.isAdmin(target), adminService.isOwner(author)).map(TupleUtils.function((admin, owner) -> !(admin && !owner))))
                             .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.admin.user-is-admin")).then(Mono.empty()))
                             .flatMap(local -> {
@@ -373,7 +373,7 @@ public class Commands{
             Mono<MessageChannel> channel = ref.getReplyChannel();
             Snowflake targetId = MessageUtil.parseUserId(args[0]);
             Snowflake guildId = author.getGuildId();
-            if(targetId == null || !discordService.exists(guildId, targetId)){
+            if(targetId == null || !discordService.existsMemberById(guildId, targetId)){
                 return messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name"));
             }
 
@@ -382,7 +382,7 @@ public class Commands{
                     .withZone(ref.context().get(KEY_TIMEZONE));
 
             return discordService.gateway().getMemberById(guildId, targetId)
-                    .flatMap(target -> Mono.just(entityRetriever.getMember(target, () -> new LocalMember(target)))
+                    .flatMap(target -> Mono.just(entityRetriever.getMember(target))
                             .flatMap(local -> {
                                 Flux<AdminAction> warnings = adminService.warnings(local.guildId(), local.userId()).limitRequest(21);
 
@@ -407,7 +407,7 @@ public class Commands{
             Mono<MessageChannel> channel = ref.getReplyChannel();
             Snowflake targetId = MessageUtil.parseUserId(args[0]);
             Snowflake guildId = ref.getAuthorAsMember().getGuildId();
-            if(targetId == null || !discordService.exists(guildId, targetId)){
+            if(targetId == null || !discordService.existsMemberById(guildId, targetId)){
                 return messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name"));
             }
 
@@ -426,9 +426,9 @@ public class Commands{
                 }
 
                 return discordService.gateway().getMemberById(guildId, targetId)
-                        .map(target -> entityRetriever.getMember(target, () -> new LocalMember(target)))
-                                .flatMap(local -> messageService.text(channel, messageService.format(ref.context(), "command.admin.unwarn", local.effectiveName(), warn))
-                                        .then(adminService.unwarn(local.guildId(), local.userId(), warn - 1)));
+                        .map(entityRetriever::getMember)
+                        .flatMap(local -> messageService.text(channel, messageService.format(ref.context(), "command.admin.unwarn", local.effectiveName(), warn))
+                                .then(adminService.unwarn(local.guildId(), local.userId(), warn - 1)));
             });
         }
     }
@@ -442,17 +442,17 @@ public class Commands{
             Snowflake targetId = MessageUtil.parseUserId(args[0]);
             Snowflake guildId = ref.localMember().guildId();
 
-            if(entityRetriever.muteDisabled(guildId)){
+            if(entityRetriever.muteRoleId(guildId).isEmpty()){
                 return messageService.err(channel, messageService.get(ref.context(), "command.disabled.mute"));
             }
 
-            if(targetId == null || !discordService.exists(guildId, targetId)){
+            if(targetId == null || !discordService.existsMemberById(guildId, targetId)){
                 return messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name"));
             }
 
             Mono<Member> target = discordService.gateway().getMemberById(guildId, targetId);
 
-            return target.flatMap(member -> Mono.just(entityRetriever.getMember(member, () -> new LocalMember(member)))
+            return target.flatMap(member -> Mono.just(entityRetriever.getMember(member))
                     .filterWhen(local -> adminService.isMuted(local.guildId(), local.userId()))
                     .flatMap(local -> ref.event().getGuild().flatMap(guild -> Mono.fromRunnable(() -> discordService.eventListener().publish(new MemberUnmuteEvent(guild, local)))).thenReturn(member))
                     .switchIfEmpty(messageService.err(channel, messageService.format(ref.context(), "audit.member.unmute.is-not-muted", member.getUsername())).then(Mono.empty())))

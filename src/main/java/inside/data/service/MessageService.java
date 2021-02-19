@@ -47,7 +47,5 @@ public interface MessageService{
 
     void delete(MessageInfo message);
 
-    void deleteById(Snowflake memberId);
-
     void cleanUp();
 }

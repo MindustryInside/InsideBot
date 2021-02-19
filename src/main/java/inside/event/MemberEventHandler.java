@@ -18,7 +18,6 @@ import reactor.function.TupleUtils;
 import reactor.util.context.Context;
 
 import java.time.Instant;
-import java.util.TimeZone;
 
 import static inside.event.audit.AuditEventType.*;
 import static inside.util.ContextUtil.*;
@@ -46,7 +45,7 @@ public class MemberEventHandler extends AuditEventHandler{
                              KEY_LOCALE, entityRetriever.locale(event.getGuildId()),
                              KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
 
-        return log(event.getGuildId(), embed -> embed.setColor(userBan.color)
+        return log(event.getGuildId(), embed -> embed.setColor(USER_BAN.color)
                 .setTitle(messageService.get(context, "audit.member.ban.title"))
                 .setDescription(messageService.format(context, "audit.member.ban.description", user.getUsername()))
                 .setFooter(timestamp(), null));
@@ -61,20 +60,20 @@ public class MemberEventHandler extends AuditEventHandler{
                              KEY_LOCALE, entityRetriever.locale(event.getGuildId()),
                              KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
 
-        LocalMember localMember = entityRetriever.getMember(member, () -> new LocalMember(member));
+        LocalMember localMember = entityRetriever.getMember(member);
 
-        Mono<Void> warn = member.getGuild().flatMap(Guild::getOwner).map(owner -> entityRetriever.getMember(owner, () -> new LocalMember(owner)))
+        Mono<Void> warn = member.getGuild().flatMap(Guild::getOwner).map(entityRetriever::getMember)
                 .filterWhen(owner -> adminService.warnings(localMember.guildId(), localMember.userId()).count().map(c -> c >= settings.maxWarnings))
                 .flatMap(owner -> adminService.warn(owner, localMember, messageService.get(context, "audit.member.warn.evade")));
 
         Mono<?> muteEvade = adminService.isMuted(member.getGuildId(), member.getId())
-                .zipWith(member.getGuild().flatMap(Guild::getOwner).map(owner -> entityRetriever.getMember(owner, () -> new LocalMember(owner))))
+                .zipWith(member.getGuild().flatMap(Guild::getOwner).map(entityRetriever::getMember))
                 .flatMap(TupleUtils.function((bool, owner) -> bool ? member.getGuild().flatMap(guild -> Mono.fromRunnable(() -> discordService.eventListener().publish(
-                        new EventType.MemberMuteEvent(guild, owner, localMember, messageService.get(context, "audit.member.mute.evade"), DateTime.now().plusDays(10))
+                        new EventType.MemberMuteEvent(guild, owner, localMember, messageService.get(context, "audit.member.mute.evade"), DateTime.now().plusDays(settings.muteEvadeDays))
                 ))).thenReturn(owner) : Mono.empty()))
                 .switchIfEmpty(warn.then(Mono.empty()));
 
-        return log(event.getGuildId(), embed -> embed.setColor(userJoin.color)
+        return log(event.getGuildId(), embed -> embed.setColor(USER_JOIN.color)
                 .setTitle(messageService.get(context, "audit.member.join.title"))
                 .setDescription(messageService.format(context, "audit.member.join.description", member.getUsername()))
                 .setFooter(timestamp(), null))
@@ -89,7 +88,7 @@ public class MemberEventHandler extends AuditEventHandler{
                              KEY_LOCALE, entityRetriever.locale(event.getGuildId()),
                              KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
 
-        Mono<Void> log = log(event.getGuildId(), embed -> embed.setColor(userLeave.color)
+        Mono<Void> log = log(event.getGuildId(), embed -> embed.setColor(USER_LEAVE.color)
                 .setTitle(messageService.get(context, "audit.member.leave.title"))
                 .setDescription(messageService.format(context, "audit.member.leave.description", user.getUsername()))
                 .setFooter(timestamp(), null));
@@ -97,7 +96,7 @@ public class MemberEventHandler extends AuditEventHandler{
         Mono<Void> kick = event.getGuild().flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MEMBER_KICK)))
                 .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)))
                 .flatMap(entry -> event.getGuild().flatMap(guild -> guild.getMemberById(entry.getResponsibleUserId()))
-                        .flatMap(admin -> log(event.getGuildId(), embed -> embed.setColor(userKick.color)
+                        .flatMap(admin -> log(event.getGuildId(), embed -> embed.setColor(USER_KICK.color)
                                 .setTitle(messageService.get(context, "audit.member.kick.title"))
                                 .setDescription(String.format("%s%n%s",
                                 messageService.format(context, "audit.member.kick.description", user.getUsername(), admin.getUsername()),
@@ -111,7 +110,7 @@ public class MemberEventHandler extends AuditEventHandler{
         return event.getGuild().flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MEMBER_BAN_ADD)))
                 .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)))
                 .flatMap(entry -> event.getGuild().flatMap(guild -> guild.getMemberById(entry.getResponsibleUserId()))
-                        .flatMap(admin -> log(event.getGuildId(), embed -> embed.setColor(userKick.color)
+                        .flatMap(admin -> log(event.getGuildId(), embed -> embed.setColor(USER_KICK.color)
                                 .setTitle(messageService.get(context, "audit.member.ban.title"))
                                 .setDescription(String.format("%s%n%s",
                                 messageService.format(context, "audit.member.ban.description", user.getUsername(), admin.getUsername()),
@@ -126,24 +125,10 @@ public class MemberEventHandler extends AuditEventHandler{
     public Publisher<?> onMemberUpdate(MemberUpdateEvent event){
         return event.getMember()
                 .filter(DiscordUtil::isNotBot)
-                .flatMap(member -> {
-                    Mono<Void> config = member.getGuild().filter(guild -> !entityRetriever.existsGuildById(guild.getId()))
-                            .flatMap(Guild::getRegion)
-                            .flatMap(region -> Mono.fromRunnable(() -> {
-                                GuildConfig guildConfig = new GuildConfig(member.getGuildId());
-                                guildConfig.locale(LocaleUtil.get(region));
-                                guildConfig.prefix(settings.prefix);
-                                guildConfig.timeZone(TimeZone.getTimeZone(settings.timeZone));
-                                entityRetriever.save(guildConfig);
-                            }));
-
-                    Mono<Void> local = Mono.fromRunnable(() -> {
-                        LocalMember localMember = entityRetriever.getMember(member, () -> new LocalMember(member));
-                        event.getCurrentNickname().ifPresent(localMember::effectiveName);
-                        entityRetriever.save(localMember);
-                    });
-
-                    return Mono.when(config, local);
-                });
+                .flatMap(member -> Mono.fromRunnable(() -> {
+                    LocalMember localMember = entityRetriever.getMember(member);
+                    event.getCurrentNickname().ifPresent(localMember::effectiveName);
+                    entityRetriever.save(localMember);
+                }));
     }
 }

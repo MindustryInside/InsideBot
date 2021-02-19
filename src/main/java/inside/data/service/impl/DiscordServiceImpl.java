@@ -3,7 +3,7 @@ package inside.data.service.impl;
 import discord4j.common.util.Snowflake;
 import discord4j.core.*;
 import discord4j.core.event.ReactiveEventAdapter;
-import discord4j.core.object.entity.*;
+import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.*;
 import discord4j.core.shard.MemberRequestFilter;
 import discord4j.gateway.intent.*;
@@ -15,10 +15,8 @@ import inside.data.service.*;
 import inside.event.dispatcher.EventListener;
 import inside.event.dispatcher.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
-import reactor.function.TupleUtils;
 
 import javax.annotation.PreDestroy;
 import java.util.*;
@@ -101,37 +99,32 @@ public class DiscordServiceImpl implements DiscordService{
     }
 
     @Override
-    public Mono<VoiceChannel> getVoiceChannelById(Snowflake channelId){
-        return gateway.getChannelById(channelId).ofType(VoiceChannel.class);
-    }
-
-    @Override
-    public boolean exists(Snowflake userId){
+    public boolean existsUserById(Snowflake userId){
         return gateway.getUserById(userId).hasElement().blockOptional().orElse(false);
     }
 
     @Override
-    public boolean exists(Snowflake guildId, Snowflake userId){
+    public boolean existsMemberById(Snowflake guildId, Snowflake userId){
         return gateway.getMemberById(guildId, userId).hasElement().blockOptional().orElse(false);
     }
 
     /* Legacy feature */
-    @Deprecated
-    @Scheduled(cron = "0 */4 * * * *")
-    public void activeUsersMonitor(){
-        Flux.fromIterable(retriever.getAllMembers())
-                .filter(localMember -> !retriever.activeUserDisabled(localMember.guildId()) && exists(localMember.guildId(), localMember.userId()))
-                .flatMap(localMember -> Mono.zip(Mono.just(localMember), gateway.getMemberById(localMember.guildId(), localMember.userId())))
-                .flatMap(TupleUtils.function((localMember, member) -> {
-                    Snowflake roleId = retriever.activeUserRoleId(member.getGuildId()).orElseThrow(IllegalStateException::new);
-                    if(localMember.isActiveUser()){
-                        return member.addRole(roleId);
-                    }else{
-                        localMember.messageSeq(0);
-                        retriever.save(localMember);
-                        return member.removeRole(roleId);
-                    }
-                }))
-                .subscribe();
-    }
+    // @Deprecated
+    // @Scheduled(cron = "0 */4 * * * *")
+    // public void activeUsersMonitor(){
+        // Flux.fromIterable(retriever.getAllMembers())
+        //         .filter(localMember -> !retriever.activeUserDisabled(localMember.guildId()) && existsMemberById(localMember.guildId(), localMember.userId()))
+        //         .flatMap(localMember -> Mono.zip(Mono.just(localMember), gateway.getMemberById(localMember.guildId(), localMember.userId())))
+        //         .flatMap(TupleUtils.function((localMember, member) -> {
+        //             Snowflake roleId = retriever.activeUserRoleId(member.getGuildId()).orElseThrow(IllegalStateException::new);
+        //             if(localMember.isActiveUser()){
+        //                 return member.addRole(roleId);
+        //             }else{
+        //                 localMember.messageSeq(0);
+        //                 retriever.save(localMember);
+        //                 return member.removeRole(roleId);
+        //             }
+        //         }))
+        //         .subscribe();
+    // }
 }

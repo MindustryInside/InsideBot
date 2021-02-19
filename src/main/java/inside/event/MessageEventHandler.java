@@ -36,9 +36,6 @@ public class MessageEventHandler extends AuditEventHandler{
     @Autowired
     private EntityRetriever entityRetriever;
 
-    @Autowired
-    private Settings settings;
-
     @Override
     public Publisher<?> onMessageCreate(MessageCreateEvent event){
         Message message = event.getMessage();
@@ -56,21 +53,10 @@ public class MessageEventHandler extends AuditEventHandler{
         }
 
         Snowflake userId = user.getId();
-        LocalMember localMember = entityRetriever.getMember(member, () -> new LocalMember(member));
+        LocalMember localMember = entityRetriever.getMember(member);
 
-        localMember.addToSeq();
         localMember.lastSentMessage(Calendar.getInstance());
         entityRetriever.save(localMember);
-
-        Mono<?> guildConfig = member.getGuild().filter(guild -> !entityRetriever.existsGuildById(guild.getId()))
-                .flatMap(Guild::getRegion)
-                .flatMap(region -> Mono.fromRunnable(() -> {
-                    GuildConfig config = new GuildConfig(member.getGuildId());
-                    config.locale(LocaleUtil.get(region));
-                    config.prefix(settings.prefix);
-                    config.timeZone(TimeZone.getTimeZone(settings.timeZone));
-                    entityRetriever.save(config);
-                }));
 
         Mono<?> messageInfo = channel.filter(textChannel -> textChannel.getType() == Type.GUILD_TEXT)
                 .filter(__ -> !MessageUtil.isEmpty(message) && !message.isTts() && message.getEmbeds().isEmpty())
@@ -95,7 +81,7 @@ public class MessageEventHandler extends AuditEventHandler{
                 .channel(() -> channel)
                 .build();
 
-        return Mono.when(messageInfo, guildConfig, commandHandler.handleMessage(text, reference).contextWrite(context));
+        return messageInfo.flatMap(__ -> commandHandler.handleMessage(text, reference).contextWrite(context));
     }
 
     @Override
@@ -122,7 +108,7 @@ public class MessageEventHandler extends AuditEventHandler{
                     messageService.save(info);
 
                     Consumer<EmbedCreateSpec> embed = spec -> {
-                        spec.setColor(messageEdit.color);
+                        spec.setColor(MESSAGE_EDIT.color);
                         spec.setAuthor(user.getUsername(), null, user.getAvatarUrl());
                         spec.setTitle(messageService.format(context, "audit.message.edit.title", channel.getName()));
                         spec.setDescription(messageService.format(context, "audit.message.edit.description",
@@ -186,7 +172,7 @@ public class MessageEventHandler extends AuditEventHandler{
         Mono<MessageCreateSpec> spec = Mono.zip(event.getGuild(), event.getChannel().ofType(TextChannel.class))
                 .map(TupleUtils.function((guild, channel) -> {
                     Consumer<EmbedCreateSpec> embedSpec = embed -> {
-                        embed.setColor(messageDelete.color);
+                        embed.setColor(MESSAGE_DELETE.color);
                         embed.setAuthor(user.getUsername(), null, user.getAvatarUrl());
                         embed.setTitle(messageService.format(context, "audit.message.delete.title", channel.getName()));
                         embed.setFooter(timestamp(), null);

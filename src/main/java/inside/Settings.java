@@ -9,6 +9,8 @@ public class Settings{
     @Value("${spring.application.token}")
     public String token;
 
+    public int historyExpireWeeks = 3;
+
     public String prefix = "$";
 
     public String timeZone = "Etc/Greenwich";
@@ -24,6 +26,9 @@ public class Settings{
 
     @Deprecated(forRemoval = true)
     public int warnExpireDays = 20;
+
+    @Deprecated(forRemoval = true)
+    public int muteEvadeDays = 10;
 
     @Deprecated(forRemoval = true)
     public int maxClearedCount = 100;

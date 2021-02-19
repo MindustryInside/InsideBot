@@ -18,11 +18,9 @@ public interface DiscordService{
 
     Mono<TextChannel> getLogChannel(Snowflake guildId);
 
-    Mono<VoiceChannel> getVoiceChannelById(Snowflake channelId);
+    boolean existsUserById(Snowflake userId);
 
-    boolean exists(Snowflake userId);
+    boolean existsMemberById(Snowflake guildId, Snowflake userId);
 
-    boolean exists(Snowflake guildId, Snowflake userId);
-
-    void activeUsersMonitor();
+    // void activeUsersMonitor();
 }

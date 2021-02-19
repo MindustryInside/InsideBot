@@ -22,37 +22,23 @@ public class LocalMember extends GuildEntity{
     @Column(name = "effective_name", length = 32)
     private String effectiveName;
 
-    @Column(name = "message_seq")
-    private long messageSeq;
-
     @Column(name = "last_sent_message")
     private Calendar lastSentMessage;
 
-    public LocalMember(){}
-
-    public LocalMember(Member member){
-        Objects.requireNonNull(member, "member");
-        this.guildId = member.getGuildId().asString();
-        this.userId = member.getId().asString();
-        this.effectiveName = member.getDisplayName();
-    }
-
     @Transient
-    public void addToSeq(){
-        messageSeq++;
-    }
-
-    @Transient
+    @Deprecated
     public boolean isActiveUser(){
         if(lastSentMessage() == null) return false;
         DateTime last = new DateTime(lastSentMessage());
-        int diff = Weeks.weeksBetween(last, DateTime.now()).getWeeks();
-
-        return diff < 3 && messageSeq() >= 75;
+        return 3 > Weeks.weeksBetween(last, DateTime.now()).getWeeks();
     }
 
     public Snowflake userId(){
         return Snowflake.of(userId);
+    }
+
+    public void userId(Snowflake userId){
+        this.userId = Objects.requireNonNull(userId, "userId").asString();
     }
 
     public String effectiveName(){
@@ -61,14 +47,6 @@ public class LocalMember extends GuildEntity{
 
     public void effectiveName(String effectiveName){
         this.effectiveName = Objects.requireNonNull(effectiveName, "effectiveName");
-    }
-
-    public long messageSeq(){
-        return messageSeq;
-    }
-
-    public void messageSeq(long messageSeq){
-        this.messageSeq = messageSeq;
     }
 
     @Nullable
@@ -85,7 +63,6 @@ public class LocalMember extends GuildEntity{
         return "LocalMember{" +
                "userId='" + userId + '\'' +
                ", effectiveName='" + effectiveName + '\'' +
-               ", messageSeq=" + messageSeq +
                ", lastSentMessage=" + lastSentMessage +
                "} " + super.toString();
     }

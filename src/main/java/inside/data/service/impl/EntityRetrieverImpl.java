@@ -4,18 +4,15 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import inside.Settings;
 import inside.data.entity.*;
-import inside.data.repository.*;
 import inside.data.service.*;
 import inside.util.LocaleUtil;
 import org.joda.time.DateTimeZone;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.*;
+import reactor.core.publisher.Flux;
 import reactor.util.*;
 
 import java.util.*;
-import java.util.function.Supplier;
 
 @Service
 public class EntityRetrieverImpl implements EntityRetriever{
@@ -23,125 +20,94 @@ public class EntityRetrieverImpl implements EntityRetriever{
 
     private final Settings settings;
 
-    private final GuildConfigRepository guildRepository;
+    private final GuildConfigService guildConfigService;
 
-    private final LocalMemberRepository memberRepository;
+    private final MemberService memberService;
 
-    private final Object $lock = new Object[0];
+    private final Object $memberLock = new Object[0];
+
+    private final Object $guildLock = new Object[0];
 
     public EntityRetrieverImpl(@Autowired Settings settings,
-                               @Autowired GuildConfigRepository guildRepository,
-                               @Autowired LocalMemberRepository memberRepository){
+                               @Autowired GuildConfigService guildConfigService,
+                               @Autowired MemberService memberService){
         this.settings = settings;
-        this.guildRepository = guildRepository;
-        this.memberRepository = memberRepository;
+        this.guildConfigService = guildConfigService;
+        this.memberService = memberService;
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public GuildConfig getGuild(Guild guild){
-        return getGuildById(guild.getId());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public GuildConfig getGuildById(Snowflake guildId){
-        return guildRepository.findByGuildId(guildId);
+        Objects.requireNonNull(guildId, "guildId");
+
+        GuildConfig guildConfig = guildConfigService.getGuildById(guildId);
+        if(guildConfig == null){
+            synchronized($guildLock){
+                guildConfig = guildConfigService.getGuildById(guildId);
+                if(guildConfig == null){
+                    guildConfig = new GuildConfig();
+                    guildConfig.guildId(guildId);
+                    guildConfig.prefix(settings.prefix);
+                    guildConfig.locale(LocaleUtil.getDefaultLocale());
+                    guildConfig.timeZone(TimeZone.getTimeZone(settings.timeZone));
+                    save(guildConfig);
+                }
+            }
+        }
+        return guildConfig;
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public GuildConfig getGuildById(Snowflake guildId, Supplier<GuildConfig> prov){
-        return existsGuildById(guildId) ? getGuildById(guildId) : prov.get();
+    public void save(GuildConfig entity){
+        guildConfigService.save(entity);
     }
 
     @Override
-    @Transactional
-    public GuildConfig save(GuildConfig entity){
-        return guildRepository.save(entity);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public boolean existsGuildById(Snowflake guildId){
-        return guildRepository.existsByGuildId(guildId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public Flux<Snowflake> adminRolesIds(Snowflake guildId){
-        return Mono.justOrEmpty(getGuildById(guildId)).flatMapMany(GuildConfig::adminRoleIDs);
+        return Flux.fromIterable(guildConfigService.getAdminRolesIds(guildId)).map(Snowflake::of);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public String prefix(Snowflake guildId){
-        return guildRepository.findPrefixByGuildId(guildId).orElse(settings.prefix);
+        return guildConfigService.getPrefix(guildId);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Locale locale(Snowflake guildId){
-        return guildRepository.findLocaleByGuildId(guildId).orElse(LocaleUtil.getDefaultLocale());
+        return guildConfigService.getLocale(guildId);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public DateTimeZone timeZone(Snowflake guildId){
-        return DateTimeZone.forTimeZone(guildRepository.findTimeZoneByGuildId(guildId).orElse(TimeZone.getTimeZone(settings.timeZone)));
+        return guildConfigService.getTimeZone(guildId);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Optional<Snowflake> logChannelId(Snowflake guildId){
-        return guildRepository.findLogChannelIdByGuildId(guildId).map(Snowflake::of);
+        return guildConfigService.getLogChannelId(guildId);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Optional<Snowflake> muteRoleId(Snowflake guildId){
-        return guildRepository.findMuteRoleIdIdByGuildId(guildId).map(Snowflake::of);
+        return guildConfigService.getMuteRoleId(guildId);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public Optional<Snowflake> activeUserRoleId(Snowflake guildId){
-        return guildRepository.findActiveUserIdByGuildId(guildId).map(Snowflake::of);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<LocalMember> getAllMembers(){
-        return memberRepository.findAll();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public LocalMember getMember(Member member){
-        return getMemberById(member.getGuildId(), member.getId());
-    }
+        Objects.requireNonNull(member, "member");
 
-    @Override
-    @Transactional
-    public LocalMember getMember(Member member, Supplier<LocalMember> prov){
-        return getMemberById(member.getGuildId(), member.getId(), prov);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public LocalMember getMemberById(Snowflake guildId, Snowflake userId){
-        return memberRepository.findByGuildIdAndUserId(guildId, userId);
-    }
-
-    @Override
-    @Transactional
-    public LocalMember getMemberById(Snowflake guildId, Snowflake userId, Supplier<LocalMember> prov){
-        LocalMember localMember = getMemberById(guildId, userId);
+        Snowflake guildId = member.getGuildId();
+        Snowflake userId = member.getId();
+        LocalMember localMember = memberService.get(guildId, userId);
         if(localMember == null){
-            synchronized($lock){
-                localMember = getMemberById(guildId, userId);
+            synchronized($memberLock){
+                localMember = memberService.get(guildId, userId);
                 if(localMember == null){
-                    localMember = memberRepository.saveAndFlush(prov.get());
+                    localMember = new LocalMember();
+                    localMember.userId(userId);
+                    localMember.guildId(guildId);
+                    localMember.effectiveName(member.getDisplayName());
+                    save(localMember);
                 }
             }
         }
@@ -149,14 +115,7 @@ public class EntityRetrieverImpl implements EntityRetriever{
     }
 
     @Override
-    @Transactional
-    public LocalMember save(LocalMember member){
-        return memberRepository.save(member);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public boolean existsMemberById(Snowflake guildId, Snowflake userId){
-        return getMemberById(guildId, userId) != null;
+    public void save(LocalMember member){
+        memberService.save(member);
     }
 }

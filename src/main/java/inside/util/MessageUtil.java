@@ -219,18 +219,6 @@ public abstract class MessageUtil{
         return canParseId(message) ? Snowflake.of(message) : null;
     }
 
-    public static Snowflake parseRoleId(String message){
-        Objects.requireNonNull(message, "message");
-        message = message.replaceAll("[<>@&]", "");
-        return canParseId(message) ? Snowflake.of(message) : null;
-    }
-
-    public static Snowflake parseChannelId(String message){
-        Objects.requireNonNull(message, "message");
-        message = message.replaceAll("[<>#]", "");
-        return canParseId(message) ? Snowflake.of(message) : null;
-    }
-
     public static DateTime parseTime(String message){
         if(message == null){
             return null;

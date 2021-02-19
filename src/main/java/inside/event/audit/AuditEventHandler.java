@@ -43,7 +43,7 @@ public abstract class AuditEventHandler extends ReactiveEventAdapter{
     }
 
     public Mono<Void> log(Snowflake guildId, Consumer<EmbedCreateSpec> embed, boolean file){
-        if(entityRetriever.auditDisabled(guildId)){
+        if(entityRetriever.logChannelId(guildId).isEmpty()){
             return Mono.empty();
         }
 

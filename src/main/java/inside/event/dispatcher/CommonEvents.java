@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.*;
 import reactor.core.scheduler.Schedulers;
+import reactor.function.TupleUtils;
 
 import java.util.function.Consumer;
 
@@ -60,7 +61,7 @@ public class CommonEvents extends Events{
             embed.setTitle(messageService.format(context, "audit.message.clear.title", event.count, event.channel.getName()));
             embed.setDescription(messageService.format(context, "audit.message.clear.description", event.member.getUsername(), event.count, messageService.getCount(context, "common.plurals.message", event.count), event.channel.getName()));
             embed.setFooter(timestamp(), null);
-            embed.setColor(messageClear.color);
+            embed.setColor(MESSAGE_CLEAR.color);
         }, true);
 
         return Flux.fromIterable(event.history)
@@ -76,18 +77,18 @@ public class CommonEvents extends Events{
     public Publisher<?> onMemberUnmute(MemberUnmuteEvent event){
         LocalMember local = event.localMember;
         return event.guild().getMemberById(local.userId())
-                .filter(member -> !entityRetriever.muteDisabled(member.getGuildId()))
-                .flatMap(member -> {
+                .zipWhen(member -> Mono.justOrEmpty(entityRetriever.muteRoleId(member.getGuildId())))
+                .flatMap(TupleUtils.function((member, roleId) -> {
                     Mono<Void> unmute = adminService.unmute(local.guildId(), local.userId())
-                            .then(member.removeRole(entityRetriever.muteRoleId(member.getGuildId()).orElseThrow(IllegalStateException::new)));
+                            .then(member.removeRole(roleId));
 
                     Mono<Void> publishLog = log(member.getGuildId(), embed -> embed.setTitle(messageService.get(context, "audit.member.unmute.title"))
                             .setDescription(messageService.format(context, "audit.member.unmute.description", member.getUsername()))
                             .setFooter(timestamp(), null)
-                            .setColor(userUnmute.color));
+                            .setColor(USER_UNMUTE.color));
 
                     return unmute.then(publishLog);
-                });
+                }));
     }
 
     @Override
@@ -99,13 +100,13 @@ public class CommonEvents extends Events{
         LocalMember local = event.target;
         Guild guild = event.guild();
         return guild.getMemberById(local.userId())
-                .filter(member -> !entityRetriever.muteDisabled(member.getGuildId()))
-                .flatMap(member -> {
+                .zipWhen(member -> Mono.justOrEmpty(entityRetriever.muteRoleId(member.getGuildId())))
+                .flatMap(TupleUtils.function((member, roleId) -> {
                     Mono<Member> admin = guild.getMemberById(event.admin.userId());
 
                     Mono<Void> mute = adminService.isMuted(member.getGuildId(), member.getId())
                             .flatMap(bool -> !bool ? adminService.mute(event.admin, local, event.delay.toCalendar(context.get(KEY_LOCALE)), event.reason().orElse(null)) : Mono.empty())
-                            .then(member.addRole(entityRetriever.muteRoleId(member.getGuildId()).orElseThrow(IllegalStateException::new)));
+                            .then(member.addRole(roleId));
 
                     Mono<Void> publishLog = admin.flatMap(adminMember -> log(member.getGuildId(), embed -> {
                         embed.setTitle(messageService.get(context, "audit.member.mute.title"));
@@ -115,10 +116,10 @@ public class CommonEvents extends Events{
                         messageService.format(context, "audit.member.mute.delay", formatter.print(event.delay))
                         ));
                         embed.setFooter(timestamp(), null);
-                        embed.setColor(userMute.color);
+                        embed.setColor(USER_MUTE.color);
                     }));
 
                     return mute.then(publishLog);
-                });
+                }));
     }
 }

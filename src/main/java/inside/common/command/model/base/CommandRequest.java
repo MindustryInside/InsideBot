@@ -31,10 +31,6 @@ public interface CommandRequest{
         return event().getMessage();
     }
 
-    default Optional<User> getAuthor(){
-        return event().getMessage().getAuthor();
-    }
-
     default Member getAuthorAsMember(){
         return event().getMember().orElse(null);
     }

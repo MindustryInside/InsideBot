@@ -42,7 +42,7 @@ public class AdminServiceImpl implements AdminService{
     @Override
     @Transactional(readOnly = true)
     public Flux<AdminAction> get(AdminActionType type, Snowflake guildId, Snowflake targetId){
-        return Flux.fromIterable(repository.findAdminActionsByTypeAndTargetId(type, guildId, targetId));
+        return Flux.fromIterable(repository.findAdminActionsByTypeAndGuildIdAndTargetId(type, guildId.asString(), targetId.asString()));
     }
 
     @Override
@@ -80,7 +80,8 @@ public class AdminServiceImpl implements AdminService{
     @Override
     @Transactional
     public Mono<Void> unban(Snowflake guildId, Snowflake targetId){
-        AdminAction action = repository.findAdminActionsByTypeAndTargetId(AdminActionType.ban, guildId, targetId).get(0);
+        AdminAction action = repository.findAdminActionsByTypeAndGuildIdAndTargetId(AdminActionType.ban, guildId.asString(), targetId.asString()).get(0);
+        // TODO: UnbanEvent
         return Mono.justOrEmpty(action).doOnNext(repository::delete).then();
     }
 
@@ -106,7 +107,7 @@ public class AdminServiceImpl implements AdminService{
     @Override
     @Transactional
     public Mono<Void> unmute(Snowflake guildId, Snowflake targetId){
-        AdminAction action = repository.findAdminActionsByTypeAndTargetId(AdminActionType.mute, guildId, targetId).get(0);
+        AdminAction action = repository.findAdminActionsByTypeAndGuildIdAndTargetId(AdminActionType.mute, guildId.asString(), targetId.asString()).get(0);
         return Mono.justOrEmpty(action).doOnNext(repository::delete).then();
     }
 
@@ -127,7 +128,7 @@ public class AdminServiceImpl implements AdminService{
     @Override
     @Transactional
     public Mono<Void> unwarn(Snowflake guildId, Snowflake targetId, int index){
-        AdminAction action = repository.findAdminActionsByTypeAndTargetId(AdminActionType.warn, guildId, targetId).get(index);
+        AdminAction action = repository.findAdminActionsByTypeAndGuildIdAndTargetId(AdminActionType.warn, guildId.asString(), targetId.asString()).get(index);
         return Mono.justOrEmpty(action).doOnNext(repository::delete).then();
     }
 

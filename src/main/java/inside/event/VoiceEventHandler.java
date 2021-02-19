@@ -32,7 +32,7 @@ public class VoiceEventHandler extends AuditEventHandler{
             if(ignore.get(state)) return Mono.empty();
             return Mono.zip(state.getChannel(), state.getUser())
                     .filter(TupleUtils.predicate((channel, user) -> DiscordUtil.isNotBot(user)))
-                    .flatMap(TupleUtils.function((channel, user) -> log(guildId, embed -> embed.setColor(voiceLeave.color)
+                    .flatMap(TupleUtils.function((channel, user) -> log(guildId, embed -> embed.setColor(VOICE_LEAVE.color)
                             .setTitle(messageService.get(context, "audit.voice.leave.title"))
                             .setDescription(messageService.format(context, "audit.voice.leave.description", user.getUsername(), channel.getName()))
                             .setFooter(timestamp(), null))));
@@ -41,7 +41,7 @@ public class VoiceEventHandler extends AuditEventHandler{
             if(ignore.get(current)) return Mono.empty();
             return Mono.zip(current.getChannel(), current.getUser())
                     .filter(TupleUtils.predicate((channel, user) -> DiscordUtil.isNotBot(user)))
-                    .flatMap(TupleUtils.function((channel, user) -> log(guildId, embed -> embed.setColor(voiceJoin.color)
+                    .flatMap(TupleUtils.function((channel, user) -> log(guildId, embed -> embed.setColor(VOICE_JOIN.color)
                             .setTitle(messageService.get(context, "audit.voice.join.title"))
                             .setDescription(messageService.format(context, "audit.voice.join.description", user.getUsername(), channel.getName()))
                             .setFooter(timestamp(), null))));

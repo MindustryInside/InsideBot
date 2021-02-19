@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.*;
 import reactor.core.scheduler.Schedulers;
-import reactor.util.*;
 import reactor.util.context.ContextView;
 
 import java.util.concurrent.TimeUnit;
@@ -28,7 +27,6 @@ import static inside.util.ContextUtil.KEY_LOCALE;
 
 @Service
 public class MessageServiceImpl implements MessageService{
-    private static final Logger log = Loggers.getLogger(MessageService.class);
 
     private final MessageInfoRepository repository;
 
@@ -117,13 +115,13 @@ public class MessageServiceImpl implements MessageService{
     @Override
     @Transactional(readOnly = true)
     public boolean exists(Snowflake messageId){
-        return repository.existsByMessageId(messageId);
+        return repository.existsByMessageId(messageId.asString());
     }
 
     @Override
     @Transactional(readOnly = true)
     public MessageInfo getById(Snowflake messageId){
-        return repository.findByMessageId(messageId);
+        return repository.findByMessageId(messageId.asString());
     }
 
     @Override
@@ -142,19 +140,10 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     @Transactional
-    public void deleteById(Snowflake messageId){
-        MessageInfo message = getById(messageId);
-        if(message != null){
-            repository.delete(message);
-        }
-    }
-
-    @Override
-    @Transactional
     @Scheduled(cron = "0 0 */4 * * *")
     public void cleanUp(){
         Flux.fromIterable(repository.findAll())
-            .filter(messageInfo -> Weeks.weeksBetween(new DateTime(messageInfo.timestamp()), DateTime.now()).getWeeks() >= 3)
+            .filter(messageInfo -> Weeks.weeksBetween(new DateTime(messageInfo.timestamp()), DateTime.now()).getWeeks() >= settings.historyExpireWeeks)
             .subscribe(repository::delete);
     }
 }
