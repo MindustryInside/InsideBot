@@ -57,7 +57,7 @@ public abstract class LocaleUtil{
         String str = String.valueOf(value);
         String key = null;
 
-        ObjectMap<String, Pattern> rules = locale != null ? pluralRules.get(locale.getLanguage()) : null;
+        ObjectMap<String, Pattern> rules = pluralRules.get(locale.getLanguage());
         if(rules == null){
             rules = pluralRules.get(defaultLocale);
         }
