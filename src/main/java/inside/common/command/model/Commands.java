@@ -20,6 +20,7 @@ import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
+import reactor.util.*;
 import reactor.util.context.Context;
 
 import java.util.*;
@@ -29,6 +30,8 @@ import static inside.util.ContextUtil.*;
 
 @Collector
 public class Commands{
+    private static final Logger log = Loggers.getLogger(Commands.class);
+
     @Autowired
     private DiscordService discordService;
 

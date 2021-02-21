@@ -15,11 +15,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
+import reactor.util.*;
 
 import java.util.*;
 
 @Service
 public class AdminServiceImpl implements AdminService{
+    private static final Logger log = Loggers.getLogger(AdminService.class);
 
     private final AdminActionRepository repository;
 
@@ -42,13 +44,13 @@ public class AdminServiceImpl implements AdminService{
     @Override
     @Transactional(readOnly = true)
     public Flux<AdminAction> get(AdminActionType type, Snowflake guildId, Snowflake targetId){
-        return Flux.fromIterable(repository.findAdminActionsByTypeAndGuildIdAndTargetId(type, guildId.asString(), targetId.asString()));
+        return Flux.fromIterable(repository.find(type, guildId.asString(), targetId.asString()));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Flux<AdminAction> getAll(AdminActionType type){
-        return Flux.fromIterable(repository.findAllByType(type));
+        return Flux.fromIterable(repository.findAll(type));
     }
 
     @Override
@@ -80,7 +82,7 @@ public class AdminServiceImpl implements AdminService{
     @Override
     @Transactional
     public Mono<Void> unban(Snowflake guildId, Snowflake targetId){
-        AdminAction action = repository.findAdminActionsByTypeAndGuildIdAndTargetId(AdminActionType.ban, guildId.asString(), targetId.asString()).get(0);
+        AdminAction action = repository.find(AdminActionType.ban, guildId.asString(), targetId.asString()).get(0);
         // TODO: UnbanEvent
         return Mono.justOrEmpty(action).doOnNext(repository::delete).then();
     }
@@ -107,7 +109,7 @@ public class AdminServiceImpl implements AdminService{
     @Override
     @Transactional
     public Mono<Void> unmute(Snowflake guildId, Snowflake targetId){
-        AdminAction action = repository.findAdminActionsByTypeAndGuildIdAndTargetId(AdminActionType.mute, guildId.asString(), targetId.asString()).get(0);
+        AdminAction action = repository.find(AdminActionType.mute, guildId.asString(), targetId.asString()).get(0);
         return Mono.justOrEmpty(action).doOnNext(repository::delete).then();
     }
 
@@ -128,12 +130,11 @@ public class AdminServiceImpl implements AdminService{
     @Override
     @Transactional
     public Mono<Void> unwarn(Snowflake guildId, Snowflake targetId, int index){
-        AdminAction action = repository.findAdminActionsByTypeAndGuildIdAndTargetId(AdminActionType.warn, guildId.asString(), targetId.asString()).get(index);
+        AdminAction action = repository.find(AdminActionType.warn, guildId.asString(), targetId.asString()).get(index);
         return Mono.justOrEmpty(action).doOnNext(repository::delete).then();
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Flux<AdminAction> warnings(Snowflake guildId, Snowflake targetId){
         return get(AdminActionType.warn, guildId, targetId);
     }
@@ -162,7 +163,7 @@ public class AdminServiceImpl implements AdminService{
     @Transactional
     @Scheduled(cron = "0 */3 * * * *")
     public void warningsMonitor(){
-        Flux.fromIterable(repository.findAllByType(AdminActionType.warn))
+        Flux.fromIterable(repository.findAll(AdminActionType.warn))
                 .filter(AdminAction::isEnd)
                 .subscribe(repository::delete);
     }
