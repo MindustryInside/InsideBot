@@ -6,7 +6,7 @@ import inside.Settings;
 import inside.data.entity.*;
 import inside.data.service.*;
 import inside.util.LocaleUtil;
-import org.joda.time.DateTimeZone;
+import org.joda.time.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -64,32 +64,32 @@ public class EntityRetrieverImpl implements EntityRetriever{
 
     @Override
     public Flux<Snowflake> adminRolesIds(Snowflake guildId){
-        return Flux.fromIterable(guildConfigService.getAdminRolesIds(guildId)).map(Snowflake::of);
+        return Flux.fromIterable(getGuildById(guildId).adminRoleIDs()).map(Snowflake::of);
     }
 
     @Override
     public String prefix(Snowflake guildId){
-        return guildConfigService.getPrefix(guildId);
+        return getGuildById(guildId).prefix();
     }
 
     @Override
     public Locale locale(Snowflake guildId){
-        return guildConfigService.getLocale(guildId);
+        return getGuildById(guildId).locale();
     }
 
     @Override
     public DateTimeZone timeZone(Snowflake guildId){
-        return guildConfigService.getTimeZone(guildId);
+        return DateTimeZone.forTimeZone(getGuildById(guildId).timeZone());
     }
 
     @Override
     public Optional<Snowflake> logChannelId(Snowflake guildId){
-        return guildConfigService.getLogChannelId(guildId);
+        return getGuildById(guildId).logChannelId();
     }
 
     @Override
     public Optional<Snowflake> muteRoleId(Snowflake guildId){
-        return guildConfigService.getMuteRoleId(guildId);
+        return getGuildById(guildId).muteRoleID();
     }
 
     @Override

@@ -7,11 +7,10 @@ import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.Channel.Type;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.spec.*;
-import inside.Settings;
 import inside.common.command.CommandHandler;
 import inside.common.command.model.base.CommandReference;
 import inside.data.entity.*;
-import inside.data.service.*;
+import inside.data.service.EntityRetriever;
 import inside.event.audit.AuditEventHandler;
 import inside.util.*;
 import org.reactivestreams.Publisher;
@@ -22,7 +21,7 @@ import reactor.function.TupleUtils;
 import reactor.util.context.Context;
 import reactor.util.function.Tuples;
 
-import java.util.*;
+import java.util.Calendar;
 import java.util.function.Consumer;
 
 import static inside.event.audit.AuditEventType.*;
@@ -41,7 +40,7 @@ public class MessageEventHandler extends AuditEventHandler{
         Message message = event.getMessage();
         String text = message.getContent();
         Member member = event.getMember().orElse(null);
-        if(member == null || message.getType() != Message.Type.DEFAULT){
+        if(member == null || message.getType() != Message.Type.DEFAULT || MessageUtil.isEmpty(message) || message.isTts() || !message.getEmbeds().isEmpty()){
             return Mono.empty();
         }
 
@@ -59,7 +58,6 @@ public class MessageEventHandler extends AuditEventHandler{
         entityRetriever.save(localMember);
 
         Mono<?> messageInfo = channel.filter(textChannel -> textChannel.getType() == Type.GUILD_TEXT)
-                .filter(__ -> !MessageUtil.isEmpty(message) && !message.isTts() && message.getEmbeds().isEmpty())
                 .doOnNext(signal -> {
                     MessageInfo info = new MessageInfo();
                     info.userId(userId);
