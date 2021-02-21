@@ -1,16 +1,13 @@
 package inside.event.audit;
 
-import org.springframework.stereotype.Component;
+import inside.data.entity.*;
+import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
 
-import java.lang.annotation.*;
+import java.io.InputStream;
+import java.util.*;
 
-@Component
-@Inherited
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface AuditProvider{
+public interface AuditProvider{
 
-    AuditEventType value();
+    Mono<Void> send(GuildConfig config, AuditAction action, List<Tuple2<String, InputStream>> attachments);
 }
-
-

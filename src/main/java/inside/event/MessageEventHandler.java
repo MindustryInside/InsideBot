@@ -23,7 +23,7 @@ import reactor.util.function.Tuples;
 import java.util.Calendar;
 
 import static inside.event.audit.AuditEventType.*;
-import static inside.event.audit.AuditForwardProviders.MessageEditAuditProvider.KEY_NEW_CONTENT;
+import static inside.event.audit.AuditProviders.MessageEditAuditProvider.KEY_NEW_CONTENT;
 import static inside.event.audit.MessageAuditProvider.*;
 import static inside.util.ContextUtil.*;
 
@@ -116,8 +116,8 @@ public class MessageEventHandler extends AuditEventHandler{
                     if(newContent.length() >= Field.MAX_VALUE_LENGTH || oldContent.length() >= Field.MAX_VALUE_LENGTH){
                         StringInputStream input = new StringInputStream();
                         input.writeString(String.format("%s:%n%s%n%n%s:%n%s",
-                                                        messageService.get(context, "audit.message.old-content.title"), oldContent,
-                                                        messageService.get(context, "audit.message.new-content.title"), newContent
+                                messageService.get(context, "audit.message.old-content.title"), oldContent,
+                                messageService.get(context, "audit.message.new-content.title"), newContent
                         ));
                         builder.withAttachment(KEY_MESSAGE_TXT, input);
                     }

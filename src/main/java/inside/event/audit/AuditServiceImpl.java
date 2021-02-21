@@ -5,7 +5,6 @@ import inside.Settings;
 import inside.data.entity.*;
 import inside.data.repository.AuditActionRepository;
 import inside.data.service.EntityRetriever;
-import inside.util.ContextUtil;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -32,13 +31,13 @@ public class AuditServiceImpl implements AuditService{
     @Autowired
     private Settings settings;
 
-    private Map<AuditEventType, AuditForwardProvider> providers;
+    private Map<AuditEventType, AuditProvider> providers;
 
     @Override
     @Transactional
     public Mono<Void> save(AuditAction action, List<Tuple2<String, InputStream>> attachments){
         GuildConfig config = entityRetriever.getGuildById(action.guildId());
-        AuditForwardProvider forwardProvider = providers.get(action.type());
+        AuditProvider forwardProvider = providers.get(action.type());
         if(forwardProvider != null){
             repository.save(action);
             return forwardProvider.send(config, action, attachments);
@@ -64,9 +63,9 @@ public class AuditServiceImpl implements AuditService{
     }
 
     @Autowired(required = false)
-    public void init(List<AuditForwardProvider> providers){
+    public void init(List<AuditProvider> providers){
         this.providers = providers.stream().collect(Collectors.toMap(
-                e -> e.getClass().getAnnotation(AuditProvider.class).value(), e -> e
+                e -> e.getClass().getAnnotation(ForwardAuditProvider.class).value(), e -> e
         ));
     }
 }

@@ -3,6 +3,8 @@ package inside.event.audit;
 import discord4j.core.spec.*;
 import inside.data.entity.*;
 import inside.data.service.*;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 import reactor.function.TupleUtils;
@@ -12,7 +14,9 @@ import reactor.util.function.Tuple2;
 import java.io.InputStream;
 import java.util.List;
 
-public abstract class BaseAuditProvider implements AuditForwardProvider{
+import static inside.util.ContextUtil.*;
+
+public abstract class BaseAuditProvider implements AuditProvider{
 
     @Autowired
     protected MessageService messageService;
@@ -28,6 +32,10 @@ public abstract class BaseAuditProvider implements AuditForwardProvider{
                     attachments.forEach(TupleUtils.consumer(spec::addFile));
                 })))
                 .then();
+    }
+
+    protected void addTimestamp(ContextView context, EmbedCreateSpec embed){
+        embed.setFooter(DateTimeFormat.longDateTime().withLocale(context.get(KEY_LOCALE)).withZone(context.get(KEY_TIMEZONE)).print(DateTime.now()), null);
     }
 
     protected abstract void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed);

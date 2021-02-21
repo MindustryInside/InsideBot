@@ -41,9 +41,9 @@ public class MemberEventHandler extends AuditEventHandler{
         User user = event.getUser();
         if(DiscordUtil.isBot(user)) return Mono.empty();
 
-        context = Context.of(KEY_GUILD_ID, event.getGuildId(),
-                             KEY_LOCALE, entityRetriever.locale(event.getGuildId()),
-                             KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
+        Context context = Context.of(KEY_GUILD_ID, event.getGuildId(),
+                                     KEY_LOCALE, entityRetriever.locale(event.getGuildId()),
+                                     KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
 
         return log(event.getGuildId(), embed -> embed.setColor(USER_BAN.color)
                 .setTitle(messageService.get(context, "audit.member.ban.title"))
@@ -84,9 +84,7 @@ public class MemberEventHandler extends AuditEventHandler{
     public Publisher<?> onMemberLeave(MemberLeaveEvent event){
         User user = event.getUser();
         if(DiscordUtil.isBot(user)) return Mono.empty();
-        context = Context.of(KEY_GUILD_ID, event.getGuildId(),
-                             KEY_LOCALE, entityRetriever.locale(event.getGuildId()),
-                             KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
+        Context context = Context.of(KEY_GUILD_ID, event.getGuildId(), KEY_LOCALE, entityRetriever.locale(event.getGuildId()), KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
 
         Mono<Void> log = log(event.getGuildId(), embed -> embed.setColor(USER_LEAVE.color)
                 .setTitle(messageService.get(context, "audit.member.leave.title"))

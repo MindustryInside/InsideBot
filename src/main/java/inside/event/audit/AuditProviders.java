@@ -7,9 +7,9 @@ import inside.data.entity.AuditAction;
 import inside.util.MessageUtil;
 import reactor.util.context.ContextView;
 
-public class AuditForwardProviders{
+public class AuditProviders{
 
-    @AuditProvider(AuditEventType.MESSAGE_EDIT)
+    @ForwardAuditProvider(AuditEventType.MESSAGE_EDIT)
     public static class MessageEditAuditProvider extends MessageAuditProvider{
         public static final String KEY_NEW_CONTENT = "new_content";
 
@@ -44,7 +44,7 @@ public class AuditForwardProviders{
         }
     }
 
-    @AuditProvider(AuditEventType.MESSAGE_DELETE)
+    @ForwardAuditProvider(AuditEventType.MESSAGE_DELETE)
     public static class MessageDeleteAuditProvider extends MessageAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
@@ -60,6 +60,26 @@ public class AuditForwardProviders{
                                MessageUtil.substringTo(oldContent, Embed.Field.MAX_VALUE_LENGTH), true);
             }
 
+            addTimestamp(context, embed);
+        }
+    }
+
+    @ForwardAuditProvider(AuditEventType.VOICE_JOIN)
+    public static class VoiceJoinAuditProvider extends BaseAuditProvider{
+        @Override
+        protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
+            embed.setTitle(messageService.get(context, "audit.voice.join.title"));
+            embed.setDescription(messageService.format(context, "audit.voice.join.description", action.user().name(), action.channel().name()));
+            addTimestamp(context, embed);
+        }
+    }
+
+    @ForwardAuditProvider(AuditEventType.VOICE_LEAVE)
+    public static class VoiceLeaveAuditProvider extends BaseAuditProvider{
+        @Override
+        protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
+            embed.setTitle(messageService.get(context, "audit.voice.leave.title"));
+            embed.setDescription(messageService.format(context, "audit.voice.leave.description", action.user().name(), action.channel().name()));
             addTimestamp(context, embed);
         }
     }
