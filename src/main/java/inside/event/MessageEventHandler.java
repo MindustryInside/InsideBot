@@ -71,7 +71,7 @@ public class MessageEventHandler extends AuditEventHandler{
                     messageService.save(info);
                 });
 
-        context = Context.of(KEY_GUILD_ID, guildId,
+        Context context = Context.of(KEY_GUILD_ID, guildId,
                              KEY_LOCALE, entityRetriever.locale(guildId),
                              KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
@@ -136,18 +136,14 @@ public class MessageEventHandler extends AuditEventHandler{
 
         User user = message.getAuthor().orElse(null);
         Snowflake guildId = event.getGuildId().orElse(null);
-        if(DiscordUtil.isBot(user) || guildId == null){
-            return Mono.empty();
-        }
-
-        if(!messageService.exists(message.getId()) || messageService.isCleared(message.getId())){
+        if(DiscordUtil.isBot(user) || guildId == null || !messageService.exists(message.getId()) || messageService.isCleared(message.getId())){
             return Mono.empty();
         }
 
         MessageInfo info = messageService.getById(message.getId());
         String content = info.content();
 
-        context = Context.of(KEY_GUILD_ID, guildId,
+        Context context = Context.of(KEY_GUILD_ID, guildId,
                              KEY_LOCALE, entityRetriever.locale(guildId),
                              KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 

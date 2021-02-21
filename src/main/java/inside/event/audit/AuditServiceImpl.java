@@ -1,11 +1,14 @@
 package inside.event.audit;
 
 import discord4j.common.util.Snowflake;
+import inside.Settings;
 import inside.data.entity.*;
 import inside.data.repository.AuditActionRepository;
 import inside.data.service.EntityRetriever;
 import inside.util.ContextUtil;
+import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
@@ -25,6 +28,9 @@ public class AuditServiceImpl implements AuditService{
 
     @Autowired
     private AuditActionRepository repository;
+
+    @Autowired
+    private Settings settings;
 
     private Map<AuditEventType, AuditForwardProvider> providers;
 
@@ -48,6 +54,13 @@ public class AuditServiceImpl implements AuditService{
                 return AuditServiceImpl.this.save(action, attachments);
             }
         };
+    }
+
+    @Override
+    @Scheduled(cron = "0 0 */4 * * *")
+    @Transactional
+    public void cleanUp(){
+        repository.deleteByTimestampBefore(DateTime.now().minusWeeks(settings.historyExpireWeeks).toCalendar(Locale.getDefault()));
     }
 
     @Autowired(required = false)
