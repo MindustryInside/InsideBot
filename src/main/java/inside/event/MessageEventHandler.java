@@ -11,7 +11,7 @@ import inside.common.command.CommandHandler;
 import inside.common.command.model.base.CommandReference;
 import inside.data.entity.*;
 import inside.data.service.EntityRetriever;
-import inside.event.audit.AuditEventHandler;
+import inside.event.audit.*;
 import inside.util.*;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,10 +21,13 @@ import reactor.function.TupleUtils;
 import reactor.util.context.Context;
 import reactor.util.function.Tuples;
 
+import java.io.InputStream;
 import java.util.Calendar;
 import java.util.function.Consumer;
 
 import static inside.event.audit.AuditEventType.*;
+import static inside.event.audit.AuditForwardProviders.MessageEditAuditForwardProvider.KEY_NEW_CONTENT;
+import static inside.event.audit.MessageAuditForwardProvider.*;
 import static inside.util.ContextUtil.*;
 
 @Component
@@ -34,6 +37,9 @@ public class MessageEventHandler extends AuditEventHandler{
 
     @Autowired
     private EntityRetriever entityRetriever;
+
+    @Autowired
+    private AuditService auditService;
 
     @Override
     public Publisher<?> onMessageCreate(MessageCreateEvent event){
@@ -96,51 +102,34 @@ public class MessageEventHandler extends AuditEventHandler{
                              KEY_LOCALE, entityRetriever.locale(guildId),
                              KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
-        Mono<MessageCreateSpec> messageSpec = Mono.zip(event.getMessage(), event.getChannel().ofType(TextChannel.class))
+        return Mono.zip(event.getMessage(), event.getChannel().ofType(TextChannel.class))
                 .filter(TupleUtils.predicate((message, channel) -> !message.isTts() && !message.isPinned()))
                 .zipWhen(tuple -> Mono.justOrEmpty(tuple.getT1().getAuthor()), (tuple, user) -> Tuples.of(tuple.getT1(), tuple.getT2(), user))
                 .filter(TupleUtils.predicate((message, channel, user) -> DiscordUtil.isNotBot(user)))
-                .map(TupleUtils.function((message, channel, user) -> {
+                .flatMap(TupleUtils.function((message, channel, user) -> {
                     String newContent = MessageUtil.effectiveContent(message);
                     info.content(newContent);
                     messageService.save(info);
 
-                    Consumer<EmbedCreateSpec> embed = spec -> {
-                        spec.setColor(MESSAGE_EDIT.color);
-                        spec.setAuthor(user.getUsername(), null, user.getAvatarUrl());
-                        spec.setTitle(messageService.format(context, "audit.message.edit.title", channel.getName()));
-                        spec.setDescription(messageService.format(context, "audit.message.edit.description",
-                                                                  channel.getGuildId().asString(),
-                                                                  channel.getId().asString(),
-                                                                  message.getId().asString()));
+                    AuditActionBuilder builder = auditService.log(guildId, MESSAGE_EDIT)
+                            .withChannel(channel)
+                            .withUser(user)
+                            .withAttribute(KEY_OLD_CONTENT, oldContent)
+                            .withAttribute(KEY_NEW_CONTENT, newContent)
+                            .withAttribute(KEY_MESSAGE_ID, message.getId());
 
-                        if(oldContent.length() > 0){
-                            spec.addField(messageService.get(context, "audit.message.old-content.title"),
-                                          MessageUtil.substringTo(oldContent, Field.MAX_VALUE_LENGTH), false);
-                        }
-
-                        if(newContent.length() > 0){
-                            spec.addField(messageService.get(context, "audit.message.new-content.title"),
-                                          MessageUtil.substringTo(newContent, Field.MAX_VALUE_LENGTH), true);
-                        }
-
-                        spec.setFooter(timestamp(), null);
-                    };
-
-                    MessageCreateSpec spec = new MessageCreateSpec().setEmbed(embed);
                     if(newContent.length() >= Field.MAX_VALUE_LENGTH || oldContent.length() >= Field.MAX_VALUE_LENGTH){
                         StringInputStream input = new StringInputStream();
                         input.writeString(String.format("%s:%n%s%n%n%s:%n%s",
                                 messageService.get(context, "audit.message.old-content.title"), oldContent,
                                 messageService.get(context, "audit.message.new-content.title"), newContent
                         ));
-                        spec.addFile("message.txt", input);
+                        builder.withAttachment(KEY_MESSAGE_TXT, input);
                     }
 
-                    return spec;
-                }));
-
-        return messageSpec.flatMap(spec -> log(guildId, spec).contextWrite(context));
+                    return builder.save();
+                }))
+                .contextWrite(context);
     }
 
     @Override

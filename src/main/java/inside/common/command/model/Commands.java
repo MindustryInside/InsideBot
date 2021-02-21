@@ -151,7 +151,7 @@ public class Commands{
             Member member = ref.getAuthorAsMember();
             Mono<MessageChannel> channel = ref.getReplyChannel();
 
-            return Mono.justOrEmpty(entityRetriever.getGuildById(member.getGuildId()))
+            return Mono.just(entityRetriever.getGuildById(member.getGuildId()))
                     .filterWhen(guildConfig -> adminService.isOwner(member))
                     .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.owner-only")).then(Mono.empty()))
                     .flatMap(guildConfig -> {

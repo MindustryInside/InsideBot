@@ -11,7 +11,9 @@ public abstract class JacksonUtil{
     public static final ObjectMapper mapper = new ObjectMapper();
 
     static{
-        mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+        mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
+                .setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.PUBLIC_ONLY)
+                .setVisibility(PropertyAccessor.CREATOR, JsonAutoDetect.Visibility.ANY);
     }
 
     public static ObjectMapper mapper(){
