@@ -159,6 +159,7 @@ public class AdminServiceImpl implements AdminService{
     }
 
     @Override
+    @Transactional
     @Scheduled(cron = "0 */3 * * * *")
     public void warningsMonitor(){
         Flux.fromIterable(repository.findAllByType(AdminActionType.warn))

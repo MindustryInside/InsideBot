@@ -100,7 +100,9 @@ public class MemberEventHandler extends AuditEventHandler{
                                 .setTitle(messageService.get(context, "audit.member.kick.title"))
                                 .setDescription(String.format("%s%n%s",
                                 messageService.format(context, "audit.member.kick.description", user.getUsername(), admin.getUsername()),
-                                messageService.format(context, "common.reason", entry.getReason().filter(MessageUtil::isNotEmpty).orElse(messageService.get(context, "common.not-defined")))
+                                messageService.format(context, "common.reason", entry.getReason()
+                                        .filter(MessageUtil::isNotEmpty)
+                                        .orElse(messageService.get(context, "common.not-defined")))
                                 ))
                                 .setFooter(timestamp(), null)))
                         .thenReturn(entry))
@@ -114,7 +116,9 @@ public class MemberEventHandler extends AuditEventHandler{
                                 .setTitle(messageService.get(context, "audit.member.ban.title"))
                                 .setDescription(String.format("%s%n%s",
                                 messageService.format(context, "audit.member.ban.description", user.getUsername(), admin.getUsername()),
-                                messageService.format(context, "common.reason", entry.getReason().filter(MessageUtil::isNotEmpty).map(String::trim).orElse(messageService.get(context, "common.not-defined")))
+                                messageService.format(context, "common.reason", entry.getReason()
+                                        .filter(MessageUtil::isNotEmpty)
+                                        .orElse(messageService.get(context, "common.not-defined")))
                                 ))
                                 .setFooter(timestamp(), null)))
                         .thenReturn(entry))
@@ -127,8 +131,10 @@ public class MemberEventHandler extends AuditEventHandler{
                 .filter(DiscordUtil::isNotBot)
                 .flatMap(member -> Mono.fromRunnable(() -> {
                     LocalMember localMember = entityRetriever.getMember(member);
-                    event.getCurrentNickname().ifPresent(localMember::effectiveName);
-                    entityRetriever.save(localMember);
+                    event.getCurrentNickname().ifPresent(nickname -> {
+                        localMember.effectiveName(nickname);
+                        entityRetriever.save(localMember);
+                    });
                 }));
     }
 }

@@ -1,10 +1,8 @@
 package inside.data.entity;
 
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.entity.Member;
 import inside.data.entity.base.GuildEntity;
-import org.joda.time.*;
-import reactor.util.annotation.*;
+import reactor.util.annotation.Nullable;
 
 import javax.persistence.*;
 import java.io.Serial;
@@ -24,14 +22,6 @@ public class LocalMember extends GuildEntity{
 
     @Column(name = "last_sent_message")
     private Calendar lastSentMessage;
-
-    @Transient
-    @Deprecated
-    public boolean isActiveUser(){
-        if(lastSentMessage() == null) return false;
-        DateTime last = new DateTime(lastSentMessage());
-        return 3 > Weeks.weeksBetween(last, DateTime.now()).getWeeks();
-    }
 
     public Snowflake userId(){
         return Snowflake.of(userId);
