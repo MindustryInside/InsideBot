@@ -6,7 +6,6 @@ import discord4j.core.object.Embed.Field;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.Channel.Type;
 import discord4j.core.object.entity.channel.TextChannel;
-import discord4j.core.spec.*;
 import inside.common.command.CommandHandler;
 import inside.common.command.model.base.CommandReference;
 import inside.data.entity.*;
@@ -21,13 +20,11 @@ import reactor.function.TupleUtils;
 import reactor.util.context.Context;
 import reactor.util.function.Tuples;
 
-import java.io.InputStream;
 import java.util.Calendar;
-import java.util.function.Consumer;
 
 import static inside.event.audit.AuditEventType.*;
-import static inside.event.audit.AuditForwardProviders.MessageEditAuditForwardProvider.KEY_NEW_CONTENT;
-import static inside.event.audit.MessageAuditForwardProvider.*;
+import static inside.event.audit.AuditForwardProviders.MessageEditAuditProvider.KEY_NEW_CONTENT;
+import static inside.event.audit.MessageAuditProvider.*;
 import static inside.util.ContextUtil.*;
 
 @Component
@@ -98,9 +95,7 @@ public class MessageEventHandler extends AuditEventHandler{
         MessageInfo info = messageService.getById(event.getMessageId());
         String oldContent = info.content();
 
-        context = Context.of(KEY_GUILD_ID, guildId,
-                             KEY_LOCALE, entityRetriever.locale(guildId),
-                             KEY_TIMEZONE, entityRetriever.timeZone(guildId));
+        Context context = Context.of(KEY_GUILD_ID, guildId, KEY_LOCALE, entityRetriever.locale(guildId), KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
         return Mono.zip(event.getMessage(), event.getChannel().ofType(TextChannel.class))
                 .filter(TupleUtils.predicate((message, channel) -> !message.isTts() && !message.isPinned()))
@@ -121,8 +116,8 @@ public class MessageEventHandler extends AuditEventHandler{
                     if(newContent.length() >= Field.MAX_VALUE_LENGTH || oldContent.length() >= Field.MAX_VALUE_LENGTH){
                         StringInputStream input = new StringInputStream();
                         input.writeString(String.format("%s:%n%s%n%n%s:%n%s",
-                                messageService.get(context, "audit.message.old-content.title"), oldContent,
-                                messageService.get(context, "audit.message.new-content.title"), newContent
+                                                        messageService.get(context, "audit.message.old-content.title"), oldContent,
+                                                        messageService.get(context, "audit.message.new-content.title"), newContent
                         ));
                         builder.withAttachment(KEY_MESSAGE_TXT, input);
                     }
@@ -156,30 +151,21 @@ public class MessageEventHandler extends AuditEventHandler{
                              KEY_LOCALE, entityRetriever.locale(guildId),
                              KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
-        Mono<MessageCreateSpec> spec = Mono.zip(event.getGuild(), event.getChannel().ofType(TextChannel.class))
-                .map(TupleUtils.function((guild, channel) -> {
-                    Consumer<EmbedCreateSpec> embedSpec = embed -> {
-                        embed.setColor(MESSAGE_DELETE.color);
-                        embed.setAuthor(user.getUsername(), null, user.getAvatarUrl());
-                        embed.setTitle(messageService.format(context, "audit.message.delete.title", channel.getName()));
-                        embed.setFooter(timestamp(), null);
+        return event.getChannel().ofType(TextChannel.class)
+                .flatMap(channel -> {
+                    AuditActionBuilder builder = auditService.log(guildId, MESSAGE_DELETE)
+                            .withChannel(channel)
+                            .withAttribute(KEY_OLD_CONTENT, content);
 
-                        if(content.length() > 0){
-                            embed.addField(messageService.get(context, "audit.message.deleted-content.title"),
-                                          MessageUtil.substringTo(content, Field.MAX_VALUE_LENGTH), true);
-                        }
-                    };
-
-                    MessageCreateSpec messageSpec = new MessageCreateSpec().setEmbed(embedSpec);
                     if(content.length() >= Field.MAX_VALUE_LENGTH){
                         StringInputStream input = new StringInputStream();
                         input.writeString(String.format("%s:%n%s", messageService.get(context, "audit.message.deleted-content.title"), content));
-                        messageSpec.addFile("message.txt", input);
+                        builder.withAttachment(KEY_MESSAGE_TXT, input);
                     }
 
-                    return messageSpec;
-                }));
-
-        return spec.flatMap(messageSpec -> log(guildId, messageSpec).contextWrite(context).then(Mono.fromRunnable(() -> messageService.delete(info))));
+                    messageService.delete(info);
+                    return builder.save();
+                })
+                .contextWrite(context);
     }
 }

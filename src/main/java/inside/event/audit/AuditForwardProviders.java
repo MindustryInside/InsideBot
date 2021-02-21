@@ -3,16 +3,14 @@ package inside.event.audit;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.Embed;
 import discord4j.core.spec.*;
-import inside.common.Collector;
 import inside.data.entity.AuditAction;
 import inside.util.MessageUtil;
 import reactor.util.context.ContextView;
 
-@Collector
 public class AuditForwardProviders{
 
     @AuditProvider(AuditEventType.MESSAGE_EDIT)
-    public static class MessageEditAuditForwardProvider extends MessageAuditForwardProvider{
+    public static class MessageEditAuditProvider extends MessageAuditProvider{
         public static final String KEY_NEW_CONTENT = "new_content";
 
         @Override
@@ -40,6 +38,26 @@ public class AuditForwardProviders{
             if(newContent.length() > 0){
                 embed.addField(messageService.get(context, "audit.message.new-content.title"),
                                MessageUtil.substringTo(newContent, Embed.Field.MAX_VALUE_LENGTH), true);
+            }
+
+            addTimestamp(context, embed);
+        }
+    }
+
+    @AuditProvider(AuditEventType.MESSAGE_DELETE)
+    public static class MessageDeleteAuditProvider extends MessageAuditProvider{
+        @Override
+        protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
+            String oldContent = action.getAttribute(KEY_OLD_CONTENT);
+            if(oldContent == null){
+                return;
+            }
+
+            embed.setTitle(messageService.format(context, "audit.message.delete.title", action.channel().name()));
+
+            if(oldContent.length() > 0){
+                embed.addField(messageService.get(context, "audit.message.deleted-content.title"),
+                               MessageUtil.substringTo(oldContent, Embed.Field.MAX_VALUE_LENGTH), true);
             }
 
             addTimestamp(context, embed);

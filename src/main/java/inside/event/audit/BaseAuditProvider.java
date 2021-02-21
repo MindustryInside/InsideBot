@@ -12,7 +12,7 @@ import reactor.util.function.Tuple2;
 import java.io.InputStream;
 import java.util.List;
 
-public abstract class BaseAuditForwardProvider implements AuditForwardProvider{
+public abstract class BaseAuditProvider implements AuditForwardProvider{
 
     @Autowired
     protected MessageService messageService;

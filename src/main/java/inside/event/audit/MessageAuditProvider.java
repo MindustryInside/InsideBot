@@ -7,7 +7,7 @@ import reactor.util.context.ContextView;
 
 import static inside.util.ContextUtil.*;
 
-public abstract class MessageAuditForwardProvider extends BaseAuditForwardProvider{
+public abstract class MessageAuditProvider extends BaseAuditProvider{
 
     public static final String KEY_MESSAGE_TXT = "message.txt";
 
