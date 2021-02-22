@@ -5,8 +5,8 @@ import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.message.*;
 import discord4j.core.object.Embed.Field;
 import discord4j.core.object.entity.*;
+import discord4j.core.object.entity.channel.*;
 import discord4j.core.object.entity.channel.Channel.Type;
-import discord4j.core.object.entity.channel.TextChannel;
 import inside.common.command.CommandHandler;
 import inside.common.command.model.base.CommandReference;
 import inside.data.entity.*;
@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import reactor.function.TupleUtils;
+import reactor.util.*;
 import reactor.util.context.Context;
 import reactor.util.function.Tuples;
 
@@ -30,6 +31,8 @@ import static inside.util.ContextUtil.*;
 
 @Component
 public class MessageEventHandler extends ReactiveEventAdapter{
+    private static final Logger log = Loggers.getLogger(MessageEventHandler.class);
+
     @Autowired
     private CommandHandler commandHandler;
 
@@ -51,7 +54,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
             return Mono.empty();
         }
 
-        Mono<TextChannel> channel = message.getChannel().ofType(TextChannel.class);
+        Mono<MessageChannel> channel = message.getChannel();
         User user = message.getAuthor().orElse(null);
         Snowflake guildId = event.getGuildId().orElse(null);
         if(DiscordUtil.isBot(user) || guildId == null){
@@ -64,20 +67,17 @@ public class MessageEventHandler extends ReactiveEventAdapter{
         localMember.lastSentMessage(Calendar.getInstance());
         entityRetriever.save(localMember);
 
-        Mono<?> messageInfo = channel.filter(textChannel -> textChannel.getType() == Type.GUILD_TEXT)
-                .doOnNext(signal -> {
-                    MessageInfo info = new MessageInfo();
-                    info.userId(userId);
-                    info.messageId(message.getId());
-                    info.guildId(guildId);
-                    info.timestamp(Calendar.getInstance());
-                    info.content(MessageUtil.effectiveContent(message));
-                    messageService.save(info);
-                });
+        Mono<Void> messageInfo = Mono.fromRunnable(() -> {
+            MessageInfo info = new MessageInfo();
+            info.userId(userId);
+            info.messageId(message.getId());
+            info.guildId(guildId);
+            info.timestamp(Calendar.getInstance());
+            info.content(MessageUtil.effectiveContent(message));
+            messageService.save(info);
+        });
 
-        Context context = Context.of(KEY_GUILD_ID, guildId,
-                             KEY_LOCALE, entityRetriever.locale(guildId),
-                             KEY_TIMEZONE, entityRetriever.timeZone(guildId));
+        Context context = Context.of(KEY_GUILD_ID, guildId, KEY_LOCALE, entityRetriever.locale(guildId), KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
         CommandReference reference = CommandReference.builder()
                 .event(event)
@@ -86,7 +86,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                 .channel(() -> channel)
                 .build();
 
-        return messageInfo.flatMap(__ -> commandHandler.handleMessage(text, reference).contextWrite(context));
+        return commandHandler.handleMessage(text, reference).and(messageInfo).contextWrite(context);
     }
 
     @Override
