@@ -39,7 +39,9 @@ public class AuditServiceImpl implements AuditService{
         GuildConfig config = entityRetriever.getGuildById(action.guildId());
         AuditProvider forwardProvider = providers.get(action.type());
         if(forwardProvider != null){
-            repository.save(action);
+            if(false){ // I don't see the point in clogging up the database yet
+                repository.save(action);
+            }
             return forwardProvider.send(config, action, attachments);
         }
         return Mono.empty();

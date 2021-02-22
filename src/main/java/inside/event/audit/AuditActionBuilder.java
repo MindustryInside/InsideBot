@@ -15,7 +15,7 @@ public abstract class AuditActionBuilder{
 
     protected final AuditAction action;
 
-    protected List<Tuple2<String, InputStream>> attachments = new ArrayList<>();
+    protected final List<Tuple2<String, InputStream>> attachments = new ArrayList<>();
 
     protected AuditActionBuilder(Snowflake guildId, AuditActionType type){
         action = new AuditAction(guildId);
