@@ -286,7 +286,7 @@ public class Commands{
                                 }
 
                                 Mono<Void> warnings = Mono.defer(() -> adminService.warnings(local.guildId(), local.userId()).count()).flatMap(count -> {
-                                    Mono<Void> message = messageService.text(channel, messageService.format(ref.context(), "message.admin.warn", target.getUsername(), count));
+                                    Mono<Void> message = messageService.text(channel, messageService.format(ref.context(), "command.admin.warn", target.getUsername(), count));
 
                                     if(count >= settings.maxWarnings){
                                         return message.then(author.getGuild().flatMap(guild -> guild.ban(target.getId(), b -> b.setDeleteMessageDays(0))));
