@@ -19,10 +19,6 @@ public abstract class GuildEntity extends BaseEntity{
         return Snowflake.of(guildId);
     }
 
-    public String getGuildId(){
-        return guildId;
-    }
-
     public void guildId(Snowflake guildId){
         this.guildId = Objects.requireNonNull(guildId, "guildId").asString();
     }

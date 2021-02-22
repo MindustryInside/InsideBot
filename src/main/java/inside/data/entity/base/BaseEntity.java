@@ -18,10 +18,6 @@ public abstract class BaseEntity implements Serializable{
     @GeneratedValue(generator = "snowflake")
     protected String id;
 
-    public String getId(){
-        return id;
-    }
-
     @Override
     public boolean equals(Object o){
         if(this == o) return true;

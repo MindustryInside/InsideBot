@@ -4,6 +4,7 @@ import discord4j.common.util.Snowflake;
 import inside.data.entity.base.*;
 import inside.event.audit.*;
 import org.hibernate.annotations.Type;
+import reactor.util.annotation.Nullable;
 
 import javax.persistence.*;
 import java.io.Serial;
@@ -58,7 +59,7 @@ public class AuditAction extends GuildEntity{
     }
 
     public void timestamp(Calendar timestamp){
-        this.timestamp = timestamp;
+        this.timestamp = Objects.requireNonNull(timestamp, "timestamp");
     }
 
     public AuditActionType type(){
@@ -66,7 +67,7 @@ public class AuditAction extends GuildEntity{
     }
 
     public void type(AuditActionType type){
-        this.type = type;
+        this.type = Objects.requireNonNull(type, "type");
     }
 
     public NamedReference user(){
@@ -74,14 +75,15 @@ public class AuditAction extends GuildEntity{
     }
 
     public void user(NamedReference user){
-        this.user = user;
+        this.user = Objects.requireNonNull(user, "user");
     }
 
+    @Nullable
     public NamedReference target(){
         return target;
     }
 
-    public void target(NamedReference targetUser){
+    public void target(@Nullable NamedReference targetUser){
         this.target = targetUser;
     }
 
@@ -90,7 +92,7 @@ public class AuditAction extends GuildEntity{
     }
 
     public void channel(NamedReference channel){
-        this.channel = channel;
+        this.channel = Objects.requireNonNull(channel, "channel");
     }
 
     public Map<String, Object> attributes(){
@@ -98,10 +100,11 @@ public class AuditAction extends GuildEntity{
     }
 
     public void attributes(Map<String, Object> attributes){
-        this.attributes = attributes;
+        this.attributes = Objects.requireNonNull(attributes, "attributes");
     }
 
     @Transient
+    @Nullable
     @SuppressWarnings("unchecked")
     public <T> T getAttribute(String key){
         if(attributes == null || attributes.isEmpty()){

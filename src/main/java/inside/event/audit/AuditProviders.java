@@ -24,7 +24,7 @@ public class AuditProviders{
             }
 
             embed.setDescription(messageService.format(context, "audit.message.edit.description",
-                                                       action.getGuildId(),
+                                                       action.guildId().asString(),
                                                        action.channel().id(),
                                                        messageId.asString()));
 
