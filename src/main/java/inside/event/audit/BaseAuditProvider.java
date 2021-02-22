@@ -26,7 +26,8 @@ public abstract class BaseAuditProvider implements AuditProvider{
 
     @Override
     public Mono<Void> send(GuildConfig config, AuditAction action, List<Tuple2<String, InputStream>> attachments){
-        return Mono.justOrEmpty(config.logChannelId()).flatMap(discordService::getTextChannelById)
+        return Mono.justOrEmpty(config.logChannelId())
+                .flatMap(discordService::getTextChannelById)
                 .flatMap(textChannel -> Mono.deferContextual(ctx -> textChannel.createMessage(spec -> {
                     spec.setEmbed(embed -> build(action, ctx, spec, embed.setColor(action.type().color)));
                     attachments.forEach(TupleUtils.consumer(spec::addFile));

@@ -2,8 +2,10 @@ package inside.event;
 
 import arc.func.Boolf;
 import discord4j.common.util.Snowflake;
+import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.VoiceStateUpdateEvent;
 import discord4j.core.object.VoiceState;
+import inside.data.service.EntityRetriever;
 import inside.event.audit.*;
 import inside.util.DiscordUtil;
 import org.reactivestreams.Publisher;
@@ -13,21 +15,22 @@ import reactor.core.publisher.Mono;
 import reactor.function.TupleUtils;
 import reactor.util.context.Context;
 
-import static inside.event.audit.AuditEventType.*;
+import static inside.event.audit.AuditActionType.*;
 import static inside.util.ContextUtil.*;
 
 @Component
-public class VoiceEventHandler extends AuditEventHandler{
+public class VoiceEventHandler extends ReactiveEventAdapter{
 
     @Autowired
     private AuditService auditService;
 
+    @Autowired
+    private EntityRetriever entityRetriever;
+
     @Override
     public Publisher<?> onVoiceStateUpdate(VoiceStateUpdateEvent event){
         Snowflake guildId = event.getCurrent().getGuildId();
-        context = Context.of(KEY_GUILD_ID, guildId,
-                             KEY_LOCALE, entityRetriever.locale(guildId),
-                             KEY_TIMEZONE, entityRetriever.timeZone(guildId));
+        Context context = Context.of(KEY_GUILD_ID, guildId, KEY_LOCALE, entityRetriever.locale(guildId), KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
         Boolf<VoiceState> ignore = voiceState -> !(voiceState.isSelfDeaf() || voiceState.isDeaf() || voiceState.isMuted() || voiceState.isSelfStreaming() ||
                                                  voiceState.isSelfVideoEnabled() || voiceState.isSuppressed());

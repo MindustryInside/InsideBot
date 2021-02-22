@@ -2,7 +2,7 @@ package inside.event.audit;
 
 import discord4j.rest.util.Color;
 
-public enum AuditEventType{
+public enum AuditActionType{
     MESSAGE_EDIT(0x32cd32),
     MESSAGE_CLEAR(0xdc143c),
     MESSAGE_DELETE(0xff341c),
@@ -19,7 +19,7 @@ public enum AuditEventType{
 
     public final Color color;
 
-    AuditEventType(int hex){
+    AuditActionType(int hex){
         this.color = Color.of(hex);
     }
 }

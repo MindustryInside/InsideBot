@@ -120,8 +120,10 @@ public abstract class MessageUtil{
         Objects.requireNonNull(text, "text");
         Function<String, String> get = s -> {
             String result = leetSpeak.get(s.toLowerCase());
-            String alter = leetSpeak.findKey(s.toLowerCase(), false);
-            return result == null ? alter != null ? alter : "" : (Character.isUpperCase(s.charAt(0)) ? (result.charAt(0) + "").toUpperCase() + (result.length() > 1 ? result.substring(1) : "") : result);
+            if(result == null){
+                result = leetSpeak.findKey(s.toLowerCase(), false);
+            }
+            return result == null ? "" : Character.isUpperCase(s.charAt(0)) ? (result.charAt(0) + "").toUpperCase() + (result.length() > 1 ? result.substring(1) : "") : result;
         };
 
         int len = text.length();
@@ -152,8 +154,10 @@ public abstract class MessageUtil{
         Objects.requireNonNull(text, "text");
         Function<String, String> get = s -> {
             String result = translit.get(s.toLowerCase());
-            String alter = translit.findKey(s.toLowerCase(), false);
-            return result == null ? alter != null ? alter : "" : (Character.isUpperCase(s.charAt(0)) ? (result.charAt(0) + "").toUpperCase() + (result.length() > 1 ? result.substring(1) : "") : result);
+            if(result == null){
+                result = translit.findKey(s.toLowerCase(), false);
+            }
+            return result == null ? "" : Character.isUpperCase(s.charAt(0)) ? (result.charAt(0) + "").toUpperCase() + (result.length() > 1 ? result.substring(1) : "") : result;
         };
 
         int len = text.length();
@@ -182,7 +186,7 @@ public abstract class MessageUtil{
 
     public static String substringTo(String message, int maxLength){
         Objects.requireNonNull(message, "message");
-        return message.length() >= maxLength ? (message.substring(0, maxLength - 4) + "...") : message;
+        return message.length() >= maxLength ? message.substring(0, maxLength - 4) + "..." : message;
     }
 
     public static String effectiveContent(Message message){

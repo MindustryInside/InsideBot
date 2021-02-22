@@ -1,6 +1,7 @@
 package inside.event;
 
 import discord4j.common.util.Snowflake;
+import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.message.*;
 import discord4j.core.object.Embed.Field;
 import discord4j.core.object.entity.*;
@@ -9,7 +10,7 @@ import discord4j.core.object.entity.channel.TextChannel;
 import inside.common.command.CommandHandler;
 import inside.common.command.model.base.CommandReference;
 import inside.data.entity.*;
-import inside.data.service.EntityRetriever;
+import inside.data.service.*;
 import inside.event.audit.*;
 import inside.util.*;
 import org.reactivestreams.Publisher;
@@ -22,18 +23,21 @@ import reactor.util.function.Tuples;
 
 import java.util.Calendar;
 
-import static inside.event.audit.AuditEventType.*;
+import static inside.event.audit.AuditActionType.*;
 import static inside.event.audit.AuditProviders.MessageEditAuditProvider.KEY_NEW_CONTENT;
 import static inside.event.audit.MessageAuditProvider.*;
 import static inside.util.ContextUtil.*;
 
 @Component
-public class MessageEventHandler extends AuditEventHandler{
+public class MessageEventHandler extends ReactiveEventAdapter{
     @Autowired
     private CommandHandler commandHandler;
 
     @Autowired
     private EntityRetriever entityRetriever;
+
+    @Autowired
+    private MessageService messageService;
 
     @Autowired
     private AuditService auditService;

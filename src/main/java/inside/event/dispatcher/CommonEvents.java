@@ -16,7 +16,7 @@ import reactor.function.TupleUtils;
 
 import java.util.function.Consumer;
 
-import static inside.event.audit.AuditEventType.*;
+import static inside.event.audit.AuditActionType.*;
 import static inside.util.ContextUtil.*;
 
 @Component
@@ -58,13 +58,13 @@ public class CommonEvents extends Events{
         };
 
         Mono<Void> publishLog = log(event.guild().getId(), embed -> {
-            embed.setTitle(messageService.format(context, "audit.message.clear.title", event.count, event.channel.getName()));
-            embed.setDescription(messageService.format(context, "audit.message.clear.description", event.member.getUsername(), event.count, messageService.getCount(context, "common.plurals.message", event.count), event.channel.getName()));
+            embed.setTitle(messageService.format(context, "audit.message.clear.title", event.getCount(), event.getChannel().getName()));
+            embed.setDescription(messageService.format(context, "audit.message.clear.description", event.getMember().getUsername(), event.getCount(), messageService.getCount(context, "common.plurals.message", event.getCount()), event.getChannel().getName()));
             embed.setFooter(timestamp(), null);
             embed.setColor(MESSAGE_CLEAR.color);
         }, true);
 
-        return Flux.fromIterable(event.history)
+        return Flux.fromIterable(event.getHistory())
                 .publishOn(Schedulers.boundedElastic())
                 .flatMap(message -> message.delete().then(Mono.fromRunnable(() -> {
                     messageService.putMessage(message.getId());
@@ -75,7 +75,7 @@ public class CommonEvents extends Events{
 
     @Override
     public Publisher<?> onMemberUnmute(MemberUnmuteEvent event){
-        LocalMember local = event.localMember;
+        LocalMember local = event.getLocalMember();
         return event.guild().getMemberById(local.userId())
                 .zipWhen(member -> Mono.justOrEmpty(entityRetriever.muteRoleId(member.getGuildId())))
                 .flatMap(TupleUtils.function((member, roleId) -> {
@@ -97,15 +97,15 @@ public class CommonEvents extends Events{
                 .withLocale(context.get(KEY_LOCALE))
                 .withZone(context.get(KEY_TIMEZONE));
 
-        LocalMember local = event.target;
+        LocalMember local = event.getTarget();
         Guild guild = event.guild();
         return guild.getMemberById(local.userId())
                 .zipWhen(member -> Mono.justOrEmpty(entityRetriever.muteRoleId(member.getGuildId())))
                 .flatMap(TupleUtils.function((member, roleId) -> {
-                    Mono<Member> admin = guild.getMemberById(event.admin.userId());
+                    Mono<Member> admin = guild.getMemberById(event.getAdmin().userId());
 
                     Mono<Void> mute = adminService.isMuted(member.getGuildId(), member.getId())
-                            .flatMap(bool -> !bool ? adminService.mute(event.admin, local, event.delay.toCalendar(context.get(KEY_LOCALE)), event.reason().orElse(null)) : Mono.empty())
+                            .flatMap(bool -> !bool ? adminService.mute(event.getAdmin(), local, event.getDelay().toCalendar(context.get(KEY_LOCALE)), event.reason().orElse(null)) : Mono.empty())
                             .then(member.addRole(roleId));
 
                     Mono<Void> publishLog = admin.flatMap(adminMember -> log(member.getGuildId(), embed -> {
@@ -113,7 +113,7 @@ public class CommonEvents extends Events{
                         embed.setDescription(String.format("%s%n%s%n%s",
                         messageService.format(context, "audit.member.mute.description", member.getUsername(), adminMember.getUsername()),
                         messageService.format(context, "common.reason", event.reason().orElse(messageService.get(context, "common.not-defined"))),
-                        messageService.format(context, "audit.member.mute.delay", formatter.print(event.delay))
+                        messageService.format(context, "audit.member.mute.delay", formatter.print(event.getDelay()))
                         ));
                         embed.setFooter(timestamp(), null);
                         embed.setColor(USER_MUTE.color);

@@ -350,7 +350,7 @@ public class Commands{
                 return messageService.err(channel, messageService.get(ref.context(), "command.incorrect-number"));
             }
 
-            return adminService.get(AdminActionType.warn, guildId, targetId).count().flatMap(count -> {
+            return adminService.warnings(guildId, targetId).count().flatMap(count -> {
                 int warn = args.length > 1 ? Strings.parseInt(args[1]) : 1;
                 if(count == 0){
                     return messageService.text(channel, messageService.get(ref.context(), "command.admin.warnings.empty"));

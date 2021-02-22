@@ -19,7 +19,7 @@ import reactor.util.context.Context;
 
 import java.time.Instant;
 
-import static inside.event.audit.AuditEventType.*;
+import static inside.event.audit.AuditActionType.*;
 import static inside.util.ContextUtil.*;
 
 @Component

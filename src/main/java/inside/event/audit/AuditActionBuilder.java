@@ -17,7 +17,7 @@ public abstract class AuditActionBuilder{
 
     protected List<Tuple2<String, InputStream>> attachments = new ArrayList<>();
 
-    protected AuditActionBuilder(Snowflake guildId, AuditEventType type){
+    protected AuditActionBuilder(Snowflake guildId, AuditActionType type){
         action = new AuditAction(guildId);
         action.timestamp(Calendar.getInstance());
         action.type(type);

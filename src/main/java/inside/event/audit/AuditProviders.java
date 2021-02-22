@@ -9,7 +9,7 @@ import reactor.util.context.ContextView;
 
 public class AuditProviders{
 
-    @ForwardAuditProvider(AuditEventType.MESSAGE_EDIT)
+    @ForwardAuditProvider(AuditActionType.MESSAGE_EDIT)
     public static class MessageEditAuditProvider extends MessageAuditProvider{
         public static final String KEY_NEW_CONTENT = "new_content";
 
@@ -44,7 +44,7 @@ public class AuditProviders{
         }
     }
 
-    @ForwardAuditProvider(AuditEventType.MESSAGE_DELETE)
+    @ForwardAuditProvider(AuditActionType.MESSAGE_DELETE)
     public static class MessageDeleteAuditProvider extends MessageAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
@@ -64,7 +64,7 @@ public class AuditProviders{
         }
     }
 
-    @ForwardAuditProvider(AuditEventType.VOICE_JOIN)
+    @ForwardAuditProvider(AuditActionType.VOICE_JOIN)
     public static class VoiceJoinAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
@@ -74,7 +74,7 @@ public class AuditProviders{
         }
     }
 
-    @ForwardAuditProvider(AuditEventType.VOICE_LEAVE)
+    @ForwardAuditProvider(AuditActionType.VOICE_LEAVE)
     public static class VoiceLeaveAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){

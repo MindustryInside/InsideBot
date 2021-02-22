@@ -10,7 +10,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ForwardAuditProvider{
 
-    AuditEventType value();
+    AuditActionType value();
 }
 
 

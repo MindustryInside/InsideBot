@@ -20,7 +20,7 @@ public class AuditAction extends GuildEntity{
 
     @Column
     @Enumerated(EnumType.STRING)
-    private AuditEventType type;
+    private AuditActionType type;
 
     @Embedded
     @AttributeOverrides({
@@ -61,11 +61,11 @@ public class AuditAction extends GuildEntity{
         this.timestamp = timestamp;
     }
 
-    public AuditEventType type(){
+    public AuditActionType type(){
         return type;
     }
 
-    public void type(AuditEventType type){
+    public void type(AuditActionType type){
         this.type = type;
     }
 

@@ -14,10 +14,10 @@ public final class EventType{
     private EventType(){}
 
     public static class MessageClearEvent extends BaseEvent{
-        public final List<Message> history;
-        public final TextChannel channel;
-        public final Member member;
-        public final int count;
+        private final List<Message> history;
+        private final TextChannel channel;
+        private final Member member;
+        private final int count;
 
         public MessageClearEvent(Guild guild, List<Message> history, Member member, TextChannel channel, int count){
             super(guild);
@@ -25,6 +25,22 @@ public final class EventType{
             this.channel = Objects.requireNonNull(channel, "channel");
             this.member = Objects.requireNonNull(member, "member");
             this.count = count;
+        }
+
+        public List<Message> getHistory(){
+            return history;
+        }
+
+        public TextChannel getChannel(){
+            return channel;
+        }
+
+        public Member getMember(){
+            return member;
+        }
+
+        public int getCount(){
+            return count;
         }
 
         @Override
@@ -40,11 +56,15 @@ public final class EventType{
     }
 
     public static class MemberUnmuteEvent extends BaseEvent{
-        public final LocalMember localMember;
+        private final LocalMember localMember;
 
         public MemberUnmuteEvent(Guild guild, LocalMember localMember){
             super(guild);
             this.localMember = Objects.requireNonNull(localMember, "localMember");
+        }
+
+        public LocalMember getLocalMember(){
+            return localMember;
         }
 
         @Override
@@ -57,9 +77,9 @@ public final class EventType{
     }
 
     public static class MemberMuteEvent extends BaseEvent{
-        public final LocalMember admin;
-        public final LocalMember target;
-        public final DateTime delay;
+        private final LocalMember admin;
+        private final LocalMember target;
+        private final DateTime delay;
         private final @Nullable String reason;
 
         public MemberMuteEvent(Guild guild, LocalMember admin, LocalMember target, @Nullable String reason, DateTime delay){
@@ -68,6 +88,18 @@ public final class EventType{
             this.target = Objects.requireNonNull(target, "target");
             this.delay = Objects.requireNonNull(delay, "delay");
             this.reason = reason;
+        }
+
+        public LocalMember getAdmin(){
+            return admin;
+        }
+
+        public LocalMember getTarget(){
+            return target;
+        }
+
+        public DateTime getDelay(){
+            return delay;
         }
 
         public Optional<String> reason(){

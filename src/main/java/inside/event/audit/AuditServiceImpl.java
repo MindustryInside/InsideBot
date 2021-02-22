@@ -31,7 +31,7 @@ public class AuditServiceImpl implements AuditService{
     @Autowired
     private Settings settings;
 
-    private Map<AuditEventType, AuditProvider> providers;
+    private Map<AuditActionType, AuditProvider> providers;
 
     @Override
     @Transactional
@@ -46,7 +46,7 @@ public class AuditServiceImpl implements AuditService{
     }
 
     @Override
-    public AuditActionBuilder log(Snowflake guildId, AuditEventType type){
+    public AuditActionBuilder log(Snowflake guildId, AuditActionType type){
         return new AuditActionBuilder(guildId, type){
             @Override
             public Mono<Void> save(){
