@@ -98,16 +98,6 @@ public class DiscordServiceImpl implements DiscordService{
         return Mono.justOrEmpty(retriever.logChannelId(guildId)).flatMap(this::getTextChannelById);
     }
 
-    @Override
-    public boolean existsUserById(Snowflake userId){
-        return gateway.getUserById(userId).hasElement().blockOptional().orElse(false);
-    }
-
-    @Override
-    public boolean existsMemberById(Snowflake guildId, Snowflake userId){
-        return gateway.getMemberById(guildId, userId).hasElement().blockOptional().orElse(false);
-    }
-
     /* Legacy feature */
     // @Deprecated
     // @Scheduled(cron = "0 */4 * * * *")
