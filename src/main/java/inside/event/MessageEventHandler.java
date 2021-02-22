@@ -115,6 +115,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                             .withUser(user)
                             .withAttribute(KEY_OLD_CONTENT, oldContent)
                             .withAttribute(KEY_NEW_CONTENT, newContent)
+                            .withAttribute(KEY_USER_URL, user.getAvatarUrl())
                             .withAttribute(KEY_MESSAGE_ID, message.getId());
 
                     if(newContent.length() >= Field.MAX_VALUE_LENGTH || oldContent.length() >= Field.MAX_VALUE_LENGTH){
@@ -147,14 +148,14 @@ public class MessageEventHandler extends ReactiveEventAdapter{
         MessageInfo info = messageService.getById(message.getId());
         String content = info.content();
 
-        Context context = Context.of(KEY_GUILD_ID, guildId,
-                             KEY_LOCALE, entityRetriever.locale(guildId),
-                             KEY_TIMEZONE, entityRetriever.timeZone(guildId));
+        Context context = Context.of(KEY_GUILD_ID, guildId, KEY_LOCALE, entityRetriever.locale(guildId), KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
         return event.getChannel().ofType(TextChannel.class)
                 .flatMap(channel -> {
                     AuditActionBuilder builder = auditService.log(guildId, MESSAGE_DELETE)
                             .withChannel(channel)
+                            .withUser(user)
+                            .withAttribute(KEY_USER_URL, user.getAvatarUrl())
                             .withAttribute(KEY_OLD_CONTENT, content);
 
                     if(content.length() >= Field.MAX_VALUE_LENGTH){

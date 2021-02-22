@@ -18,7 +18,8 @@ public class AuditProviders{
             Snowflake messageId = action.getAttribute(KEY_MESSAGE_ID);
             String oldContent = action.getAttribute(KEY_OLD_CONTENT);
             String newContent = action.getAttribute(KEY_NEW_CONTENT);
-            if(messageId == null || oldContent == null || newContent == null){
+            String url = action.getAttribute(KEY_USER_URL);
+            if(messageId == null || oldContent == null || newContent == null || url == null){
                 return;
             }
 
@@ -27,7 +28,7 @@ public class AuditProviders{
                                                        action.channel().id(),
                                                        messageId.asString()));
 
-            embed.setAuthor(action.user().name(), null, null);
+            embed.setAuthor(action.user().name(), null, url);
             embed.setTitle(messageService.format(context, "audit.message.edit.title", action.channel().name()));
 
             if(oldContent.length() > 0){
@@ -49,10 +50,12 @@ public class AuditProviders{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
             String oldContent = action.getAttribute(KEY_OLD_CONTENT);
-            if(oldContent == null){
+            String url = action.getAttribute(KEY_USER_URL);
+            if(oldContent == null || url == null){
                 return;
             }
 
+            embed.setAuthor(action.user().name(), null, url);
             embed.setTitle(messageService.format(context, "audit.message.delete.title", action.channel().name()));
 
             if(oldContent.length() > 0){
