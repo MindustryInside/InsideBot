@@ -127,7 +127,7 @@ public abstract class MessageUtil{
         };
 
         int len = text.length();
-        if(len == 0) {
+        if(len == 0){
             return "";
         }
         if(len == 1){
@@ -161,7 +161,7 @@ public abstract class MessageUtil{
         };
 
         int len = text.length();
-        if(len == 0) {
+        if(len == 0){
             return "";
         }
         if(len == 1){

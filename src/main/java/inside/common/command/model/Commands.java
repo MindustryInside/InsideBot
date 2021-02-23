@@ -39,8 +39,8 @@ public class Commands{
     @Autowired
     private MessageService messageService;
 
-    @Autowired
     @Lazy
+    @Autowired
     private AdminService adminService;
 
     @Autowired

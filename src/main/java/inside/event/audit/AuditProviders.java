@@ -28,13 +28,12 @@ public class AuditProviders{
                 return;
             }
 
+            embed.setAuthor(action.user().name(), null, url);
+            embed.setTitle(messageService.format(context, "audit.message.edit.title", action.channel().name()));
             embed.setDescription(messageService.format(context, "audit.message.edit.description",
                                                        action.guildId().asString(),
                                                        action.channel().id(),
                                                        messageId.asString()));
-
-            embed.setAuthor(action.user().name(), null, url);
-            embed.setTitle(messageService.format(context, "audit.message.edit.title", action.channel().name()));
 
             if(oldContent.length() > 0){
                 embed.addField(messageService.get(context, "audit.message.old-content.title"),
@@ -81,7 +80,10 @@ public class AuditProviders{
                 return;
             }
 
-            embed.setTitle(messageService.format(context, "audit.message.clear.title", count, action.channel().name()));
+            embed.setTitle(messageService.format(context, "audit.message.clear.title",
+                                                 count,
+                                                 messageService.getCount(context, "common.plurals.message", count),
+                                                 action.channel().name()));
             embed.setDescription(messageService.format(context, "audit.message.clear.description",
                                                        action.user().name(), count,
                                                        messageService.getCount(context, "common.plurals.message", count),
@@ -94,7 +96,6 @@ public class AuditProviders{
     public static class UserJoinAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
-            embed.setTitle(messageService.get(context, "audit.member.join.title"));
             embed.setDescription(messageService.format(context, "audit.member.join.description", action.user().name()));
             addTimestamp(context, embed);
         }
@@ -104,7 +105,6 @@ public class AuditProviders{
     public static class UserLeaveAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
-            embed.setTitle(messageService.get(context, "audit.member.leave.title"));
             embed.setDescription(messageService.format(context, "audit.member.leave.description", action.user().name()));
             addTimestamp(context, embed);
         }
@@ -120,11 +120,9 @@ public class AuditProviders{
                 return;
             }
 
-            embed.setTitle(messageService.get(context, "audit.member.kick.title"));
-            embed.setDescription(String.format("%s%n%s",
-                    messageService.format(context, "audit.member.kick.description", target.name(), action.user().name()),
-                    messageService.format(context, "common.reason", reason)
-            ));
+            embed.setDescription(messageService.format(context, "audit.member.kick.title", target.name()));
+            embed.addField(messageService.get(context, "audit.member.admin"), action.user().name(), true);
+            embed.addField(messageService.get(context, "audit.member.reason"), reason, true);
             addTimestamp(context, embed);
         }
     }
@@ -135,19 +133,13 @@ public class AuditProviders{
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
             String reason = action.getAttribute(REASON);
             NamedReference target = action.target();
-            if(reason == null){
-                reason = messageService.get(context, "common.not-defined");
-            }
-
-            if(target == null){
+            if(target == null || reason == null){
                 return;
             }
 
-            embed.setTitle(messageService.get(context, "audit.member.ban.title"));
-            embed.setDescription(String.format("%s%n%s",
-                    messageService.format(context, "audit.member.ban.description", target.name(), action.user().name()),
-                    messageService.format(context, "common.reason", reason)
-            ));
+            embed.setDescription(messageService.format(context, "audit.member.ban.title", target.name()));
+            embed.addField(messageService.get(context, "audit.member.admin"), action.user().name(), true);
+            embed.addField(messageService.get(context, "audit.member.reason"), reason, true);
             addTimestamp(context, embed);
         }
     }
@@ -161,9 +153,7 @@ public class AuditProviders{
                 return;
             }
 
-            embed.setTitle(messageService.get(context, "audit.member.unmute.title"));
-            embed.setDescription(messageService.format(context, "audit.member.unmute.description", target.name()));
-            // TODO(Skat): admin field
+            embed.setDescription(messageService.format(context, "audit.member.unmute.title", target.name()));
             addTimestamp(context, embed);
         }
     }
@@ -187,13 +177,10 @@ public class AuditProviders{
                     .withLocale(context.get(KEY_LOCALE))
                     .withZone(context.get(KEY_TIMEZONE));
 
-            embed.setTitle(messageService.get(context, "audit.member.mute.title"));
-            embed.setDescription(String.format("%s%n%s%n%s",
-                    messageService.format(context, "audit.member.mute.description", target.name(), action.user().name()),
-                    messageService.format(context, "common.reason", reason),
-                    messageService.format(context, "audit.member.mute.delay", formatter.print(delay))
-            ));
-            // TODO(Skat): admin field
+            embed.setDescription(messageService.format(context, "audit.member.mute.title", target.name()));
+            embed.addField(messageService.get(context, "audit.member.admin"), action.user().name(), true);
+            embed.addField(messageService.get(context, "audit.member.reason"), reason, true);
+            embed.addField(messageService.get(context, "audit.member.mute.delay"), formatter.print(delay), true);
             addTimestamp(context, embed);
         }
     }
@@ -202,7 +189,6 @@ public class AuditProviders{
     public static class VoiceJoinAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
-            embed.setTitle(messageService.get(context, "audit.voice.join.title"));
             embed.setDescription(messageService.format(context, "audit.voice.join.description", action.user().name(), action.channel().name()));
             addTimestamp(context, embed);
         }
@@ -212,7 +198,6 @@ public class AuditProviders{
     public static class VoiceLeaveAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
-            embed.setTitle(messageService.get(context, "audit.voice.leave.title"));
             embed.setDescription(messageService.format(context, "audit.voice.leave.description", action.user().name(), action.channel().name()));
             addTimestamp(context, embed);
         }
