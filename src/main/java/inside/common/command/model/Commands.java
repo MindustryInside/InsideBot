@@ -18,6 +18,7 @@ import inside.util.*;
 import org.joda.time.DateTime;
 import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
 import reactor.util.*;
@@ -39,6 +40,7 @@ public class Commands{
     private MessageService messageService;
 
     @Autowired
+    @Lazy
     private AdminService adminService;
 
     @Autowired

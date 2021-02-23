@@ -23,14 +23,10 @@ import java.util.*;
 public class DiscordServiceImpl implements DiscordService{
     private final Settings settings;
 
-    private final EntityRetriever retriever;
-
     private GatewayDiscordClient gateway;
 
-    public DiscordServiceImpl(@Autowired Settings settings,
-                              @Autowired EntityRetriever retriever){
+    public DiscordServiceImpl(@Autowired Settings settings){
         this.settings = settings;
-        this.retriever = retriever;
     }
 
     @Autowired(required = false)
@@ -77,11 +73,6 @@ public class DiscordServiceImpl implements DiscordService{
     @Override
     public Mono<TextChannel> getTextChannelById(Snowflake channelId){
         return gateway.getChannelById(channelId).ofType(TextChannel.class);
-    }
-
-    @Override
-    public Mono<TextChannel> getLogChannel(Snowflake guildId){
-        return Mono.justOrEmpty(retriever.logChannelId(guildId)).flatMap(this::getTextChannelById);
     }
 
     /* Legacy feature */

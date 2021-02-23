@@ -13,7 +13,5 @@ public interface DiscordService{
 
     Mono<TextChannel> getTextChannelById(Snowflake channelId);
 
-    Mono<TextChannel> getLogChannel(Snowflake guildId);
-
     // void activeUsersMonitor();
 }
