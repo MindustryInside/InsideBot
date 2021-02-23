@@ -15,7 +15,7 @@ public abstract class AuditActionBuilder{
 
     protected final AuditAction action;
 
-    protected final List<Tuple2<String, InputStream>> attachments = new ArrayList<>();
+    protected List<Tuple2<String, InputStream>> attachments;
 
     protected AuditActionBuilder(Snowflake guildId, AuditActionType type){
         action = new AuditAction(guildId);
@@ -59,12 +59,15 @@ public abstract class AuditActionBuilder{
         return this;
     }
 
-    public AuditActionBuilder withAttribute(String key, Object value){
-        action.attributes().put(key, getReferenceForObject(value));
+    public <T> AuditActionBuilder withAttribute(Attribute<T> key, T value){
+        action.attributes().put(key.name, getReferenceForObject(value));
         return this;
     }
 
     public AuditActionBuilder withAttachment(String key, InputStream data){
+        if(attachments == null){
+            attachments = new ArrayList<>(1);
+        }
         attachments.add(Tuples.of(key, data));
         return this;
     }

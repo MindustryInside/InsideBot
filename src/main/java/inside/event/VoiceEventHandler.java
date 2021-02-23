@@ -20,7 +20,6 @@ import static inside.util.ContextUtil.*;
 
 @Component
 public class VoiceEventHandler extends ReactiveEventAdapter{
-
     @Autowired
     private AuditService auditService;
 

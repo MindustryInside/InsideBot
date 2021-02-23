@@ -29,6 +29,6 @@ public interface CommandRequest{
     }
 
     default Member getAuthorAsMember(){
-        return event().getMember().orElse(null);
+        return event().getMember().orElseThrow(IllegalAccessError::new);
     }
 }

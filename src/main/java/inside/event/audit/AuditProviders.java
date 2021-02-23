@@ -9,8 +9,7 @@ import inside.util.MessageUtil;
 import org.joda.time.format.*;
 import reactor.util.context.ContextView;
 
-import java.util.Objects;
-
+import static inside.event.audit.Attribute.*;
 import static inside.util.ContextUtil.*;
 
 public class AuditProviders{
@@ -18,15 +17,13 @@ public class AuditProviders{
     private AuditProviders(){}
 
     @ForwardAuditProvider(AuditActionType.MESSAGE_EDIT)
-    public static class MessageEditAuditProvider extends MessageAuditProvider{
-        public static final String KEY_NEW_CONTENT = "new_content";
-
+    public static class MessageEditAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
-            Snowflake messageId = action.getAttribute(KEY_MESSAGE_ID);
-            String oldContent = action.getAttribute(KEY_OLD_CONTENT);
-            String newContent = action.getAttribute(KEY_NEW_CONTENT);
-            String url = action.getAttribute(KEY_USER_URL);
+            Snowflake messageId = action.getAttribute(MESSAGE_ID);
+            String oldContent = action.getAttribute(OLD_CONTENT);
+            String newContent = action.getAttribute(NEW_CONTENT);
+            String url = action.getAttribute(USER_URL);
             if(messageId == null || oldContent == null || newContent == null || url == null){
                 return;
             }
@@ -54,11 +51,11 @@ public class AuditProviders{
     }
 
     @ForwardAuditProvider(AuditActionType.MESSAGE_DELETE)
-    public static class MessageDeleteAuditProvider extends MessageAuditProvider{
+    public static class MessageDeleteAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
-            String oldContent = action.getAttribute(KEY_OLD_CONTENT);
-            String url = action.getAttribute(KEY_USER_URL);
+            String oldContent = action.getAttribute(OLD_CONTENT);
+            String url = action.getAttribute(USER_URL);
             if(oldContent == null || url == null){
                 return;
             }
@@ -76,12 +73,10 @@ public class AuditProviders{
     }
 
     @ForwardAuditProvider(AuditActionType.MESSAGE_CLEAR)
-    public static class MessageClearAuditProvider extends MessageAuditProvider{
-        public static final String KEY_COUNT = "count";
-
+    public static class MessageClearAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
-            Integer count = action.getAttribute(KEY_COUNT);
+            Integer count = action.getAttribute(COUNT);
             if(count == null){
                 return;
             }
@@ -119,7 +114,7 @@ public class AuditProviders{
     public static class UserKickAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
-            String reason = action.getAttribute(KEY_REASON);
+            String reason = action.getAttribute(REASON);
             NamedReference target = action.target();
             if(target == null || reason == null){
                 return;
@@ -138,7 +133,7 @@ public class AuditProviders{
     public static class UserBanAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
-            String reason = action.getAttribute(KEY_REASON);
+            String reason = action.getAttribute(REASON);
             NamedReference target = action.target();
             if(reason == null){
                 reason = messageService.get(context, "common.not-defined");
@@ -177,8 +172,8 @@ public class AuditProviders{
     public static class UserMuteAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
-            Long delay = action.getAttribute(KEY_DELAY);
-            String reason = action.getAttribute(KEY_REASON);
+            Long delay = action.getAttribute(DELAY);
+            String reason = action.getAttribute(REASON);
             NamedReference target = action.target();
             if(reason == null){
                 reason = messageService.get(context, "common.not-defined");

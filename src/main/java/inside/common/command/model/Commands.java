@@ -26,17 +26,14 @@ import reactor.util.context.Context;
 import java.util.*;
 import java.util.function.*;
 
-import static inside.event.audit.AuditProviders.MessageClearAuditProvider.KEY_COUNT;
-import static inside.event.audit.MessageAuditProvider.KEY_MESSAGE_TXT;
+import static inside.event.audit.Attribute.COUNT;
+import static inside.event.audit.BaseAuditProvider.MESSAGE_TXT;
 import static inside.util.ContextUtil.*;
 
 // TODO(Skat): delete synthetics?
 @Collector
 public class Commands{
     private static final Logger log = Loggers.getLogger(Commands.class);
-
-    @Autowired
-    private DiscordService discordService;
 
     @Autowired
     private MessageService messageService;
@@ -98,7 +95,7 @@ public class Commands{
             Mono<MessageChannel> channel = ref.getReplyChannel();
             Snowflake targetId = args.length > 0 ? MessageUtil.parseUserId(args[0]) : ref.getAuthorAsMember().getId();
 
-            return Mono.justOrEmpty(targetId).flatMap(id -> discordService.gateway().withRetrievalStrategy(EntityRetrievalStrategy.REST).getUserById(id))
+            return Mono.justOrEmpty(targetId).flatMap(id -> ref.getClient().withRetrievalStrategy(EntityRetrievalStrategy.REST).getUserById(id))
                     .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name")).then(Mono.empty()))
                     .flatMap(user -> messageService.info(channel, embed -> embed.setColor(settings.normalColor)
                             .setDescription(messageService.format(ref.context(), "command.avatar.text", user.getUsername()))
@@ -206,7 +203,7 @@ public class Commands{
                 return messageService.err(channel, messageService.get(ref.context(), "message.error.invalid-time"));
             }
 
-            return Mono.justOrEmpty(targetId).flatMap(id -> discordService.gateway().getMemberById(guildId, id))
+            return Mono.justOrEmpty(targetId).flatMap(id -> ref.getClient().getMemberById(guildId, id))
                     .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name")).then(Mono.empty()))
                     .flatMap(target -> Mono.just(entityRetriever.getMember(target))
                             .filterWhen(local -> adminService.isMuted(guildId, target.getId()).map(bool -> !bool))
@@ -224,7 +221,7 @@ public class Commands{
                                     return messageService.err(channel, messageService.format(ref.context(), "common.string-limit", 512));
                                 }
 
-                                return adminService.mute(ref.localMember(), local, delay.toCalendar(entityRetriever.locale(guildId)), reason); // TODO(Skat): remove #toCalendar
+                                return adminService.mute(author, target, delay, reason);
                             }))
                             .then());
         }
@@ -274,7 +271,7 @@ public class Commands{
 
             AuditActionBuilder builder = auditService.log(author.getGuildId(), AuditActionType.MESSAGE_CLEAR)
                     .withUser(author)
-                    .withAttribute(KEY_COUNT, number);
+                    .withAttribute(COUNT, number);
 
             Mono<Void> history = reply.flatMapMany(channel -> channel.getMessagesBefore(ref.getMessage().getId()))
                     .limitRequest(number)
@@ -287,7 +284,7 @@ public class Commands{
 
             Mono<Void> log =  ref.getReplyChannel().ofType(GuildChannel.class)
                     .flatMap(channel -> builder.withChannel(channel)
-                            .withAttachment(KEY_MESSAGE_TXT, input.writeString(result.toString()))
+                            .withAttachment(MESSAGE_TXT, input.writeString(result.toString()))
                             .save());
 
             return history.then(log);
@@ -304,7 +301,7 @@ public class Commands{
             Snowflake targetId = MessageUtil.parseUserId(args[0]);
             Snowflake guildId = author.getGuildId();
 
-            return Mono.justOrEmpty(targetId).flatMap(id -> discordService.gateway().getMemberById(guildId, id))
+            return Mono.justOrEmpty(targetId).flatMap(id -> ref.getClient().getMemberById(guildId, id))
                     .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name")).then(Mono.empty()))
                     .flatMap(target -> Mono.just(entityRetriever.getMember(target))
                             .filterWhen(local -> Mono.zip(adminService.isAdmin(target), adminService.isOwner(author)).map(TupleUtils.function((admin, owner) -> !(admin && !owner))))
@@ -329,7 +326,7 @@ public class Commands{
                                     return message;
                                 });
 
-                                return adminService.warn(ref.localMember(), local, reason).then(warnings);
+                                return adminService.warn(author, target, reason).then(warnings);
                             })
                     );
         }
@@ -348,7 +345,7 @@ public class Commands{
                     .withLocale(ref.context().get(KEY_LOCALE))
                     .withZone(ref.context().get(KEY_TIMEZONE));
 
-            return Mono.justOrEmpty(targetId).flatMap(id -> discordService.gateway().getMemberById(guildId, id))
+            return Mono.justOrEmpty(targetId).flatMap(id -> ref.getClient().getMemberById(guildId, id))
                     .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name")).then(Mono.empty()))
                     .flatMap(target -> Mono.just(entityRetriever.getMember(target))
                             .flatMap(local -> {
@@ -390,11 +387,10 @@ public class Commands{
                     return messageService.err(channel, messageService.get(ref.context(), "command.incorrect-number"));
                 }
 
-                return Mono.justOrEmpty(targetId).flatMap(id -> discordService.gateway().getMemberById(guildId, id))
+                return Mono.justOrEmpty(targetId).flatMap(id -> ref.getClient().getMemberById(guildId, id))
                         .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name")).then(Mono.empty()))
-                        .map(entityRetriever::getMember)
-                        .flatMap(local -> messageService.text(channel, messageService.format(ref.context(), "command.admin.unwarn", local.effectiveName(), warn))
-                                .then(adminService.unwarn(local.guildId(), local.userId(), warn - 1)));
+                        .flatMap(target -> messageService.text(channel, messageService.format(ref.context(), "command.admin.unwarn", target.getUsername(), warn))
+                                .then(adminService.unwarn(target, warn - 1)));
             });
         }
     }
@@ -412,12 +408,12 @@ public class Commands{
                 return messageService.err(channel, messageService.get(ref.context(), "command.disabled.mute"));
             }
 
-            return Mono.justOrEmpty(targetId).flatMap(id -> discordService.gateway().getMemberById(guildId, id))
+            return Mono.justOrEmpty(targetId).flatMap(id -> ref.getClient().getMemberById(guildId, id))
                     .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name")).then(Mono.empty()))
                     .flatMap(member -> Mono.just(entityRetriever.getMember(member))
-                    .filterWhen(local -> adminService.isMuted(local.guildId(), local.userId()))
-                    .flatMap(local -> adminService.unmute(member).thenReturn(member))
-                    .switchIfEmpty(messageService.err(channel, messageService.format(ref.context(), "audit.member.unmute.is-not-muted", member.getUsername())).then(Mono.empty())))
+                            .filterWhen(local -> adminService.isMuted(local.guildId(), local.userId()))
+                            .flatMap(local -> adminService.unmute(member).thenReturn(member))
+                            .switchIfEmpty(messageService.err(channel, messageService.format(ref.context(), "audit.member.unmute.is-not-muted", member.getUsername())).then(Mono.empty())))
                     .then();
         }
     }

@@ -17,9 +17,7 @@ import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
 import reactor.util.*;
 
-import java.util.Calendar;
-
-import static inside.event.audit.BaseAuditProvider.*;
+import java.util.*;
 
 @Service
 public class AdminServiceImpl implements AdminService{
@@ -61,60 +59,29 @@ public class AdminServiceImpl implements AdminService{
 
     @Override
     @Transactional
-    public Mono<Void> kick(LocalMember admin, LocalMember target, String reason){
-        AdminAction action = new AdminAction(target.guildId())
-                .type(AdminActionType.kick)
-                .admin(admin)
-                .target(target)
-                .timestamp(Calendar.getInstance())
-                .reason(reason);
-
-        return Mono.just(action).doOnNext(repository::save).then();
-    }
-
-    @Override
-    @Transactional
-    public Mono<Void> ban(LocalMember admin, LocalMember target, String reason){
-        AdminAction action = new AdminAction(target.guildId())
-                .type(AdminActionType.ban)
-                .admin(admin)
-                .target(target)
-                .timestamp(Calendar.getInstance())
-                .reason(reason);
-
-        return Mono.just(action).doOnNext(repository::save).then();
-    }
-
-    @Override
-    @Transactional
-    public Mono<Void> unban(Snowflake guildId, Snowflake targetId){
-        AdminAction action = repository.find(AdminActionType.ban, guildId.asString(), targetId.asString()).get(0);
-        // TODO: UnbanEvent
-        return Mono.justOrEmpty(action).doOnNext(repository::delete).then();
-    }
-
-    @Override
-    @Transactional      // TODO(Skat): change parameters
-    public Mono<Void> mute(LocalMember admin, LocalMember target, Calendar end, String reason){
-        AdminAction action = new AdminAction(target.guildId())
+    public Mono<Void> mute(Member admin, Member target, DateTime end, String reason){
+        LocalMember adminLocalMember = entityRetriever.getMember(admin);
+        LocalMember targetLocalMember = entityRetriever.getMember(target);
+        Locale locale = entityRetriever.locale(admin.getGuildId());
+        AdminAction action = new AdminAction(target.getGuildId())
                 .type(AdminActionType.mute)
-                .admin(admin)
-                .target(target)
+                .admin(adminLocalMember)
+                .target(targetLocalMember)
                 .timestamp(Calendar.getInstance())
-                .end(end)
+                .end(end.toCalendar(locale))
                 .reason(reason);
 
         Mono<Void> add = Mono.fromRunnable(() -> repository.save(action));
 
-        Mono<Void> log = auditService.log(admin.guildId(), AuditActionType.USER_MUTE)
+        Mono<Void> log = auditService.log(admin.getGuildId(), AuditActionType.USER_MUTE)
                 .withUser(admin)
                 .withTargetUser(target)
                 .withAttribute(KEY_REASON, reason)
-                .withAttribute(KEY_DELAY, end.getTimeInMillis())
+                .withAttribute(KEY_DELAY, end.getMillis())
                 .save();
 
-        Mono<Void> addRole = Mono.justOrEmpty(entityRetriever.muteRoleId(admin.guildId()))
-                .flatMap(id -> discordService.gateway().getMemberById(admin.guildId(), target.userId()).flatMap(member -> member.addRole(id)));
+        Mono<Void> addRole = Mono.justOrEmpty(entityRetriever.muteRoleId(admin.getGuildId()))
+                .flatMap(target::addRole);
 
         return Mono.when(add, addRole, log);
     }
@@ -145,16 +112,19 @@ public class AdminServiceImpl implements AdminService{
 
     @Override
     @Transactional
-    public Mono<Void> warn(LocalMember admin, LocalMember target, String reason){
-        AdminAction action = new AdminAction(target.guildId())
+    public Mono<Void> warn(Member admin, Member target, String reason){
+        LocalMember adminLocalMember = entityRetriever.getMember(admin);
+        LocalMember targetLocalMember = entityRetriever.getMember(target);
+        Locale locale = entityRetriever.locale(admin.getGuildId());
+        AdminAction action = new AdminAction(admin.getGuildId())
                 .type(AdminActionType.warn)
-                .admin(admin)
-                .target(target)
+                .admin(adminLocalMember)
+                .target(targetLocalMember)
                 .timestamp(Calendar.getInstance())
-                .end(DateTime.now().plusDays(settings.warnExpireDays).toCalendar(entityRetriever.locale(admin.guildId())))
+                .end(DateTime.now().plusDays(settings.warnExpireDays).toCalendar(locale))
                 .reason(reason);
 
-        return Mono.just(action).doOnNext(repository::save).then();
+        return Mono.fromRunnable(() -> repository.save(action));
     }
 
     @Override

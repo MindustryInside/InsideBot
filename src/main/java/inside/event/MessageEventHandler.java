@@ -24,8 +24,8 @@ import reactor.util.function.Tuples;
 import java.util.Calendar;
 
 import static inside.event.audit.AuditActionType.*;
-import static inside.event.audit.AuditProviders.MessageEditAuditProvider.KEY_NEW_CONTENT;
-import static inside.event.audit.MessageAuditProvider.*;
+import static inside.event.audit.Attribute.*;
+import static inside.event.audit.BaseAuditProvider.MESSAGE_TXT;
 import static inside.util.ContextUtil.*;
 
 @Component
@@ -112,10 +112,10 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                     AuditActionBuilder builder = auditService.log(guildId, MESSAGE_EDIT)
                             .withChannel(channel)
                             .withUser(user)
-                            .withAttribute(KEY_OLD_CONTENT, oldContent)
-                            .withAttribute(KEY_NEW_CONTENT, newContent)
-                            .withAttribute(KEY_USER_URL, user.getAvatarUrl())
-                            .withAttribute(KEY_MESSAGE_ID, message.getId());
+                            .withAttribute(OLD_CONTENT, oldContent)
+                            .withAttribute(NEW_CONTENT, newContent)
+                            .withAttribute(USER_URL, user.getAvatarUrl())
+                            .withAttribute(MESSAGE_ID, message.getId());
 
                     if(newContent.length() >= Field.MAX_VALUE_LENGTH || oldContent.length() >= Field.MAX_VALUE_LENGTH){
                         StringInputStream input = new StringInputStream();
@@ -123,7 +123,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                                 messageService.get(context, "audit.message.old-content.title"), oldContent,
                                 messageService.get(context, "audit.message.new-content.title"), newContent
                         ));
-                        builder.withAttachment(KEY_MESSAGE_TXT, input);
+                        builder.withAttachment(MESSAGE_TXT, input);
                     }
 
                     return builder.save();
@@ -154,13 +154,13 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                     AuditActionBuilder builder = auditService.log(guildId, MESSAGE_DELETE)
                             .withChannel(channel)
                             .withUser(user)
-                            .withAttribute(KEY_USER_URL, user.getAvatarUrl())
-                            .withAttribute(KEY_OLD_CONTENT, content);
+                            .withAttribute(USER_URL, user.getAvatarUrl())
+                            .withAttribute(OLD_CONTENT, content);
 
                     if(content.length() >= Field.MAX_VALUE_LENGTH){
                         StringInputStream input = new StringInputStream();
                         input.writeString(String.format("%s:%n%s", messageService.get(context, "audit.message.deleted-content.title"), content));
-                        builder.withAttachment(KEY_MESSAGE_TXT, input);
+                        builder.withAttachment(MESSAGE_TXT, input);
                     }
 
                     messageService.delete(info);

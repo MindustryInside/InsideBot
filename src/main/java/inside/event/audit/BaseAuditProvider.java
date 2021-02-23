@@ -17,10 +17,7 @@ import java.util.List;
 import static inside.util.ContextUtil.*;
 
 public abstract class BaseAuditProvider implements AuditProvider{
-
-    public static final String KEY_REASON = "reason";
-
-    public static final String KEY_DELAY = "delay";
+    public static final String MESSAGE_TXT = "message.txt";
 
     @Autowired
     protected MessageService messageService;

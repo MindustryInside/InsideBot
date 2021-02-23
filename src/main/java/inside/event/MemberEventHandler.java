@@ -7,7 +7,7 @@ import discord4j.core.object.entity.*;
 import inside.Settings;
 import inside.data.entity.LocalMember;
 import inside.data.service.*;
-import inside.event.audit.AuditService;
+import inside.event.audit.*;
 import inside.util.*;
 import org.joda.time.DateTime;
 import org.reactivestreams.Publisher;
@@ -19,8 +19,8 @@ import reactor.util.context.Context;
 
 import java.time.Instant;
 
+import static inside.event.audit.Attribute.*;
 import static inside.event.audit.AuditActionType.*;
-import static inside.event.audit.BaseAuditProvider.KEY_REASON;
 import static inside.util.ContextUtil.*;
 
 @Component
@@ -49,17 +49,15 @@ public class MemberEventHandler extends ReactiveEventAdapter{
 
         Context context = Context.of(KEY_GUILD_ID, event.getGuildId(), KEY_LOCALE, entityRetriever.locale(event.getGuildId()), KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
 
-        LocalMember localMember = entityRetriever.getMember(member);
+        Mono<Void> warn = member.getGuild().flatMap(Guild::getOwner)
+                .filterWhen(owner -> adminService.warnings(member).count().map(c -> c >= settings.maxWarnings))
+                .flatMap(owner -> adminService.warn(owner, member, messageService.get(context, "audit.member.warn.evade")));
 
-        Mono<Void> warn = member.getGuild().flatMap(Guild::getOwner).map(entityRetriever::getMember)
-                .filterWhen(owner -> adminService.warnings(localMember.guildId(), localMember.userId()).count().map(c -> c >= settings.maxWarnings))
-                .flatMap(owner -> adminService.warn(owner, localMember, messageService.get(context, "audit.member.warn.evade")));
-
-        Mono<?> muteEvade = adminService.isMuted(member.getGuildId(), member.getId())
-                .zipWith(member.getGuild().flatMap(Guild::getOwner).map(entityRetriever::getMember))
-                .flatMap(TupleUtils.function((bool, owner) -> bool ? adminService.mute(
-                        owner, localMember, DateTime.now().plusDays(settings.muteEvadeDays).toCalendar(entityRetriever.locale(localMember.guildId())), messageService.get(context, "audit.member.mute.evade")
-                ).thenReturn(owner) : Mono.empty()))
+        Mono<?> muteEvade = member.getGuild().flatMap(Guild::getOwner)
+                .filterWhen(owner -> adminService.isMuted(member))
+                .flatMap(owner -> adminService.mute(owner, member, DateTime.now().plusDays(settings.muteEvadeDays),
+                                                    messageService.get(context, "audit.member.mute.evade"))
+                        .thenReturn(owner))
                 .switchIfEmpty(warn.then(Mono.empty()));
 
         return auditService.log(event.getGuildId(), USER_JOIN)
@@ -85,7 +83,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                         .flatMap(admin -> auditService.log(event.getGuildId(), USER_KICK)
                                 .withUser(admin)
                                 .withTargetUser(user)
-                                .withAttribute(KEY_REASON, entry.getReason()
+                                .withAttribute(REASON, entry.getReason()
                                         .filter(MessageUtil::isNotEmpty)
                                         .orElse(messageService.get(context, "common.not-defined")))
                                 .save())
@@ -99,7 +97,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                         .flatMap(admin -> auditService.log(event.getGuildId(), USER_BAN)
                                 .withUser(admin)
                                 .withTargetUser(user)
-                                .withAttribute(KEY_REASON, entry.getReason()
+                                .withAttribute(REASON, entry.getReason()
                                         .filter(MessageUtil::isNotEmpty)
                                         .orElse(messageService.get(context, "common.not-defined")))
                                 .save())

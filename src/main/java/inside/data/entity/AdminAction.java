@@ -13,6 +13,7 @@ import javax.persistence.Table;
 import java.io.Serial;
 import java.util.*;
 
+// TODO(Skat): replace to builder
 @Entity
 @Table(name = "admin_action")
 public class AdminAction extends GuildEntity{

@@ -64,7 +64,7 @@ public class DiscordServiceImpl implements DiscordService{
         gateway.logout().block();
     }
 
-    @Override
+    @Override // for monitors
     public GatewayDiscordClient gateway(){
         return gateway;
     }

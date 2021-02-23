@@ -52,7 +52,7 @@ public class AuditServiceImpl implements AuditService{
         return new AuditActionBuilder(guildId, type){
             @Override
             public Mono<Void> save(){
-                return AuditServiceImpl.this.save(action, attachments);
+                return AuditServiceImpl.this.save(action, attachments == null ? Collections.emptyList() : attachments);
             }
         };
     }
@@ -67,7 +67,7 @@ public class AuditServiceImpl implements AuditService{
     @Autowired(required = false)
     public void init(List<AuditProvider> providers){
         this.providers = providers.stream().collect(Collectors.toMap(
-                e -> e.getClass().getAnnotation(ForwardAuditProvider.class).value(), e -> e
+                p -> p.getClass().getAnnotation(ForwardAuditProvider.class).value(), p -> p
         ));
     }
 }

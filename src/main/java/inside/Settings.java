@@ -30,6 +30,5 @@ public class Settings{
     @Deprecated(forRemoval = true)
     public int muteEvadeDays = 10;
 
-    @Deprecated(forRemoval = true)
     public int maxClearedCount = 100;
 }
