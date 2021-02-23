@@ -223,6 +223,7 @@ public abstract class MessageUtil{
         return canParseId(message) ? Snowflake.of(message) : null;
     }
 
+    @Nullable
     public static DateTime parseTime(String message){
         if(message == null){
             return null;

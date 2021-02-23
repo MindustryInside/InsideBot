@@ -6,16 +6,16 @@ import org.hibernate.usertype.DynamicParameterizedType;
 import java.io.Serial;
 import java.util.Properties;
 
-public class JsonBinaryType extends AbstractSingleColumnStandardBasicType<Object> implements DynamicParameterizedType{
+public class JsonType extends AbstractSingleColumnStandardBasicType<Object> implements DynamicParameterizedType{
     @Serial
     private static final long serialVersionUID = -3828163915941087141L;
 
-    public JsonBinaryType(){
-        super(JsonBinarySqlTypeDescriptor.instance, new JsonTypeDescriptor());
+    public JsonType(){
+        super(JsonSqlTypeDescriptor.instance, new JsonTypeDescriptor());
     }
 
     public String getName(){
-        return "jsonb";
+        return "json";
     }
 
     @Override

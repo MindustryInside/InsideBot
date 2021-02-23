@@ -8,11 +8,11 @@ import org.hibernate.type.descriptor.sql.BasicBinder;
 import java.io.Serial;
 import java.sql.*;
 
-public class JsonBinarySqlTypeDescriptor extends AbstractJsonSqlTypeDescriptor{
+public class JsonSqlTypeDescriptor extends AbstractJsonSqlTypeDescriptor{
     @Serial
     private static final long serialVersionUID = 925608129281277893L;
 
-    protected static final JsonBinarySqlTypeDescriptor instance = new JsonBinarySqlTypeDescriptor();
+    protected static final JsonSqlTypeDescriptor instance = new JsonSqlTypeDescriptor();
 
     @Override
     public <X> ValueBinder<X> getBinder(JavaTypeDescriptor<X> descriptor){

@@ -30,7 +30,7 @@ public class GuildConfig extends GuildEntity{
     private String muteRoleId;
 
     /* lazy initializing */
-    @Type(type = "jsonb")
+    @Type(type = "json")
     @Column(name = "admin_role_ids", columnDefinition = "json")
     private List<String> adminRoleIds;
 

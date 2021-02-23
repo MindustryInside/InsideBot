@@ -1,13 +1,13 @@
 package inside.data.entity.base;
 
-import inside.data.type.JsonBinaryType;
+import inside.data.type.JsonType;
 import org.hibernate.annotations.*;
 
 import javax.persistence.*;
 import java.io.*;
 import java.util.Objects;
 
-@TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)
+@TypeDef(name = "json", typeClass = JsonType.class)
 @MappedSuperclass
 public abstract class BaseEntity implements Serializable{
     @Serial

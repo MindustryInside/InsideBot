@@ -6,7 +6,6 @@ import discord4j.core.event.domain.message.*;
 import discord4j.core.object.Embed.Field;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
-import discord4j.core.object.entity.channel.Channel.Type;
 import inside.common.command.CommandHandler;
 import inside.common.command.model.base.CommandReference;
 import inside.data.entity.*;

@@ -203,9 +203,8 @@ public class AdminServiceImpl implements AdminService{
     public void mutesMonitor(){
         getAll(AdminService.AdminActionType.mute)
                 .filter(AdminAction::isEnd)
-                .flatMap(adminAction -> auditService.log(adminAction.guildId(), AuditActionType.USER_UNMUTE)
-                        .withTargetUser(adminAction.target())
-                        .save())
+                .flatMap(adminAction -> discordService.gateway().getMemberById(adminAction.guildId(), adminAction.target().userId()))
+                .flatMap(this::unmute)
                 .subscribe();
     }
 }

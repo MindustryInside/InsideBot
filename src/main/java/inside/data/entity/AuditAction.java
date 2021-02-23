@@ -44,7 +44,7 @@ public class AuditAction extends GuildEntity{
     })
     private NamedReference channel;
 
-    @Type(type = "jsonb")
+    @Type(type = "json")
     @Column(columnDefinition = "json")
     private Map<String, Object> attributes;
 
