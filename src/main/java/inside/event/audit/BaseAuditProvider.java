@@ -18,6 +18,8 @@ import static inside.util.ContextUtil.*;
 
 public abstract class BaseAuditProvider implements AuditProvider{
 
+    public static final String KEY_REASON = "reason";
+
     @Autowired
     protected MessageService messageService;
 

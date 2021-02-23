@@ -14,7 +14,7 @@ import java.util.function.*;
 
 public class CommandReference implements CommandRequest, CommandResponse{
     private final MessageCreateEvent event;
-    private final ContextView context;
+    private final ContextView context; // TODO(Skat): use Mono#deferContextual
     private final Supplier<Mono<? extends MessageChannel>> replyChannel;
     private final Scheduler replyScheduler;
     private final LocalMember localMember;

@@ -84,7 +84,7 @@ public abstract class AuditActionBuilder{
     }
 
     private NamedReference getReference(Member member){
-        return new NamedReference(member.getId(), member.getDisplayName());
+        return new NamedReference(member.getId(), member.getUsername());
     }
 
     private NamedReference getReference(User user){

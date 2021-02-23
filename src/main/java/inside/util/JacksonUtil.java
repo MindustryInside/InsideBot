@@ -3,6 +3,7 @@ package inside.util;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 
 import java.util.*;
 
@@ -11,9 +12,10 @@ public abstract class JacksonUtil{
     public static final ObjectMapper mapper = new ObjectMapper();
 
     static{
-        mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
-                .setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.PUBLIC_ONLY)
-                .setVisibility(PropertyAccessor.CREATOR, JsonAutoDetect.Visibility.ANY);
+        mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE);
+        mapper.setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.PUBLIC_ONLY);
+        mapper.setVisibility(PropertyAccessor.CREATOR, JsonAutoDetect.Visibility.ANY);
+        mapper.registerModule(new Jdk8Module());
     }
 
     public static ObjectMapper mapper(){

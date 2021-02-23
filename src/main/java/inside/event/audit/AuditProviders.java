@@ -4,10 +4,17 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.Embed;
 import discord4j.core.spec.*;
 import inside.data.entity.AuditAction;
+import inside.data.entity.base.NamedReference;
 import inside.util.MessageUtil;
 import reactor.util.context.ContextView;
 
+import java.util.Objects;
+
+import static inside.event.audit.AuditActionType.USER_JOIN;
+
 public class AuditProviders{
+
+    private AuditProviders(){}
 
     @ForwardAuditProvider(AuditActionType.MESSAGE_EDIT)
     public static class MessageEditAuditProvider extends MessageAuditProvider{
@@ -63,6 +70,64 @@ public class AuditProviders{
                                MessageUtil.substringTo(oldContent, Embed.Field.MAX_VALUE_LENGTH), true);
             }
 
+            addTimestamp(context, embed);
+        }
+    }
+
+    @ForwardAuditProvider(AuditActionType.USER_JOIN)
+    public static class UserJoinAuditProvider extends BaseAuditProvider{
+        @Override
+        protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
+            embed.setTitle(messageService.get(context, "audit.member.join.title"));
+            embed.setDescription(messageService.format(context, "audit.member.join.description", action.user().name()));
+            addTimestamp(context, embed);
+        }
+    }
+
+    @ForwardAuditProvider(AuditActionType.USER_LEAVE)
+    public static class UserLeaveAuditProvider extends BaseAuditProvider{
+        @Override
+        protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
+            embed.setTitle(messageService.get(context, "audit.member.leave.title"));
+            embed.setDescription(messageService.format(context, "audit.member.leave.description", action.user().name()));
+            addTimestamp(context, embed);
+        }
+    }
+
+    @ForwardAuditProvider(AuditActionType.USER_KICK)
+    public static class UserKickAuditProvider extends BaseAuditProvider{
+        @Override
+        protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
+            String reason = action.getAttribute(KEY_REASON);
+            NamedReference target = action.target();
+            if(target == null || reason == null){
+                return;
+            }
+
+            embed.setTitle(messageService.get(context, "audit.member.kick.title"));
+            embed.setDescription(String.format("%s%n%s",
+                    messageService.format(context, "audit.member.kick.description", target.name(), action.user().name()),
+                    messageService.format(context, "common.reason", reason)
+            ));
+            addTimestamp(context, embed);
+        }
+    }
+
+    @ForwardAuditProvider(AuditActionType.USER_BAN)
+    public static class UserBanAuditProvider extends BaseAuditProvider{
+        @Override
+        protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
+            String reason = action.getAttribute(KEY_REASON);
+            NamedReference target = action.target();
+            if(target == null || reason == null){
+                return;
+            }
+
+            embed.setTitle(messageService.get(context, "audit.member.ban.title"));
+            embed.setDescription(String.format("%s%n%s",
+                    messageService.format(context, "audit.member.ban.description", target.name(), action.user().name()),
+                    messageService.format(context, "common.reason", reason)
+            ));
             addTimestamp(context, embed);
         }
     }

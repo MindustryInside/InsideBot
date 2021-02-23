@@ -82,7 +82,7 @@ public final class EventType{
         private final DateTime delay;
         private final @Nullable String reason;
 
-        public MemberMuteEvent(Guild guild, LocalMember admin, LocalMember target, @Nullable String reason, DateTime delay){
+        public MemberMuteEvent(Guild guild, LocalMember admin, LocalMember target, DateTime delay, @Nullable String reason){
             super(guild);
             this.admin = Objects.requireNonNull(admin, "admin");
             this.target = Objects.requireNonNull(target, "target");

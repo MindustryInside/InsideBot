@@ -16,6 +16,7 @@ import java.util.function.*;
 
 import static inside.util.ContextUtil.*;
 
+@Deprecated
 public abstract class AuditEventHandler extends ReactiveEventAdapter{
     @Autowired
     protected MessageService messageService;

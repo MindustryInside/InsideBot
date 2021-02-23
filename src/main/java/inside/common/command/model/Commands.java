@@ -27,6 +27,7 @@ import java.util.function.*;
 
 import static inside.util.ContextUtil.*;
 
+// TODO(Skat): delete synthetics?
 @Collector
 public class Commands{
     private static final Logger log = Loggers.getLogger(Commands.class);
@@ -218,7 +219,7 @@ public class Commands{
                                 }
 
                                 return target.getGuild().flatMap(guild -> Mono.fromRunnable(() -> discordService.eventListener().publish(
-                                        new MemberMuteEvent(guild, ref.localMember(), local, reason, delay)
+                                        new MemberMuteEvent(guild, ref.localMember(), local, delay, reason)
                                 )));
                             }))
                             .then());
