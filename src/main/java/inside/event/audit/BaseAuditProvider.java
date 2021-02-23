@@ -20,6 +20,8 @@ public abstract class BaseAuditProvider implements AuditProvider{
 
     public static final String KEY_REASON = "reason";
 
+    public static final String KEY_DELAY = "delay";
+
     @Autowired
     protected MessageService messageService;
 

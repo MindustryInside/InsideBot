@@ -12,8 +12,6 @@ import discord4j.rest.response.ResponseFunction;
 import discord4j.rest.route.Routes;
 import inside.Settings;
 import inside.data.service.*;
-import inside.event.dispatcher.EventListener;
-import inside.event.dispatcher.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
@@ -29,8 +27,6 @@ public class DiscordServiceImpl implements DiscordService{
 
     private GatewayDiscordClient gateway;
 
-    private EventListener eventListener;
-
     public DiscordServiceImpl(@Autowired Settings settings,
                               @Autowired EntityRetriever retriever){
         this.settings = settings;
@@ -38,7 +34,7 @@ public class DiscordServiceImpl implements DiscordService{
     }
 
     @Autowired(required = false)
-    public void init(List<ReactiveEventAdapter> handlers, List<Events> events){
+    public void init(List<ReactiveEventAdapter> handlers){
         String token = settings.token;
         Objects.requireNonNull(token, "token");
 
@@ -60,27 +56,17 @@ public class DiscordServiceImpl implements DiscordService{
                 .login()
                 .block();
 
-        eventListener = EventListener.buffering();
-
-        Flux.fromIterable(events).subscribe(e -> eventListener.on(e).subscribe());
-
         Flux.fromIterable(handlers).subscribe(e -> gateway.on(e).subscribe());
     }
 
     @PreDestroy
     public void destroy(){
         gateway.logout().block();
-        eventListener.shutdown();
     }
 
     @Override
     public GatewayDiscordClient gateway(){
         return gateway;
-    }
-
-    @Override
-    public EventListener eventListener(){
-        return eventListener;
     }
 
     @Override

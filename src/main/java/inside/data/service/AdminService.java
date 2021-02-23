@@ -24,7 +24,7 @@ public interface AdminService{
 
     Mono<Boolean> isMuted(Snowflake guildId, Snowflake targetId);
 
-    Mono<Void> unmute(Snowflake guildId, Snowflake targetId);
+    Mono<Void> unmute(Member target);
 
     Mono<Void> warn(LocalMember admin, LocalMember target, @Nullable String reason);
 

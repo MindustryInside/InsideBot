@@ -11,8 +11,9 @@ public class StringInputStream extends ReusableByteInStream{
         super();
     }
 
-    public void writeString(String data){
+    public StringInputStream writeString(String data){
         Objects.requireNonNull(data, "data");
         setBytes(data.getBytes(Strings.utf8));
+        return this;
     }
 }

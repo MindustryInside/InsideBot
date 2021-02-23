@@ -1,19 +1,19 @@
 package inside.event;
 
+import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.guild.*;
-import discord4j.core.object.audit.*;
+import discord4j.core.object.audit.ActionType;
 import discord4j.core.object.entity.*;
 import inside.Settings;
-import inside.data.entity.*;
+import inside.data.entity.LocalMember;
 import inside.data.service.*;
-import inside.event.audit.*;
-import inside.event.dispatcher.EventType;
+import inside.event.audit.AuditService;
 import inside.util.*;
 import org.joda.time.DateTime;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.*;
+import reactor.core.publisher.Mono;
 import reactor.function.TupleUtils;
 import reactor.util.context.Context;
 
@@ -24,7 +24,7 @@ import static inside.event.audit.BaseAuditProvider.KEY_REASON;
 import static inside.util.ContextUtil.*;
 
 @Component
-public class MemberEventHandler extends AuditEventHandler{
+public class MemberEventHandler extends ReactiveEventAdapter{
     public static final long TIMEOUT_MILLIS = 2500L;
 
     @Autowired
@@ -37,32 +37,17 @@ public class MemberEventHandler extends AuditEventHandler{
     private AdminService adminService;
 
     @Autowired
+    private MessageService messageService;
+
+    @Autowired
     private Settings settings;
-
-    @Override
-    @Deprecated
-    public Publisher<?> onBan(BanEvent event){
-        User user = event.getUser();
-        if(DiscordUtil.isBot(user)) return Mono.empty();
-
-        Context context = Context.of(KEY_GUILD_ID, event.getGuildId(),
-                                     KEY_LOCALE, entityRetriever.locale(event.getGuildId()),
-                                     KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
-
-        return log(event.getGuildId(), embed -> embed.setColor(USER_BAN.color)
-                .setTitle(messageService.get(context, "audit.member.ban.title"))
-                .setDescription(messageService.format(context, "audit.member.ban.description", user.getUsername()))
-                .setFooter(timestamp(), null));
-    }
 
     @Override
     public Publisher<?> onMemberJoin(MemberJoinEvent event){
         Member member = event.getMember();
         if(DiscordUtil.isBot(member)) return Mono.empty();
 
-        Context context = Context.of(KEY_GUILD_ID, event.getGuildId(),
-                             KEY_LOCALE, entityRetriever.locale(event.getGuildId()),
-                             KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
+        Context context = Context.of(KEY_GUILD_ID, event.getGuildId(), KEY_LOCALE, entityRetriever.locale(event.getGuildId()), KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
 
         LocalMember localMember = entityRetriever.getMember(member);
 
@@ -72,9 +57,9 @@ public class MemberEventHandler extends AuditEventHandler{
 
         Mono<?> muteEvade = adminService.isMuted(member.getGuildId(), member.getId())
                 .zipWith(member.getGuild().flatMap(Guild::getOwner).map(entityRetriever::getMember))
-                .flatMap(TupleUtils.function((bool, owner) -> bool ? member.getGuild().flatMap(guild -> Mono.fromRunnable(() -> discordService.eventListener().publish(
-                        new EventType.MemberMuteEvent(guild, owner, localMember, DateTime.now().plusDays(settings.muteEvadeDays), messageService.get(context, "audit.member.mute.evade"))
-                ))).thenReturn(owner) : Mono.empty()))
+                .flatMap(TupleUtils.function((bool, owner) -> bool ? adminService.mute(
+                        owner, localMember, DateTime.now().plusDays(settings.muteEvadeDays).toCalendar(entityRetriever.locale(localMember.guildId())), messageService.get(context, "audit.member.mute.evade")
+                ).thenReturn(owner) : Mono.empty()))
                 .switchIfEmpty(warn.then(Mono.empty()));
 
         return auditService.log(event.getGuildId(), USER_JOIN)

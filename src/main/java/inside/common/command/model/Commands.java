@@ -2,6 +2,7 @@ package inside.common.command.model;
 
 import arc.util.Strings;
 import discord4j.common.util.Snowflake;
+import discord4j.core.object.Embed;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
 import discord4j.core.retriever.EntityRetrievalStrategy;
@@ -12,7 +13,7 @@ import inside.common.command.CommandHandler;
 import inside.common.command.model.base.*;
 import inside.data.entity.AdminAction;
 import inside.data.service.*;
-import inside.event.dispatcher.EventType.*;
+import inside.event.audit.*;
 import inside.util.*;
 import org.joda.time.DateTime;
 import org.joda.time.format.*;
@@ -25,6 +26,8 @@ import reactor.util.context.Context;
 import java.util.*;
 import java.util.function.*;
 
+import static inside.event.audit.AuditProviders.MessageClearAuditProvider.KEY_COUNT;
+import static inside.event.audit.MessageAuditProvider.KEY_MESSAGE_TXT;
 import static inside.util.ContextUtil.*;
 
 // TODO(Skat): delete synthetics?
@@ -49,6 +52,9 @@ public class Commands{
 
     @Autowired
     private Settings settings;
+
+    @Autowired
+    private AuditService auditService;
 
     public class ModeratorCommand extends Command{
         @Override
@@ -218,9 +224,7 @@ public class Commands{
                                     return messageService.err(channel, messageService.format(ref.context(), "common.string-limit", 512));
                                 }
 
-                                return target.getGuild().flatMap(guild -> Mono.fromRunnable(() -> discordService.eventListener().publish(
-                                        new MemberMuteEvent(guild, ref.localMember(), local, delay, reason)
-                                )));
+                                return adminService.mute(ref.localMember(), local, delay.toCalendar(entityRetriever.locale(guildId)), reason); // TODO(Skat): remove #toCalendar
                             }))
                             .then());
         }
@@ -242,13 +246,51 @@ public class Commands{
                 return messageService.err(reply, messageService.format(ref.context(), "common.limit-number", settings.maxClearedCount));
             }
 
-            Mono<List<Message>> history = reply.flatMapMany(channel -> channel.getMessagesBefore(ref.getMessage().getId()))
-                    .limitRequest(number)
-                    .collectSortedList(Comparator.comparing(Message::getId));
+            StringBuffer result = new StringBuffer();
+            DateTimeFormatter formatter = DateTimeFormat.forPattern("MM-dd-yyyy HH:mm:ss")
+                    .withLocale(ref.context().get(KEY_LOCALE))
+                    .withZone(ref.context().get(KEY_TIMEZONE));
 
-            return Mono.zip(reply, author.getGuild(), history).flatMap(TupleUtils.function((channel, guild, messages) -> Mono.fromRunnable(() ->
-                    discordService.eventListener().publish(new MessageClearEvent(guild, messages, author, channel, number))
-            )));
+            StringInputStream input = new StringInputStream();
+            Consumer<Message> appendInfo = message -> {
+                Member member = message.getAuthorAsMember().block();
+                result.append("[").append(formatter.print(message.getTimestamp().toEpochMilli())).append("] ");
+                if(DiscordUtil.isBot(member)){
+                    result.append("[BOT] ");
+                }
+
+                result.append(DiscordUtil.detailName(member)).append(" > ");
+                if(!MessageUtil.isEmpty(message)){
+                    result.append(MessageUtil.effectiveContent(message));
+                }
+
+                for(int i = 0; i < message.getEmbeds().size(); i++){
+                    Embed embed = message.getEmbeds().get(i);
+                    result.append("\n[embed-").append(i + 1).append("]");
+                    embed.getDescription().ifPresent(s -> result.append("\n").append(s));
+                }
+                result.append("\n");
+            };
+
+            AuditActionBuilder builder = auditService.log(author.getGuildId(), AuditActionType.MESSAGE_CLEAR)
+                    .withUser(author)
+                    .withAttribute(KEY_COUNT, number);
+
+            Mono<Void> history = reply.flatMapMany(channel -> channel.getMessagesBefore(ref.getMessage().getId()))
+                    .limitRequest(number)
+                    .sort(Comparator.comparing(Message::getId))
+                    .flatMap(message -> message.delete().then(Mono.fromRunnable(() -> {
+                        messageService.putMessage(message.getId());
+                        appendInfo.accept(message);
+                    })))
+                    .then();
+
+            Mono<Void> log =  ref.getReplyChannel().ofType(GuildChannel.class)
+                    .flatMap(channel -> builder.withChannel(channel)
+                            .withAttachment(KEY_MESSAGE_TXT, input.writeString(result.toString()))
+                            .save());
+
+            return history.then(log);
         }
     }
 
@@ -374,7 +416,7 @@ public class Commands{
                     .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name")).then(Mono.empty()))
                     .flatMap(member -> Mono.just(entityRetriever.getMember(member))
                     .filterWhen(local -> adminService.isMuted(local.guildId(), local.userId()))
-                    .flatMap(local -> ref.event().getGuild().flatMap(guild -> Mono.fromRunnable(() -> discordService.eventListener().publish(new MemberUnmuteEvent(guild, local)))).thenReturn(member))
+                    .flatMap(local -> adminService.unmute(member).thenReturn(member))
                     .switchIfEmpty(messageService.err(channel, messageService.format(ref.context(), "audit.member.unmute.is-not-muted", member.getUsername())).then(Mono.empty())))
                     .then();
         }

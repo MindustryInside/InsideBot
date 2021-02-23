@@ -6,11 +6,12 @@ import discord4j.core.spec.*;
 import inside.data.entity.AuditAction;
 import inside.data.entity.base.NamedReference;
 import inside.util.MessageUtil;
+import org.joda.time.format.*;
 import reactor.util.context.ContextView;
 
 import java.util.Objects;
 
-import static inside.event.audit.AuditActionType.USER_JOIN;
+import static inside.util.ContextUtil.*;
 
 public class AuditProviders{
 
@@ -74,6 +75,26 @@ public class AuditProviders{
         }
     }
 
+    @ForwardAuditProvider(AuditActionType.MESSAGE_CLEAR)
+    public static class MessageClearAuditProvider extends MessageAuditProvider{
+        public static final String KEY_COUNT = "count";
+
+        @Override
+        protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
+            Integer count = action.getAttribute(KEY_COUNT);
+            if(count == null){
+                return;
+            }
+
+            embed.setTitle(messageService.format(context, "audit.message.clear.title", count, action.channel().name()));
+            embed.setDescription(messageService.format(context, "audit.message.clear.description",
+                                                       action.user().name(), count,
+                                                       messageService.getCount(context, "common.plurals.message", count),
+                                                       action.channel().name()));
+            addTimestamp(context, embed);
+        }
+    }
+
     @ForwardAuditProvider(AuditActionType.USER_JOIN)
     public static class UserJoinAuditProvider extends BaseAuditProvider{
         @Override
@@ -119,7 +140,11 @@ public class AuditProviders{
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
             String reason = action.getAttribute(KEY_REASON);
             NamedReference target = action.target();
-            if(target == null || reason == null){
+            if(reason == null){
+                reason = messageService.get(context, "common.not-defined");
+            }
+
+            if(target == null){
                 return;
             }
 
@@ -128,6 +153,52 @@ public class AuditProviders{
                     messageService.format(context, "audit.member.ban.description", target.name(), action.user().name()),
                     messageService.format(context, "common.reason", reason)
             ));
+            addTimestamp(context, embed);
+        }
+    }
+
+    @ForwardAuditProvider(AuditActionType.USER_UNMUTE)
+    public static class UserUnmuteAuditProvider extends BaseAuditProvider{
+        @Override
+        protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
+            NamedReference target = action.target();
+            if(target == null){
+                return;
+            }
+
+            embed.setTitle(messageService.get(context, "audit.member.unmute.title"));
+            embed.setDescription(messageService.format(context, "audit.member.unmute.description", target.name()));
+            // TODO(Skat): admin field
+            addTimestamp(context, embed);
+        }
+    }
+
+    @ForwardAuditProvider(AuditActionType.USER_MUTE)
+    public static class UserMuteAuditProvider extends BaseAuditProvider{
+        @Override
+        protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
+            Long delay = action.getAttribute(KEY_DELAY);
+            String reason = action.getAttribute(KEY_REASON);
+            NamedReference target = action.target();
+            if(reason == null){
+                reason = messageService.get(context, "common.not-defined");
+            }
+
+            if(delay == null || target == null){
+                return;
+            }
+
+            DateTimeFormatter formatter = DateTimeFormat.shortDateTime()
+                    .withLocale(context.get(KEY_LOCALE))
+                    .withZone(context.get(KEY_TIMEZONE));
+
+            embed.setTitle(messageService.get(context, "audit.member.mute.title"));
+            embed.setDescription(String.format("%s%n%s%n%s",
+                    messageService.format(context, "audit.member.mute.description", target.name(), action.user().name()),
+                    messageService.format(context, "common.reason", reason),
+                    messageService.format(context, "audit.member.mute.delay", formatter.print(delay))
+            ));
+            // TODO(Skat): admin field
             addTimestamp(context, embed);
         }
     }

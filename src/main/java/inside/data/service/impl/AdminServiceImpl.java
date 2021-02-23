@@ -7,7 +7,7 @@ import inside.Settings;
 import inside.data.entity.*;
 import inside.data.repository.AdminActionRepository;
 import inside.data.service.*;
-import inside.event.dispatcher.EventType;
+import inside.event.audit.*;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,7 +17,9 @@ import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
 import reactor.util.*;
 
-import java.util.*;
+import java.util.Calendar;
+
+import static inside.event.audit.BaseAuditProvider.*;
 
 @Service
 public class AdminServiceImpl implements AdminService{
@@ -31,14 +33,18 @@ public class AdminServiceImpl implements AdminService{
 
     private final Settings settings;
 
+    private final AuditService auditService;
+
     public AdminServiceImpl(@Autowired AdminActionRepository repository,
                             @Autowired EntityRetriever entityRetriever,
                             @Autowired DiscordService discordService,
-                            @Autowired Settings settings){
+                            @Autowired Settings settings,
+                            @Autowired AuditService auditService){
         this.repository = repository;
         this.entityRetriever = entityRetriever;
         this.discordService = discordService;
         this.settings = settings;
+        this.auditService = auditService;
     }
 
     @Override
@@ -88,7 +94,7 @@ public class AdminServiceImpl implements AdminService{
     }
 
     @Override
-    @Transactional
+    @Transactional      // TODO(Skat): change parameters
     public Mono<Void> mute(LocalMember admin, LocalMember target, Calendar end, String reason){
         AdminAction action = new AdminAction(target.guildId())
                 .type(AdminActionType.mute)
@@ -98,7 +104,19 @@ public class AdminServiceImpl implements AdminService{
                 .end(end)
                 .reason(reason);
 
-        return Mono.just(action).doOnNext(repository::save).then();
+        Mono<Void> add = Mono.fromRunnable(() -> repository.save(action));
+
+        Mono<Void> log = auditService.log(admin.guildId(), AuditActionType.USER_MUTE)
+                .withUser(admin)
+                .withTargetUser(target)
+                .withAttribute(KEY_REASON, reason)
+                .withAttribute(KEY_DELAY, end.getTimeInMillis())
+                .save();
+
+        Mono<Void> addRole = Mono.justOrEmpty(entityRetriever.muteRoleId(admin.guildId()))
+                .flatMap(id -> discordService.gateway().getMemberById(admin.guildId(), target.userId()).flatMap(member -> member.addRole(id)));
+
+        return Mono.when(add, addRole, log);
     }
 
     @Override
@@ -108,9 +126,21 @@ public class AdminServiceImpl implements AdminService{
 
     @Override
     @Transactional
-    public Mono<Void> unmute(Snowflake guildId, Snowflake targetId){
-        AdminAction action = repository.find(AdminActionType.mute, guildId.asString(), targetId.asString()).get(0);
-        return Mono.justOrEmpty(action).doOnNext(repository::delete).then();
+    public Mono<Void> unmute(Member target){
+        LocalMember localMember = entityRetriever.getMember(target);
+
+        Mono<Void> remove = Flux.fromIterable(repository.find(AdminActionType.mute, localMember.guildId().asString(), localMember.userId().asString()))
+                .next()
+                .flatMap(adminAction -> Mono.fromRunnable(() -> repository.delete(adminAction)))
+                .then();
+
+        Mono<Void> log = auditService.log(localMember.guildId(), AuditActionType.USER_UNMUTE)
+                .withTargetUser(target)
+                .save();
+
+        Mono<Void> removeRole = Mono.justOrEmpty(entityRetriever.muteRoleId(localMember.guildId())).flatMap(target::removeRole);
+
+        return Mono.when(removeRole, log, remove);
     }
 
     @Override
@@ -173,8 +203,9 @@ public class AdminServiceImpl implements AdminService{
     public void mutesMonitor(){
         getAll(AdminService.AdminActionType.mute)
                 .filter(AdminAction::isEnd)
-                .subscribe(adminAction -> discordService.eventListener().publish(
-                        new EventType.MemberUnmuteEvent(discordService.gateway().getGuildById(adminAction.guildId()).block(), adminAction.target())
-                ));
+                .flatMap(adminAction -> auditService.log(adminAction.guildId(), AuditActionType.USER_UNMUTE)
+                        .withTargetUser(adminAction.target())
+                        .save())
+                .subscribe();
     }
 }
