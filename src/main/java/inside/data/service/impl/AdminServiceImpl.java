@@ -19,6 +19,8 @@ import reactor.util.*;
 
 import java.util.*;
 
+import static inside.event.audit.Attribute.*;
+
 @Service
 public class AdminServiceImpl implements AdminService{
     private static final Logger log = Loggers.getLogger(AdminService.class);
@@ -76,8 +78,8 @@ public class AdminServiceImpl implements AdminService{
         Mono<Void> log = auditService.log(admin.getGuildId(), AuditActionType.USER_MUTE)
                 .withUser(admin)
                 .withTargetUser(target)
-                .withAttribute(KEY_REASON, reason)
-                .withAttribute(KEY_DELAY, end.getMillis())
+                .withAttribute(REASON, reason)
+                .withAttribute(DELAY, end.getMillis())
                 .save();
 
         Mono<Void> addRole = Mono.justOrEmpty(entityRetriever.muteRoleId(admin.getGuildId()))
