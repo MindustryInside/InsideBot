@@ -4,7 +4,6 @@ import arc.struct.ObjectMap;
 import arc.util.Strings;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
-import discord4j.rest.http.client.ClientException;
 import inside.common.command.model.base.*;
 import inside.data.service.*;
 import org.springframework.beans.factory.annotation.Autowired;

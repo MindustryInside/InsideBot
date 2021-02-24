@@ -16,10 +16,12 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
 import reactor.util.*;
+import reactor.util.context.Context;
 
 import java.util.*;
 
 import static inside.event.audit.Attribute.*;
+import static inside.util.ContextUtil.*;
 
 @Service
 public class AdminServiceImpl implements AdminService{
@@ -176,7 +178,9 @@ public class AdminServiceImpl implements AdminService{
         getAll(AdminService.AdminActionType.mute)
                 .filter(AdminAction::isEnd)
                 .flatMap(adminAction -> discordService.gateway().getMemberById(adminAction.guildId(), adminAction.target().userId()))
-                .flatMap(this::unmute)
+                .flatMap(target -> unmute(target).contextWrite(ctx -> ctx.put(KEY_GUILD_ID, target.getGuildId())
+                        .put(KEY_LOCALE, entityRetriever.locale(target.getGuildId()))
+                        .put(KEY_TIMEZONE, entityRetriever.timeZone(target.getGuildId()))))
                 .subscribe();
     }
 }
