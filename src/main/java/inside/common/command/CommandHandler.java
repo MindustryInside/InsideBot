@@ -4,6 +4,7 @@ import arc.struct.ObjectMap;
 import arc.util.Strings;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
+import discord4j.rest.http.client.ClientException;
 import inside.common.command.model.base.*;
 import inside.data.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,12 +52,13 @@ public class CommandHandler{
         Mono<TextChannel> channel = ref.getReplyChannel().ofType(TextChannel.class);
         Mono<User> self = ref.getClient().getSelf();
 
-        final String prefix = entityRetriever.prefix(ref.getAuthorAsMember().getGuildId());
+        String prefix = entityRetriever.prefix(ref.getAuthorAsMember().getGuildId());
 
         Mono<Tuple2<String, String>> text = Mono.justOrEmpty(prefix)
                 .filter(message::startsWith)
                 .map(s -> message.substring(s.length()).trim())
-                .zipWhen(s -> Mono.justOrEmpty(s.contains(" ") ? s.substring(0, s.indexOf(" ")) : s));
+                .zipWhen(s -> Mono.justOrEmpty(s.contains(" ") ? s.substring(0, s.indexOf(" ")) : s))
+                .cache();
 
         Mono<Void> suggestion = text.flatMap(t -> {
             int min = 0;
@@ -140,11 +142,12 @@ public class CommandHandler{
                             .flatMap(s -> messageService.text(channel, String.format("%s%n%n%s",
                                     messageService.get(ref.context(), "message.error.permission-denied.title"),
                                     messageService.format(ref.context(), "message.error.permission-denied.description", s)))
-                                    .onErrorResume(__ -> guild.flatMap(g -> g.getOwner().flatMap(User::getPrivateChannel))
-                                            .flatMap(c -> c.createMessage(String.format("%s%n%n%s",
-                                            messageService.get(ref.context(), "message.error.permission-denied.title"),
-                                            messageService.format(ref.context(), "message.error.permission-denied.description", s))))
-                                            .then())
+                                    .onErrorResume(t -> t.getMessage().contains("Missing Permissions"), t ->
+                                            guild.flatMap(g -> g.getOwner().flatMap(User::getPrivateChannel))
+                                                    .flatMap(c -> c.createMessage(String.format("%s%n%n%s",
+                                                            messageService.get(ref.context(), "message.error.permission-denied.title"),
+                                                            messageService.format(ref.context(), "message.error.permission-denied.description", s))))
+                                                    .then())
                                     .thenReturn(s))
                             .switchIfEmpty(execute);
                 })));
