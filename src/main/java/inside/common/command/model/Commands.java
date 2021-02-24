@@ -26,6 +26,7 @@ import reactor.util.context.Context;
 
 import java.util.*;
 import java.util.function.*;
+import java.util.stream.Collectors;
 
 import static inside.event.audit.Attribute.COUNT;
 import static inside.event.audit.BaseAuditProvider.MESSAGE_TXT;
@@ -158,25 +159,23 @@ public class Commands{
                     .filterWhen(guildConfig -> adminService.isOwner(member))
                     .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.owner-only")).then(Mono.empty()))
                     .flatMap(guildConfig -> {
-                        Supplier<String> formatter = () -> ref.context().<Locale>getOrEmpty(KEY_LOCALE)
-                                .filter(locale -> !locale.equals(Locale.ROOT))
-                                .map(Locale::toString)
-                                .orElse(messageService.get(ref.context(), "common.default"));
-
                         if(args.length == 0){
-                            return messageService.text(channel, messageService.format(ref.context(), "command.config.locale", formatter.get()));
+                            return messageService.text(channel, messageService.format(ref.context(), "command.config.locale", ref.context().<Locale>getOrEmpty(KEY_LOCALE)));
                         }else{
                             if(!args[0].isBlank()){
                                 Locale locale = LocaleUtil.get(args[0]);
                                 if(locale == null){
-                                    String all = Strings.join(", ", LocaleUtil.locales.values().toSeq().map(Locale::toString));
+                                    String all = LocaleUtil.locales.values().stream()
+                                            .map(Locale::toString)
+                                            .collect(Collectors.joining(", "));
+
                                     return messageService.text(channel, messageService.format(ref.context(), "command.config.unknown", all));
                                 }
 
                                 guildConfig.locale(locale);
                                 entityRetriever.save(guildConfig);
-                                ((Context)ref.context()).put(KEY_LOCALE, locale);
-                                return messageService.text(channel, messageService.format(ref.context(), "command.config.locale-updated", formatter.get()));
+                                return Mono.deferContextual(ctx -> messageService.text(channel, messageService.format(ctx, "command.config.locale-updated", ctx.<Locale>get(KEY_LOCALE))))
+                                        .contextWrite(ctx -> ctx.put(KEY_LOCALE, locale));
                             }
                         }
 
