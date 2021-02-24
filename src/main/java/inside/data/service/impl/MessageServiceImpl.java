@@ -1,6 +1,5 @@
 package inside.data.service.impl;
 
-import arc.util.*;
 import com.github.benmanes.caffeine.cache.*;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.channel.MessageChannel;
@@ -9,14 +8,14 @@ import inside.Settings;
 import inside.data.entity.MessageInfo;
 import inside.data.repository.MessageInfoRepository;
 import inside.data.service.MessageService;
-import inside.util.*;
-import org.joda.time.*;
+import inside.util.LocaleUtil;
+import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.*;
+import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.context.ContextView;
 
@@ -75,7 +74,7 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public Mono<Void> text(Mono<? extends MessageChannel> channel, String text){
         return channel.publishOn(Schedulers.boundedElastic())
-                .flatMap(c -> c.createMessage(Strings.format(text)))
+                .flatMap(c -> c.createMessage(text))
                 .then();
     }
 

@@ -98,7 +98,7 @@ public class AdminServiceImpl implements AdminService{
     public Mono<Void> unmute(Member target){
         LocalMember localMember = entityRetriever.getMember(target);
 
-        Mono<Void> remove = Flux.fromIterable(repository.find(AdminActionType.mute, localMember.guildId().asString(), localMember.userId().asString()))
+        Mono<Void> remove = get(AdminActionType.mute, localMember.guildId(), localMember.userId())
                 .next()
                 .flatMap(adminAction -> Mono.fromRunnable(() -> repository.delete(adminAction)))
                 .then();

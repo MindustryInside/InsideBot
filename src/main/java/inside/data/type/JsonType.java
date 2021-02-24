@@ -14,6 +14,7 @@ public class JsonType extends AbstractSingleColumnStandardBasicType<Object> impl
         super(JsonSqlTypeDescriptor.instance, new JsonTypeDescriptor());
     }
 
+    @Override
     public String getName(){
         return "json";
     }
