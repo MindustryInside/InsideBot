@@ -76,7 +76,8 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                 .withUser(user)
                 .save();
 
-        Mono<Void> kick = event.getGuild().flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MEMBER_KICK)))
+        Mono<Void> kick = event.getGuild()
+                .flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MEMBER_KICK)))
                 .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)))
                 .flatMap(entry -> event.getGuild().flatMap(guild -> guild.getMemberById(entry.getResponsibleUserId()))
                         .flatMap(admin -> auditService.log(event.getGuildId(), USER_KICK)
@@ -90,7 +91,8 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                 .switchIfEmpty(log.then(Mono.empty()))
                 .then();
 
-        return event.getGuild().flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MEMBER_BAN_ADD)))
+        return event.getGuild()
+                .flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MEMBER_BAN_ADD)))
                 .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)))
                 .flatMap(entry -> event.getGuild().flatMap(guild -> guild.getMemberById(entry.getResponsibleUserId()))
                         .flatMap(admin -> auditService.log(event.getGuildId(), USER_BAN)

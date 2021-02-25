@@ -11,7 +11,6 @@ import inside.common.command.model.base.CommandReference;
 import inside.data.entity.*;
 import inside.data.service.*;
 import inside.event.audit.*;
-import inside.event.audit.AuditService;
 import inside.util.*;
 import org.joda.time.DateTime;
 import org.reactivestreams.Publisher;
@@ -23,8 +22,8 @@ import reactor.util.*;
 import reactor.util.context.Context;
 import reactor.util.function.Tuples;
 
-import static inside.event.audit.AuditActionType.*;
 import static inside.event.audit.Attribute.*;
+import static inside.event.audit.AuditActionType.*;
 import static inside.event.audit.BaseAuditProvider.MESSAGE_TXT;
 import static inside.util.ContextUtil.*;
 
@@ -149,7 +148,8 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
         Context context = Context.of(KEY_GUILD_ID, guildId, KEY_LOCALE, entityRetriever.locale(guildId), KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
-        return event.getChannel().ofType(TextChannel.class)
+        return event.getChannel()
+                .ofType(TextChannel.class)
                 .flatMap(channel -> {
                     AuditActionBuilder builder = auditService.log(guildId, MESSAGE_DELETE)
                             .withChannel(channel)
