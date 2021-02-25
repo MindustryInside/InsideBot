@@ -47,7 +47,7 @@ public class CommandHandler{
     }
 
     public Mono<?> handleMessage(final String message, final CommandReference ref){
-        Mono<Guild> guild = ref.event().getGuild();
+        Mono<Guild> guild = ref.getMessage().getGuild();
         Mono<TextChannel> channel = ref.getReplyChannel().ofType(TextChannel.class);
         Mono<User> self = ref.getClient().getSelf();
 
@@ -75,7 +75,7 @@ public class CommandHandler{
                 return messageService.err(channel, messageService.format(ref.context(), "command.response.found-closest", closest.text));
             }
             return messageService.err(channel, messageService.format(ref.context(), "command.response.unknown", prefix));
-        });
+        }).doFirst(() -> messageService.awaitEdit(ref.getMessage().getId()));
 
         return text.flatMap(TupleUtils.function((commandstr, cmd) -> Mono.defer(() -> commands.containsKey(cmd) ? Mono.just(commands.get(cmd)) : suggestion)
                 .ofType(Command.class)
@@ -89,6 +89,7 @@ public class CommandHandler{
 
                     while(true){
                         if(index >= commandInfo.params.length && !argstr.isEmpty()){
+                            messageService.awaitEdit(ref.getMessage().getId());
                             return messageService.err(channel, messageService.get(ref.context(), "command.response.many-arguments.title"),
                                                       messageService.format(ref.context(), argsres, prefix, commandInfo.text, commandInfo.paramText));
                         }else if(argstr.isEmpty()){
@@ -107,6 +108,7 @@ public class CommandHandler{
                         int next = argstr.indexOf(" ");
                         if(next == -1){
                             if(!satisfied){
+                                messageService.awaitEdit(ref.getMessage().getId());
                                 return messageService.err(channel, messageService.get(ref.context(), "command.response.few-arguments.title"),
                                                           messageService.format(ref.context(), argsres, prefix, commandInfo.text, commandInfo.paramText));
                             }
@@ -122,6 +124,7 @@ public class CommandHandler{
                     }
 
                     if(!satisfied && commandInfo.params.length > 0 && !commandInfo.params[0].optional){
+                        messageService.awaitEdit(ref.getMessage().getId());
                         return messageService.err(channel, messageService.get(ref.context(), "command.response.few-arguments.title"),
                                                   messageService.format(ref.context(), argsres, prefix, commandInfo.text, commandInfo.paramText));
                     }

@@ -10,7 +10,9 @@ import reactor.util.context.ContextView;
 
 public interface CommandRequest{
 
-    MessageCreateEvent event();
+    Member getAuthorAsMember();
+
+    Message getMessage();
 
     ContextView context();
 
@@ -21,14 +23,6 @@ public interface CommandRequest{
     Mono<PrivateChannel> getPrivateChannel();
 
     default GatewayDiscordClient getClient(){
-        return event().getClient();
-    }
-
-    default Message getMessage(){
-        return event().getMessage();
-    }
-
-    default Member getAuthorAsMember(){
-        return event().getMember().orElseThrow(IllegalStateException::new);
+        return getMessage().getClient();
     }
 }

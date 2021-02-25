@@ -125,7 +125,7 @@ public class Commands{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             Member member = ref.getAuthorAsMember();
-            Mono<MessageChannel> channel = ref.event().getMessage().getChannel();
+            Mono<MessageChannel> channel = ref.getReplyChannel();
 
             return Mono.justOrEmpty(entityRetriever.getGuildById(member.getGuildId()))
                     .filterWhen(guildConfig -> adminService.isOwner(member))
