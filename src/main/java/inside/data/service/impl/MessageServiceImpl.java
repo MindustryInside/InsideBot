@@ -19,7 +19,6 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.context.ContextView;
 
-import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -142,6 +141,6 @@ public class MessageServiceImpl implements MessageService{
     @Transactional
     @Scheduled(cron = "0 0 */4 * * *")
     public void cleanUp(){
-        repository.deleteByTimestampBefore(DateTime.now().minusWeeks(settings.historyExpireWeeks).toCalendar(Locale.getDefault()));
+        repository.deleteByTimestampBefore(DateTime.now().minusWeeks(settings.historyExpireWeeks));
     }
 }
