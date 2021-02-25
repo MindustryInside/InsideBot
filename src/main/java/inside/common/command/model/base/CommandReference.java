@@ -112,12 +112,12 @@ public class CommandReference implements CommandRequest, CommandResponse{
         }
 
         public Builder channel(Supplier<Mono<? extends MessageChannel>> channel){
-            this.channel = Objects.requireNonNull(channel, "channel");
+            this.channel = channel;
             return this;
         }
 
         public Builder scheduler(Scheduler scheduler){
-            this.scheduler = Objects.requireNonNull(scheduler, "scheduler");
+            this.scheduler = scheduler;
             return this;
         }
 
