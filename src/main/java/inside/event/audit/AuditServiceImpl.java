@@ -9,7 +9,7 @@ import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.*;
 import reactor.core.publisher.Mono;
 import reactor.util.*;
 import reactor.util.function.Tuple2;
@@ -22,16 +22,21 @@ import java.util.stream.Collectors;
 public class AuditServiceImpl implements AuditService{
     private static final Logger log = Loggers.getLogger(AuditService.class);
 
-    @Autowired
-    private EntityRetriever entityRetriever;
+    private final EntityRetriever entityRetriever;
 
-    @Autowired
-    private AuditActionRepository repository;
+    private final AuditActionRepository repository;
 
-    @Autowired
-    private Settings settings;
+    private final Settings settings;
 
     private Map<AuditActionType, AuditProvider> providers;
+
+    public AuditServiceImpl(@Autowired EntityRetriever entityRetriever,
+                            @Autowired AuditActionRepository repository,
+                            @Autowired Settings settings){
+        this.entityRetriever = entityRetriever;
+        this.repository = repository;
+        this.settings = settings;
+    }
 
     @Override
     @Transactional
