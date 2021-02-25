@@ -10,7 +10,7 @@ import reactor.util.annotation.Nullable;
 import java.time.*;
 import java.time.temporal.*;
 import java.util.Objects;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.regex.*;
 
 import static java.util.regex.Pattern.compile;
@@ -108,17 +108,16 @@ public abstract class MessageUtil{
         return !isEmpty(cs);
     }
 
-    public static boolean isEmpty(CharSequence cs) {
+    public static boolean isEmpty(@Nullable CharSequence cs) {
         return cs == null || cs.length() == 0;
     }
 
-    public static boolean isEmpty(Message message) {
+    public static boolean isEmpty(@Nullable Message message) {
         return message == null || effectiveContent(message).isBlank();
     }
 
     public static String leeted(String text){
-        Objects.requireNonNull(text, "text");
-        Function<String, String> get = s -> {
+        UnaryOperator<String> get = s -> {
             String result = leetSpeak.get(s.toLowerCase());
             if(result == null){
                 result = leetSpeak.findKey(s.toLowerCase(), false);
@@ -151,8 +150,7 @@ public abstract class MessageUtil{
     }
 
     public static String translit(String text){
-        Objects.requireNonNull(text, "text");
-        Function<String, String> get = s -> {
+        UnaryOperator<String> get = s -> {
             String result = translit.get(s.toLowerCase());
             if(result == null){
                 result = translit.findKey(s.toLowerCase(), false);
@@ -198,7 +196,7 @@ public abstract class MessageUtil{
         StringBuilder builder = new StringBuilder(message.getContent());
         if(!message.getAttachments().isEmpty()){
             builder.append("\n---\n");
-            message.getAttachments().forEach(a -> builder.append(a.getUrl()).append('\n'));
+            message.getAttachments().forEach(a -> builder.append(a.getUrl()).append("\n"));
         }
         return builder.toString();
     }
@@ -218,17 +216,12 @@ public abstract class MessageUtil{
 
     @Nullable
     public static Snowflake parseUserId(String message){
-        Objects.requireNonNull(message, "message");
         message = message.replaceAll("[<>@!]", "");
         return canParseId(message) ? Snowflake.of(message) : null;
     }
 
     @Nullable
     public static DateTime parseTime(String message){
-        if(message == null){
-            return null;
-        }
-
         Matcher matcher = timeUnitPattern.matcher(message.toLowerCase());
         if(!matcher.matches()){
             return null;

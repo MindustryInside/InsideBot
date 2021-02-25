@@ -2,7 +2,7 @@ package inside.util;
 
 import reactor.util.context.Context;
 
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 public abstract class ContextUtil{
     public static final String KEY_GUILD_ID = "inside.guild";
@@ -11,7 +11,7 @@ public abstract class ContextUtil{
 
     private ContextUtil(){}
 
-    public static Function<Context, Context> reset(){
+    public static UnaryOperator<Context> reset(){
         return ctx -> ctx.delete(KEY_LOCALE)
                 .delete(KEY_TIMEZONE)
                 .delete(KEY_GUILD_ID);
