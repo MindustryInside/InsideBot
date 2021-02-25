@@ -23,6 +23,9 @@ import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
 import reactor.util.*;
 
+import javax.persistence.criteria.CriteriaBuilder;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collectors;
@@ -243,6 +246,7 @@ public class Commands{
             }
 
             StringBuffer result = new StringBuffer();
+            Instant limit = Instant.now().minus(14, ChronoUnit.DAYS);
             DateTimeFormatter formatter = DateTimeFormat.forPattern("MM-dd-yyyy HH:mm:ss")
                     .withLocale(ref.context().get(KEY_LOCALE))
                     .withZone(ref.context().get(KEY_TIMEZONE));
@@ -276,6 +280,7 @@ public class Commands{
             Mono<Void> history = reply.flatMapMany(channel -> channel.getMessagesBefore(ref.getMessage().getId()))
                     .limitRequest(number)
                     .sort(Comparator.comparing(Message::getId))
+                    .filter(message -> message.getTimestamp().isAfter(limit))
                     .flatMap(message -> message.getAuthorAsMember().flatMap(member -> Mono.fromRunnable(() -> {
                                 messageService.putMessage(message.getId());
                                 appendInfo.accept(message, member);
