@@ -30,7 +30,7 @@ public class DiscordServiceImpl implements DiscordService{
     }
 
     @Autowired(required = false)
-    public void init(List<ReactiveEventAdapter> handlers){
+    public void init(ReactiveEventAdapter[] handlers){
         String token = settings.token;
         Objects.requireNonNull(token, "token");
 
@@ -52,7 +52,9 @@ public class DiscordServiceImpl implements DiscordService{
                 .login()
                 .block();
 
-        Flux.fromIterable(handlers).subscribe(e -> gateway.on(e).subscribe());
+        Objects.requireNonNull(gateway); // for ide
+
+        gateway.on(ReactiveEventAdapter.from(handlers)).subscribe();
     }
 
     @PreDestroy
