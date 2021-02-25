@@ -2,9 +2,9 @@ package inside.data.repository;
 
 import inside.data.entity.MessageInfo;
 import inside.data.repository.base.GuildRepository;
+import org.joda.time.DateTime;
 import org.springframework.stereotype.Repository;
-
-import java.util.Calendar;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public interface MessageInfoRepository extends GuildRepository<MessageInfo>{
@@ -13,5 +13,6 @@ public interface MessageInfoRepository extends GuildRepository<MessageInfo>{
 
     MessageInfo findByMessageId(String messageId);
 
-    void deleteByTimestampBefore(Calendar timestamp);
+    @Transactional
+    void deleteByTimestampBefore(DateTime timestamp);
 }

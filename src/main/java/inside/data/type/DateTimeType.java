@@ -23,11 +23,7 @@ public class DateTimeType implements EnhancedUserType, Serializable{
 
     @Override
     public boolean equals(Object a, Object b) throws HibernateException{
-        if(a == b) return true;
-        if(a == null || b == null) return false;
-        DateTime a1 = (DateTime)a;
-        DateTime b1 = (DateTime)b;
-        return a1.equals(b1);
+        return Objects.equals(a, b);
     }
 
     @Override
