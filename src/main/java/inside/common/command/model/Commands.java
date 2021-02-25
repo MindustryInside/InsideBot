@@ -24,7 +24,7 @@ import reactor.function.TupleUtils;
 import reactor.util.*;
 
 import java.util.*;
-import java.util.function.Consumer;
+import java.util.function.*;
 import java.util.stream.Collectors;
 
 import static inside.event.audit.Attribute.COUNT;
@@ -248,14 +248,15 @@ public class Commands{
                     .withZone(ref.context().get(KEY_TIMEZONE));
 
             StringInputStream input = new StringInputStream();
-            Consumer<Message> appendInfo = message -> {
-                Member member = message.getAuthorAsMember().block();
+            BiConsumer<Message, Member> appendInfo = (message, member) -> {
                 result.append("[").append(formatter.print(message.getTimestamp().toEpochMilli())).append("] ");
                 if(DiscordUtil.isBot(member)){
                     result.append("[BOT] ");
                 }
 
-                result.append(DiscordUtil.detailName(member)).append(" > ");
+                result.append(member.getUsername());
+                member.getNickname().ifPresent(nickname -> result.append(" (").append(nickname).append(")"));
+                result.append(" > ");
                 if(!MessageUtil.isEmpty(message)){
                     result.append(MessageUtil.effectiveContent(message));
                 }
@@ -275,10 +276,11 @@ public class Commands{
             Mono<Void> history = reply.flatMapMany(channel -> channel.getMessagesBefore(ref.getMessage().getId()))
                     .limitRequest(number)
                     .sort(Comparator.comparing(Message::getId))
-                    .flatMap(message -> message.delete().then(Mono.fromRunnable(() -> {
-                        messageService.putMessage(message.getId());
-                        appendInfo.accept(message);
-                    })))
+                    .flatMap(message -> message.getAuthorAsMember().flatMap(member -> Mono.fromRunnable(() -> {
+                                messageService.putMessage(message.getId());
+                                appendInfo.accept(message, member);
+                            }))
+                            .and(message.delete()))
                     .then();
 
             Mono<Void> log =  ref.getReplyChannel()

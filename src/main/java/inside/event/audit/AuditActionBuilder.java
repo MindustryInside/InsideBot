@@ -25,12 +25,12 @@ public abstract class AuditActionBuilder{
         action.attributes(new HashMap<>());
     }
 
-    public AuditActionBuilder withUser(User user){
+    public AuditActionBuilder withUser(Member user){
         action.user(getReference(user));
         return this;
     }
 
-    public AuditActionBuilder withUser(Member user){
+    public AuditActionBuilder withUser(User user){
         action.user(getReference(user));
         return this;
     }
@@ -40,12 +40,12 @@ public abstract class AuditActionBuilder{
         return this;
     }
 
-    public AuditActionBuilder withTargetUser(User user){
+    public AuditActionBuilder withTargetUser(Member user){
         action.target(getReference(user));
         return this;
     }
 
-    public AuditActionBuilder withTargetUser(Member user){
+    public AuditActionBuilder withTargetUser(User user){
         action.target(getReference(user));
         return this;
     }
