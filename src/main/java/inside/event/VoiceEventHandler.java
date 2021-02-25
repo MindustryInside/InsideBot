@@ -1,10 +1,8 @@
 package inside.event;
 
-import arc.func.Boolf;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.VoiceStateUpdateEvent;
-import discord4j.core.object.VoiceState;
 import inside.data.service.EntityRetriever;
 import inside.event.audit.AuditService;
 import inside.util.DiscordUtil;
@@ -30,26 +28,18 @@ public class VoiceEventHandler extends ReactiveEventAdapter{
     public Publisher<?> onVoiceStateUpdate(VoiceStateUpdateEvent event){
         Snowflake guildId = event.getCurrent().getGuildId();
         Context context = Context.of(KEY_GUILD_ID, guildId, KEY_LOCALE, entityRetriever.locale(guildId), KEY_TIMEZONE, entityRetriever.timeZone(guildId));
+        if(!event.isJoinEvent() && !event.isLeaveEvent()){
+            return Mono.empty();
+        }
 
-        Boolf<VoiceState> ignore = voiceState -> !(voiceState.isSelfDeaf() || voiceState.isDeaf() || voiceState.isMuted() || voiceState.isSelfStreaming() ||
-                                                 voiceState.isSelfVideoEnabled() || voiceState.isSuppressed());
-
-        return Mono.justOrEmpty(event.getOld()).filter(ignore::get)
-                .switchIfEmpty(Mono.justOrEmpty(event.getCurrent())
-                        .filter(ignore::get)
-                        .flatMap(state -> Mono.zip(state.getChannel(), state.getUser())
-                        .filter(TupleUtils.predicate((channel, user) -> DiscordUtil.isNotBot(user)))
-                        .flatMap(TupleUtils.function((channel, user) -> auditService.log(guildId, VOICE_JOIN)
-                                .withChannel(channel)
-                                .withUser(user)
-                                .save()))
-                ).then(Mono.empty()))
-                .flatMap(state -> Mono.zip(state.getChannel(), state.getUser())
-                        .filter(TupleUtils.predicate((channel, user) -> DiscordUtil.isNotBot(user)))
-                        .flatMap(TupleUtils.function((channel, user) -> auditService.log(guildId, VOICE_LEAVE)
-                                .withChannel(channel)
-                                .withUser(user)
-                                .save())))
+        return Mono.justOrEmpty(event.getOld())
+                .defaultIfEmpty(event.getCurrent())
+                .flatMap(state -> Mono.zip(state.getChannel(), state.getUser()))
+                .filter(TupleUtils.predicate((channel, user) -> DiscordUtil.isNotBot(user)))
+                .flatMap(TupleUtils.function((channel, user) -> auditService.log(guildId, event.isLeaveEvent() ? VOICE_LEAVE : VOICE_JOIN)
+                        .withChannel(channel)
+                        .withUser(user)
+                        .save()))
                 .contextWrite(context);
     }
 }
