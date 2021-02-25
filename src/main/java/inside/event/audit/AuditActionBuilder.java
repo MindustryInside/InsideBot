@@ -5,6 +5,7 @@ import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.GuildChannel;
 import inside.data.entity.*;
 import inside.data.entity.base.NamedReference;
+import org.joda.time.DateTime;
 import reactor.core.publisher.Mono;
 import reactor.util.function.*;
 
@@ -19,7 +20,7 @@ public abstract class AuditActionBuilder{
 
     protected AuditActionBuilder(Snowflake guildId, AuditActionType type){
         action = new AuditAction(guildId);
-        action.timestamp(Calendar.getInstance());
+        action.timestamp(DateTime.now());
         action.type(type);
         action.attributes(new HashMap<>());
     }

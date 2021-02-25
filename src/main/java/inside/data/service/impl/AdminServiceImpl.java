@@ -66,13 +66,12 @@ public class AdminServiceImpl implements AdminService{
     public Mono<Void> mute(Member admin, Member target, DateTime end, String reason){
         LocalMember adminLocalMember = entityRetriever.getMember(admin);
         LocalMember targetLocalMember = entityRetriever.getMember(target);
-        Locale locale = entityRetriever.locale(admin.getGuildId());
         AdminAction action = new AdminAction(target.getGuildId())
                 .type(AdminActionType.mute)
                 .admin(adminLocalMember)
                 .target(targetLocalMember)
-                .timestamp(Calendar.getInstance())
-                .end(end.toCalendar(locale))
+                .timestamp(DateTime.now())
+                .end(end)
                 .reason(reason);
 
         Mono<Void> add = Mono.fromRunnable(() -> repository.save(action));
@@ -119,13 +118,12 @@ public class AdminServiceImpl implements AdminService{
     public Mono<Void> warn(Member admin, Member target, String reason){
         LocalMember adminLocalMember = entityRetriever.getMember(admin);
         LocalMember targetLocalMember = entityRetriever.getMember(target);
-        Locale locale = entityRetriever.locale(admin.getGuildId());
         AdminAction action = new AdminAction(admin.getGuildId())
                 .type(AdminActionType.warn)
                 .admin(adminLocalMember)
                 .target(targetLocalMember)
-                .timestamp(Calendar.getInstance())
-                .end(DateTime.now().plusDays(settings.warnExpireDays).toCalendar(locale))
+                .timestamp(DateTime.now())
+                .end(DateTime.now().plusDays(settings.warnExpireDays))
                 .reason(reason);
 
         return Mono.fromRunnable(() -> repository.save(action));

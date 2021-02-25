@@ -12,6 +12,7 @@ import inside.data.entity.*;
 import inside.data.service.*;
 import inside.event.audit.*;
 import inside.util.*;
+import org.joda.time.DateTime;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -63,7 +64,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
         Snowflake userId = user.getId();
         LocalMember localMember = entityRetriever.getMember(member);
 
-        localMember.lastSentMessage(Calendar.getInstance());
+        localMember.lastSentMessage(DateTime.now());
         entityRetriever.save(localMember);
 
         Mono<Void> messageInfo = Mono.fromRunnable(() -> {
@@ -71,7 +72,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
             info.userId(userId);
             info.messageId(message.getId());
             info.guildId(guildId);
-            info.timestamp(Calendar.getInstance());
+            info.timestamp(DateTime.now());
             info.content(MessageUtil.effectiveContent(message));
             messageService.save(info);
         });

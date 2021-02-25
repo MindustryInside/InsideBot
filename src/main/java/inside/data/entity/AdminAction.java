@@ -33,14 +33,16 @@ public class AdminAction extends GuildEntity{
     @JoinColumn(name = "target_id")
     private LocalMember target;
 
-    @Column(length = 1000)
+    @Column(length = 512)
     private String reason;
 
     @Column
-    private Calendar timestamp;
+    @Type(type = "date-time")
+    private DateTime timestamp;
 
+    @Type(type = "date-time")
     @Column(name = "end_timestamp")
-    private Calendar endTimestamp;
+    private DateTime endTimestamp;
 
     public AdminAction(){}
 
@@ -84,28 +86,28 @@ public class AdminAction extends GuildEntity{
         return this;
     }
 
-    public Calendar timestamp(){
+    public DateTime timestamp(){
         return timestamp;
     }
 
-    public AdminAction timestamp(Calendar timestamp){
+    public AdminAction timestamp(DateTime timestamp){
         this.timestamp = Objects.requireNonNull(timestamp, "timestamp");
         return this;
     }
 
     @Nullable
-    public Calendar end(){
+    public DateTime end(){
         return endTimestamp;
     }
 
-    public AdminAction end(@Nullable Calendar end){
+    public AdminAction end(@Nullable DateTime end){
         this.endTimestamp = end;
         return this;
     }
 
     @Transient
     public boolean isEnd(){
-        return end() != null && DateTime.now().isAfter(new DateTime(end()));
+        return end() != null && DateTime.now().isAfter(end());
     }
 
     @Override
