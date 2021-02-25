@@ -35,6 +35,10 @@ public interface MessageService{
 
     //data
 
+    void awaitEdit(Snowflake messageId);
+
+    boolean isAwaitEdit(Snowflake messageId);
+
     boolean isCleared(Snowflake messageId);
 
     void putMessage(Snowflake messageId);

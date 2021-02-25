@@ -19,6 +19,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.context.ContextView;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -35,6 +36,10 @@ public class MessageServiceImpl implements MessageService{
 
     private final Cache<Snowflake, Boolean> deletedMessage = Caffeine.newBuilder()
             .expireAfterWrite(3, TimeUnit.MINUTES)
+            .build();
+
+    private final Cache<Snowflake, Boolean> waitingMessage = Caffeine.newBuilder()
+            .expireAfterWrite(15, TimeUnit.SECONDS)
             .build();
 
     public MessageServiceImpl(@Autowired MessageInfoRepository repository,
@@ -97,8 +102,18 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public Mono<Void> err(Mono<? extends MessageChannel> channel, String title, String text){
         return channel.publishOn(Schedulers.boundedElastic())
-                .flatMap(c -> c.createEmbed(e -> e.setColor(settings.errorColor).setTitle(title).setDescription(text)))
-                .then();
+                .flatMap(c -> c.createEmbed(embed -> embed.setColor(settings.errorColor).setTitle(title).setDescription(text)))
+                .flatMap(message -> Mono.delay(Duration.ofSeconds(5)).then(message.delete()));
+    }
+
+    @Override
+    public void awaitEdit(Snowflake messageId){
+        waitingMessage.put(messageId, true);
+    }
+
+    @Override
+    public boolean isAwaitEdit(Snowflake messageId){
+        return Boolean.TRUE.equals(waitingMessage.getIfPresent(messageId));
     }
 
     @Override

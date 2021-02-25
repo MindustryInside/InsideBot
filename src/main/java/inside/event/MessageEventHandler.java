@@ -78,7 +78,8 @@ public class MessageEventHandler extends ReactiveEventAdapter{
         Context context = Context.of(KEY_GUILD_ID, guildId, KEY_LOCALE, entityRetriever.locale(guildId), KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
         CommandReference reference = CommandReference.builder()
-                .event(event)
+                .message(message)
+                .member(member)
                 .context(context)
                 .localMember(localMember)
                 .channel(() -> channel)
@@ -101,19 +102,31 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
         return Mono.zip(event.getMessage(), event.getChannel().ofType(TextChannel.class))
                 .filter(TupleUtils.predicate((message, channel) -> !message.isTts() && !message.isPinned()))
-                .zipWhen(tuple -> Mono.justOrEmpty(tuple.getT1().getAuthor()), (tuple, user) -> Tuples.of(tuple.getT1(), tuple.getT2(), user))
-                .filter(TupleUtils.predicate((message, channel, user) -> DiscordUtil.isNotBot(user)))
-                .flatMap(TupleUtils.function((message, channel, user) -> {
+                .zipWhen(tuple -> tuple.getT1().getAuthorAsMember(), (tuple, user) -> Tuples.of(tuple.getT1(), tuple.getT2(), user))
+                .filter(TupleUtils.predicate((message, channel, member) -> DiscordUtil.isNotBot(member)))
+                .flatMap(TupleUtils.function((message, channel, member) -> {
                     String newContent = MessageUtil.effectiveContent(message);
                     info.content(newContent);
                     messageService.save(info);
 
+                    Mono<Void> command = Mono.defer(() -> {
+                        if(!messageService.isAwaitEdit(message.getId())) return Mono.empty();
+                        CommandReference commandReference = CommandReference.builder()
+                                .localMember(entityRetriever.getMember(member))
+                                .message(message)
+                                .member(member)
+                                .context(context)
+                                .build();
+
+                        return commandHandler.handleMessage(newContent, commandReference);
+                    }).then();
+
                     AuditActionBuilder builder = auditService.log(guildId, MESSAGE_EDIT)
                             .withChannel(channel)
-                            .withUser(user)
+                            .withUser(member)
                             .withAttribute(OLD_CONTENT, oldContent)
                             .withAttribute(NEW_CONTENT, newContent)
-                            .withAttribute(USER_URL, user.getAvatarUrl())
+                            .withAttribute(USER_URL, member.getAvatarUrl())
                             .withAttribute(MESSAGE_ID, message.getId());
 
                     if(newContent.length() >= Field.MAX_VALUE_LENGTH || oldContent.length() >= Field.MAX_VALUE_LENGTH){
@@ -125,7 +138,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                         builder.withAttachment(MESSAGE_TXT, input);
                     }
 
-                    return builder.save();
+                    return builder.save().and(command);
                 }))
                 .contextWrite(context);
     }
