@@ -8,6 +8,4 @@ import org.springframework.stereotype.Repository;
 public interface LocalMemberRepository extends GuildRepository<LocalMember>{
 
     LocalMember findByGuildIdAndUserId(String guildId, String userId);
-
-    boolean existsByGuildIdAndUserId(String guildId, String userId);
 }

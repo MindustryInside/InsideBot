@@ -79,13 +79,13 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     public Mono<Void> info(Mono<? extends MessageChannel> channel, String title, String text){
-        return info(channel, embed -> embed.setColor(settings.normalColor).setTitle(title).setDescription(text));
+        return info(channel, embed -> embed.setTitle(title).setDescription(text));
     }
 
     @Override
     public Mono<Void> info(Mono<? extends MessageChannel> channel, Consumer<EmbedCreateSpec> embed){
         return channel.publishOn(Schedulers.boundedElastic())
-                .flatMap(c -> c.createEmbed(embed))
+                .flatMap(c -> c.createEmbed(embed.andThen(spec -> spec.setColor(settings.normalColor))))
                 .then();
     }
 

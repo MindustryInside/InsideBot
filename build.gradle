@@ -1,5 +1,5 @@
 plugins{
-    id 'org.springframework.boot' version '2.4.0'
+    id 'org.springframework.boot' version '2.4.3'
     id 'io.spring.dependency-management' version '1.0.10.RELEASE'
     id 'java'
 }
@@ -13,7 +13,7 @@ repositories{
 ext{
     discord4j_version  = '3.1.3'
     arc_version = 'v115'
-    joda_version = 'v2.10.8'
+    joda_version = 'v2.10.10'
     caffeine_version = '2.8.8'
 
     jaxb_version = '2.3.1'

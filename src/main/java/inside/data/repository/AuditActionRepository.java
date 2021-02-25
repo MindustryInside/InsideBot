@@ -6,8 +6,6 @@ import org.joda.time.DateTime;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Calendar;
-
 @Repository
 public interface AuditActionRepository extends GuildRepository<AuditAction>{
 

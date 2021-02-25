@@ -14,6 +14,7 @@ import inside.common.command.model.base.*;
 import inside.data.entity.AdminAction;
 import inside.data.service.*;
 import inside.event.audit.*;
+import inside.event.audit.AuditService;
 import inside.util.*;
 import org.joda.time.DateTime;
 import org.joda.time.format.*;
@@ -22,7 +23,6 @@ import org.springframework.context.annotation.Lazy;
 import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
 import reactor.util.*;
-import reactor.util.context.Context;
 
 import java.util.*;
 import java.util.function.*;
@@ -100,9 +100,8 @@ public class Commands{
 
             return Mono.justOrEmpty(targetId).flatMap(id -> ref.getClient().withRetrievalStrategy(EntityRetrievalStrategy.REST).getUserById(id))
                     .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name")).then(Mono.empty()))
-                    .flatMap(user -> messageService.info(channel, embed -> embed.setColor(settings.normalColor)
-                            .setDescription(messageService.format(ref.context(), "command.avatar.text", user.getUsername()))
-                            .setImage(user.getAvatarUrl() + "?size=512")));
+                    .flatMap(user -> messageService.info(channel, embed -> embed.setImage(user.getAvatarUrl() + "?size=512")
+                            .setDescription(messageService.format(ref.context(), "command.avatar.text", user.getUsername()))));
         }
     }
 
@@ -283,7 +282,8 @@ public class Commands{
                     })))
                     .then();
 
-            Mono<Void> log =  ref.getReplyChannel().ofType(GuildChannel.class)
+            Mono<Void> log =  ref.getReplyChannel()
+                    .ofType(GuildChannel.class)
                     .flatMap(channel -> builder.withChannel(channel)
                             .withAttachment(MESSAGE_TXT, input.writeString(result.toString()))
                             .save());
@@ -353,8 +353,8 @@ public class Commands{
                                 Flux<AdminAction> warnings = adminService.warnings(local.guildId(), local.userId()).limitRequest(21);
 
                                 Mono<Void> warningMessage = Mono.defer(() -> messageService.info(channel, embed ->
-                                        warnings.index().subscribe(TupleUtils.consumer((index, warn) -> embed.setColor(settings.normalColor)
-                                                .setTitle(messageService.format(ref.context(), "command.admin.warnings.title", local.effectiveName()))
+                                        warnings.index().subscribe(TupleUtils.consumer((index, warn) ->
+                                                embed.setTitle(messageService.format(ref.context(), "command.admin.warnings.title", local.effectiveName()))
                                                 .addField(String.format("%2s. %s", index + 1, formatter.print(new DateTime(warn.timestamp()))), String.format("%s%n%s",
                                                 messageService.format(ref.context(), "common.admin", warn.admin().effectiveName()),
                                                 messageService.format(ref.context(), "common.reason", warn.reason().orElse(messageService.get(ref.context(), "common.not-defined")))
