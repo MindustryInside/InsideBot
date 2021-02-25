@@ -403,7 +403,7 @@ public class Commands{
         public Mono<Void> execute(CommandReference ref, String[] args){
             Mono<MessageChannel> channel = ref.getReplyChannel();
             Snowflake targetId = MessageUtil.parseUserId(args[0]);
-            Snowflake guildId = ref.localMember().guildId();
+            Snowflake guildId = ref.getAuthorAsMember().getGuildId();
 
             if(entityRetriever.muteRoleId(guildId).isEmpty()){
                 return messageService.err(channel, messageService.get(ref.context(), "command.disabled.mute"));

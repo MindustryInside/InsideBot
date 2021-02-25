@@ -1,13 +1,16 @@
 package inside.data.entity.base;
 
-import inside.data.type.JsonType;
+import inside.data.type.*;
 import org.hibernate.annotations.*;
 
 import javax.persistence.*;
 import java.io.*;
 import java.util.Objects;
 
-@TypeDef(name = "json", typeClass = JsonType.class)
+@TypeDefs({
+        @TypeDef(name = "json", typeClass = JsonType.class),
+        @TypeDef(name = "date-time", typeClass = DateTimeType.class)
+})
 @MappedSuperclass
 public abstract class BaseEntity implements Serializable{
     @Serial

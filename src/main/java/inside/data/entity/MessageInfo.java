@@ -3,6 +3,7 @@ package inside.data.entity;
 import discord4j.common.util.Snowflake;
 import inside.data.entity.base.GuildEntity;
 import org.hibernate.annotations.Type;
+import org.joda.time.DateTime;
 import reactor.util.annotation.NonNull;
 
 import javax.persistence.*;
@@ -25,7 +26,8 @@ public class MessageInfo extends GuildEntity{
     private String content;
 
     @Column
-    private Calendar timestamp;
+    @Type(type = "date-time")
+    private DateTime timestamp;
 
     public Snowflake messageId(){
         return Snowflake.of(messageId);
@@ -51,11 +53,11 @@ public class MessageInfo extends GuildEntity{
         this.content = Objects.requireNonNull(content, "content");
     }
 
-    public Calendar timestamp(){
+    public DateTime timestamp(){
         return timestamp;
     }
 
-    public void timestamp(Calendar timestamp){
+    public void timestamp(DateTime timestamp){
         this.timestamp = Objects.requireNonNull(timestamp, "timestamp");
     }
 

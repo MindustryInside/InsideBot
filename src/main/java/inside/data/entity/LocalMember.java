@@ -2,6 +2,8 @@ package inside.data.entity;
 
 import discord4j.common.util.Snowflake;
 import inside.data.entity.base.GuildEntity;
+import org.hibernate.annotations.Type;
+import org.joda.time.DateTime;
 import reactor.util.annotation.Nullable;
 
 import javax.persistence.*;
@@ -20,8 +22,9 @@ public class LocalMember extends GuildEntity{
     @Column(name = "effective_name", length = 32)
     private String effectiveName;
 
+    @Type(type = "date-time")
     @Column(name = "last_sent_message")
-    private Calendar lastSentMessage;
+    private DateTime lastSentMessage;
 
     public Snowflake userId(){
         return Snowflake.of(userId);
@@ -40,11 +43,11 @@ public class LocalMember extends GuildEntity{
     }
 
     @Nullable
-    public Calendar lastSentMessage(){
+    public DateTime lastSentMessage(){
         return lastSentMessage;
     }
 
-    public void lastSentMessage(@Nullable Calendar lastSentMessage){
+    public void lastSentMessage(@Nullable DateTime lastSentMessage){
         this.lastSentMessage = lastSentMessage;
     }
 
