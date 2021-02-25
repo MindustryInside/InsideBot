@@ -91,12 +91,9 @@ public class MessageEventHandler extends ReactiveEventAdapter{
     @Override
     public Publisher<?> onMessageUpdate(MessageUpdateEvent event){
         Snowflake guildId = event.getGuildId().orElse(null);
-        if(guildId == null || !event.isContentChanged() || !messageService.exists(event.getMessageId())){
+        if(guildId == null || !event.isContentChanged()){
             return Mono.empty();
         }
-
-        MessageInfo info = messageService.getById(event.getMessageId());
-        String oldContent = info.content();
 
         Context context = Context.of(KEY_GUILD_ID, guildId, KEY_LOCALE, entityRetriever.locale(guildId), KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
@@ -106,6 +103,16 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                 .filter(TupleUtils.predicate((message, channel, member) -> DiscordUtil.isNotBot(member)))
                 .flatMap(TupleUtils.function((message, channel, member) -> {
                     String newContent = MessageUtil.effectiveContent(message);
+                    MessageInfo info = messageService.getById(event.getMessageId());
+                    if(info == null){
+                        info = new MessageInfo();
+                        info.messageId(event.getMessageId());
+                        info.userId(member.getId());
+                        info.guildId(guildId);
+                        info.content(event.getOld().map(MessageUtil::effectiveContent).orElse(""));
+                        info.timestamp(new DateTime(event.getMessageId().getTimestamp().toEpochMilli()));
+                    }
+                    String oldContent = info.content();
                     info.content(newContent);
                     messageService.save(info);
 
