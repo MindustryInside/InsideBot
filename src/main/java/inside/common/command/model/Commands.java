@@ -342,10 +342,9 @@ public class Commands{
     public class WarningsCommand extends ModeratorCommand{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
-            Member author = ref.getAuthorAsMember();
             Mono<MessageChannel> channel = ref.getReplyChannel();
             Snowflake targetId = MessageUtil.parseUserId(args[0]);
-            Snowflake guildId = author.getGuildId();
+            Snowflake guildId = ref.getAuthorAsMember().getGuildId();
 
             DateTimeFormatter formatter = DateTimeFormat.shortDateTime()
                     .withLocale(ref.context().get(KEY_LOCALE))
@@ -353,21 +352,20 @@ public class Commands{
 
             return Mono.justOrEmpty(targetId).flatMap(id -> ref.getClient().getMemberById(guildId, id))
                     .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name")).then(Mono.empty()))
-                    .flatMap(target -> Mono.just(entityRetriever.getMember(target))
-                            .flatMap(local -> {
-                                Flux<AdminAction> warnings = adminService.warnings(local.guildId(), local.userId()).limitRequest(21);
+                    .flatMap(target -> {
+                        Flux<AdminAction> warnings = adminService.warnings(target.getGuildId(), target.getId()).limitRequest(21);
 
-                                Mono<Void> warningMessage = Mono.defer(() -> messageService.info(channel, embed ->
-                                        warnings.index().subscribe(TupleUtils.consumer((index, warn) ->
-                                                embed.setTitle(messageService.format(ref.context(), "command.admin.warnings.title", local.effectiveName()))
-                                                .addField(String.format("%2s. %s", index + 1, formatter.print(new DateTime(warn.timestamp()))), String.format("%s%n%s",
-                                                messageService.format(ref.context(), "common.admin", warn.admin().effectiveName()),
-                                                messageService.format(ref.context(), "common.reason", warn.reason().orElse(messageService.get(ref.context(), "common.not-defined")))
-                                                ), true)))
+                        Mono<Void> warningMessage = Mono.defer(() -> messageService.info(channel, embed ->
+                                warnings.index().subscribe(TupleUtils.consumer((index, warn) ->
+                                        embed.setTitle(messageService.format(ref.context(), "command.admin.warnings.title", target.getDisplayName()))
+                                        .addField(String.format("%2s. %s", index + 1, formatter.print(new DateTime(warn.timestamp()))), String.format("%s%n%s",
+                                        messageService.format(ref.context(), "common.admin", warn.admin().effectiveName()),
+                                        messageService.format(ref.context(), "common.reason", warn.reason().orElse(messageService.get(ref.context(), "common.not-defined")))
+                                        ), true)))
                                 ));
 
-                                return warnings.hasElements().flatMap(bool -> !bool ? messageService.text(channel, messageService.get(ref.context(), "command.admin.warnings.empty")) : warningMessage);
-                            }));
+                        return warnings.hasElements().flatMap(bool -> !bool ? messageService.text(channel, messageService.get(ref.context(), "command.admin.warnings.empty")) : warningMessage);
+                    });
         }
     }
 
