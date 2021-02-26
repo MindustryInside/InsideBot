@@ -1,7 +1,6 @@
 package inside.common.command.model.base;
 
 import discord4j.core.GatewayDiscordClient;
-import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
 import inside.data.entity.LocalMember;

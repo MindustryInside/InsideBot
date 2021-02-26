@@ -51,7 +51,10 @@ public class AdminAction extends GuildEntity{
 
     public AdminAction(){}
 
-    private AdminAction(Snowflake guildId, AdminActionType type, LocalMember admin, LocalMember target, @Nullable String reason, DateTime timestamp, DateTime endTimestamp){
+    private AdminAction(Snowflake guildId, AdminActionType type,
+                        LocalMember admin, LocalMember target,
+                        @Nullable String reason, DateTime timestamp,
+                        @Nullable DateTime endTimestamp){
         this.guildId = guildId.asString();
         this.type = type;
         this.admin = admin;

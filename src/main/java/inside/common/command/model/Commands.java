@@ -23,7 +23,6 @@ import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
 import reactor.util.*;
 
-import javax.persistence.criteria.CriteriaBuilder;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -328,7 +327,7 @@ public class Commands{
                                     Mono<Void> message = messageService.text(channel, messageService.format(ref.context(), "command.admin.warn", target.getUsername(), count));
 
                                     if(count >= settings.maxWarnings){
-                                        return message.then(author.getGuild().flatMap(guild -> guild.ban(target.getId(), b -> b.setDeleteMessageDays(0))));
+                                        return message.then(author.getGuild().flatMap(guild -> guild.ban(target.getId(), spec -> spec.setDeleteMessageDays(0))));
                                     }
                                     return message;
                                 });
