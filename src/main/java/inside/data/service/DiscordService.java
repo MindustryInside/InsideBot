@@ -9,8 +9,6 @@ public interface DiscordService{
 
     GatewayDiscordClient gateway();
 
-    Mono<PrivateChannel> getPrivateChannelById(Snowflake userId);
-
     Mono<TextChannel> getTextChannelById(Snowflake channelId);
 
     // void activeUsersMonitor();

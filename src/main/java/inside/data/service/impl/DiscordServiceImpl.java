@@ -3,7 +3,6 @@ package inside.data.service.impl;
 import discord4j.common.util.Snowflake;
 import discord4j.core.*;
 import discord4j.core.event.ReactiveEventAdapter;
-import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.*;
 import discord4j.core.shard.MemberRequestFilter;
 import discord4j.gateway.intent.*;
@@ -65,11 +64,6 @@ public class DiscordServiceImpl implements DiscordService{
     @Override // for monitors
     public GatewayDiscordClient gateway(){
         return gateway;
-    }
-
-    @Override
-    public Mono<PrivateChannel> getPrivateChannelById(Snowflake userId){
-        return gateway.getUserById(userId).flatMap(User::getPrivateChannel);
     }
 
     @Override
