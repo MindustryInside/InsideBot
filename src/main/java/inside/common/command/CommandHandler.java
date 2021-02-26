@@ -46,7 +46,8 @@ public class CommandHandler{
         return commands.values().toSeq().map(Command::compile);
     }
 
-    public Mono<?> handleMessage(final String message, final CommandReference ref){
+    public Mono<?> handleMessage(final CommandReference ref){
+        String message = ref.getMessage().getContent();
         Mono<Guild> guild = ref.getMessage().getGuild();
         Mono<TextChannel> channel = ref.getReplyChannel().ofType(TextChannel.class);
         Mono<User> self = ref.getClient().getSelf();

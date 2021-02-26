@@ -46,7 +46,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
         Member member = event.getMember();
         if(DiscordUtil.isBot(member)) return Mono.empty();
 
-        Context context = Context.of(KEY_GUILD_ID, event.getGuildId(), KEY_LOCALE, entityRetriever.locale(event.getGuildId()), KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
+        Context context = Context.of(KEY_LOCALE, entityRetriever.locale(event.getGuildId()), KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
 
         Mono<Void> warn = member.getGuild().flatMap(Guild::getOwner)
                 .filterWhen(owner -> adminService.warnings(member).count().map(c -> c >= settings.maxWarnings))
@@ -70,7 +70,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
     public Publisher<?> onMemberLeave(MemberLeaveEvent event){
         User user = event.getUser();
         if(DiscordUtil.isBot(user)) return Mono.empty();
-        Context context = Context.of(KEY_GUILD_ID, event.getGuildId(), KEY_LOCALE, entityRetriever.locale(event.getGuildId()), KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
+        Context context = Context.of(KEY_LOCALE, entityRetriever.locale(event.getGuildId()), KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
 
         Mono<Void> log = auditService.log(event.getGuildId(), USER_LEAVE)
                 .withUser(user)

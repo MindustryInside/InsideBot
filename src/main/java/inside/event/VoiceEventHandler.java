@@ -27,7 +27,7 @@ public class VoiceEventHandler extends ReactiveEventAdapter{
     @Override
     public Publisher<?> onVoiceStateUpdate(VoiceStateUpdateEvent event){
         Snowflake guildId = event.getCurrent().getGuildId();
-        Context context = Context.of(KEY_GUILD_ID, guildId, KEY_LOCALE, entityRetriever.locale(guildId), KEY_TIMEZONE, entityRetriever.timeZone(guildId));
+        Context context = Context.of(KEY_LOCALE, entityRetriever.locale(guildId), KEY_TIMEZONE, entityRetriever.timeZone(guildId));
         if(!event.isJoinEvent() && !event.isLeaveEvent()){
             return Mono.empty();
         }

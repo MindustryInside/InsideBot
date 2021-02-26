@@ -178,8 +178,7 @@ public class AdminServiceImpl implements AdminService{
         getAll(AdminService.AdminActionType.mute)
                 .filter(AdminAction::isEnd)
                 .flatMap(adminAction -> discordService.gateway().getMemberById(adminAction.guildId(), adminAction.target().userId()))
-                .flatMap(target -> unmute(target).contextWrite(ctx -> ctx.put(KEY_GUILD_ID, target.getGuildId())
-                        .put(KEY_LOCALE, entityRetriever.locale(target.getGuildId()))
+                .flatMap(target -> unmute(target).contextWrite(ctx -> ctx.put(KEY_LOCALE, entityRetriever.locale(target.getGuildId()))
                         .put(KEY_TIMEZONE, entityRetriever.timeZone(target.getGuildId()))))
                 .subscribe();
     }

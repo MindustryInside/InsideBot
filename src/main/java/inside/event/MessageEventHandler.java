@@ -46,7 +46,6 @@ public class MessageEventHandler extends ReactiveEventAdapter{
     @Override
     public Publisher<?> onMessageCreate(MessageCreateEvent event){
         Message message = event.getMessage();
-        String text = message.getContent();
         Member member = event.getMember().orElse(null);
         if(member == null || message.getType() != Message.Type.DEFAULT || MessageUtil.isEmpty(message) || message.isTts() || !message.getEmbeds().isEmpty()){
             return Mono.empty();
@@ -75,7 +74,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
             messageService.save(info);
         });
 
-        Context context = Context.of(KEY_GUILD_ID, guildId, KEY_LOCALE, entityRetriever.locale(guildId), KEY_TIMEZONE, entityRetriever.timeZone(guildId));
+        Context context = Context.of(KEY_LOCALE, entityRetriever.locale(guildId), KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
         CommandReference reference = CommandReference.builder()
                 .message(message)
@@ -85,7 +84,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                 .channel(() -> channel)
                 .build();
 
-        return commandHandler.handleMessage(text, reference).and(messageInfo).contextWrite(context);
+        return commandHandler.handleMessage(reference).and(messageInfo).contextWrite(context);
     }
 
     @Override
@@ -95,7 +94,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
             return Mono.empty();
         }
 
-        Context context = Context.of(KEY_GUILD_ID, guildId, KEY_LOCALE, entityRetriever.locale(guildId), KEY_TIMEZONE, entityRetriever.timeZone(guildId));
+        Context context = Context.of(KEY_LOCALE, entityRetriever.locale(guildId), KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
         return Mono.zip(event.getMessage(), event.getChannel().ofType(TextChannel.class))
                 .filter(TupleUtils.predicate((message, channel) -> !message.isTts() && !message.isPinned()))
@@ -118,14 +117,14 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
                     Mono<Void> command = Mono.defer(() -> {
                         if(!messageService.isAwaitEdit(message.getId())) return Mono.empty();
-                        CommandReference commandReference = CommandReference.builder()
+                        CommandReference reference = CommandReference.builder()
                                 .localMember(entityRetriever.getMember(member))
                                 .message(message)
                                 .member(member)
                                 .context(context)
                                 .build();
 
-                        return commandHandler.handleMessage(newContent, commandReference);
+                        return commandHandler.handleMessage(reference);
                     }).then();
 
                     AuditActionBuilder builder = auditService.log(guildId, MESSAGE_EDIT)
@@ -166,7 +165,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
         MessageInfo info = messageService.getById(message.getId());
         String content = info.content();
 
-        Context context = Context.of(KEY_GUILD_ID, guildId, KEY_LOCALE, entityRetriever.locale(guildId), KEY_TIMEZONE, entityRetriever.timeZone(guildId));
+        Context context = Context.of(KEY_LOCALE, entityRetriever.locale(guildId), KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
         return event.getChannel()
                 .ofType(TextChannel.class)
