@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.*;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.EmbedCreateSpec;
+import discord4j.rest.util.AllowedMentions;
 import inside.Settings;
 import inside.data.entity.MessageInfo;
 import inside.data.repository.MessageInfoRepository;
@@ -78,7 +79,8 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public Mono<Void> text(Mono<? extends MessageChannel> channel, String text){
         return channel.publishOn(Schedulers.boundedElastic())
-                .flatMap(c -> c.createMessage(text))
+                .flatMap(c -> c.createMessage(spec -> spec.setContent(text)
+                        .setAllowedMentions(AllowedMentions.suppressEveryone())))
                 .then();
     }
 

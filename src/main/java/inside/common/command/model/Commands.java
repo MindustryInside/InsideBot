@@ -110,7 +110,7 @@ public class Commands{
     public class LeetCommand extends Command{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
-            return messageService.text(ref.getReplyChannel(), MessageUtil.leeted(args[0]));
+            return messageService.text(ref.getReplyChannel(), MessageUtil.substringTo(MessageUtil.leeted(args[0]), Message.MAX_CONTENT_LENGTH));
         }
     }
 
@@ -118,7 +118,7 @@ public class Commands{
     public class TranslitCommand extends Command{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
-            return messageService.text(ref.getReplyChannel(), MessageUtil.translit(args[0]));
+            return messageService.text(ref.getReplyChannel(), MessageUtil.substringTo(MessageUtil.translit(args[0]), Message.MAX_CONTENT_LENGTH));
         }
     }
 
