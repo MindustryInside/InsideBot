@@ -37,6 +37,8 @@ public interface MessageService{
 
     void awaitEdit(Snowflake messageId);
 
+    void removeEdit(Snowflake messageId);
+
     boolean isAwaitEdit(Snowflake messageId);
 
     boolean isCleared(Snowflake messageId);

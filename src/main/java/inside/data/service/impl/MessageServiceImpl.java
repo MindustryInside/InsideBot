@@ -114,6 +114,11 @@ public class MessageServiceImpl implements MessageService{
     }
 
     @Override
+    public void removeEdit(Snowflake messageId){
+        waitingMessage.invalidate(messageId);
+    }
+
+    @Override
     public boolean isAwaitEdit(Snowflake messageId){
         return Boolean.TRUE.equals(waitingMessage.getIfPresent(messageId));
     }
