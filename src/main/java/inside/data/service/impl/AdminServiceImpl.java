@@ -145,17 +145,21 @@ public class AdminServiceImpl implements AdminService{
 
     @Override
     public Mono<Boolean> isOwner(Member member){
-        if(member == null) return Mono.empty();
+        if(member == null){
+            return Mono.empty();
+        }
         return member.getGuild().map(Guild::getOwnerId).map(ownerId -> member.getId().equals(ownerId));
     }
 
     @Override
     public Mono<Boolean> isAdmin(Member member){
-        if(member == null) return Mono.empty();
+        if(member == null){
+            return Mono.empty();
+        }
         Flux<Snowflake> roles = entityRetriever.adminRolesIds(member.getGuildId());
 
         Mono<Boolean> isPermissed = member.getRoles().map(Role::getId)
-                .filterWhen(roleId -> roles.any(id -> id.equals(roleId)))
+                .filterWhen(roleId -> roles.any(roleId::equals))
                 .hasElements();
 
         Mono<Boolean> isAdmin = member.getRoles().map(Role::getPermissions).any(set -> set.contains(Permission.ADMINISTRATOR));
