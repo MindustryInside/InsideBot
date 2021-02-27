@@ -15,7 +15,7 @@ import inside.data.entity.AdminAction;
 import inside.data.service.*;
 import inside.event.audit.*;
 import inside.util.*;
-import org.joda.time.DateTime;
+import org.joda.time.*;
 import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -148,6 +148,47 @@ public class Commands{
         }
     }
 
+    @DiscordCommand(key = "timezone", params = "[timezone]", description = "command.config.timezone.description")
+    public class TimezoneCommand extends Command{
+        @Override
+        public Mono<Void> execute(CommandReference ref, String[] args){
+            Member member = ref.getAuthorAsMember();
+            Mono<MessageChannel> channel = ref.getReplyChannel();
+
+            return Mono.just(entityRetriever.getGuildById(member.getGuildId()))
+                    .filterWhen(guildConfig -> adminService.isOwner(member).map(bool -> bool && args.length > 0))
+                    .flatMap(guildConfig -> Mono.defer(() -> {
+                        DateTimeZone timeZone = MessageUtil.find(args[0]);
+                        if(timeZone == null){
+                            int min = 0;
+                            String suggest = null;
+
+                            for(String z : DateTimeZone.getAvailableIDs()){
+                                int dst = Strings.levenshtein(z, args[0]);
+                                if(dst < 3 && (suggest == null || dst < min)){
+                                    min = dst;
+                                    suggest = z;
+                                }
+                            }
+
+                            if(suggest != null){
+                                return messageService.err(channel, messageService.format(ref.context(), "command.config.unknown-timezone.suggest", suggest));
+                            }
+                            return messageService.err(channel, messageService.format(ref.context(), "command.config.unknown-timezone"));
+                        }
+
+                        guildConfig.timeZone(timeZone.toTimeZone());
+                        entityRetriever.save(guildConfig);
+                        return Mono.deferContextual(ctx -> messageService.text(channel, messageService.format(ctx, "command.config.timezone-updated", ctx.<Locale>get(KEY_TIMEZONE))))
+                                .contextWrite(ctx -> ctx.put(KEY_TIMEZONE, timeZone));
+                    }).thenReturn(guildConfig))
+                    .switchIfEmpty(args.length == 0 ?
+                                   messageService.text(channel, messageService.format(ref.context(), "command.config.timezone", ref.context().<Locale>get(KEY_TIMEZONE))).then(Mono.empty()) :
+                                   messageService.err(channel, messageService.get(ref.context(), "command.owner-only")).then(Mono.empty()))
+                    .then(Mono.empty());
+        }
+    }
+
     @DiscordCommand(key = "locale", params = "[locale]", description = "command.config.locale.description")
     public class LocaleCommand extends Command{
         @Override
@@ -156,31 +197,26 @@ public class Commands{
             Mono<MessageChannel> channel = ref.getReplyChannel();
 
             return Mono.just(entityRetriever.getGuildById(member.getGuildId()))
-                    .filterWhen(guildConfig -> adminService.isOwner(member))
-                    .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.owner-only")).then(Mono.empty()))
-                    .flatMap(guildConfig -> {
-                        if(args.length == 0){
-                            return messageService.text(channel, messageService.format(ref.context(), "command.config.locale", ref.context().<Locale>getOrEmpty(KEY_LOCALE)));
-                        }else{
-                            if(!args[0].isBlank()){
-                                Locale locale = LocaleUtil.get(args[0]);
-                                if(locale == null){
-                                    String all = LocaleUtil.locales.values().stream()
-                                            .map(Locale::toString)
-                                            .collect(Collectors.joining(", "));
+                    .filterWhen(guildConfig -> adminService.isOwner(member).map(bool -> bool && args.length > 0))
+                    .flatMap(guildConfig -> Mono.defer(() -> {
+                        Locale locale = LocaleUtil.get(args[0]);
+                        if(locale == null){
+                            String all = LocaleUtil.locales.values().stream()
+                                    .map(Locale::toString)
+                                    .collect(Collectors.joining(", "));
 
-                                    return messageService.text(channel, messageService.format(ref.context(), "command.config.unknown", all));
-                                }
-
-                                guildConfig.locale(locale);
-                                entityRetriever.save(guildConfig);
-                                return Mono.deferContextual(ctx -> messageService.text(channel, messageService.format(ctx, "command.config.locale-updated", ctx.<Locale>get(KEY_LOCALE))))
-                                        .contextWrite(ctx -> ctx.put(KEY_LOCALE, locale));
-                            }
+                            return messageService.text(channel, messageService.format(ref.context(), "command.config.unknown-locale", all));
                         }
 
-                        return Mono.empty();
-                    });
+                        guildConfig.locale(locale);
+                        entityRetriever.save(guildConfig);
+                        return Mono.deferContextual(ctx -> messageService.text(channel, messageService.format(ctx, "command.config.locale-updated", ctx.<Locale>get(KEY_LOCALE))))
+                                .contextWrite(ctx -> ctx.put(KEY_LOCALE, locale));
+                    }).thenReturn(guildConfig))
+                    .switchIfEmpty(args.length == 0 ?
+                            messageService.text(channel, messageService.format(ref.context(), "command.config.locale", ref.context().<Locale>get(KEY_LOCALE))).then(Mono.empty()) :
+                            messageService.err(channel, messageService.get(ref.context(), "command.owner-only")).then(Mono.empty()))
+                    .then(Mono.empty());
         }
     }
 
@@ -206,15 +242,14 @@ public class Commands{
 
             return Mono.justOrEmpty(targetId).flatMap(id -> ref.getClient().getMemberById(guildId, id))
                     .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name")).then(Mono.empty()))
-                    .flatMap(target -> Mono.just(entityRetriever.getMember(target))
-                            .filterWhen(local -> adminService.isMuted(guildId, target.getId()).map(bool -> !bool))
+                    .transform(target -> target.filterWhen(member -> adminService.isMuted(member).map(bool -> !bool))
                             .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.admin.mute.already-muted")).then(Mono.never()))
-                            .filterWhen(local -> Mono.zip(adminService.isAdmin(target), adminService.isOwner(author)).map(TupleUtils.function((admin, owner) -> !(admin && !owner))))
+                            .filterWhen(member -> Mono.zip(adminService.isAdmin(member), adminService.isOwner(author)).map(TupleUtils.function((admin, owner) -> !(admin && !owner))))
                             .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.admin.user-is-admin")).then(Mono.empty()))
-                            .flatMap(local -> Mono.defer(() -> {
+                            .flatMap(member -> Mono.defer(() -> {
                                 String reason = args.length > 2 ? args[2].trim() : null;
 
-                                if(Objects.equals(author, target)){
+                                if(Objects.equals(author, member)){
                                     return messageService.err(channel, messageService.get(ref.context(), "command.admin.mute.self-user"));
                                 }
 
@@ -222,11 +257,32 @@ public class Commands{
                                     return messageService.err(channel, messageService.format(ref.context(), "common.string-limit", 512));
                                 }
 
-                                return adminService.mute(author, target, delay, reason);
+                                return adminService.mute(author, member, delay, reason);
                             }))
                             .then());
         }
     }
+
+    // bulk delete test
+    // @DiscordCommand(key = "test", params = "[count]", description = "")
+    // public class TestCommand extends Command{
+    //     @Override
+    //     public Mono<Void> execute(CommandReference ref, String[] args){
+    //         Mono<TextChannel> reply = ref.getReplyChannel()
+    //                 .ofType(TextChannel.class);
+    //
+    //         int number = Strings.parseInt(args[0]);
+    //         if(number >= settings.maxClearedCount){
+    //             return messageService.err(reply, messageService.format(ref.context(), "common.limit-number", settings.maxClearedCount));
+    //         }
+    //
+    //         return reply.flatMapMany(textChannel -> textChannel.getMessagesBefore(ref.getMessage().getId())
+    //                 .take(number)
+    //                 .map(Message::getId)
+    //                 .transform(textChannel::bulkDelete))
+    //                 .then();
+    //     }
+    // }
 
     @DiscordCommand(key = "delete", params = "<amount>", description = "command.admin.delete.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_MESSAGES, Permission.READ_MESSAGE_HISTORY})
@@ -309,13 +365,13 @@ public class Commands{
 
             return Mono.justOrEmpty(targetId).flatMap(id -> ref.getClient().getMemberById(guildId, id))
                     .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name")).then(Mono.empty()))
-                    .flatMap(target -> Mono.just(entityRetriever.getMember(target))
-                            .filterWhen(local -> Mono.zip(adminService.isAdmin(target), adminService.isOwner(author)).map(TupleUtils.function((admin, owner) -> !(admin && !owner))))
+                    .transform(target -> target.filterWhen(member -> Mono.zip(adminService.isAdmin(member), adminService.isOwner(author))
+                            .map(TupleUtils.function((admin, owner) -> !(admin && !owner))))
                             .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.admin.user-is-admin")).then(Mono.empty()))
-                            .flatMap(local -> {
+                            .flatMap(member -> {
                                 String reason = args.length > 1 ? args[1].trim() : null;
 
-                                if(Objects.equals(author, target)){
+                                if(Objects.equals(author, member)){
                                     return messageService.err(channel, messageService.get(ref.context(), "command.admin.warn.self-user"));
                                 }
 
@@ -323,18 +379,17 @@ public class Commands{
                                     return messageService.err(channel, messageService.format(ref.context(), "common.string-limit", 512));
                                 }
 
-                                Mono<Void> warnings = Mono.defer(() -> adminService.warnings(local.guildId(), local.userId()).count()).flatMap(count -> {
-                                    Mono<Void> message = messageService.text(channel, messageService.format(ref.context(), "command.admin.warn", target.getUsername(), count));
+                                Mono<Void> warnings = Mono.defer(() -> adminService.warnings(member).count()).flatMap(count -> {
+                                    Mono<Void> message = messageService.text(channel, messageService.format(ref.context(), "command.admin.warn", member.getUsername(), count));
 
                                     if(count >= settings.maxWarnings){
-                                        return message.then(author.getGuild().flatMap(guild -> guild.ban(target.getId(), spec -> spec.setDeleteMessageDays(0))));
+                                        return message.then(author.getGuild().flatMap(guild -> guild.ban(member.getId(), spec -> spec.setDeleteMessageDays(0))));
                                     }
                                     return message;
                                 });
 
-                                return adminService.warn(author, target, reason).then(warnings);
-                            })
-                    );
+                                return adminService.warn(author, member, reason).then(warnings);
+                            }));
         }
     }
 
@@ -414,10 +469,9 @@ public class Commands{
 
             return Mono.justOrEmpty(targetId).flatMap(id -> ref.getClient().getMemberById(guildId, id))
                     .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name")).then(Mono.empty()))
-                    .flatMap(member -> Mono.just(entityRetriever.getMember(member))
-                            .filterWhen(local -> adminService.isMuted(local.guildId(), local.userId()))
-                            .flatMap(local -> adminService.unmute(member).thenReturn(member))
-                            .switchIfEmpty(messageService.err(channel, messageService.format(ref.context(), "audit.member.unmute.is-not-muted", member.getUsername())).then(Mono.empty())))
+                    .transform(member -> member.filterWhen(adminService::isMuted)
+                            .flatMap(target -> adminService.unmute(target).thenReturn(target))
+                            .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "audit.member.unmute.is-not-muted")).then(Mono.empty())))
                     .then();
         }
     }

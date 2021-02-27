@@ -80,14 +80,9 @@ public class AuditProviders{
                 return;
             }
 
-            embed.setTitle(messageService.format(context, "audit.message.clear.title",
-                                                 count,
-                                                 messageService.getCount(context, "common.plurals.message", count),
-                                                 action.channel().name()));
-            embed.setDescription(messageService.format(context, "audit.message.clear.description",
-                                                       action.user().name(), count,
-                                                       messageService.getCount(context, "common.plurals.message", count),
-                                                       action.channel().name()));
+            embed.setDescription(messageService.format(context, "audit.message.clear.description", count, messageService.getCount(context, "common.plurals.message", count)));
+            embed.addField(messageService.get(context, "audit.member.admin"), action.user().name(), true);
+            embed.addField(messageService.get(context, "audit.message.channel"), action.channel().name(), true);
             addTimestamp(context, embed);
         }
     }

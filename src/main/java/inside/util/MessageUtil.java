@@ -4,10 +4,11 @@ import arc.struct.StringMap;
 import arc.util.Strings;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
-import org.joda.time.DateTime;
+import org.joda.time.*;
 import reactor.util.annotation.Nullable;
 
 import java.time.*;
+import java.time.LocalDateTime;
 import java.time.temporal.*;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
@@ -199,6 +200,15 @@ public abstract class MessageUtil{
             message.getAttachments().forEach(a -> builder.append(a.getUrl()).append("\n"));
         }
         return builder.toString();
+    }
+
+    @Nullable
+    public static DateTimeZone find(String id){
+        try{
+            return DateTimeZone.forID(id);
+        }catch(Throwable t){
+            return null;
+        }
     }
 
     public static boolean canParseInt(String message){
