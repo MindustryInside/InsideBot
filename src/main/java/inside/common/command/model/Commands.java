@@ -57,7 +57,7 @@ public class Commands{
     @Autowired
     private AuditService auditService;
 
-    public class ModeratorCommand extends Command{
+    public abstract class ModeratorCommand extends Command{
         @Override
         public Mono<Boolean> apply(CommandRequest req){
             return adminService.isAdmin(req.getAuthorAsMember());
@@ -253,7 +253,7 @@ public class Commands{
                                     return messageService.err(channel, messageService.get(ref.context(), "command.admin.mute.self-user"));
                                 }
 
-                                if(reason != null && !reason.isBlank() && reason.length() > 512){
+                                if(reason != null && !reason.isBlank() && reason.length() >= 512){
                                     return messageService.err(channel, messageService.format(ref.context(), "common.string-limit", 512));
                                 }
 
@@ -264,8 +264,8 @@ public class Commands{
     }
 
     // bulk delete test
-    // @DiscordCommand(key = "test", params = "[count]", description = "")
-    // public class TestCommand extends Command{
+    // @DiscordCommand(key = "test", params = "<count>", description = "")
+    // public class TestCommand extends ModeratorCommand{
     //     @Override
     //     public Mono<Void> execute(CommandReference ref, String[] args){
     //         Mono<TextChannel> reply = ref.getReplyChannel()
@@ -336,7 +336,8 @@ public class Commands{
                     .limitRequest(number)
                     .sort(Comparator.comparing(Message::getId))
                     .filter(message -> message.getTimestamp().isAfter(limit))
-                    .flatMap(message -> message.getAuthorAsMember().flatMap(member -> Mono.fromRunnable(() -> {
+                    .flatMap(message -> message.getAuthorAsMember()
+                            .flatMap(member -> Mono.fromRunnable(() -> {
                                 messageService.putMessage(message.getId());
                                 appendInfo.accept(message, member);
                             }))
@@ -413,7 +414,7 @@ public class Commands{
                         Mono<Void> warningMessage = Mono.defer(() -> messageService.info(channel, embed ->
                                 warnings.index().subscribe(TupleUtils.consumer((index, warn) ->
                                         embed.setTitle(messageService.format(ref.context(), "command.admin.warnings.title", target.getDisplayName()))
-                                        .addField(String.format("%2s. %s", index + 1, formatter.print(new DateTime(warn.timestamp()))), String.format("%s%n%s",
+                                        .addField(String.format("%2s. %s", index + 1, formatter.print(warn.timestamp())), String.format("%s%n%s",
                                         messageService.format(ref.context(), "common.admin", warn.admin().effectiveName()),
                                         messageService.format(ref.context(), "common.reason", warn.reason().orElse(messageService.get(ref.context(), "common.not-defined")))
                                         ), true)))
