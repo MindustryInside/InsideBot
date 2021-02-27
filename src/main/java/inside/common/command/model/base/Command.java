@@ -5,7 +5,6 @@ import reactor.core.publisher.Mono;
 import java.util.function.Function;
 
 public abstract class Command implements Function<CommandRequest, Mono<Boolean>>{
-
     @Override
     public Mono<Boolean> apply(CommandRequest req){
         return Mono.just(true);

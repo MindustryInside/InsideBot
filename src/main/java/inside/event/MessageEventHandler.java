@@ -187,4 +187,9 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                 })
                 .contextWrite(context);
     }
+
+    // @Override
+    // public Publisher<?> onMessageBulkDelete(MessageBulkDeleteEvent event){
+    //     return Mono.fromRunnable(() -> log.info("bulk delete: {}", event));
+    // }
 }
