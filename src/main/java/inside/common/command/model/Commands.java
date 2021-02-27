@@ -315,15 +315,13 @@ public class Commands{
 
                 result.append(member.getUsername());
                 member.getNickname().ifPresent(nickname -> result.append(" (").append(nickname).append(")"));
-                result.append(" > ");
-                if(!MessageUtil.isEmpty(message)){
-                    result.append(MessageUtil.effectiveContent(message));
+                result.append(" >");
+                String content = MessageUtil.effectiveContent(message);
+                if(!content.isBlank()){
+                    result.append(" ").append(content);
                 }
-
-                for(int i = 0; i < message.getEmbeds().size(); i++){
-                    Embed embed = message.getEmbeds().get(i);
-                    result.append("\n[embed-").append(i + 1).append("]");
-                    embed.getDescription().ifPresent(s -> result.append("\n").append(s));
+                if(!message.getEmbeds().isEmpty()){
+                    result.append(" (... ").append(message.getEmbeds().size()).append(" embed(s))");
                 }
                 result.append("\n");
             };
