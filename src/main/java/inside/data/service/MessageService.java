@@ -2,6 +2,7 @@ package inside.data.service;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.channel.MessageChannel;
+import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.EmbedCreateSpec;
 import inside.data.entity.MessageInfo;
 import reactor.core.publisher.Mono;
@@ -10,6 +11,8 @@ import reactor.util.context.ContextView;
 import java.util.function.Consumer;
 
 public interface MessageService{
+
+    ReactionEmoji ok = ReactionEmoji.unicode("✅");
 
     //bundle
 
@@ -49,7 +52,9 @@ public interface MessageService{
 
     boolean exists(Snowflake messageId);
 
-    MessageInfo save(MessageInfo message);
+    void save(MessageInfo message);
+
+    void deleteById(Snowflake messageId);
 
     void delete(MessageInfo message);
 

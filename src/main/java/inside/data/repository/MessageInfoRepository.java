@@ -12,5 +12,7 @@ public interface MessageInfoRepository extends GuildRepository<MessageInfo>{
 
     MessageInfo findByMessageId(String messageId);
 
+    void deleteByMessageId(String messageId);
+
     void deleteByTimestampBefore(DateTime timestamp);
 }

@@ -28,6 +28,7 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
+import static inside.data.service.MessageService.ok;
 import static inside.event.audit.Attribute.COUNT;
 import static inside.event.audit.BaseAuditProvider.MESSAGE_TXT;
 import static inside.util.ContextUtil.*;
@@ -243,7 +244,8 @@ public class Commands{
                     .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name")).then(Mono.empty()))
                     .transform(target -> target.filterWhen(member -> adminService.isMuted(member).map(bool -> !bool))
                             .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.admin.mute.already-muted")).then(Mono.never()))
-                            .filterWhen(member -> Mono.zip(adminService.isAdmin(member), adminService.isOwner(author)).map(TupleUtils.function((admin, owner) -> !(admin && !owner))))
+                            .filterWhen(member -> Mono.zip(adminService.isAdmin(member), adminService.isOwner(author))
+                                    .map(TupleUtils.function((admin, owner) -> !(admin && !owner))))
                             .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.admin.user-is-admin")).then(Mono.empty()))
                             .flatMap(member -> Mono.defer(() -> {
                                 String reason = args.length > 2 ? args[2].trim() : null;
@@ -258,7 +260,8 @@ public class Commands{
 
                                 return adminService.mute(author, member, delay, reason);
                             }))
-                            .then());
+                            .then())
+                    .and(ref.getMessage().addReaction(ok));
         }
     }
 
@@ -347,7 +350,7 @@ public class Commands{
                             .withAttachment(MESSAGE_TXT, input.writeString(result.toString()))
                             .save());
 
-            return history.then(log);
+            return history.then(log).and(ref.getMessage().addReaction(ok));
         }
     }
 
