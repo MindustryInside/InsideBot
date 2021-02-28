@@ -81,8 +81,8 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public Mono<Void> text(Mono<? extends MessageChannel> channel, String text){
         return channel.publishOn(Schedulers.boundedElastic())
-                .flatMap(c -> c.createMessage(spec -> spec.setContent(text)
-                        .setAllowedMentions(AllowedMentions.suppressEveryone())))
+                .flatMap(c -> c.createMessage(spec -> spec.setContent(text.isBlank() ? ":eyes: (?)" : text)
+                        .setAllowedMentions(AllowedMentions.suppressAll())))
                 .then();
     }
 
