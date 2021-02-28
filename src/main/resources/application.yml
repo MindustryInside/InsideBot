@@ -19,4 +19,4 @@ spring:
   task:
     scheduling:
       pool:
-        size: 3
+        size: 4
