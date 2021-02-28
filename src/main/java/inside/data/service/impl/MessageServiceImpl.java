@@ -152,7 +152,7 @@ public class MessageServiceImpl implements MessageService{
     @Override
     @Transactional
     public void save(MessageInfo message){
-        //???
+        repository.save(message);
     }
 
     @Override
