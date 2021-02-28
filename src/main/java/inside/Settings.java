@@ -11,6 +11,8 @@ public class Settings{
 
     public int historyExpireWeeks = 3;
 
+    public int memberKeepMonths = 6;
+
     public String prefix = "$";
 
     public String timeZone = "Etc/Greenwich";

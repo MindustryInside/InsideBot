@@ -42,7 +42,7 @@ public class LocalMember extends GuildEntity{
         this.effectiveName = Objects.requireNonNull(effectiveName, "effectiveName");
     }
 
-    @Nullable // TODO(Skat): create cleaning inactive users
+    @Nullable
     public DateTime lastSentMessage(){
         return lastSentMessage;
     }

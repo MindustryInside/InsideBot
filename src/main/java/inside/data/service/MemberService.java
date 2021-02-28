@@ -13,4 +13,6 @@ public interface MemberService{
     }
 
     void save(LocalMember member);
+
+    void cleanUp();
 }
