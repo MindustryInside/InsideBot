@@ -2,9 +2,7 @@ package inside.data.entity;
 
 import discord4j.common.util.Snowflake;
 import inside.data.entity.base.GuildEntity;
-import inside.data.service.AdminService;
 import inside.data.service.AdminService.AdminActionType;
-import io.netty.channel.local.LocalAddress;
 import org.hibernate.annotations.*;
 import org.joda.time.*;
 import reactor.util.annotation.*;
@@ -68,60 +66,53 @@ public class AdminAction extends GuildEntity{
         return type;
     }
 
-    public AdminAction type(AdminActionType type){
+    public void type(AdminActionType type){
         this.type = Objects.requireNonNull(type, "type");
-        return this;
     }
 
     public LocalMember admin(){
         return admin;
     }
 
-    public AdminAction admin(LocalMember admin){
+    public void admin(LocalMember admin){
         this.admin = Objects.requireNonNull(admin, "admin");
-        return this;
     }
 
     public LocalMember target(){
         return target;
     }
 
-    public AdminAction target(LocalMember target){
+    public void target(LocalMember target){
         this.target = Objects.requireNonNull(target, "target");
-        return this;
     }
 
     public Optional<String> reason(){
         return Optional.ofNullable(reason);
     }
 
-    public AdminAction reason(@Nullable String reason){
+    public void reason(@Nullable String reason){
         this.reason = reason;
-        return this;
     }
 
     public DateTime timestamp(){
         return timestamp;
     }
 
-    public AdminAction timestamp(DateTime timestamp){
+    public void timestamp(DateTime timestamp){
         this.timestamp = Objects.requireNonNull(timestamp, "timestamp");
-        return this;
     }
 
-    @Nullable
-    public DateTime end(){
-        return endTimestamp;
+    public Optional<DateTime> endTimestamp(){
+        return Optional.ofNullable(endTimestamp);
     }
 
-    public AdminAction end(@Nullable DateTime end){
-        this.endTimestamp = end;
-        return this;
+    public void endTimestamp(@Nullable DateTime endTimestamp){
+        this.endTimestamp = endTimestamp;
     }
 
     @Transient
     public boolean isEnd(){
-        return end() != null && DateTime.now().isAfter(end());
+        return endTimestamp().map(delay -> DateTime.now().isAfter(delay)).orElse(false);
     }
 
     @Override

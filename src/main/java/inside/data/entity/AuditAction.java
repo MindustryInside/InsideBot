@@ -115,4 +115,16 @@ public class AuditAction extends GuildEntity{
         Object value = attributes.get(key.name);
         return value != null ? (T)value : null;
     }
+
+    @Override
+    public String toString(){
+        return "AuditAction{" +
+                "timestamp=" + timestamp +
+                ", type=" + type +
+                ", user=" + user +
+                ", target=" + target +
+                ", channel=" + channel +
+                ", attributes=" + attributes +
+                "} " + super.toString();
+    }
 }
