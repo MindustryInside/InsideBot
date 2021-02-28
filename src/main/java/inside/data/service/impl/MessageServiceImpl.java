@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import reactor.util.*;
 import reactor.util.context.ContextView;
 
 import java.time.Duration;
@@ -28,6 +29,7 @@ import static inside.util.ContextUtil.KEY_LOCALE;
 
 @Service
 public class MessageServiceImpl implements MessageService{
+    private static final Logger log = Loggers.getLogger(MessageService.class);
 
     private final MessageInfoRepository repository;
 
@@ -129,8 +131,10 @@ public class MessageServiceImpl implements MessageService{
     }
 
     @Override
+    @Transactional
     public void putMessage(Snowflake messageId){
         deletedMessage.put(messageId, true);
+        deleteById(messageId);
     }
 
     @Override
@@ -147,8 +151,14 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     @Transactional
-    public MessageInfo save(MessageInfo user) {
-        return repository.save(user);
+    public void save(MessageInfo message){
+        //???
+    }
+
+    @Override
+    @Transactional
+    public void deleteById(Snowflake messageId){
+        repository.deleteByMessageId(messageId.asString());
     }
 
     @Override
