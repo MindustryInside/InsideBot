@@ -15,7 +15,7 @@ public class CommandInfo{
         this.description = description;
         this.permissions = PermissionSet.of(permissions);
 
-        String[] psplit = paramText.split("\\s+");
+        String[] psplit = paramText.split("(?<=(\\]|>))\\s+(?=(\\[|<))");
         if(paramText.isBlank()){
             params = new CommandParam[0];
         }else{

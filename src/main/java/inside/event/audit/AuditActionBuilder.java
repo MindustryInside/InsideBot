@@ -22,7 +22,7 @@ public abstract class AuditActionBuilder{
         action = new AuditAction(guildId);
         action.timestamp(DateTime.now());
         action.type(type);
-        action.attributes(new HashMap<>());
+        action.attributes(new HashMap<>(7));
     }
 
     public AuditActionBuilder withUser(Member user){

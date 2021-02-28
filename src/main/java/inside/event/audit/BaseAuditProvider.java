@@ -36,6 +36,7 @@ public abstract class BaseAuditProvider implements AuditProvider{
                 .then();
     }
 
+    // oh no, why we use DateTime#now, we have a action timestamp(?)
     protected void addTimestamp(ContextView context, EmbedCreateSpec embed){
         embed.setFooter(DateTimeFormat.longDateTime().withLocale(context.get(KEY_LOCALE)).withZone(context.get(KEY_TIMEZONE)).print(DateTime.now()), null);
     }
