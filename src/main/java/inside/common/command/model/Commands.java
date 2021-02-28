@@ -2,7 +2,6 @@ package inside.common.command.model;
 
 import arc.util.Strings;
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.Embed;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
 import discord4j.core.retriever.EntityRetrievalStrategy;
@@ -26,7 +25,7 @@ import reactor.util.*;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.function.*;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 import static inside.event.audit.Attribute.COUNT;
