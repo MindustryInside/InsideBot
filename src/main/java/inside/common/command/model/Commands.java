@@ -7,7 +7,6 @@ import discord4j.core.object.entity.channel.*;
 import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.rest.util.Permission;
 import inside.Settings;
-import inside.common.Collector;
 import inside.common.command.CommandHandler;
 import inside.common.command.model.base.*;
 import inside.data.entity.AdminAction;
@@ -20,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
-import reactor.util.*;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -33,31 +31,15 @@ import static inside.event.audit.Attribute.COUNT;
 import static inside.event.audit.BaseAuditProvider.MESSAGE_TXT;
 import static inside.util.ContextUtil.*;
 
-// TODO(Skat): delete synthetics?
-@Collector
 public class Commands{
-    private static final Logger log = Loggers.getLogger(Commands.class);
 
-    @Autowired
-    private MessageService messageService;
+    private Commands(){}
 
-    @Lazy
-    @Autowired
-    private AdminService adminService;
+    public static abstract class ModeratorCommand extends Command{
+        @Lazy
+        @Autowired
+        protected AdminService adminService;
 
-    @Autowired
-    private EntityRetriever entityRetriever;
-
-    @Autowired
-    private CommandHandler handler;
-
-    @Autowired
-    private Settings settings;
-
-    @Autowired
-    private AuditService auditService;
-
-    public abstract class ModeratorCommand extends Command{
         @Override
         public Mono<Boolean> apply(CommandRequest req){
             return adminService.isAdmin(req.getAuthorAsMember());
@@ -65,7 +47,10 @@ public class Commands{
     }
 
     @DiscordCommand(key = "help", description = "command.help.description")
-    public class HelpCommand extends Command{
+    public static class HelpCommand extends Command{
+        @Autowired
+        private CommandHandler handler;
+
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             StringBuilder builder = new StringBuilder();
@@ -93,7 +78,7 @@ public class Commands{
     }
 
     @DiscordCommand(key = "avatar", params = "[@user]", description = "command.avatar.description")
-    public class AvatarCommand extends Command{
+    public static class AvatarCommand extends Command{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             Mono<MessageChannel> channel = ref.getReplyChannel();
@@ -107,7 +92,7 @@ public class Commands{
     }
 
     @DiscordCommand(key = "1337", params = "<text...>", description = "command.1337.description")
-    public class LeetCommand extends Command{
+    public static class LeetCommand extends Command{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             return messageService.text(ref.getReplyChannel(), MessageUtil.substringTo(MessageUtil.leeted(args[0]), Message.MAX_CONTENT_LENGTH));
@@ -115,7 +100,7 @@ public class Commands{
     }
 
     @DiscordCommand(key = "tr", params = "<text...>", description = "command.translit.description")
-    public class TranslitCommand extends Command{
+    public static class TranslitCommand extends Command{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             return messageService.text(ref.getReplyChannel(), MessageUtil.substringTo(MessageUtil.translit(args[0]), Message.MAX_CONTENT_LENGTH));
@@ -123,7 +108,10 @@ public class Commands{
     }
 
     @DiscordCommand(key = "prefix", params = "[prefix]", description = "command.config.prefix.description")
-    public class PrefixCommand extends Command{
+    public static class PrefixCommand extends Command{
+        @Autowired
+        private AdminService adminService;
+
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             Member member = ref.getAuthorAsMember();
@@ -149,7 +137,10 @@ public class Commands{
     }
 
     @DiscordCommand(key = "timezone", params = "[timezone]", description = "command.config.timezone.description")
-    public class TimezoneCommand extends Command{
+    public static class TimezoneCommand extends Command{
+        @Autowired
+        private AdminService adminService;
+
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             Member member = ref.getAuthorAsMember();
@@ -190,7 +181,10 @@ public class Commands{
     }
 
     @DiscordCommand(key = "locale", params = "[locale]", description = "command.config.locale.description")
-    public class LocaleCommand extends Command{
+    public static class LocaleCommand extends Command{
+        @Autowired
+        private AdminService adminService;
+
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             Member member = ref.getAuthorAsMember();
@@ -222,7 +216,7 @@ public class Commands{
 
     @DiscordCommand(key = "mute", params = "<@user> <delay> [reason...]", description = "command.admin.mute.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_ROLES})
-    public class MuteCommand extends ModeratorCommand{
+    public static class MuteCommand extends ModeratorCommand{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             Mono<MessageChannel> channel = ref.getReplyChannel();
@@ -288,7 +282,13 @@ public class Commands{
 
     @DiscordCommand(key = "delete", params = "<amount>", description = "command.admin.delete.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_MESSAGES, Permission.READ_MESSAGE_HISTORY})
-    public class DeleteCommand extends ModeratorCommand{
+    public static class DeleteCommand extends ModeratorCommand{
+        @Autowired
+        private Settings settings;
+
+        @Autowired
+        private AuditService auditService;
+
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             Member author = ref.getAuthorAsMember();
@@ -356,7 +356,10 @@ public class Commands{
 
     @DiscordCommand(key = "warn", params = "<@user> [reason...]", description = "command.admin.warn.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.BAN_MEMBERS})
-    public class WarnCommand extends ModeratorCommand{
+    public static class WarnCommand extends ModeratorCommand{
+        @Autowired
+        private Settings settings;
+
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             Member author = ref.getAuthorAsMember();
@@ -395,7 +398,7 @@ public class Commands{
     }
 
     @DiscordCommand(key = "warnings", params = "<@user>", description = "command.admin.warnings.description")
-    public class WarningsCommand extends ModeratorCommand{
+    public static class WarningsCommand extends ModeratorCommand{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             Mono<MessageChannel> channel = ref.getReplyChannel();
@@ -426,7 +429,7 @@ public class Commands{
     }
 
     @DiscordCommand(key = "unwarn", params = "<@user> [number]", description = "command.admin.unwarn.description")
-    public class UnwarnCommand extends ModeratorCommand{
+    public static class UnwarnCommand extends ModeratorCommand{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             Mono<MessageChannel> channel = ref.getReplyChannel();
@@ -457,7 +460,7 @@ public class Commands{
 
     @DiscordCommand(key = "unmute", params = "<@user>", description = "command.admin.unmute.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_ROLES})
-    public class UnmuteCommand extends ModeratorCommand{
+    public static class UnmuteCommand extends ModeratorCommand{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             Mono<MessageChannel> channel = ref.getReplyChannel();
