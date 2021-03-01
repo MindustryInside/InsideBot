@@ -432,6 +432,7 @@ public class Commands{
     public static class UnwarnCommand extends ModeratorCommand{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
+            Member author = ref.getAuthorAsMember();
             Mono<MessageChannel> channel = ref.getReplyChannel();
             Snowflake targetId = MessageUtil.parseUserId(args[0]);
             Snowflake guildId = ref.getAuthorAsMember().getGuildId();
@@ -440,21 +441,24 @@ public class Commands{
                 return messageService.err(channel, messageService.get(ref.context(), "command.incorrect-number"));
             }
 
-            return adminService.warnings(guildId, targetId).count().flatMap(count -> {
-                int warn = args.length > 1 ? Strings.parseInt(args[1]) : 1;
-                if(count == 0){
-                    return messageService.text(channel, messageService.get(ref.context(), "command.admin.warnings.empty"));
-                }
+            return Mono.justOrEmpty(targetId).flatMap(id -> ref.getClient().getMemberById(guildId, id))
+                    .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name")).then(Mono.never()))
+                    .filterWhen(target -> Mono.zip(adminService.isAdmin(target), adminService.isOwner(author))
+                            .map(TupleUtils.function((admin, owner) -> !target.equals(author) || owner)))
+                    .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.admin.unwarn.permission-denied")).then(Mono.empty()))
+                    .flatMap(target -> adminService.warnings(target).count().flatMap(count -> {
+                        int warn = args.length > 1 ? Strings.parseInt(args[1]) : 1;
+                        if(count == 0){
+                            return messageService.text(channel, messageService.get(ref.context(), "command.admin.warnings.empty"));
+                        }
 
-                if(warn > count){
-                    return messageService.err(channel, messageService.get(ref.context(), "command.incorrect-number"));
-                }
+                        if(warn > count){
+                            return messageService.err(channel, messageService.get(ref.context(), "command.incorrect-number"));
+                        }
 
-                return Mono.justOrEmpty(targetId).flatMap(id -> ref.getClient().getMemberById(guildId, id))
-                        .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name")).then(Mono.empty()))
-                        .flatMap(target -> messageService.text(channel, messageService.format(ref.context(), "command.admin.unwarn", target.getUsername(), warn))
-                                .then(adminService.unwarn(target, warn - 1)));
-            });
+                        return messageService.text(channel, messageService.format(ref.context(), "command.admin.unwarn", target.getUsername(), warn))
+                                .and(adminService.unwarn(target, warn - 1));
+                    }));
         }
     }
 
