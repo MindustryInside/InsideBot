@@ -135,7 +135,7 @@ public abstract class MessageUtil{
     }
 
     public static String text2lat(String text){
-        for(int i = 0; i < latPattern.length; i++){
+        for(int i = 0; i < rusPattern.length; i++){
             text = text.replaceAll("(?u)" + rusPattern[i], latPattern[i]);
         }
         return text;
