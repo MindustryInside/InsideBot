@@ -115,10 +115,6 @@ public abstract class MessageUtil{
 
     private MessageUtil(){}
 
-    public static boolean isNotEmpty(CharSequence cs){
-        return !isEmpty(cs);
-    }
-
     public static boolean isEmpty(@Nullable CharSequence cs){
         return cs == null || cs.length() == 0;
     }
@@ -152,9 +148,6 @@ public abstract class MessageUtil{
         };
 
         int len = text.length();
-        if(len == 0){
-            return "";
-        }
         if(len == 1){
             return get.apply(text);
         }
@@ -186,9 +179,6 @@ public abstract class MessageUtil{
         };
 
         int len = text.length();
-        if(len == 0){
-            return "";
-        }
         if(len == 1){
             return get.apply(text);
         }

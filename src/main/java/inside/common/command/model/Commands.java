@@ -476,8 +476,7 @@ public class Commands{
 
             return Mono.justOrEmpty(targetId).flatMap(id -> ref.getClient().getMemberById(guildId, id))
                     .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name")).then(Mono.never()))
-                    .filterWhen(target -> Mono.zip(adminService.isAdmin(target), adminService.isOwner(author))
-                            .map(TupleUtils.function((admin, owner) -> !target.equals(author) || owner)))
+                    .filterWhen(target -> adminService.isOwner(author).map(owner -> !target.equals(author) || owner))
                     .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.admin.unwarn.permission-denied")).then(Mono.empty()))
                     .flatMap(target -> adminService.warnings(target).count().flatMap(count -> {
                         int warn = args.length > 1 ? Strings.parseInt(args[1]) : 1;
