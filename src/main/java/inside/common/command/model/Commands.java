@@ -115,6 +115,15 @@ public class Commands{
         }
     }
 
+    @DiscordCommand(key = "r", params = "<from ru/lat> <text...>", description = "command.text-layout.description")
+    public static class TextLayoutCommand extends Command{
+        @Override
+        public Mono<Void> execute(CommandReference ref, String[] args){
+            boolean lat = args[0].equalsIgnoreCase("lat");
+            return messageService.text(ref.getReplyChannel(), MessageUtil.substringTo(lat ? MessageUtil.text2rus(args[1]) : MessageUtil.text2lat(args[1]), Message.MAX_CONTENT_LENGTH));
+        }
+    }
+
     @DiscordCommand(key = "1337", params = "<text...>", description = "command.1337.description")
     public static class LeetCommand extends Command{
         @Override
