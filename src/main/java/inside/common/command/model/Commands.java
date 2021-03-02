@@ -120,7 +120,7 @@ public class Commands{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             boolean lat = args[0].equalsIgnoreCase("lat");
-            return messageService.text(ref.getReplyChannel(), MessageUtil.substringTo(lat ? MessageUtil.text2rus(args[1]) : MessageUtil.text2lat(args[1]), Message.MAX_CONTENT_LENGTH));
+            return messageService.text(ref.getReplyChannel(), lat ? MessageUtil.text2rus(args[1]) : MessageUtil.text2lat(args[1]));
         }
     }
 
