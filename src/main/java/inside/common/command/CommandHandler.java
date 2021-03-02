@@ -1,6 +1,5 @@
 package inside.common.command;
 
-import arc.struct.ObjectMap;
 import arc.util.Strings;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
@@ -22,7 +21,7 @@ public class CommandHandler{
 
     private final MessageService messageService;
 
-    private final ObjectMap<String, Command> commands = new ObjectMap<>();
+    private final Map<String, Command> commands = new LinkedHashMap<>();
 
     public CommandHandler(@Autowired EntityRetriever entityRetriever,
                           @Autowired MessageService messageService){
@@ -38,12 +37,14 @@ public class CommandHandler{
         });
     }
 
-    public ObjectMap<String, Command> commands(){
+    public Map<String, Command> commands(){
         return commands;
     }
 
-    public Iterable<CommandInfo> commandList(){
-        return commands.values().toSeq().map(Command::compile);
+    public List<CommandInfo> commandList(){
+        return commands.values().stream()
+                .map(Command::compile)
+                .collect(Collectors.toUnmodifiableList());
     }
 
     public Mono<?> handleMessage(final CommandReference ref){
