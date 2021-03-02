@@ -4,13 +4,14 @@ import arc.util.Strings;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
+import discord4j.core.object.presence.Presence;
 import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.rest.util.Permission;
 import inside.Settings;
 import inside.common.command.CommandHandler;
 import inside.common.command.model.base.*;
 import inside.data.entity.AdminAction;
-import inside.data.service.*;
+import inside.data.service.AdminService;
 import inside.event.audit.*;
 import inside.util.*;
 import org.joda.time.*;
@@ -43,6 +44,15 @@ public class Commands{
         @Override
         public Mono<Boolean> apply(CommandRequest req){
             return adminService.isAdmin(req.getAuthorAsMember());
+        }
+    }
+
+    public static abstract class TestCommand extends Command{
+        @Override
+        public Mono<Boolean> apply(CommandRequest req){
+            return req.getClient().getApplicationInfo()
+                    .map(ApplicationInfo::getOwnerId)
+                    .map(owner -> owner.equals(req.getAuthorAsMember().getId()));
         }
     }
 
@@ -88,6 +98,20 @@ public class Commands{
                     .switchIfEmpty(messageService.err(channel, messageService.get(ref.context(), "command.incorrect-name")).then(Mono.empty()))
                     .flatMap(user -> messageService.info(channel, embed -> embed.setImage(user.getAvatarUrl() + "?size=512")
                             .setDescription(messageService.format(ref.context(), "command.avatar.text", user.getUsername()))));
+        }
+    }
+
+    @DiscordCommand(key = "status", params = "<status>", description = "command.status.description")
+    public static class StatusCommand extends TestCommand{
+        @Override
+        public Mono<Void> execute(CommandReference ref, String[] args){
+            return switch(args[0].toLowerCase()){
+                case "online" -> ref.getClient().updatePresence(Presence.online());
+                case "dnd" -> ref.getClient().updatePresence(Presence.doNotDisturb());
+                case "idle" -> ref.getClient().updatePresence(Presence.idle());
+                case "invisible" -> ref.getClient().updatePresence(Presence.invisible());
+                default -> messageService.err(ref.getReplyChannel(), messageService.get(ref.context(), "command.status.unknown-presence"));
+            };
         }
     }
 
