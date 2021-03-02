@@ -7,16 +7,26 @@ import discord4j.core.object.entity.Message;
 import org.joda.time.*;
 import reactor.util.annotation.Nullable;
 
-import java.time.*;
 import java.time.LocalDateTime;
+import java.time.*;
 import java.time.temporal.*;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.UnaryOperator;
 import java.util.regex.*;
 
 import static java.util.regex.Pattern.compile;
 
 public abstract class MessageUtil{
+
+    private static final String[] latPattern;
+    private static final String[] rusPattern;
+
+    static{
+        String lat = "Q-W-E-R-T-Y-U-I-O-P-A-S-D-F-G-H-J-K-L-Z-X-C-V-B-N-M";
+        String rus = "Й-Ц-У-К-Е-Н-Г-Ш-Щ-З-Ф-Ы-В-А-П-Р-О-Л-Д-Я-Ч-С-М-И-Т-Ь";
+        latPattern = (lat + "-" + lat.toLowerCase() + "-\\^-:-\\$-@-&-~-`-\\{-\\[-\\}-\\]-\"-'-<->-;-\\?-\\/-\\.-,-#").split("-");
+        rusPattern = (rus + "-" + rus.toLowerCase() + "-:-Ж-;-\"-\\?-Ё-ё-Х-х-Ъ-ъ-Э-э-Б-Ю-ж-,-\\.-ю-б-№").split("-");
+    }
 
     public static StringMap leetSpeak = StringMap.of(
             "а", "4", "a", "4",
@@ -109,12 +119,26 @@ public abstract class MessageUtil{
         return !isEmpty(cs);
     }
 
-    public static boolean isEmpty(@Nullable CharSequence cs) {
+    public static boolean isEmpty(@Nullable CharSequence cs){
         return cs == null || cs.length() == 0;
     }
 
-    public static boolean isEmpty(@Nullable Message message) {
+    public static boolean isEmpty(@Nullable Message message){
         return message == null || effectiveContent(message).isBlank();
+    }
+
+    public static String text2rus(String text){
+        for(int i = 0; i < latPattern.length; i++){
+            text = text.replaceAll("(?u)" + latPattern[i], rusPattern[i]);
+        }
+        return text;
+    }
+
+    public static String text2lat(String text){
+        for(int i = 0; i < latPattern.length; i++){
+            text = text.replaceAll("(?u)" + rusPattern[i], latPattern[i]);
+        }
+        return text;
     }
 
     public static String leeted(String text){
@@ -136,7 +160,7 @@ public abstract class MessageUtil{
         }
 
         StringBuilder result = new StringBuilder();
-        for(int i = 0; i < len;){
+        for(int i = 0; i < len; ){
             String c = text.substring(i, i <= len - 2 ? i + 2 : i + 1);
             String leeted = get.apply(c);
             if(isEmpty(leeted)){
@@ -170,7 +194,7 @@ public abstract class MessageUtil{
         }
 
         StringBuilder result = new StringBuilder();
-        for(int i = 0; i < len;){
+        for(int i = 0; i < len; ){
             String c = text.substring(i, i <= len - 2 ? i + 2 : i + 1);
             String translited = get.apply(c);
             if(isEmpty(translited)){
