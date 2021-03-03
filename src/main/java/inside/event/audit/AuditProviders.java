@@ -80,7 +80,8 @@ public class AuditProviders{
                 return;
             }
 
-            embed.setDescription(messageService.format(context, "audit.message.clear.description", count, messageService.getCount(context, "common.plurals.message", count)));
+            embed.setDescription(messageService.format(context, "audit.message.clear.description", count,
+                                                       messageService.getCount(context, "common.plurals.message", count)));
             embed.addField(messageService.get(context, "audit.member.admin"), action.user().name(), true);
             embed.addField(messageService.get(context, "audit.message.channel"), action.channel().name(), true);
             addTimestamp(context, embed);
