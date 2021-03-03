@@ -16,6 +16,7 @@ import reactor.util.function.Tuple2;
 
 import java.io.InputStream;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -72,7 +73,7 @@ public class AuditServiceImpl implements AuditService{
     @Autowired(required = false)
     public void init(List<AuditProvider> providers){
         this.providers = providers.stream().collect(Collectors.toMap(
-                p -> p.getClass().getAnnotation(ForwardAuditProvider.class).value(), p -> p
+                p -> p.getClass().getAnnotation(ForwardAuditProvider.class).value(), Function.identity()
         ));
     }
 }
