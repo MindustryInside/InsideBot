@@ -72,7 +72,7 @@ public class AuditServiceImpl implements AuditService{
 
     @Autowired(required = false)
     public void init(List<AuditProvider> providers){
-        this.providers = providers.stream().collect(Collectors.toMap(
+        this.providers = providers.stream().collect(Collectors.toConcurrentMap(
                 p -> p.getClass().getAnnotation(ForwardAuditProvider.class).value(), Function.identity()
         ));
     }
