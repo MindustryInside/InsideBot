@@ -24,7 +24,7 @@ public class CommandInfo{
             boolean hadOptional = false;
 
             for(int i = 0; i < params.length; i++){
-                String param = psplit[i];
+                String param = psplit[i].trim();
 
                 if(param.length() <= 2){
                     throw new IllegalArgumentException("Malformed param '" + param + "'");

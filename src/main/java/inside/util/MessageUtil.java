@@ -143,8 +143,7 @@ public abstract class MessageUtil{
             if(result == null){
                 result = leetSpeak.findKey(s.toLowerCase(), false);
             }
-            return result != null ? Character.isUpperCase(s.charAt(0)) ? Character.toUpperCase(result.charAt(0)) +
-                    (result.length() > 1 ? result.substring(1).toUpperCase() : "") : result : "";
+            return result != null ? Character.isUpperCase(s.charAt(0)) ? result.toUpperCase() : result : "";
         };
 
         int len = text.length();
@@ -174,8 +173,7 @@ public abstract class MessageUtil{
             if(result == null){
                 result = translit.findKey(s.toLowerCase(), false);
             }
-            return result != null ? Character.isUpperCase(s.charAt(0)) ? Character.toUpperCase(result.charAt(0)) +
-                    (result.length() > 1 ? result.substring(1).toUpperCase() : "") : result : "";
+            return result != null ? Character.isUpperCase(s.charAt(0)) ? result.toUpperCase() : result : "";
         };
 
         int len = text.length();
