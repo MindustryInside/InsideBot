@@ -27,7 +27,7 @@ public class CommandHandler{
 
     private final Map<String, Command> commands = new LinkedHashMap<>();
 
-    private final Map<Command, CommandInfo> commandInfos = new LinkedHashMap();
+    private final Map<Command, CommandInfo> commandInfo = new LinkedHashMap<>();
 
     public CommandHandler(@Autowired EntityRetriever entityRetriever,
                           @Autowired MessageService messageService){
@@ -41,7 +41,7 @@ public class CommandHandler{
         for(Command command : commands){
             CommandInfo info = compile(command);
             this.commands.put(info.text, command);
-            this.commandInfos.put(command, info);
+            this.commandInfo.put(command, info);
         }
     }
 
@@ -99,7 +99,7 @@ public class CommandHandler{
     }
 
     public Collection<CommandInfo> commandList(){
-        return commandInfos.values();
+        return commandInfo.values();
     }
 
     public Mono<?> handleMessage(final CommandReference ref){
@@ -137,27 +137,27 @@ public class CommandHandler{
         return text.flatMap(TupleUtils.function((commandstr, cmd) -> Mono.defer(() -> commands.containsKey(cmd) ? Mono.just(commands.get(cmd)) : suggestion)
                 .ofType(Command.class)
                 .flatMap(command -> {
-                    CommandInfo commandInfo = commandInfos.get(command);
+                    CommandInfo info = commandInfo.get(command);
                     List<String> result = new ArrayList<>();
                     String argstr = commandstr.contains(" ") ? commandstr.substring(cmd.length() + 1) : "";
                     int index = 0;
                     boolean satisfied = false;
-                    String argsres = commandInfo.paramText.isEmpty() ? "command.response.incorrect-arguments.empty" : "command.response.incorrect-arguments";
+                    String argsres = info.paramText.isEmpty() ? "command.response.incorrect-arguments.empty" : "command.response.incorrect-arguments";
 
                     while(true){
-                        if(index >= commandInfo.params.length && !argstr.isEmpty()){
+                        if(index >= info.params.length && !argstr.isEmpty()){
                             messageService.awaitEdit(ref.getMessage().getId());
                             return messageService.err(channel, messageService.get(ref.context(), "command.response.many-arguments.title"),
-                                                      messageService.format(ref.context(), argsres, prefix, commandInfo.text, commandInfo.paramText));
+                                                      messageService.format(ref.context(), argsres, prefix, info.text, info.paramText));
                         }else if(argstr.isEmpty()){
                             break;
                         }
 
-                        if(commandInfo.params[index].optional || index >= commandInfo.params.length - 1 || commandInfo.params[index + 1].optional){
+                        if(info.params[index].optional || index >= info.params.length - 1 || info.params[index + 1].optional){
                             satisfied = true;
                         }
 
-                        if(commandInfo.params[index].variadic){
+                        if(info.params[index].variadic){
                             result.add(argstr);
                             break;
                         }
@@ -167,7 +167,7 @@ public class CommandHandler{
                             if(!satisfied){
                                 messageService.awaitEdit(ref.getMessage().getId());
                                 return messageService.err(channel, messageService.get(ref.context(), "command.response.few-arguments.title"),
-                                                          messageService.format(ref.context(), argsres, prefix, commandInfo.text, commandInfo.paramText));
+                                                          messageService.format(ref.context(), argsres, prefix, info.text, info.paramText));
                             }
                             result.add(argstr);
                             break;
@@ -180,10 +180,10 @@ public class CommandHandler{
                         index++;
                     }
 
-                    if(!satisfied && commandInfo.params.length > 0 && !commandInfo.params[0].optional){
+                    if(!satisfied && info.params.length > 0 && !info.params[0].optional){
                         messageService.awaitEdit(ref.getMessage().getId());
                         return messageService.err(channel, messageService.get(ref.context(), "command.response.few-arguments.title"),
-                                                  messageService.format(ref.context(), argsres, prefix, commandInfo.text, commandInfo.paramText));
+                                                  messageService.format(ref.context(), argsres, prefix, info.text, info.paramText));
                     }
 
                     Mono<String> execute = Mono.just(command)
@@ -192,7 +192,7 @@ public class CommandHandler{
                             .doFirst(() -> messageService.removeEdit(ref.getMessage().getId()))
                             .then(Mono.empty());
 
-                    return Flux.fromIterable(commandInfo.permissions)
+                    return Flux.fromIterable(info.permissions)
                             .filterWhen(permission -> channel.zipWith(self.map(User::getId))
                                     .flatMap(TupleUtils.function((targetChannel, selfId) -> targetChannel.getEffectivePermissions(selfId)))
                                     .map(set -> !set.contains(permission)))
