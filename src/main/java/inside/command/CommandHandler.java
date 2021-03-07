@@ -27,7 +27,7 @@ public class CommandHandler{
 
     private final Map<String, Command> commands = new LinkedHashMap<>();
 
-    private final List<CommandInfo> commandInfos = new ArrayList<>();
+    private final Map<Command, CommandInfo> commandInfos = new LinkedHashMap();
 
     public CommandHandler(@Autowired EntityRetriever entityRetriever,
                           @Autowired MessageService messageService){
@@ -41,13 +41,13 @@ public class CommandHandler{
         for(Command command : commands){
             CommandInfo info = compile(command);
             this.commands.put(info.text, command);
-            this.commandInfos.add(info);
+            this.commandInfos.put(command, info);
         }
     }
 
     private CommandInfo compile(Command command){
         DiscordCommand meta = command.getAnnotation();
-        String paramText = messageService.get(Context.of(KEY_LOCALE, LocaleUtil.getDefaultLocale()), meta.params());
+        String paramText = messageService.get(Context.of(KEY_LOCALE, LocaleUtil.getDefaultLocale()), meta.params()); // get 'en' parameter text
         String[] psplit = paramText.split("(?<=(\\]|>))\\s+(?=(\\[|<))");
         CommandParam[] params = new CommandParam[0];
         if(!paramText.isBlank()){
@@ -98,8 +98,8 @@ public class CommandHandler{
         return commands;
     }
 
-    public List<CommandInfo> commandList(){
-        return commandInfos;
+    public Collection<CommandInfo> commandList(){
+        return commandInfos.values();
     }
 
     public Mono<?> handleMessage(final CommandReference ref){
@@ -137,7 +137,7 @@ public class CommandHandler{
         return text.flatMap(TupleUtils.function((commandstr, cmd) -> Mono.defer(() -> commands.containsKey(cmd) ? Mono.just(commands.get(cmd)) : suggestion)
                 .ofType(Command.class)
                 .flatMap(command -> {
-                    CommandInfo commandInfo = compile(command);
+                    CommandInfo commandInfo = commandInfos.get(command);
                     List<String> result = new ArrayList<>();
                     String argstr = commandstr.contains(" ") ? commandstr.substring(cmd.length() + 1) : "";
                     int index = 0;
