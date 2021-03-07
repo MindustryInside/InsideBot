@@ -21,6 +21,8 @@ public abstract class MessageUtil{
     public static final StringMap rusLeetSpeak;
     public static final StringMap latLeetSpeak;
 
+    public static final StringMap translit;
+
     private static final String[] latPattern;
     private static final String[] rusPattern;
 
@@ -47,23 +49,23 @@ public abstract class MessageUtil{
                 "y", "y", "z", "2"
         );
 
+        translit = StringMap.of(
+                "a", "а", "b", "б", "v", "в", "g", "г",
+                "d", "д", "e", "е", "yo", "ё", "zh", "ж",
+                "z", "з", "i", "и", "j", "й", "k", "к",
+                "l", "л", "m", "м", "n", "н", "o", "о",
+                "p", "п", "r", "р", "s", "с", "t", "т",
+                "u", "у", "f", "ф", "h", "х", "ts", "ц",
+                "ch", "ч", "sh", "ш", "\\`", "ъ", "y", "у",
+                "'", "ь", "yu", "ю", "ya", "я", "x", "кс",
+                "v", "в", "q", "к", "iy", "ий"
+        );
+
         String lat = "Q-W-E-R-T-Y-U-I-O-P-A-S-D-F-G-H-J-K-L-Z-X-C-V-B-N-M";
         String rus = "Й-Ц-У-К-Е-Н-Г-Ш-Щ-З-Ф-Ы-В-А-П-Р-О-Л-Д-Я-Ч-С-М-И-Т-Ь";
         latPattern = (lat + "-" + lat.toLowerCase() + "-\\^-:-\\$-@-&-~-`-\\{-\\[-\\}-\\]-\"-'-<->-;-\\?-\\/-\\.-,-#").split("-");
         rusPattern = (rus + "-" + rus.toLowerCase() + "-:-Ж-;-\"-\\?-Ё-ё-Х-х-Ъ-ъ-Э-э-Б-Ю-ж-,-\\.-ю-б-№").split("-");
     }
-
-    public static StringMap translit = StringMap.of(
-            "a", "а", "b", "б", "v", "в", "g", "г",
-            "d", "д", "e", "е", "yo", "ё", "zh", "ж",
-            "z", "з", "i", "и", "j", "й", "k", "к",
-            "l", "л", "m", "м", "n", "н", "o", "о",
-            "p", "п", "r", "р", "s", "с", "t", "т",
-            "u", "у", "f", "ф", "h", "х", "ts", "ц",
-            "ch", "ч", "sh", "ш", "\\`", "ъ", "y", "у",
-            "'", "ь", "yu", "ю", "ya", "я", "x", "кс",
-            "v", "в", "q", "к", "iy", "ий"
-    );
 
     private static final Pattern timeUnitPattern = compile(
             "^" +
