@@ -18,88 +18,51 @@ import static java.util.regex.Pattern.compile;
 
 public abstract class MessageUtil{
 
+    public static final StringMap rusLeetSpeak;
+    public static final StringMap latLeetSpeak;
+
     private static final String[] latPattern;
     private static final String[] rusPattern;
 
     static{
+        rusLeetSpeak = StringMap.of(
+                "а", "4", "б", "6", "в", "8", "г", "g",
+                "д", "d", "е", "3", "ё", "3", "ж", "zh",
+                "з", "e", "и", "i", "й", "\\`i", "к", "k",
+                "л", "l", "м", "m", "н", "n", "о", "0",
+                "п", "p", "р", "r", "с", "c", "т", "7",
+                "у", "y", "ф", "f", "х", "x", "ц", "u,",
+                "ч", "ch", "ш", "w", "щ", "w,", "ъ", "\\`ь",
+                "ы", "ьi", "ь", "ь", "э", "э", "ю", "10",
+                "я", "9"
+        );
+
+        latLeetSpeak = StringMap.of(
+                "a", "4", "b", "8", "c", "c", "d", "d",
+                "e", "3", "f", "ph", "g", "9", "h", "h",
+                "i", "1", "j", "g", "k", "k", "l", "l",
+                "m", "m", "n", "n", "o", "0", "p", "p",
+                "q", "q", "r", "r", "s", "5", "t", "7",
+                "u", "u", "v", "v", "w", "w", "x", "x",
+                "y", "y", "z", "2"
+        );
+
         String lat = "Q-W-E-R-T-Y-U-I-O-P-A-S-D-F-G-H-J-K-L-Z-X-C-V-B-N-M";
         String rus = "Й-Ц-У-К-Е-Н-Г-Ш-Щ-З-Ф-Ы-В-А-П-Р-О-Л-Д-Я-Ч-С-М-И-Т-Ь";
         latPattern = (lat + "-" + lat.toLowerCase() + "-\\^-:-\\$-@-&-~-`-\\{-\\[-\\}-\\]-\"-'-<->-;-\\?-\\/-\\.-,-#").split("-");
         rusPattern = (rus + "-" + rus.toLowerCase() + "-:-Ж-;-\"-\\?-Ё-ё-Х-х-Ъ-ъ-Э-э-Б-Ю-ж-,-\\.-ю-б-№").split("-");
     }
 
-    public static StringMap leetSpeak = StringMap.of(
-            "а", "4", "a", "4",
-            "б", "6", "b", "8",
-            "в", "8", "c", "c",
-            "г", "g", "d", "d",
-            "д", "d", "e", "3",
-            "е", "3", "f", "ph",
-            "ё", "3", "g", "9",
-            "ж", "zh", "h", "h",
-            "з", "e", "i", "1",
-            "и", "i", "j", "g",
-            "й", "\\`i", "k", "k",
-            "к", "k", "l", "l",
-            "л", "l", "m", "m",
-            "м", "m", "n", "n",
-            "н", "n", "o", "0",
-            "о", "0", "p", "p",
-            "п", "p", "q", "q",
-            "р", "r", "r", "r",
-            "с", "c", "s", "5",
-            "т", "7", "t", "7",
-            "у", "y", "u", "u",
-            "ф", "f", "v", "v",
-            "х", "x", "w", "w",
-            "ц", "u,", "x", "x",
-            "ч", "ch", "y", "y",
-            "ш", "w", "z", "2",
-            "щ", "w,",
-            "ъ", "\\`ь",
-            "ы", "ьi",
-            "ь", "ь",
-            "э", "э",
-            "ю", "10",
-            "я", "9"
-    );
-
     public static StringMap translit = StringMap.of(
-            "a", "а",
-            "b", "б",
-            "v", "в",
-            "g", "г",
-            "d", "д",
-            "e", "е",
-            "yo", "ё",
-            "zh", "ж",
-            "z", "з",
-            "i", "и",
-            "j", "й",
-            "k", "к",
-            "l", "л",
-            "m", "м",
-            "n", "н",
-            "o", "о",
-            "p", "п",
-            "r", "р",
-            "s", "с",
-            "t", "т",
-            "u", "у",
-            "f", "ф",
-            "h", "х",
-            "ts", "ц",
-            "ch", "ч",
-            "sh", "ш",
-            "\\`", "ъ",
-            "y", "у",
-            "'", "ь",
-            "yu", "ю",
-            "ya", "я",
-            "x", "кс",
-            "v", "в",
-            "q", "к",
-            "iy", "ий"
+            "a", "а", "b", "б", "v", "в", "g", "г",
+            "d", "д", "e", "е", "yo", "ё", "zh", "ж",
+            "z", "з", "i", "и", "j", "й", "k", "к",
+            "l", "л", "m", "м", "n", "н", "o", "о",
+            "p", "п", "r", "р", "s", "с", "t", "т",
+            "u", "у", "f", "ф", "h", "х", "ts", "ц",
+            "ch", "ч", "sh", "ш", "\\`", "ъ", "y", "у",
+            "'", "ь", "yu", "ю", "ya", "я", "x", "кс",
+            "v", "в", "q", "к", "iy", "ий"
     );
 
     private static final Pattern timeUnitPattern = compile(
@@ -137,11 +100,12 @@ public abstract class MessageUtil{
         return text;
     }
 
-    public static String leeted(String text){
+    public static String leeted(String text, boolean lat){
+        StringMap map = lat ? latLeetSpeak : rusLeetSpeak;
         UnaryOperator<String> get = s -> {
-            String result = leetSpeak.get(s.toLowerCase());
+            String result = map.get(s.toLowerCase());
             if(result == null){
-                result = leetSpeak.findKey(s.toLowerCase(), false);
+                result = map.findKey(s.toLowerCase(), false);
             }
             return result != null ? Character.isUpperCase(s.charAt(0)) ? result.toUpperCase() : result : "";
         };

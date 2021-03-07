@@ -127,7 +127,8 @@ public class Commands{
     public static class LeetCommand extends Command{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
-            return messageService.text(ref.getReplyChannel(), MessageUtil.substringTo(MessageUtil.leeted(args[0]), Message.MAX_CONTENT_LENGTH));
+            boolean lat = args[0].equalsIgnoreCase("lat");
+            return messageService.text(ref.getReplyChannel(), MessageUtil.substringTo(MessageUtil.leeted(args[1], lat), Message.MAX_CONTENT_LENGTH));
         }
     }
 

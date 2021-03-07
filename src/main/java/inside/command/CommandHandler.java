@@ -205,8 +205,8 @@ public class CommandHandler{
                                     .onErrorResume(t -> t.getMessage().contains("Missing Permissions"), t ->
                                             guild.flatMap(g -> g.getOwner().flatMap(User::getPrivateChannel))
                                                     .flatMap(c -> c.createMessage(String.format("%s%n%n%s",
-                                                            messageService.get(ref.context(), "message.error.permission-denied.title"),
-                                                            messageService.format(ref.context(), "message.error.permission-denied.description", s))))
+                                                    messageService.get(ref.context(), "message.error.permission-denied.title"),
+                                                    messageService.format(ref.context(), "message.error.permission-denied.description", s))))
                                                     .then())
                                     .thenReturn(s))
                             .switchIfEmpty(execute);
