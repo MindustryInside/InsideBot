@@ -1,4 +1,4 @@
-package inside.common.command.model;
+package inside.command;
 
 import arc.util.Strings;
 import discord4j.common.util.Snowflake;
@@ -8,8 +8,7 @@ import discord4j.core.object.presence.Presence;
 import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.rest.util.Permission;
 import inside.Settings;
-import inside.common.command.CommandHandler;
-import inside.common.command.model.base.*;
+import inside.command.model.*;
 import inside.data.entity.AdminAction;
 import inside.data.service.AdminService;
 import inside.event.audit.*;
@@ -74,7 +73,7 @@ public class Commands{
                 builder.append("**");
                 if(command.params.length > 0){
                     builder.append(" *");
-                    builder.append(command.paramText);
+                    builder.append(messageService.get(ref.context(), command.paramText));
                     builder.append("*");
                 }
                 builder.append(" - ");
@@ -87,7 +86,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "avatar", params = "[@user]", description = "command.avatar.description")
+    @DiscordCommand(key = "avatar", params = "command.avatar.params", description = "command.avatar.description")
     public static class AvatarCommand extends Command{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
@@ -101,7 +100,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "status", params = "<status>", description = "command.status.description")
+    @DiscordCommand(key = "status", params = "command.status.params", description = "command.status.description")
     public static class StatusCommand extends TestCommand{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
@@ -115,7 +114,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "r", params = "<from ru/lat> <text...>", description = "command.text-layout.description")
+    @DiscordCommand(key = "r", params = "command.text-layout.params", description = "command.text-layout.description")
     public static class TextLayoutCommand extends Command{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
@@ -124,7 +123,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "1337", params = "<text...>", description = "command.1337.description")
+    @DiscordCommand(key = "1337", params = "command.1337.params", description = "command.1337.description")
     public static class LeetCommand extends Command{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
@@ -132,7 +131,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "tr", params = "<text...>", description = "command.translit.description")
+    @DiscordCommand(key = "tr", params = "command.translit.params", description = "command.translit.description")
     public static class TranslitCommand extends Command{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
@@ -140,7 +139,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "prefix", params = "[prefix]", description = "command.config.prefix.description")
+    @DiscordCommand(key = "prefix", params = "command.config.prefix.params", description = "command.config.prefix.description")
     public static class PrefixCommand extends Command{
         @Autowired
         private AdminService adminService;
@@ -169,7 +168,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "timezone", params = "[timezone]", description = "command.config.timezone.description")
+    @DiscordCommand(key = "timezone", params = "command.config.timezone.params", description = "command.config.timezone.description")
     public static class TimezoneCommand extends Command{
         @Autowired
         private AdminService adminService;
@@ -213,7 +212,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "locale", params = "[locale]", description = "command.config.locale.description")
+    @DiscordCommand(key = "locale", params = "command.config.locale.params", description = "command.config.locale.description")
     public static class LocaleCommand extends Command{
         @Autowired
         private AdminService adminService;
@@ -247,7 +246,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "mute", params = "<@user> <delay> [reason...]", description = "command.admin.mute.description",
+    @DiscordCommand(key = "mute", params = "command.admin.mute.params", description = "command.admin.mute.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_ROLES})
     public static class MuteCommand extends ModeratorCommand{
         @Override
@@ -313,7 +312,7 @@ public class Commands{
     //     }
     // }
 
-    @DiscordCommand(key = "delete", params = "<amount>", description = "command.admin.delete.description",
+    @DiscordCommand(key = "delete", params = "command.admin.delete.params", description = "command.admin.delete.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_MESSAGES, Permission.READ_MESSAGE_HISTORY})
     public static class DeleteCommand extends ModeratorCommand{
         @Autowired
@@ -387,7 +386,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "warn", params = "<@user> [reason...]", description = "command.admin.warn.description",
+    @DiscordCommand(key = "warn", params = "command.admin.warn.params", description = "command.admin.warn.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.BAN_MEMBERS})
     public static class WarnCommand extends ModeratorCommand{
         @Autowired
@@ -430,7 +429,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "warnings", params = "<@user>", description = "command.admin.warnings.description")
+    @DiscordCommand(key = "warnings", params = "command.admin.warnings.params", description = "command.admin.warnings.description")
     public static class WarningsCommand extends ModeratorCommand{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
@@ -461,7 +460,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "unwarn", params = "<@user> [number]", description = "command.admin.unwarn.description")
+    @DiscordCommand(key = "unwarn", params = "command.admin.unwarn.params", description = "command.admin.unwarn.description")
     public static class UnwarnCommand extends ModeratorCommand{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
@@ -494,7 +493,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "unmute", params = "<@user>", description = "command.admin.unmute.description",
+    @DiscordCommand(key = "unmute", params = "command.admin.unmute.params", description = "command.admin.unmute.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_ROLES})
     public static class UnmuteCommand extends ModeratorCommand{
         @Override
