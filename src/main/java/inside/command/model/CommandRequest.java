@@ -1,4 +1,4 @@
-package inside.common.command.model.base;
+package inside.command.model;
 
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.entity.*;

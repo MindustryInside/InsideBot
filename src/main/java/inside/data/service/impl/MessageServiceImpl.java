@@ -56,8 +56,9 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public String get(ContextView ctx, String key){
         try{
-            return context.getMessage(key, null, ctx.get(KEY_LOCALE));
+            return key.isEmpty() ? "" : context.getMessage(key, null, ctx.get(KEY_LOCALE));
         }catch(Throwable t){
+            log.error("Failed to get localized text", t);
             return "???" + key + "???";
         }
     }

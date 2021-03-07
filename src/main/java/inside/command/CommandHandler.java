@@ -1,18 +1,22 @@
-package inside.common.command;
+package inside.command;
 
 import arc.util.Strings;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
-import inside.common.command.model.base.*;
+import inside.command.model.*;
 import inside.data.service.*;
+import inside.util.LocaleUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
+import reactor.util.context.Context;
 import reactor.util.function.Tuple2;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static inside.util.ContextUtil.KEY_LOCALE;
 
 @Service
 public class CommandHandler{
@@ -23,18 +27,71 @@ public class CommandHandler{
 
     private final Map<String, Command> commands = new LinkedHashMap<>();
 
+    private final List<CommandInfo> commandInfos = new ArrayList<>();
+
     public CommandHandler(@Autowired EntityRetriever entityRetriever,
                           @Autowired MessageService messageService){
         this.entityRetriever = entityRetriever;
         this.messageService = messageService;
     }
 
+    // TODO: immutable collections
     @Autowired(required = false)
     public void init(List<Command> commands){
-        commands.forEach(cmd -> {
-            CommandInfo command = cmd.compile();
-            this.commands.put(command.text, cmd);
-        });
+        for(Command command : commands){
+            CommandInfo info = compile(command);
+            this.commands.put(info.text, command);
+            this.commandInfos.add(info);
+        }
+    }
+
+    private CommandInfo compile(Command command){
+        DiscordCommand meta = command.getAnnotation();
+        String paramText = messageService.get(Context.of(KEY_LOCALE, LocaleUtil.getDefaultLocale()), meta.params());
+        String[] psplit = paramText.split("(?<=(\\]|>))\\s+(?=(\\[|<))");
+        CommandParam[] params = new CommandParam[0];
+        if(!paramText.isBlank()){
+            params = new CommandParam[psplit.length];
+            boolean hadOptional = false;
+
+            for(int i = 0; i < params.length; i++){
+                String param = psplit[i].trim();
+                if(param.length() <= 2){
+                    throw new IllegalArgumentException("Malformed param '" + param + "'");
+                }
+
+                char l = param.charAt(0), r = param.charAt(param.length() - 1);
+                boolean optional, variadic = false;
+
+                if(l == '<' && r == '>'){
+                    if(hadOptional){
+                        throw new IllegalArgumentException("Can't have non-optional param after optional param!");
+                    }
+                    optional = false;
+                }else if(l == '[' && r == ']'){
+                    optional = true;
+                }else{
+                    throw new IllegalArgumentException("Malformed param '" + param + "'");
+                }
+
+                if(optional){
+                    hadOptional = true;
+                }
+
+                String fname = param.substring(1, param.length() - 1);
+                if(fname.endsWith("...")){
+                    if(i != params.length - 1){
+                        throw new IllegalArgumentException("A variadic parameter should be the last parameter!");
+                    }
+                    fname = fname.substring(0, fname.length() - 3);
+                    variadic = true;
+                }
+
+                params[i] = new CommandParam(fname, optional, variadic);
+            }
+        }
+
+        return new CommandInfo(meta.key(), meta.params(), meta.description(), params, meta.permissions());
     }
 
     public Map<String, Command> commands(){
@@ -42,9 +99,7 @@ public class CommandHandler{
     }
 
     public List<CommandInfo> commandList(){
-        return commands.values().stream()
-                .map(Command::compile)
-                .collect(Collectors.toUnmodifiableList());
+        return commandInfos;
     }
 
     public Mono<?> handleMessage(final CommandReference ref){
@@ -82,7 +137,7 @@ public class CommandHandler{
         return text.flatMap(TupleUtils.function((commandstr, cmd) -> Mono.defer(() -> commands.containsKey(cmd) ? Mono.just(commands.get(cmd)) : suggestion)
                 .ofType(Command.class)
                 .flatMap(command -> {
-                    CommandInfo commandInfo = command.compile();
+                    CommandInfo commandInfo = compile(command);
                     List<String> result = new ArrayList<>();
                     String argstr = commandstr.contains(" ") ? commandstr.substring(cmd.length() + 1) : "";
                     int index = 0;

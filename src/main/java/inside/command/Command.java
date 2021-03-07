@@ -1,5 +1,6 @@
-package inside.common.command.model.base;
+package inside.command;
 
+import inside.command.model.*;
 import inside.data.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
@@ -22,8 +23,7 @@ public abstract class Command implements Function<CommandRequest, Mono<Boolean>>
         return Mono.empty();
     }
 
-    public CommandInfo compile(){
-        DiscordCommand annotation = getClass().getDeclaredAnnotation(DiscordCommand.class);
-        return new CommandInfo(annotation.key(), annotation.params(), annotation.description(), annotation.permissions());
+    protected DiscordCommand getAnnotation(){
+        return getClass().getDeclaredAnnotation(DiscordCommand.class);
     }
 }
