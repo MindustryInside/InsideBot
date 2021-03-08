@@ -23,7 +23,7 @@ import reactor.function.TupleUtils;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.function.BiConsumer;
+import java.util.function.*;
 import java.util.stream.Collectors;
 
 import static inside.data.service.MessageService.ok;
@@ -69,15 +69,15 @@ public class Commands{
             handler.commandList().forEach(command -> {
                 builder.append(prefix);
                 builder.append("**");
-                builder.append(command.text);
+                builder.append(command.text());
                 builder.append("**");
-                if(command.params.length > 0){
+                if(command.params().length > 0){
                     builder.append(" *");
-                    builder.append(messageService.get(ref.context(), command.paramText));
+                    builder.append(messageService.get(ref.context(), command.paramText()));
                     builder.append("*");
                 }
                 builder.append(" - ");
-                builder.append(messageService.get(ref.context(), command.description));
+                builder.append(messageService.get(ref.context(), command.description()));
                 builder.append("\n");
             });
             builder.append(messageService.get(ref.context(), "command.help.disclaimer.user"));
@@ -184,16 +184,7 @@ public class Commands{
                     .flatMap(guildConfig -> Mono.defer(() -> {
                         DateTimeZone timeZone = MessageUtil.find(args[0]);
                         if(timeZone == null){
-                            int min = 0;
-                            String suggest = null;
-
-                            for(String z : DateTimeZone.getAvailableIDs()){
-                                int dst = Strings.levenshtein(z, args[0]);
-                                if(dst < 3 && (suggest == null || dst < min)){
-                                    min = dst;
-                                    suggest = z;
-                                }
-                            }
+                            String suggest = MessageUtil.findClosest(DateTimeZone.getAvailableIDs(), Function.identity(), args[0]);
 
                             if(suggest != null){
                                 return messageService.err(channel, messageService.format(ref.context(), "command.config.unknown-timezone.suggest", suggest));
@@ -340,10 +331,6 @@ public class Commands{
                 result.append("\n");
             };
 
-            AuditActionBuilder builder = auditService.log(author.getGuildId(), AuditActionType.MESSAGE_CLEAR)
-                    .withUser(author)
-                    .withAttribute(COUNT, number);
-
             Mono<Void> history = reply.flatMapMany(channel -> channel.getMessagesBefore(ref.getMessage().getId())
                     .limitRequest(number)
                     .sort(Comparator.comparing(Message::getId))
@@ -357,7 +344,10 @@ public class Commands{
                     .transform(messages -> number != 1 ? channel.bulkDeleteMessages(messages).then() : messages.next().flatMap(Message::delete).then()))
                     .then();
 
-            Mono<Void> log =  reply.flatMap(channel -> builder.withChannel(channel)
+            Mono<Void> log =  reply.flatMap(channel -> auditService.log(author.getGuildId(), AuditActionType.MESSAGE_CLEAR)
+                    .withUser(author)
+                    .withChannel(channel)
+                    .withAttribute(COUNT, number)
                     .withAttachment(MESSAGE_TXT, input.writeString(result.toString()))
                     .save());
 

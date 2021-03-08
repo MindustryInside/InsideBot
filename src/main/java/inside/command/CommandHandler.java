@@ -5,7 +5,7 @@ import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
 import inside.command.model.*;
 import inside.data.service.*;
-import inside.util.LocaleUtil;
+import inside.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
@@ -40,7 +40,7 @@ public class CommandHandler{
     public void init(List<Command> commands){
         for(Command command : commands){
             CommandInfo info = compile(command);
-            this.commands.put(info.text, command);
+            this.commands.put(info.text(), command);
             this.commandInfo.put(command, info);
         }
     }
@@ -117,19 +117,10 @@ public class CommandHandler{
                 .cache();
 
         Mono<Void> suggestion = text.flatMap(t -> {
-            int min = 0;
-            CommandInfo closest = null;
-
-            for(CommandInfo c : commandList()){
-                int dst = Strings.levenshtein(c.text, t.getT1());
-                if(dst < 3 && (closest == null || dst < min)){
-                    min = dst;
-                    closest = c;
-                }
-            }
+            CommandInfo closest = MessageUtil.findClosest(commandList(), CommandInfo::text, t.getT1());
 
             if(closest != null){
-                return messageService.err(channel, messageService.format(ref.context(), "command.response.found-closest", closest.text));
+                return messageService.err(channel, messageService.format(ref.context(), "command.response.found-closest", closest.text()));
             }
             return messageService.err(channel, messageService.format(ref.context(), "command.response.unknown", prefix));
         }).doFirst(() -> messageService.awaitEdit(ref.getMessage().getId()));
@@ -142,22 +133,22 @@ public class CommandHandler{
                     String argstr = commandstr.contains(" ") ? commandstr.substring(cmd.length() + 1) : "";
                     int index = 0;
                     boolean satisfied = false;
-                    String argsres = info.paramText.isEmpty() ? "command.response.incorrect-arguments.empty" : "command.response.incorrect-arguments";
+                    String argsres = info.paramText().isEmpty() ? "command.response.incorrect-arguments.empty" : "command.response.incorrect-arguments";
 
                     while(true){
-                        if(index >= info.params.length && !argstr.isEmpty()){
+                        if(index >= info.params().length && !argstr.isEmpty()){
                             messageService.awaitEdit(ref.getMessage().getId());
                             return messageService.err(channel, messageService.get(ref.context(), "command.response.many-arguments.title"),
-                                                      messageService.format(ref.context(), argsres, prefix, info.text, info.paramText));
+                                                      messageService.format(ref.context(), argsres, prefix, info.text(), info.paramText()));
                         }else if(argstr.isEmpty()){
                             break;
                         }
 
-                        if(info.params[index].optional || index >= info.params.length - 1 || info.params[index + 1].optional){
+                        if(info.params()[index].optional() || index >= info.params().length - 1 || info.params()[index + 1].optional()){
                             satisfied = true;
                         }
 
-                        if(info.params[index].variadic){
+                        if(info.params()[index].variadic()){
                             result.add(argstr);
                             break;
                         }
@@ -167,7 +158,7 @@ public class CommandHandler{
                             if(!satisfied){
                                 messageService.awaitEdit(ref.getMessage().getId());
                                 return messageService.err(channel, messageService.get(ref.context(), "command.response.few-arguments.title"),
-                                                          messageService.format(ref.context(), argsres, prefix, info.text, info.paramText));
+                                                          messageService.format(ref.context(), argsres, prefix, info.text(), info.paramText()));
                             }
                             result.add(argstr);
                             break;
@@ -180,10 +171,10 @@ public class CommandHandler{
                         index++;
                     }
 
-                    if(!satisfied && info.params.length > 0 && !info.params[0].optional){
+                    if(!satisfied && info.params().length > 0 && !info.params()[0].optional()){
                         messageService.awaitEdit(ref.getMessage().getId());
                         return messageService.err(channel, messageService.get(ref.context(), "command.response.few-arguments.title"),
-                                                  messageService.format(ref.context(), argsres, prefix, info.text, info.paramText));
+                                                  messageService.format(ref.context(), argsres, prefix, info.text(), info.paramText()));
                     }
 
                     Mono<String> execute = Mono.just(command)
@@ -192,7 +183,7 @@ public class CommandHandler{
                             .doFirst(() -> messageService.removeEdit(ref.getMessage().getId()))
                             .then(Mono.empty());
 
-                    return Flux.fromIterable(info.permissions)
+                    return Flux.fromIterable(info.permissions())
                             .filterWhen(permission -> channel.zipWith(self.map(User::getId))
                                     .flatMap(TupleUtils.function((targetChannel, selfId) -> targetChannel.getEffectivePermissions(selfId)))
                                     .map(set -> !set.contains(permission)))
