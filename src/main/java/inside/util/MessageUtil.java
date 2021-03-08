@@ -20,6 +20,7 @@ import static java.util.regex.Pattern.compile;
 public abstract class MessageUtil{
     private static final int DEFAULT_LEVENSHTEIN_DST = 3;
 
+    // TODO: move to command classes
     public static final StringMap rusLeetSpeak;
     public static final StringMap latLeetSpeak;
 
