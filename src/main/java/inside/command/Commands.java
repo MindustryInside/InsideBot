@@ -354,7 +354,7 @@ public class Commands{
                                 messageService.deleteById(message.getId());
                             })
                             .thenReturn(message))
-                    .transform(channel::bulkDeleteMessages))
+                    .transform(messages -> number != 1 ? channel.bulkDeleteMessages(messages).then() : messages.next().flatMap(Message::delete).then()))
                     .then();
 
             Mono<Void> log =  reply.flatMap(channel -> builder.withChannel(channel)
