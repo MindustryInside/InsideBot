@@ -44,10 +44,6 @@ public interface MessageService{
 
     boolean isAwaitEdit(Snowflake messageId);
 
-    boolean isCleared(Snowflake messageId);
-
-    void putMessage(Snowflake messageId);
-
     MessageInfo getById(Snowflake messageId);
 
     boolean exists(Snowflake messageId);
