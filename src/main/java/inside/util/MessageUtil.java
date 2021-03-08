@@ -4,6 +4,7 @@ import arc.struct.StringMap;
 import arc.util.Strings;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
+import inside.command.model.CommandInfo;
 import org.joda.time.*;
 import reactor.util.annotation.Nullable;
 
@@ -11,12 +12,13 @@ import java.time.LocalDateTime;
 import java.time.*;
 import java.time.temporal.*;
 import java.util.*;
-import java.util.function.UnaryOperator;
+import java.util.function.*;
 import java.util.regex.*;
 
 import static java.util.regex.Pattern.compile;
 
 public abstract class MessageUtil{
+    private static final int DEFAULT_LEVENSHTEIN_DST = 3;
 
     public static final StringMap rusLeetSpeak;
     public static final StringMap latLeetSpeak;
@@ -161,6 +163,27 @@ public abstract class MessageUtil{
             }
         }
         return result.toString();
+    }
+
+    @Nullable
+    public static <T> T findClosest(Iterable<? extends T> all, Function<T, String> comp, String wrong){
+        return findClosest(all, comp, wrong, DEFAULT_LEVENSHTEIN_DST);
+    }
+
+    @Nullable
+    public static <T> T findClosest(Iterable<? extends T> all, Function<T, String> comp, String wrong, int max){
+        int min = 0;
+        T closest = null;
+
+        for(T t : all){
+            int dst = Strings.levenshtein(comp.apply(t), wrong);
+            if(dst < max && (closest == null || dst < min)){
+                min = dst;
+                closest = t;
+            }
+        }
+
+        return closest;
     }
 
     public static String substringTo(String message, int maxLength){
