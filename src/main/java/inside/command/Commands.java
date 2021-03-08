@@ -1,5 +1,6 @@
 package inside.command;
 
+import arc.struct.StringMap;
 import arc.util.*;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
@@ -130,27 +131,155 @@ public class Commands{
 
     @DiscordCommand(key = "r", params = "command.text-layout.params", description = "command.text-layout.description")
     public static class TextLayoutCommand extends Command{
+        private static final String[] latPattern;
+        private static final String[] rusPattern;
+
+        static{
+            String lat = "Q-W-E-R-T-Y-U-I-O-P-A-S-D-F-G-H-J-K-L-Z-X-C-V-B-N-M";
+            String rus = "Й-Ц-У-К-Е-Н-Г-Ш-Щ-З-Ф-Ы-В-А-П-Р-О-Л-Д-Я-Ч-С-М-И-Т-Ь";
+            latPattern = (lat + "-" + lat.toLowerCase() + "-\\^-:-\\$-@-&-~-`-\\{-\\[-\\}-\\]-\"-'-<->-;-\\?-\\/-\\.-,-#").split("-");
+            rusPattern = (rus + "-" + rus.toLowerCase() + "-:-Ж-;-\"-\\?-Ё-ё-Х-х-Ъ-ъ-Э-э-Б-Ю-ж-,-\\.-ю-б-№").split("-");
+        }
+
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             boolean lat = args[0].equalsIgnoreCase("lat");
-            return messageService.text(ref.getReplyChannel(), lat ? MessageUtil.text2rus(args[1]) : MessageUtil.text2lat(args[1]));
+            return messageService.text(ref.getReplyChannel(), lat ? text2rus(args[1]) : text2lat(args[1]));
+        }
+
+        public String text2rus(String text){
+            for(int i = 0; i < latPattern.length; i++){
+                text = text.replaceAll("(?u)" + latPattern[i], rusPattern[i]);
+            }
+            return text;
+        }
+
+        public String text2lat(String text){
+            for(int i = 0; i < rusPattern.length; i++){
+                text = text.replaceAll("(?u)" + rusPattern[i], latPattern[i]);
+            }
+            return text;
         }
     }
 
     @DiscordCommand(key = "1337", params = "command.1337.params", description = "command.1337.description")
     public static class LeetCommand extends Command{
+        public static final StringMap rusLeetSpeak;
+        public static final StringMap latLeetSpeak;
+
+        static{
+            rusLeetSpeak = StringMap.of(
+                    "а", "4", "б", "6", "в", "8", "г", "g",
+                    "д", "d", "е", "3", "ё", "3", "ж", "zh",
+                    "з", "e", "и", "i", "й", "\\`i", "к", "k",
+                    "л", "l", "м", "m", "н", "n", "о", "0",
+                    "п", "p", "р", "r", "с", "c", "т", "7",
+                    "у", "y", "ф", "f", "х", "x", "ц", "u,",
+                    "ч", "ch", "ш", "w", "щ", "w,", "ъ", "\\`ь",
+                    "ы", "ьi", "ь", "ь", "э", "э", "ю", "10",
+                    "я", "9"
+            );
+
+            latLeetSpeak = StringMap.of(
+                    "a", "4", "b", "8", "c", "c", "d", "d",
+                    "e", "3", "f", "ph", "g", "9", "h", "h",
+                    "i", "1", "j", "g", "k", "k", "l", "l",
+                    "m", "m", "n", "n", "o", "0", "p", "p",
+                    "q", "q", "r", "r", "s", "5", "t", "7",
+                    "u", "u", "v", "v", "w", "w", "x", "x",
+                    "y", "y", "z", "2"
+            );
+        }
+
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             boolean lat = args[0].equalsIgnoreCase("lat");
-            return messageService.text(ref.getReplyChannel(), MessageUtil.substringTo(MessageUtil.leeted(args[1], lat), Message.MAX_CONTENT_LENGTH));
+            return messageService.text(ref.getReplyChannel(), MessageUtil.substringTo(leeted(args[1], lat), Message.MAX_CONTENT_LENGTH));
+        }
+
+        public String leeted(String text, boolean lat){
+            StringMap map = lat ? latLeetSpeak : rusLeetSpeak;
+            UnaryOperator<String> get = s -> {
+                String result = map.get(s.toLowerCase());
+                if(result == null){
+                    result = map.findKey(s.toLowerCase(), false);
+                }
+                return result != null ? Character.isUpperCase(s.charAt(0)) ? result.toUpperCase() : result : "";
+            };
+
+            int len = text.length();
+            if(len == 1){
+                return get.apply(text);
+            }
+
+            StringBuilder result = new StringBuilder();
+            for(int i = 0; i < len; ){
+                String c = text.substring(i, i <= len - 2 ? i + 2 : i + 1);
+                String leeted = get.apply(c);
+                if(MessageUtil.isEmpty(leeted)){
+                    leeted = get.apply(c.charAt(0) + "");
+                    result.append(MessageUtil.isEmpty(leeted) ? c.charAt(0) : leeted);
+                    i++;
+                }else{
+                    result.append(leeted);
+                    i += 2;
+                }
+            }
+            return result.toString();
         }
     }
 
     @DiscordCommand(key = "tr", params = "command.translit.params", description = "command.translit.description")
     public static class TranslitCommand extends Command{
+        public static final StringMap translit;
+
+        static{
+            translit = StringMap.of(
+                    "a", "а", "b", "б", "v", "в", "g", "г",
+                    "d", "д", "e", "е", "yo", "ё", "zh", "ж",
+                    "z", "з", "i", "и", "j", "й", "k", "к",
+                    "l", "л", "m", "м", "n", "н", "o", "о",
+                    "p", "п", "r", "р", "s", "с", "t", "т",
+                    "u", "у", "f", "ф", "h", "х", "ts", "ц",
+                    "ch", "ч", "sh", "ш", "\\`", "ъ", "y", "у",
+                    "'", "ь", "yu", "ю", "ya", "я", "x", "кс",
+                    "v", "в", "q", "к", "iy", "ий"
+            );
+        }
+
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
-            return messageService.text(ref.getReplyChannel(), MessageUtil.substringTo(MessageUtil.translit(args[0]), Message.MAX_CONTENT_LENGTH));
+            return messageService.text(ref.getReplyChannel(), MessageUtil.substringTo(translit(args[0]), Message.MAX_CONTENT_LENGTH));
+        }
+
+        public String translit(String text){
+            UnaryOperator<String> get = s -> {
+                String result = translit.get(s.toLowerCase());
+                if(result == null){
+                    result = translit.findKey(s.toLowerCase(), false);
+                }
+                return result != null ? Character.isUpperCase(s.charAt(0)) ? result.toUpperCase() : result : "";
+            };
+
+            int len = text.length();
+            if(len == 1){
+                return get.apply(text);
+            }
+
+            StringBuilder result = new StringBuilder();
+            for(int i = 0; i < len; ){
+                String c = text.substring(i, i <= len - 2 ? i + 2 : i + 1);
+                String translited = get.apply(c);
+                if(MessageUtil.isEmpty(translited)){
+                    translited = get.apply(c.charAt(0) + "");
+                    result.append(MessageUtil.isEmpty(translited) ? c.charAt(0) : translited);
+                    i++;
+                }else{
+                    result.append(translited);
+                    i += 2;
+                }
+            }
+            return result.toString();
         }
     }
 
