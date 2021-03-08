@@ -1,6 +1,6 @@
 package inside.command;
 
-import arc.util.Strings;
+import arc.util.*;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
@@ -10,7 +10,7 @@ import discord4j.rest.util.Permission;
 import inside.Settings;
 import inside.command.model.*;
 import inside.data.entity.AdminAction;
-import inside.data.service.AdminService;
+import inside.data.service.*;
 import inside.event.audit.*;
 import inside.util.*;
 import org.joda.time.*;
@@ -83,6 +83,20 @@ public class Commands{
             builder.append(messageService.get(ref.context(), "command.help.disclaimer.user"));
 
             return messageService.info(ref.getReplyChannel(), messageService.get(ref.context(), "command.help"), builder.toString());
+        }
+    }
+
+    @DiscordCommand(key = "ping", description = "command.ping.description")
+    public static class PingCommand extends Command{
+        @Override
+        public Mono<Void> execute(CommandReference ref, String[] args){
+            long start = System.currentTimeMillis();
+            return ref.getReplyChannel()
+                    .flatMap(channel -> channel.createMessage(
+                            messageService.get(ref.context(), "command.ping.testing")))
+                    .flatMap(message -> message.edit(spec -> spec.setContent(
+                            messageService.format(ref.context(), "command.ping.completed", Time.timeSinceMillis(start)))))
+                    .then();
         }
     }
 

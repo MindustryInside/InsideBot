@@ -115,17 +115,19 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                     info.content(newContent);
                     messageService.save(info);
 
-                    Mono<Void> command = Mono.defer(() -> {
-                        if(!messageService.isAwaitEdit(message.getId())) return Mono.empty();
-                        CommandReference reference = CommandReference.builder()
-                                .localMember(entityRetriever.getMember(member))
-                                .message(message)
-                                .member(member)
-                                .context(context)
-                                .build();
+                    Mono<?> command = Mono.defer(() -> {
+                        if(messageService.isAwaitEdit(message.getId())){
+                            CommandReference reference = CommandReference.builder()
+                                    .localMember(entityRetriever.getMember(member))
+                                    .message(message)
+                                    .member(member)
+                                    .context(context)
+                                    .build();
 
-                        return commandHandler.handleMessage(reference);
-                    }).then();
+                            return commandHandler.handleMessage(reference);
+                        }
+                        return Mono.empty();
+                    });
 
                     AuditActionBuilder builder = auditService.log(guildId, MESSAGE_EDIT)
                             .withChannel(channel)
