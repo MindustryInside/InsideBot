@@ -204,7 +204,7 @@ public class Commands{
                 if(result == null){
                     result = map.findKey(s.toLowerCase(), false);
                 }
-                return result != null ? Character.isUpperCase(s.charAt(0)) ? result.toUpperCase() : result : "";
+                return result != null ? s.chars().anyMatch(Character::isUpperCase) ? result.toUpperCase() : result : "";
             };
 
             int len = text.length();
@@ -258,7 +258,7 @@ public class Commands{
                 if(result == null){
                     result = translit.findKey(s.toLowerCase(), false);
                 }
-                return result != null ? Character.isUpperCase(s.charAt(0)) ? result.toUpperCase() : result : "";
+                return result != null ? s.chars().anyMatch(Character::isUpperCase) ? result.toUpperCase() : result : "";
             };
 
             int len = text.length();
