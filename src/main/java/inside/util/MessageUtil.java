@@ -1,18 +1,16 @@
 package inside.util;
 
-import arc.struct.StringMap;
 import arc.util.Strings;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
-import inside.command.model.CommandInfo;
 import org.joda.time.*;
 import reactor.util.annotation.Nullable;
 
 import java.time.LocalDateTime;
 import java.time.*;
 import java.time.temporal.*;
-import java.util.*;
-import java.util.function.*;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.regex.*;
 
 import static java.util.regex.Pattern.compile;
