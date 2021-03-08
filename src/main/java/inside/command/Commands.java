@@ -292,27 +292,6 @@ public class Commands{
         }
     }
 
-    // bulk delete test
-    // @DiscordCommand(key = "test", params = "<count>", description = "")
-    // public class TestCommand extends ModeratorCommand{
-    //     @Override
-    //     public Mono<Void> execute(CommandReference ref, String[] args){
-    //         Mono<TextChannel> reply = ref.getReplyChannel()
-    //                 .ofType(TextChannel.class);
-    //
-    //         int number = Strings.parseInt(args[0]);
-    //         if(number >= settings.maxClearedCount){
-    //             return messageService.err(reply, messageService.format(ref.context(), "common.limit-number", settings.maxClearedCount));
-    //         }
-    //
-    //         return reply.flatMapMany(textChannel -> textChannel.getMessagesBefore(ref.getMessage().getId())
-    //                 .take(number)
-    //                 .map(Message::getId)
-    //                 .transform(textChannel::bulkDelete))
-    //                 .then();
-    //     }
-    // }
-
     @DiscordCommand(key = "delete", params = "command.admin.delete.params", description = "command.admin.delete.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_MESSAGES, Permission.READ_MESSAGE_HISTORY})
     public static class DeleteCommand extends ModeratorCommand{
@@ -365,23 +344,22 @@ public class Commands{
                     .withUser(author)
                     .withAttribute(COUNT, number);
 
-            Mono<Void> history = reply.flatMapMany(channel -> channel.getMessagesBefore(ref.getMessage().getId()))
+            Mono<Void> history = reply.flatMapMany(channel -> channel.getMessagesBefore(ref.getMessage().getId())
                     .limitRequest(number)
                     .sort(Comparator.comparing(Message::getId))
                     .filter(message -> message.getTimestamp().isAfter(limit))
                     .flatMap(message -> message.getAuthorAsMember()
-                            .flatMap(member -> Mono.fromRunnable(() -> {
-                                messageService.putMessage(message.getId());
+                            .doOnNext(member -> {
                                 appendInfo.accept(message, member);
-                            }))
-                            .and(message.delete()))
+                                messageService.deleteById(message.getId());
+                            })
+                            .thenReturn(message))
+                    .transform(channel::bulkDeleteMessages))
                     .then();
 
-            Mono<Void> log =  ref.getReplyChannel()
-                    .ofType(GuildChannel.class)
-                    .flatMap(channel -> builder.withChannel(channel)
-                            .withAttachment(MESSAGE_TXT, input.writeString(result.toString()))
-                            .save());
+            Mono<Void> log =  reply.flatMap(channel -> builder.withChannel(channel)
+                    .withAttachment(MESSAGE_TXT, input.writeString(result.toString()))
+                    .save());
 
             return history.then(log).and(ref.getMessage().addReaction(ok));
         }

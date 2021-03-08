@@ -158,7 +158,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
         User user = message.getAuthor().orElse(null);
         Snowflake guildId = event.getGuildId().orElse(null);
-        if(DiscordUtil.isBot(user) || guildId == null || !messageService.exists(message.getId()) || messageService.isCleared(message.getId())){
+        if(DiscordUtil.isBot(user) || guildId == null || !messageService.exists(message.getId())){
             return Mono.empty();
         }
 

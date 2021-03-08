@@ -37,10 +37,6 @@ public class MessageServiceImpl implements MessageService{
 
     private final Settings settings;
 
-    private final Cache<Snowflake, Boolean> deletedMessage = Caffeine.newBuilder()
-            .expireAfterWrite(3, TimeUnit.MINUTES)
-            .build();
-
     private final Cache<Snowflake, Boolean> waitingMessage = Caffeine.newBuilder()
             .expireAfterWrite(15, TimeUnit.SECONDS)
             .build();
@@ -124,18 +120,6 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public boolean isAwaitEdit(Snowflake messageId){
         return Boolean.TRUE.equals(waitingMessage.getIfPresent(messageId));
-    }
-
-    @Override
-    public boolean isCleared(Snowflake messageId){
-        return Boolean.TRUE.equals(deletedMessage.getIfPresent(messageId));
-    }
-
-    @Override
-    @Transactional
-    public void putMessage(Snowflake messageId){
-        deletedMessage.put(messageId, true);
-        deleteById(messageId);
     }
 
     @Override
