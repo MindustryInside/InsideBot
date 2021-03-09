@@ -101,7 +101,7 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     public Mono<Void> err(Mono<? extends MessageChannel> channel, String text, Object... args){
-        return error(channel, "message.error.general.title", text);
+        return error(channel, "message.error.general.title", text, args);
     }
 
     @Override
