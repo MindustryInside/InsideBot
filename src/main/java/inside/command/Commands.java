@@ -12,7 +12,7 @@ import discord4j.rest.util.Permission;
 import inside.Settings;
 import inside.command.model.*;
 import inside.data.entity.AdminAction;
-import inside.data.service.*;
+import inside.data.service.AdminService;
 import inside.event.audit.*;
 import inside.util.*;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -24,7 +24,6 @@ import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
 import reactor.netty.http.client.HttpClient;
 
-import java.net.UnknownHostException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -137,7 +136,9 @@ public class Commands{
                     .switchIfEmpty(attachmentUrl)
                     .flatMap(url -> httpClient.get()
                             .uri(url)
-                            .responseSingle((res, mono) -> res.status().equals(HttpResponseStatus.OK) ? mono.asString(Strings.utf8) : Mono.empty()))
+                            .responseSingle((res, mono) -> res.status().equals(HttpResponseStatus.OK) ? mono.filter(buf -> buf.capacity() < 3145728)
+                                    .switchIfEmpty(messageService.err(ref.getReplyChannel(), "command.read.under-limit").then(Mono.never()))
+                                    .map(buf -> buf.readCharSequence(buf.readableBytes(), Strings.utf8).toString()) : Mono.empty()))
                     .onErrorResume(t -> true, t -> Mono.empty())
                     .switchIfEmpty(messageService.err(ref.getReplyChannel(), "command.read.error").then(Mono.empty()))
                     .map(content -> MessageUtil.substringTo(content, Message.MAX_CONTENT_LENGTH))
