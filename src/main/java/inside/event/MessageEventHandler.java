@@ -17,7 +17,6 @@ import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
-import reactor.function.TupleUtils;
 import reactor.util.*;
 import reactor.util.context.Context;
 import reactor.util.function.Tuples;
@@ -26,6 +25,7 @@ import static inside.event.audit.Attribute.*;
 import static inside.event.audit.AuditActionType.*;
 import static inside.event.audit.BaseAuditProvider.MESSAGE_TXT;
 import static inside.util.ContextUtil.*;
+import static reactor.function.TupleUtils.*;
 
 @Component
 public class MessageEventHandler extends ReactiveEventAdapter{
@@ -74,7 +74,8 @@ public class MessageEventHandler extends ReactiveEventAdapter{
             messageService.save(info);
         });
 
-        Context context = Context.of(KEY_LOCALE, entityRetriever.locale(guildId), KEY_TIMEZONE, entityRetriever.timeZone(guildId));
+        Context context = Context.of(KEY_LOCALE, entityRetriever.locale(guildId),
+                KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
         CommandReference reference = CommandReference.builder()
                 .message(message)
@@ -94,13 +95,15 @@ public class MessageEventHandler extends ReactiveEventAdapter{
             return Mono.empty();
         }
 
-        Context context = Context.of(KEY_LOCALE, entityRetriever.locale(guildId), KEY_TIMEZONE, entityRetriever.timeZone(guildId));
+        Context context = Context.of(KEY_LOCALE, entityRetriever.locale(guildId),
+                KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
         return Mono.zip(event.getMessage(), event.getChannel().ofType(TextChannel.class))
-                .filter(TupleUtils.predicate((message, channel) -> !message.isTts() && !message.isPinned()))
-                .zipWhen(tuple -> tuple.getT1().getAuthorAsMember(), (tuple, user) -> Tuples.of(tuple.getT1(), tuple.getT2(), user))
-                .filter(TupleUtils.predicate((message, channel, member) -> DiscordUtil.isNotBot(member)))
-                .flatMap(TupleUtils.function((message, channel, member) -> {
+                .filter(predicate((message, channel) -> !message.isTts() && !message.isPinned()))
+                .zipWhen(tuple -> tuple.getT1().getAuthorAsMember(),
+                        (tuple, user) -> Tuples.of(tuple.getT1(), tuple.getT2(), user))
+                .filter(predicate((message, channel, member) -> DiscordUtil.isNotBot(member)))
+                .flatMap(function((message, channel, member) -> {
                     String newContent = MessageUtil.effectiveContent(message);
                     MessageInfo info = messageService.getById(event.getMessageId());
                     if(info == null){
@@ -167,7 +170,8 @@ public class MessageEventHandler extends ReactiveEventAdapter{
         MessageInfo info = messageService.getById(message.getId());
         String content = info.content();
 
-        Context context = Context.of(KEY_LOCALE, entityRetriever.locale(guildId), KEY_TIMEZONE, entityRetriever.timeZone(guildId));
+        Context context = Context.of(KEY_LOCALE, entityRetriever.locale(guildId),
+                KEY_TIMEZONE, entityRetriever.timeZone(guildId));
 
         return event.getChannel()
                 .ofType(TextChannel.class)
@@ -180,7 +184,9 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
                     if(content.length() >= Field.MAX_VALUE_LENGTH){
                         StringInputStream input = new StringInputStream();
-                        input.writeString(String.format("%s:%n%s", messageService.get(context, "audit.message.deleted-content.title"), content));
+                        input.writeString(String.format("%s:%n%s",
+                                messageService.get(context, "audit.message.deleted-content.title"), content
+                        ));
                         builder.withAttachment(MESSAGE_TXT, input);
                     }
 
@@ -189,9 +195,4 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                 })
                 .contextWrite(context);
     }
-
-    // @Override
-    // public Publisher<?> onMessageBulkDelete(MessageBulkDeleteEvent event){
-    //     return Mono.fromRunnable(() -> log.info("bulk delete: {}", event));
-    // }
 }
