@@ -9,10 +9,10 @@ import inside.Settings;
 import inside.data.entity.MessageInfo;
 import inside.data.repository.MessageInfoRepository;
 import inside.data.service.MessageService;
-import inside.util.LocaleUtil;
+import inside.util.*;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
+import org.springframework.context.*;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,10 +52,9 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public String get(ContextView ctx, String key){
         try{
-            return key.isEmpty() ? "" : context.getMessage(key, null, ctx.get(KEY_LOCALE));
-        }catch(Throwable t){
-            log.error("Failed to get localized text", t);
-            return "???" + key + "???";
+            return MessageUtil.isEmpty(key) ? "" : context.getMessage(key, null, ctx.get(KEY_LOCALE));
+        }catch(NoSuchMessageException e){
+            return key;
         }
     }
 
@@ -72,20 +71,25 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     public String format(ContextView ctx, String key, Object... args){
-        return context.getMessage(key, args, ctx.get(KEY_LOCALE));
+        try{
+            return context.getMessage(key, args, ctx.get(KEY_LOCALE));
+        }catch(NoSuchMessageException e){
+            return key;
+        }
     }
 
     @Override
-    public Mono<Void> text(Mono<? extends MessageChannel> channel, String text){
-        return channel.publishOn(Schedulers.boundedElastic())
-                .flatMap(c -> c.createMessage(spec -> spec.setContent(text.isBlank() ? ":eyes: (?)" : text)
+    public Mono<Void> text(Mono<? extends MessageChannel> channel, String text, Object... args){
+        return Mono.deferContextual(ctx -> channel.publishOn(Schedulers.boundedElastic())
+                .flatMap(c -> c.createMessage(spec -> spec.setContent(text.isBlank() ? ":eyes: (?)" : format(ctx, text, args))
                         .setAllowedMentions(AllowedMentions.suppressAll())))
-                .then();
+                .then());
     }
 
     @Override
-    public Mono<Void> info(Mono<? extends MessageChannel> channel, String title, String text){
-        return info(channel, embed -> embed.setTitle(title).setDescription(text));
+    public Mono<Void> info(Mono<? extends MessageChannel> channel, String title, String text, Object... args){
+        return Mono.deferContextual(ctx -> info(channel, embed -> embed.setTitle(get(ctx, title))
+                .setDescription(format(ctx, text))));
     }
 
     @Override
@@ -96,15 +100,17 @@ public class MessageServiceImpl implements MessageService{
     }
 
     @Override
-    public Mono<Void> err(Mono<? extends MessageChannel> channel, String text){
-        return Mono.deferContextual(ctx -> err(channel, get(ctx, "message.error.general.title"), text));
+    public Mono<Void> err(Mono<? extends MessageChannel> channel, String text, Object... args){
+        return error(channel, "message.error.general.title", text);
     }
 
     @Override
-    public Mono<Void> err(Mono<? extends MessageChannel> channel, String title, String text){
-        return channel.publishOn(Schedulers.boundedElastic())
-                .flatMap(c -> c.createEmbed(embed -> embed.setColor(settings.errorColor).setTitle(title).setDescription(text)))
-                .flatMap(message -> Mono.delay(Duration.ofSeconds(5)).then(message.delete()));
+    public Mono<Void> error(Mono<? extends MessageChannel> channel, String title, String text, Object... args){
+        return Mono.deferContextual(ctx -> channel.publishOn(Schedulers.boundedElastic())
+                .flatMap(c -> c.createEmbed(embed -> embed.setColor(settings.errorColor)
+                        .setDescription(format(ctx, text, args))
+                        .setTitle(get(ctx, title))))
+                .flatMap(message -> Mono.delay(Duration.ofSeconds(5)).then(message.delete())));
     }
 
     @Override
