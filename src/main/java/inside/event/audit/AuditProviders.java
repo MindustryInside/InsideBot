@@ -31,18 +31,18 @@ public class AuditProviders{
             embed.setAuthor(action.user().name(), null, url);
             embed.setTitle(messageService.format(context, "audit.message.edit.title", action.channel().name()));
             embed.setDescription(messageService.format(context, "audit.message.edit.description",
-                                                       action.guildId().asString(),
-                                                       action.channel().id(),
-                                                       messageId.asString()));
+                    action.guildId().asString(),
+                    action.channel().id(),
+                    messageId.asString()));
 
             if(oldContent.length() > 0){
                 embed.addField(messageService.get(context, "audit.message.old-content.title"),
-                               MessageUtil.substringTo(oldContent, Embed.Field.MAX_VALUE_LENGTH), false);
+                        MessageUtil.substringTo(oldContent, Embed.Field.MAX_VALUE_LENGTH), false);
             }
 
             if(newContent.length() > 0){
                 embed.addField(messageService.get(context, "audit.message.new-content.title"),
-                               MessageUtil.substringTo(newContent, Embed.Field.MAX_VALUE_LENGTH), true);
+                        MessageUtil.substringTo(newContent, Embed.Field.MAX_VALUE_LENGTH), true);
             }
 
             addTimestamp(context, embed);
@@ -64,7 +64,7 @@ public class AuditProviders{
 
             if(oldContent.length() > 0){
                 embed.addField(messageService.get(context, "audit.message.deleted-content.title"),
-                               MessageUtil.substringTo(oldContent, Embed.Field.MAX_VALUE_LENGTH), true);
+                        MessageUtil.substringTo(oldContent, Embed.Field.MAX_VALUE_LENGTH), true);
             }
 
             addTimestamp(context, embed);
@@ -81,7 +81,7 @@ public class AuditProviders{
             }
 
             embed.setDescription(messageService.format(context, "audit.message.clear.description", count,
-                                                       messageService.getCount(context, "common.plurals.message", count)));
+                    messageService.getCount(context, "common.plurals.message", count)));
             embed.addField(messageService.get(context, "audit.member.admin"), action.user().name(), true);
             embed.addField(messageService.get(context, "audit.message.channel"), action.channel().name(), true);
             addTimestamp(context, embed);

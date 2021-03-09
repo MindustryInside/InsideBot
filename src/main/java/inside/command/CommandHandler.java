@@ -1,6 +1,5 @@
 package inside.command;
 
-import arc.util.Strings;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
 import inside.command.model.*;
@@ -47,7 +46,8 @@ public class CommandHandler{
 
     private CommandInfo compile(Command command){
         DiscordCommand meta = command.getAnnotation();
-        String paramText = messageService.get(Context.of(KEY_LOCALE, LocaleUtil.getDefaultLocale()), meta.params()); // get 'en' parameter text
+        // get 'en' parameter text for validation
+        String paramText = messageService.get(Context.of(KEY_LOCALE, LocaleUtil.getDefaultLocale()), meta.params());
         String[] psplit = paramText.split("(?<=(\\]|>))\\s+(?=(\\[|<))");
         CommandParam[] params = new CommandParam[0];
         if(!paramText.isBlank()){
@@ -120,9 +120,9 @@ public class CommandHandler{
             CommandInfo closest = MessageUtil.findClosest(commandList(), CommandInfo::text, t.getT1());
 
             if(closest != null){
-                return messageService.err(channel, messageService.format(ref.context(), "command.response.found-closest", closest.text()));
+                return messageService.err(channel, "command.response.found-closest", closest.text());
             }
-            return messageService.err(channel, messageService.format(ref.context(), "command.response.unknown", prefix));
+            return messageService.err(channel, "command.response.unknown", prefix);
         }).doFirst(() -> messageService.awaitEdit(ref.getMessage().getId()));
 
         return text.flatMap(TupleUtils.function((commandstr, cmd) -> Mono.defer(() -> commands.containsKey(cmd) ? Mono.just(commands.get(cmd)) : suggestion)
@@ -138,8 +138,8 @@ public class CommandHandler{
                     while(true){
                         if(index >= info.params().length && !argstr.isEmpty()){
                             messageService.awaitEdit(ref.getMessage().getId());
-                            return messageService.err(channel, messageService.get(ref.context(), "command.response.many-arguments.title"),
-                                                      messageService.format(ref.context(), argsres, prefix, info.text(), info.paramText()));
+                            return messageService.error(channel, "command.response.many-arguments.title",
+                                    argsres, prefix, info.text(), messageService.get(ref.context(), info.paramText()));
                         }else if(argstr.isEmpty()){
                             break;
                         }
@@ -157,8 +157,8 @@ public class CommandHandler{
                         if(next == -1){
                             if(!satisfied){
                                 messageService.awaitEdit(ref.getMessage().getId());
-                                return messageService.err(channel, messageService.get(ref.context(), "command.response.few-arguments.title"),
-                                                          messageService.format(ref.context(), argsres, prefix, info.text(), info.paramText()));
+                                return messageService.error(channel, "command.response.few-arguments.title",
+                                        argsres, prefix, info.text(), messageService.get(ref.context(), info.paramText()));
                             }
                             result.add(argstr);
                             break;
@@ -173,8 +173,8 @@ public class CommandHandler{
 
                     if(!satisfied && info.params().length > 0 && !info.params()[0].optional()){
                         messageService.awaitEdit(ref.getMessage().getId());
-                        return messageService.err(channel, messageService.get(ref.context(), "command.response.few-arguments.title"),
-                                                  messageService.format(ref.context(), argsres, prefix, info.text(), info.paramText()));
+                        return messageService.error(channel, "command.response.few-arguments.title",
+                                argsres, prefix, info.text(), messageService.get(ref.context(), info.paramText()));
                     }
 
                     Mono<String> execute = Mono.just(command)

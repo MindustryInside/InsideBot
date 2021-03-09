@@ -26,15 +26,16 @@ public interface MessageService{
 
     //send
 
-    Mono<Void> text(Mono<? extends MessageChannel> channel, String text);
+    Mono<Void> text(Mono<? extends MessageChannel> channel, String text, Object... args);
 
-    Mono<Void> info(Mono<? extends MessageChannel> channel, String title, String text);
+    Mono<Void> info(Mono<? extends MessageChannel> channel, String title, String text, Object... args);
 
     Mono<Void> info(Mono<? extends MessageChannel> channel, Consumer<EmbedCreateSpec> embed);
 
-    Mono<Void> err(Mono<? extends MessageChannel> channel, String text);
+    Mono<Void> err(Mono<? extends MessageChannel> channel, String text, Object... args);
 
-    Mono<Void> err(Mono<? extends MessageChannel> channel, String title, String text);
+    // TODO: rename
+    Mono<Void> error(Mono<? extends MessageChannel> channel, String title, String text, Object... args);
 
     //data
 
