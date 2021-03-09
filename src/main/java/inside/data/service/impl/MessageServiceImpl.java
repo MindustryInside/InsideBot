@@ -89,7 +89,7 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public Mono<Void> info(Mono<? extends MessageChannel> channel, String title, String text, Object... args){
         return Mono.deferContextual(ctx -> info(channel, embed -> embed.setTitle(get(ctx, title))
-                .setDescription(format(ctx, text))));
+                .setDescription(format(ctx, text, args))));
     }
 
     @Override
