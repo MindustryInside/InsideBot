@@ -55,7 +55,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
         Mono<?> muteEvade = member.getGuild().flatMap(Guild::getOwner)
                 .filterWhen(owner -> adminService.isMuted(member))
                 .flatMap(owner -> adminService.mute(owner, member, DateTime.now().plusDays(settings.muteEvadeDays),
-                                                    messageService.get(context, "audit.member.mute.evade"))
+                        messageService.get(context, "audit.member.mute.evade"))
                         .thenReturn(owner))
                 .switchIfEmpty(warn.then(Mono.empty()));
 
