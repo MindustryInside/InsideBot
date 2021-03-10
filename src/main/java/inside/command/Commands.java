@@ -134,7 +134,7 @@ public class Commands{
             });
 
             return result.onErrorResume(t -> t instanceof ArithmeticException || t instanceof Expression.ExpressionException,
-                    t -> messageService.error(ref.getReplyChannel(), "command.math.error.title", t.getMessage()).then(Mono.empty()))
+                    t -> messageService.error(ref.getReplyChannel(), "command.math.error.title", messageService.localize(ref.context(), t)).then(Mono.empty()))
                     .flatMap(decimal -> messageService.text(ref.getReplyChannel(), MessageUtil.substringTo(decimal.toString(), Message.MAX_CONTENT_LENGTH)));
         }
 
