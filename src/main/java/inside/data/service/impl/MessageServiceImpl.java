@@ -22,6 +22,7 @@ import reactor.util.*;
 import reactor.util.context.ContextView;
 
 import java.time.Duration;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -76,6 +77,15 @@ public class MessageServiceImpl implements MessageService{
         }catch(NoSuchMessageException e){
             return key;
         }
+    }
+
+    @Override
+    public String localize(ContextView ctx, Throwable throwable){
+        if(ctx.getOrEmpty(KEY_LOCALE).map(locale -> LocaleUtil.getDefaultLocale().equals(locale)).orElse(false)){
+            return throwable.getMessage();
+        }
+        String message = throwable.getMessage() != null ? "." + kebalize(throwable.getMessage()) : "";
+        return get(ctx, throwable.getClass().getCanonicalName() + message);
     }
 
     @Override
@@ -165,5 +175,21 @@ public class MessageServiceImpl implements MessageService{
     @Scheduled(cron = "0 0 */4 * * *")
     public void cleanUp(){
         repository.deleteByTimestampBefore(DateTime.now().minusWeeks(settings.historyExpireWeeks));
+    }
+
+    // TODO: move to MessageUtil?
+    private String kebalize(String s){
+        StringBuilder result = new StringBuilder(s.length() + 1);
+
+        for(int i = 0; i < s.length(); ++i){
+            char c = s.charAt(i);
+            if(i > 0 && Character.isUpperCase(s.charAt(i)) || Character.isWhitespace(c)){
+                result.append('-');
+            }else{
+                result.append(Character.toLowerCase(c));
+            }
+        }
+
+        return result.toString();
     }
 }

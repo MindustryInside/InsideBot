@@ -24,6 +24,8 @@ public interface MessageService{
 
     String format(ContextView ctx, String key, Object... args);
 
+    String localize(ContextView ctx, Throwable throwable);
+
     //send
 
     Mono<Void> text(Mono<? extends MessageChannel> channel, String text, Object... args);
