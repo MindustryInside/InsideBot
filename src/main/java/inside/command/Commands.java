@@ -1,6 +1,5 @@
 package inside.command;
 
-import arc.math.Interp;
 import arc.struct.StringMap;
 import arc.util.*;
 import com.udojava.evalex.*;
@@ -30,8 +29,8 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.function.*;
 import java.util.function.Function;
+import java.util.function.*;
 import java.util.stream.Collectors;
 
 import static inside.data.service.MessageService.ok;
