@@ -30,6 +30,7 @@ dependencies{
     implementation "com.github.Anuken.Arc:arc-core:$arc_version"
     implementation "com.github.JodaOrg:joda-time:$joda_version"
     implementation "com.github.ben-manes.caffeine:caffeine:$caffeine_version"
+    implementation "com.udojava:EvalEx:2.5"
 
     // data dependencies
     implementation "javax.xml.bind:jaxb-api:$jaxb_version"
