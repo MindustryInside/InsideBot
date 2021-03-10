@@ -1,7 +1,9 @@
 package inside.command;
 
+import arc.math.Interp;
 import arc.struct.StringMap;
 import arc.util.*;
+import com.udojava.evalex.*;
 import discord4j.common.ReactorResources;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
@@ -24,10 +26,12 @@ import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
 import reactor.netty.http.client.HttpClient;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static inside.data.service.MessageService.ok;
@@ -116,6 +120,37 @@ public class Commands{
                     .flatMap(user -> messageService.info(channel, embed -> embed.setImage(user.getAvatarUrl() + "?size=512")
                             .setDescription(messageService.format(ref.context(), "command.avatar.text", user.getUsername()))));
         }
+    }
+
+    @DiscordCommand(key = "math", params = "command.math.params", description = "command.math.description")
+    public static class MathCommand extends Command{
+        @Override
+        public Mono<Void> execute(CommandReference ref, String[] args){
+            Mono<BigDecimal> result = Mono.fromCallable(() -> {
+                Expression exp = new Expression(args[0]).setPrecision(10);
+                exp.addOperator(shiftRightOperator);
+                exp.addOperator(shiftLeftOperator);
+                return exp.eval();
+            });
+
+            return result.onErrorResume(t -> t instanceof ArithmeticException || t instanceof Expression.ExpressionException,
+                    t -> messageService.error(ref.getReplyChannel(), "command.math.error.title", t.getMessage()).then(Mono.empty()))
+                    .flatMap(decimal -> messageService.text(ref.getReplyChannel(), MessageUtil.substringTo(decimal.toString(), Message.MAX_CONTENT_LENGTH)));
+        }
+
+        private static final LazyOperator shiftRightOperator = new AbstractOperator(">>", 30, true){
+            @Override
+            public BigDecimal eval(BigDecimal v1, BigDecimal v2){
+                return v1.movePointRight(v2.toBigInteger().intValue());
+            }
+        };
+
+        private static final LazyOperator shiftLeftOperator = new AbstractOperator("<<", 30, true){
+            @Override
+            public BigDecimal eval(BigDecimal v1, BigDecimal v2){
+                return v1.movePointLeft(v2.toBigInteger().intValue());
+            }
+        };
     }
 
     @DiscordCommand(key = "read", params = "command.read.params", description = "command.read.description")
