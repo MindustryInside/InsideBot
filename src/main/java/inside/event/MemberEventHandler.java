@@ -80,12 +80,14 @@ public class MemberEventHandler extends ReactiveEventAdapter{
 
         Mono<Void> kick = event.getGuild()
                 .flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MEMBER_KICK)))
-                .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)))
+                .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)) &&
+                        entry.getTargetId().map(target -> target.equals(user.getId())).orElse(false))
                 .flatMap(entry -> event.getGuild().flatMap(guild -> guild.getMemberById(entry.getResponsibleUserId()))
                         .flatMap(admin -> auditService.log(event.getGuildId(), USER_KICK)
                                 .withUser(admin)
                                 .withTargetUser(user)
-                                .withAttribute(REASON, entry.getReason().orElse(messageService.get(context, "common.not-defined")))
+                                .withAttribute(REASON, entry.getReason()
+                                        .orElse(messageService.get(context, "common.not-defined")))
                                 .save())
                         .thenReturn(entry))
                 .switchIfEmpty(log.then(Mono.empty()))
@@ -93,12 +95,14 @@ public class MemberEventHandler extends ReactiveEventAdapter{
 
         return event.getGuild()
                 .flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MEMBER_BAN_ADD)))
-                .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)))
+                .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)) &&
+                        entry.getTargetId().map(target -> target.equals(user.getId())).orElse(false))
                 .flatMap(entry -> event.getGuild().flatMap(guild -> guild.getMemberById(entry.getResponsibleUserId()))
                         .flatMap(admin -> auditService.log(event.getGuildId(), USER_BAN)
                                 .withUser(admin)
                                 .withTargetUser(user)
-                                .withAttribute(REASON, entry.getReason().orElse(messageService.get(context, "common.not-defined")))
+                                .withAttribute(REASON, entry.getReason()
+                                        .orElse(messageService.get(context, "common.not-defined")))
                                 .save())
                         .thenReturn(entry))
                 .switchIfEmpty(kick.then(Mono.empty()))
