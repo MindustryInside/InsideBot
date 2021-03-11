@@ -42,11 +42,7 @@ public class DateTimeType implements EnhancedUserType, Serializable{
 
     @Override
     public void nullSafeSet(PreparedStatement st, Object value, int index, SharedSessionContractImplementor session) throws HibernateException, SQLException{
-        if(value == null){
-            StandardBasicTypes.TIMESTAMP.nullSafeSet(st, null, index, session);
-        }else{
-            StandardBasicTypes.TIMESTAMP.nullSafeSet(st, ((DateTime)value).toDate(), index, session);
-        }
+        StandardBasicTypes.TIMESTAMP.nullSafeSet(st, value != null ? ((DateTime)value).toDate() : null, index, session);
     }
 
     @Override

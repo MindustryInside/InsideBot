@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import discord4j.common.JacksonResources;
+import discord4j.discordjson.possible.PossibleModule;
 
 import java.util.*;
 
@@ -17,6 +17,7 @@ public abstract class JacksonUtil{
         mapper.setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.PUBLIC_ONLY);
         mapper.setVisibility(PropertyAccessor.CREATOR, JsonAutoDetect.Visibility.ANY);
         mapper.registerModule(new Jdk8Module());
+        mapper.registerModule(new PossibleModule());
     }
 
     public static ObjectMapper mapper(){

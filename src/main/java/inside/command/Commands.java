@@ -596,7 +596,8 @@ public class Commands{
                                     Mono<Void> message = messageService.text(channel, "command.admin.warn", member.getUsername(), count);
 
                                     if(count >= settings.maxWarnings){
-                                        return message.then(author.getGuild().flatMap(guild -> guild.ban(member.getId(), spec -> spec.setDeleteMessageDays(0))));
+                                        return message.then(author.getGuild().flatMap(guild ->
+                                                guild.ban(member.getId(), spec -> spec.setDeleteMessageDays(0))));
                                     }
                                     return message;
                                 });

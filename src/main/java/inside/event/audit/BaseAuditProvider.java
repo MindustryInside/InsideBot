@@ -38,7 +38,10 @@ public abstract class BaseAuditProvider implements AuditProvider{
 
     // oh no, why we use DateTime#now, we have an action timestamp(?)
     protected void addTimestamp(ContextView context, EmbedCreateSpec embed){
-        embed.setFooter(DateTimeFormat.longDateTime().withLocale(context.get(KEY_LOCALE)).withZone(context.get(KEY_TIMEZONE)).print(DateTime.now()), null);
+        embed.setFooter(DateTimeFormat.longDateTime()
+                .withLocale(context.get(KEY_LOCALE))
+                .withZone(context.get(KEY_TIMEZONE))
+                .print(DateTime.now()), null);
     }
 
     protected abstract void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed);

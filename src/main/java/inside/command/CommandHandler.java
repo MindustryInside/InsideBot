@@ -119,13 +119,15 @@ public class CommandHandler{
         Mono<Void> suggestion = text.flatMap(t -> {
             CommandInfo closest = MessageUtil.findClosest(commandList(), CommandInfo::text, t.getT1());
 
+            messageService.awaitEdit(ref.getMessage().getId());
             if(closest != null){
                 return messageService.err(channel, "command.response.found-closest", closest.text());
             }
             return messageService.err(channel, "command.response.unknown", prefix);
-        }).doFirst(() -> messageService.awaitEdit(ref.getMessage().getId()));
+        });
 
-        return text.flatMap(TupleUtils.function((commandstr, cmd) -> Mono.defer(() -> commands.containsKey(cmd) ? Mono.just(commands.get(cmd)) : suggestion)
+        return text.flatMap(TupleUtils.function((commandstr, cmd) ->
+                Mono.defer(() -> commands.containsKey(cmd) ? Mono.just(commands.get(cmd)) : suggestion)
                 .ofType(Command.class)
                 .flatMap(command -> {
                     CommandInfo info = commandInfo.get(command);
@@ -133,7 +135,8 @@ public class CommandHandler{
                     String argstr = commandstr.contains(" ") ? commandstr.substring(cmd.length() + 1) : "";
                     int index = 0;
                     boolean satisfied = false;
-                    String argsres = info.paramText().isEmpty() ? "command.response.incorrect-arguments.empty" : "command.response.incorrect-arguments";
+                    String argsres = info.paramText().isEmpty() ? "command.response.incorrect-arguments.empty" :
+                                     "command.response.incorrect-arguments";
 
                     while(true){
                         if(index >= info.params().length && !argstr.isEmpty()){
