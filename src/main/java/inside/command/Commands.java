@@ -16,7 +16,7 @@ import inside.data.entity.AdminAction;
 import inside.data.service.AdminService;
 import inside.event.audit.*;
 import inside.util.*;
-import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.*;
 import org.joda.time.*;
 import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -170,9 +170,10 @@ public class Commands{
                     .switchIfEmpty(attachmentUrl)
                     .flatMap(url -> httpClient.get()
                             .uri(url)
-                            .responseSingle((res, mono) -> res.status().equals(HttpResponseStatus.OK) ? mono.filter(buf -> buf.capacity() < 3145728)
-                                    .switchIfEmpty(messageService.err(ref.getReplyChannel(), "command.read.under-limit").then(Mono.never()))
-                                    .map(buf -> buf.readCharSequence(buf.readableBytes(), Strings.utf8).toString()) : Mono.empty()))
+                            .responseSingle((res, mono) -> res.status().equals(HttpResponseStatus.OK) ?
+                                   res.responseHeaders().getInt(HttpHeaderNames.CONTENT_LENGTH) > 3145728 ?
+                                   messageService.err(ref.getReplyChannel(), "command.read.under-limit").then(Mono.never()) :
+                                   mono.asString(Strings.utf8) : Mono.empty()))
                     .onErrorResume(t -> true, t -> Mono.empty())
                     .switchIfEmpty(messageService.err(ref.getReplyChannel(), "command.read.error").then(Mono.empty()))
                     .map(content -> MessageUtil.substringTo(content, Message.MAX_CONTENT_LENGTH))
