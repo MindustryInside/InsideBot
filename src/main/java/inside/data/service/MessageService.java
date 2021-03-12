@@ -14,7 +14,7 @@ public interface MessageService{
 
     ReactionEmoji ok = ReactionEmoji.unicode("✅");
 
-    //bundle
+    // bundle
 
     String get(ContextView ctx, String key);
 
@@ -24,9 +24,7 @@ public interface MessageService{
 
     String format(ContextView ctx, String key, Object... args);
 
-    String localize(ContextView ctx, Throwable throwable);
-
-    //send
+    // send
 
     Mono<Void> text(Mono<? extends MessageChannel> channel, String text, Object... args);
 
@@ -39,7 +37,7 @@ public interface MessageService{
     // TODO: rename
     Mono<Void> error(Mono<? extends MessageChannel> channel, String title, String text, Object... args);
 
-    //data
+    // data
 
     void awaitEdit(Snowflake messageId);
 
