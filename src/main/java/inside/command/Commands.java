@@ -170,10 +170,11 @@ public class Commands{
                     .switchIfEmpty(attachmentUrl)
                     .flatMap(url -> httpClient.get()
                             .uri(url)
-                            .responseSingle((res, mono) -> res.status().equals(HttpResponseStatus.OK) ?
-                                   res.responseHeaders().getInt(HttpHeaderNames.CONTENT_LENGTH) > 3145728 ?
-                                   messageService.err(ref.getReplyChannel(), "command.read.under-limit").then(Mono.never()) :
-                                   mono.asString(Strings.utf8) : Mono.empty()))
+                            .responseSingle((res, mono) -> res.status().equals(HttpResponseStatus.OK) &&
+                            !res.responseHeaders().get(HttpHeaderNames.CONTENT_TYPE).matches("(?iu)^(image|video)") ?
+                            res.responseHeaders().getInt(HttpHeaderNames.CONTENT_LENGTH, 0) > 3145728 ?
+                            messageService.err(ref.getReplyChannel(), "command.read.under-limit").then(Mono.never()) :
+                            mono.asString(Strings.utf8) : Mono.empty()))
                     .onErrorResume(t -> true, t -> Mono.empty())
                     .switchIfEmpty(messageService.err(ref.getReplyChannel(), "command.read.error").then(Mono.empty()))
                     .map(content -> MessageUtil.substringTo(content, Message.MAX_CONTENT_LENGTH))
