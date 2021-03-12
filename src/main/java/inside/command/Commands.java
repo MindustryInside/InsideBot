@@ -24,7 +24,6 @@ import org.springframework.context.annotation.Lazy;
 import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
 import reactor.netty.http.client.HttpClient;
-import reactor.util.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -174,13 +173,13 @@ public class Commands{
                             .responseSingle((res, mono) -> {
                                 String type = res.responseHeaders().get(HttpHeaderNames.CONTENT_TYPE).toLowerCase();
                                 if(res.status().equals(HttpResponseStatus.OK) && !type.contains("image") && !type.contains("video")){
-                                    return res.responseHeaders().getInt(HttpHeaderNames.CONTENT_LENGTH, 0) > 3145728 ?
+                                    return Strings.parseLong(res.responseHeaders().get(HttpHeaderNames.CONTENT_LENGTH), 0) > 3145728 ?
                                     messageService.err(ref.getReplyChannel(), "command.read.under-limit").then(Mono.never()) :
                                     mono.asString(Strings.utf8);
                                 }
                                 return Mono.empty();
                             }))
-                    .onErrorResume(t -> true, t -> Mono.empty())
+                    .onErrorResume(t -> true, t -> Mono.fromRunnable(t::printStackTrace))
                     .switchIfEmpty(messageService.err(ref.getReplyChannel(), "command.read.error").then(Mono.empty()))
                     .map(content -> MessageUtil.substringTo(content, Message.MAX_CONTENT_LENGTH))
                     .flatMap(content -> messageService.text(ref.getReplyChannel(), content));
