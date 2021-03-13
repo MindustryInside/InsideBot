@@ -485,7 +485,7 @@ public class Commands{
                             .flatMap(member -> Mono.defer(() -> {
                                 String reason = args.length > 2 ? args[2].trim() : null;
 
-                                if(Objects.equals(author, member)){
+                                if(author.equals(member)){
                                     return messageService.err(channel, "command.admin.mute.self-user");
                                 }
 
