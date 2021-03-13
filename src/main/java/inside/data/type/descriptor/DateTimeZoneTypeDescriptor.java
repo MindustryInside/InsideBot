@@ -4,19 +4,8 @@ import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.AbstractTypeDescriptor;
 import org.joda.time.DateTimeZone;
 
-import java.util.*;
-
 public class DateTimeZoneTypeDescriptor extends AbstractTypeDescriptor<DateTimeZone>{
     public static final DateTimeZoneTypeDescriptor instance = new DateTimeZoneTypeDescriptor();
-
-    public static class DateTimeZoneComparator implements Comparator<DateTimeZone>{
-        public static final DateTimeZoneComparator instance = new DateTimeZoneComparator();
-
-        @Override
-        public int compare(DateTimeZone o1, DateTimeZone o2){
-            return o1.getID().compareTo(o2.getID());
-        }
-    }
 
     public DateTimeZoneTypeDescriptor(){
         super(DateTimeZone.class);
@@ -25,11 +14,6 @@ public class DateTimeZoneTypeDescriptor extends AbstractTypeDescriptor<DateTimeZ
     @Override
     public DateTimeZone fromString(String string){
         return DateTimeZone.forID(string);
-    }
-
-    @Override
-    public Comparator<DateTimeZone> getComparator(){
-        return DateTimeZoneComparator.instance;
     }
 
     @SuppressWarnings("unchecked")
