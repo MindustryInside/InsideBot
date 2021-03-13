@@ -161,7 +161,8 @@ public class AdminServiceImpl implements AdminService{
                 .filterWhen(roleId -> roles.any(roleId::equals))
                 .hasElements();
 
-        Mono<Boolean> isAdmin = member.getRoles().map(Role::getPermissions).any(set -> set.contains(Permission.ADMINISTRATOR));
+        Mono<Boolean> isAdmin = member.getRoles().map(Role::getPermissions)
+                .any(set -> set.contains(Permission.ADMINISTRATOR));
 
         return Mono.zip(isOwner(member), isAdmin, isPermissed).map(TupleUtils.function((owner, admin, permissed) -> owner || admin || permissed));
     }
@@ -180,7 +181,8 @@ public class AdminServiceImpl implements AdminService{
     public void mutesMonitor(){
         getAll(AdminService.AdminActionType.mute)
                 .filter(AdminAction::isEnd)
-                .flatMap(adminAction -> discordService.gateway().getMemberById(adminAction.guildId(), adminAction.target().userId()))
+                .flatMap(adminAction -> discordService.gateway()
+                        .getMemberById(adminAction.guildId(), adminAction.target().userId()))
                 .flatMap(target -> unmute(target).contextWrite(ctx -> ctx.put(KEY_LOCALE, entityRetriever.locale(target.getGuildId()))
                         .put(KEY_TIMEZONE, entityRetriever.timeZone(target.getGuildId()))))
                 .subscribe();

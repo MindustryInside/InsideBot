@@ -85,8 +85,8 @@ public class AuditAction extends GuildEntity{
         return target;
     }
 
-    public void target(@Nullable NamedReference targetUser){
-        this.target = targetUser;
+    public void target(@Nullable NamedReference target){
+        this.target = target;
     }
 
     public NamedReference channel(){

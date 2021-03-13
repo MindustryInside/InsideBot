@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Lazy;
 import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
 import reactor.netty.http.client.HttpClient;
+import reactor.util.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -154,6 +155,8 @@ public class Commands{
 
     @DiscordCommand(key = "read", params = "command.read.params", description = "command.read.description")
     public static class ReadCommand extends Command{
+        private static final Logger log = Loggers.getLogger(ReadCommand.class);
+
         private final HttpClient httpClient = ReactorResources.DEFAULT_HTTP_CLIENT.get();
 
         @Override
@@ -179,7 +182,7 @@ public class Commands{
                                 }
                                 return Mono.empty();
                             }))
-                    .onErrorResume(t -> true, t -> Mono.fromRunnable(t::printStackTrace))
+                    .onErrorResume(t -> true, t -> Mono.fromRunnable(() -> log.debug("Failed to request file.", t)))
                     .switchIfEmpty(messageService.err(ref.getReplyChannel(), "command.read.error").then(Mono.empty()))
                     .map(content -> MessageUtil.substringTo(content, Message.MAX_CONTENT_LENGTH))
                     .flatMap(content -> messageService.text(ref.getReplyChannel(), content));
