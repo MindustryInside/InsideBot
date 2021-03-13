@@ -1,4 +1,4 @@
-package inside.data.type;
+package inside.data.type.descriptor;
 
 import org.hibernate.type.descriptor.*;
 import org.hibernate.type.descriptor.java.JavaTypeDescriptor;

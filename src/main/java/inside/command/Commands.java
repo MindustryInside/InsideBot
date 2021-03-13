@@ -409,14 +409,14 @@ public class Commands{
                             return messageService.err(channel, "command.config.unknown-timezone");
                         }
 
-                        guildConfig.timeZone(timeZone.toTimeZone());
+                        guildConfig.timeZone(timeZone);
                         entityRetriever.save(guildConfig);
                         return Mono.deferContextual(ctx -> messageService.text(channel, "command.config.timezone-updated", ctx.<Locale>get(KEY_TIMEZONE)))
                                 .contextWrite(ctx -> ctx.put(KEY_TIMEZONE, timeZone));
                     }).thenReturn(guildConfig))
                     .switchIfEmpty(args.length == 0 ?
-                                   messageService.text(channel, "command.config.timezone", ref.context().<Locale>get(KEY_TIMEZONE)).then(Mono.empty()) :
-                                   messageService.err(channel, "command.owner-only").then(Mono.empty()))
+                            messageService.text(channel, "command.config.timezone", ref.context().<Locale>get(KEY_TIMEZONE)).then(Mono.empty()) :
+                            messageService.err(channel, "command.owner-only").then(Mono.empty()))
                     .then(Mono.empty());
         }
     }

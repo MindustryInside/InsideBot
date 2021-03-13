@@ -49,7 +49,7 @@ public class EntityRetrieverImpl implements EntityRetriever{
                     guildConfig.guildId(guildId);
                     guildConfig.prefix(settings.prefix);
                     guildConfig.locale(LocaleUtil.getDefaultLocale());
-                    guildConfig.timeZone(TimeZone.getTimeZone(settings.timeZone));
+                    guildConfig.timeZone(DateTimeZone.forID(settings.timeZone));
                     save(guildConfig);
                 }
             }
@@ -79,7 +79,7 @@ public class EntityRetrieverImpl implements EntityRetriever{
 
     @Override
     public DateTimeZone timeZone(Snowflake guildId){
-        return DateTimeZone.forTimeZone(getGuildById(guildId).timeZone());
+        return getGuildById(guildId).timeZone();
     }
 
     @Override

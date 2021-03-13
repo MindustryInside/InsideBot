@@ -3,6 +3,7 @@ package inside.data.entity;
 import discord4j.common.util.Snowflake;
 import inside.data.entity.base.GuildEntity;
 import org.hibernate.annotations.Type;
+import org.joda.time.DateTimeZone;
 
 import javax.persistence.*;
 import java.io.Serial;
@@ -20,8 +21,9 @@ public class GuildConfig extends GuildEntity{
     @Column
     private Locale locale;
 
+    @Type(type = "date-time-zone")
     @Column(name = "time_zone")
-    private TimeZone timeZone;
+    private DateTimeZone timeZone;
 
     @Column(name = "log_channel_id")
     private String logChannelId;
@@ -50,11 +52,11 @@ public class GuildConfig extends GuildEntity{
         this.locale = Objects.requireNonNull(locale, "locale");
     }
 
-    public TimeZone timeZone(){
+    public DateTimeZone timeZone(){
         return timeZone;
     }
 
-    public void timeZone(TimeZone timeZone){
+    public void timeZone(DateTimeZone timeZone){
         this.timeZone = Objects.requireNonNull(timeZone, "timeZone");
     }
 

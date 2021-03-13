@@ -9,7 +9,8 @@ import java.util.Objects;
 
 @TypeDefs({
         @TypeDef(name = "json", typeClass = JsonType.class),
-        @TypeDef(name = "date-time", typeClass = DateTimeType.class)
+        @TypeDef(name = "date-time", typeClass = DateTimeType.class),
+        @TypeDef(name = "date-time-zone", typeClass = DateTimeZoneType.class)
 })
 @MappedSuperclass
 public abstract class BaseEntity implements Serializable{

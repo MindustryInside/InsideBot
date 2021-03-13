@@ -75,7 +75,7 @@ public class MessageServiceImpl implements MessageService{
         try{
             return context.getMessage(key, args, ctx.get(KEY_LOCALE));
         }catch(NoSuchMessageException e){
-            return MessageFormat.format(key, args);
+            return key;
         }
     }
 
