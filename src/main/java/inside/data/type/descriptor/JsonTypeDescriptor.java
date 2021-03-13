@@ -1,4 +1,4 @@
-package inside.data.type;
+package inside.data.type.descriptor;
 
 import inside.util.JacksonUtil;
 import org.hibernate.annotations.common.reflection.java.JavaXMember;
@@ -14,6 +14,8 @@ import java.util.*;
 public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implements DynamicParameterizedType{
     @Serial
     private static final long serialVersionUID = -4842954367890483417L;
+
+    public static final JsonTypeDescriptor instance = new JsonTypeDescriptor();
 
     private Class<?> clazz;
     private Type type;

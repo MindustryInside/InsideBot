@@ -1,4 +1,4 @@
-package inside.data.type;
+package inside.data.type.descriptor;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.hibernate.type.descriptor.*;
@@ -12,7 +12,7 @@ public class JsonSqlTypeDescriptor extends AbstractJsonSqlTypeDescriptor{
     @Serial
     private static final long serialVersionUID = 925608129281277893L;
 
-    protected static final JsonSqlTypeDescriptor instance = new JsonSqlTypeDescriptor();
+    public static final JsonSqlTypeDescriptor instance = new JsonSqlTypeDescriptor();
 
     @Override
     public <X> ValueBinder<X> getBinder(JavaTypeDescriptor<X> descriptor){
