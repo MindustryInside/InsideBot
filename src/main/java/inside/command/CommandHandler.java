@@ -126,9 +126,8 @@ public class CommandHandler{
             return messageService.err(channel, "command.response.unknown", prefix);
         });
 
-        return text.flatMap(TupleUtils.function((commandstr, cmd) ->
-                Mono.defer(() -> commands.containsKey(cmd) ? Mono.just(commands.get(cmd)) : suggestion)
-                .ofType(Command.class)
+        return text.flatMap(TupleUtils.function((commandstr, cmd) -> Mono.justOrEmpty(commands.get(cmd))
+                .switchIfEmpty(suggestion.then(Mono.empty()))
                 .flatMap(command -> {
                     CommandInfo info = commandInfo.get(command);
                     List<String> result = new ArrayList<>();
