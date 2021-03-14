@@ -115,10 +115,8 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                 .filter(DiscordUtil::isNotBot)
                 .flatMap(member -> Mono.fromRunnable(() -> {
                     LocalMember localMember = entityRetriever.getMember(member);
-                    event.getCurrentNickname().ifPresent(nickname -> {
-                        localMember.effectiveName(nickname);
-                        entityRetriever.save(localMember);
-                    });
+                    localMember.effectiveName(event.getCurrentNickname().orElse(member.getUsername()));
+                    entityRetriever.save(localMember);
                 }));
     }
 }
