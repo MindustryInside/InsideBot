@@ -1,6 +1,7 @@
 package inside.util;
 
 import discord4j.core.object.Region;
+import reactor.util.annotation.Nullable;
 
 import java.util.*;
 import java.util.regex.Pattern;
@@ -47,26 +48,25 @@ public abstract class LocaleUtil{
         return getDefaultLocale();
     }
 
+    @Nullable
     public static Locale get(String tag){
         return locales.get(tag);
     }
 
     public static String getCount(long value, Locale locale){
         String str = String.valueOf(value);
-        String key = null;
 
         Map<String, Pattern> rules = pluralRules.getOrDefault(locale.getLanguage(), pluralRules.get(defaultLocale));
         for(Map.Entry<String, Pattern> plural : rules.entrySet()){
             if(plural.getValue().matcher(str).find()){
-                key = plural.getKey();
-                break;
+                return plural.getKey();
             }
         }
 
-        return key != null ? key : "other";
+        return "other";
     }
 
     public static Locale getDefaultLocale(){
-        return get(defaultLocale);
+        return Objects.requireNonNull(get(defaultLocale));
     }
 }

@@ -25,6 +25,7 @@ import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
 import reactor.netty.http.client.HttpClient;
 import reactor.util.*;
+import reactor.util.annotation.Nullable;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -399,7 +400,7 @@ public class Commands{
             return Mono.just(entityRetriever.getGuildById(member.getGuildId()))
                     .filterWhen(guildConfig -> adminService.isOwner(member).map(bool -> bool && args.length > 0))
                     .flatMap(guildConfig -> Mono.defer(() -> {
-                        DateTimeZone timeZone = MessageUtil.find(args[0]);
+                        DateTimeZone timeZone = find(args[0]);
                         if(timeZone == null){
                             String suggest = MessageUtil.findClosest(DateTimeZone.getAvailableIDs(), Function.identity(), args[0]);
 
@@ -418,6 +419,15 @@ public class Commands{
                             messageService.text(channel, "command.config.timezone", ref.context().<Locale>get(KEY_TIMEZONE)).then(Mono.empty()) :
                             messageService.err(channel, "command.owner-only").then(Mono.empty()))
                     .then(Mono.empty());
+        }
+
+        @Nullable
+        private DateTimeZone find(String id){
+            try{
+                return DateTimeZone.forID(id);
+            }catch(Throwable t){
+                return null;
+            }
         }
     }
 
