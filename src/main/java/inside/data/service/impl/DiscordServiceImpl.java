@@ -30,7 +30,7 @@ public class DiscordServiceImpl implements DiscordService{
 
     @Autowired(required = false)
     public void init(ReactiveEventAdapter[] handlers){
-        String token = settings.token;
+        String token = settings.getToken();
         Objects.requireNonNull(token, "token");
 
         gateway = DiscordClientBuilder.create(token)

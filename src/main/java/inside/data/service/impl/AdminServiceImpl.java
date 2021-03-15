@@ -107,7 +107,8 @@ public class AdminServiceImpl implements AdminService{
                 .withTargetUser(target)
                 .save();
 
-        Mono<Void> removeRole = Mono.justOrEmpty(entityRetriever.muteRoleId(localMember.guildId())).flatMap(target::removeRole);
+        Mono<Void> removeRole = Mono.justOrEmpty(entityRetriever.muteRoleId(localMember.guildId()))
+                .flatMap(target::removeRole);
 
         return Mono.when(removeRole, log, remove);
     }
@@ -124,7 +125,7 @@ public class AdminServiceImpl implements AdminService{
                 .target(targetLocalMember)
                 .reason(reason)
                 .timestamp(DateTime.now())
-                .endTimestamp(DateTime.now().plusDays(settings.warnExpireDays))
+                .endTimestamp(DateTime.now().plus(settings.getModeration().getWarnExpire().toMillis()))
                 .build();
 
         return Mono.fromRunnable(() -> repository.save(action));

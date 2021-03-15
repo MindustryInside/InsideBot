@@ -3,6 +3,7 @@ package inside;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.support.ResourceBundleMessageSource;
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @EntityScan("inside")
 @EnableJpaRepositories("inside")
+@ConfigurationPropertiesScan("inside")
 @EnableScheduling
 @EnableTransactionManagement
 @SpringBootApplication

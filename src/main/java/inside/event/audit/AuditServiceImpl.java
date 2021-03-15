@@ -67,7 +67,7 @@ public class AuditServiceImpl implements AuditService{
     @Scheduled(cron = "0 0 */4 * * *")
     @Transactional
     public void cleanUp(){
-        repository.deleteByTimestampBefore(DateTime.now().minusWeeks(settings.historyExpireWeeks));
+        repository.deleteByTimestampBefore(DateTime.now().minus(settings.getAudit().getHistoryKeep().toMillis()));
     }
 
     @Autowired(required = false)

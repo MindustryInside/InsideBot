@@ -96,7 +96,7 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public Mono<Void> info(Mono<? extends MessageChannel> channel, Consumer<EmbedCreateSpec> embed){
         return channel.publishOn(Schedulers.boundedElastic())
-                .flatMap(c -> c.createEmbed(embed.andThen(spec -> spec.setColor(settings.normalColor))))
+                .flatMap(c -> c.createEmbed(embed.andThen(spec -> spec.setColor(settings.getDefaults().getNormalColor()))))
                 .then();
     }
 
@@ -108,7 +108,7 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public Mono<Void> error(Mono<? extends MessageChannel> channel, String title, String text, Object... args){
         return Mono.deferContextual(ctx -> channel.publishOn(Schedulers.boundedElastic())
-                .flatMap(c -> c.createEmbed(embed -> embed.setColor(settings.errorColor)
+                .flatMap(c -> c.createEmbed(embed -> embed.setColor(settings.getDefaults().getErrorColor())
                         .setDescription(format(ctx, text, args))
                         .setTitle(get(ctx, title))))
                 .flatMap(message -> Mono.delay(Duration.ofSeconds(5)).then(message.delete())));
@@ -165,6 +165,6 @@ public class MessageServiceImpl implements MessageService{
     @Transactional
     @Scheduled(cron = "0 0 */4 * * *")
     public void cleanUp(){
-        repository.deleteByTimestampBefore(DateTime.now().minusWeeks(settings.historyExpireWeeks));
+        repository.deleteByTimestampBefore(DateTime.now().minus(settings.getAudit().getHistoryKeep().toMillis()));
     }
 }

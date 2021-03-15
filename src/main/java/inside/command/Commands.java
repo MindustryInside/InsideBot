@@ -109,6 +109,14 @@ public class Commands{
         }
     }
 
+    @DiscordCommand(key = "google", params = "command.google.params", description = "command.google.description")
+    public static class GoogleCommand extends Command{
+        @Override
+        public Mono<Void> execute(CommandReference ref, String[] args){
+            return messageService.text(ref.getReplyChannel(), "http://lmgtfy.com/?q=" + Strings.encode(args[0]));
+        }
+    }
+
     @DiscordCommand(key = "avatar", params = "command.avatar.params", description = "command.avatar.description")
     public static class AvatarCommand extends Command{
         @Override
@@ -528,8 +536,8 @@ public class Commands{
             }
 
             int number = Strings.parseInt(args[0]);
-            if(number >= settings.maxClearedCount){
-                return messageService.err(reply, "common.limit-number", settings.maxClearedCount);
+            if(number >= settings.getDiscord().getMaxClearedCount()){
+                return messageService.err(reply, "common.limit-number", settings.getDiscord().getMaxClearedCount());
             }
 
             StringBuffer result = new StringBuffer();
@@ -614,7 +622,7 @@ public class Commands{
                                 Mono<Void> warnings = Mono.defer(() -> adminService.warnings(member).count()).flatMap(count -> {
                                     Mono<Void> message = messageService.text(channel, "command.admin.warn", member.getUsername(), count);
 
-                                    if(count >= settings.maxWarnings){
+                                    if(count >= settings.getModeration().getMaxWarnings()){
                                         return message.then(author.getGuild().flatMap(guild ->
                                                 guild.ban(member.getId(), spec -> spec.setDeleteMessageDays(0))));
                                     }

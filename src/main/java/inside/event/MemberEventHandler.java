@@ -44,18 +44,20 @@ public class MemberEventHandler extends ReactiveEventAdapter{
     @Override
     public Publisher<?> onMemberJoin(MemberJoinEvent event){
         Member member = event.getMember();
-        if(DiscordUtil.isBot(member)) return Mono.empty();
+        if(DiscordUtil.isBot(member)){
+            return Mono.empty();
+        }
 
         Context context = Context.of(KEY_LOCALE, entityRetriever.locale(event.getGuildId()),
                 KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
 
         Mono<Void> warn = member.getGuild().flatMap(Guild::getOwner)
-                .filterWhen(owner -> adminService.warnings(member).count().map(c -> c >= settings.maxWarnings))
+                .filterWhen(owner -> adminService.warnings(member).count().map(c -> c >= settings.getModeration().getMaxWarnings()))
                 .flatMap(owner -> adminService.warn(owner, member, messageService.get(context, "audit.member.warn.evade")));
 
         Mono<?> muteEvade = member.getGuild().flatMap(Guild::getOwner)
                 .filterWhen(owner -> adminService.isMuted(member))
-                .flatMap(owner -> adminService.mute(owner, member, DateTime.now().plusDays(settings.muteEvadeDays),
+                .flatMap(owner -> adminService.mute(owner, member, DateTime.now().plus(settings.getModeration().getMuteEvade().toMillis()),
                         messageService.get(context, "audit.member.mute.evade"))
                         .thenReturn(owner))
                 .switchIfEmpty(warn.then(Mono.empty()));
@@ -70,7 +72,9 @@ public class MemberEventHandler extends ReactiveEventAdapter{
     @Override
     public Publisher<?> onMemberLeave(MemberLeaveEvent event){
         User user = event.getUser();
-        if(DiscordUtil.isBot(user)) return Mono.empty();
+        if(DiscordUtil.isBot(user)){
+            return Mono.empty();
+        }
         Context context = Context.of(KEY_LOCALE, entityRetriever.locale(event.getGuildId()),
                 KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
 
