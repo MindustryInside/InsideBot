@@ -1,0 +1,40 @@
+{
+  "properties": [
+    {
+      "name": "insidebot.moderatorion.warn-expire",
+      "type": "java.time.Duration",
+      "sourceType": "inside.Settings",
+      "description": "Description for insidebot.moderatorion.warn-expire."
+    },
+    {
+      "name": "insidebot.defaults.time-zone",
+      "type": "java.lang.String",
+      "sourceType": "inside.Settings",
+      "description": "Description for insidebot.defaults.time-zone."
+    },
+    {
+      "name": "insidebot.moderatorion.mute-evade",
+      "type": "java.time.Duration",
+      "sourceType": "inside.Settings",
+      "description": "Description for insidebot.moderatorion.mute-evade."
+    },
+    {
+      "name": "insidebot.moderatorion.max-warnings",
+      "type": "java.lang.Integer",
+      "sourceType": "inside.Settings",
+      "description": "Description for insidebot.moderatorion.max-warnings."
+    },
+    {
+      "name": "insidebot.defaults.normal-color",
+      "type": "java.lang.Integer",
+      "sourceType": "inside.Settings",
+      "description": "Description for insidebot.defaults.normal-color."
+    },
+    {
+      "name": "insidebot.defaults.error-color",
+      "type": "java.lang.Integer",
+      "sourceType": "inside.Settings",
+      "description": "Description for insidebot.defaults.error-color."
+    }
+  ]
+}

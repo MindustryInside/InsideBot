@@ -47,9 +47,9 @@ public class EntityRetrieverImpl implements EntityRetriever{
                 if(guildConfig == null){
                     guildConfig = new GuildConfig();
                     guildConfig.guildId(guildId);
-                    guildConfig.prefix(settings.prefix);
+                    guildConfig.prefix(settings.getDefaults().getPrefix());
                     guildConfig.locale(LocaleUtil.getDefaultLocale());
-                    guildConfig.timeZone(DateTimeZone.forID(settings.timeZone));
+                    guildConfig.timeZone(settings.getDefaults().getTimeZone());
                     save(guildConfig);
                 }
             }
