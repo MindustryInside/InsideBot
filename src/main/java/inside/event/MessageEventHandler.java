@@ -47,7 +47,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
     public Publisher<?> onMessageCreate(MessageCreateEvent event){
         Message message = event.getMessage();
         Member member = event.getMember().orElse(null);
-        if(member == null || message.getType() != Message.Type.DEFAULT || MessageUtil.isEmpty(message) || message.isTts() || !message.getEmbeds().isEmpty()){
+        if(member == null || MessageUtil.isEmpty(message) || message.getType() != Message.Type.DEFAULT || message.isTts() || !message.getEmbeds().isEmpty()){
             return Mono.empty();
         }
 
