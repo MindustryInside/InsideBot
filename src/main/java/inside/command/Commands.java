@@ -2,6 +2,7 @@ package inside.command;
 
 import arc.struct.StringMap;
 import arc.util.*;
+import arc.util.serialization.Base64Coder;
 import com.udojava.evalex.*;
 import discord4j.common.ReactorResources;
 import discord4j.common.util.Snowflake;
@@ -109,11 +110,15 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "google", params = "command.google.params", description = "command.google.description")
-    public static class GoogleCommand extends Command{
+    @DiscordCommand(key = "base64", params = "command.base64.params", description = "command.base64.description")
+    public static class Base64Command extends Command{
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
-            return messageService.text(ref.getReplyChannel(), "http://lmgtfy.com/?q=" + Strings.encode(args[0]));
+            boolean encode = args[0].matches("(?i)enc(ode)?");
+            Mono<String> result = Mono.fromCallable(() -> encode ? Base64Coder.encodeString(args[1]) : Base64Coder.decodeString(args[1]));
+            return result.onErrorResume(t -> t instanceof IllegalArgumentException,
+                    t -> messageService.err(ref.getReplyChannel(), t.getMessage()).then(Mono.empty()))
+                    .flatMap(str -> messageService.text(ref.getReplyChannel(), str));
         }
     }
 

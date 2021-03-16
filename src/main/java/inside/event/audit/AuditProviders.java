@@ -185,7 +185,8 @@ public class AuditProviders{
     public static class VoiceJoinAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
-            embed.setDescription(messageService.format(context, "audit.voice.join.description", action.user().name(), action.channel().name()));
+            embed.setDescription(messageService.format(context, "audit.voice.join.description",
+                    action.user().name(), action.channel().name()));
             addTimestamp(context, embed);
         }
     }
@@ -194,7 +195,8 @@ public class AuditProviders{
     public static class VoiceLeaveAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
-            embed.setDescription(messageService.format(context, "audit.voice.leave.description", action.user().name(), action.channel().name()));
+            embed.setDescription(messageService.format(context, "audit.voice.leave.description",
+                    action.user().name(), action.channel().name()));
             addTimestamp(context, embed);
         }
     }
