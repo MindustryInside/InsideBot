@@ -14,6 +14,7 @@ import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.*;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.crypto.encrypt.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
@@ -21,7 +22,6 @@ import reactor.core.scheduler.Schedulers;
 import reactor.util.*;
 import reactor.util.context.ContextView;
 
-import java.text.MessageFormat;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -159,6 +159,24 @@ public class MessageServiceImpl implements MessageService{
         if(message != null){
             repository.delete(message);
         }
+    }
+
+    @Override
+    public String encrypt(String text, Snowflake messageId, Snowflake channelId){
+        if(settings.getDiscord().isEncryptMessages()){
+            TextEncryptor encryptor = Encryptors.text(messageId.asString(), channelId.asString());
+            return encryptor.encrypt(text);
+        }
+        return text;
+    }
+
+    @Override
+    public String decrypt(String text, Snowflake messageId, Snowflake channelId){
+        if(settings.getDiscord().isEncryptMessages()){
+            TextEncryptor encryptor = Encryptors.text(messageId.asString(), channelId.asString());
+            return encryptor.decrypt(text);
+        }
+        return text;
     }
 
     @Override

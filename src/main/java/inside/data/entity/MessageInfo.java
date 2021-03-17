@@ -22,7 +22,7 @@ public class MessageInfo extends GuildEntity{
     @Column(name = "user_id")
     private String userId;
 
-    @Column(length = 2000)
+    @Column(columnDefinition = "text")
     private String content;
 
     @Column

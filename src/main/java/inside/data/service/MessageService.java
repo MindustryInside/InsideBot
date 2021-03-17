@@ -55,5 +55,9 @@ public interface MessageService{
 
     void delete(MessageInfo message);
 
+    String encrypt(String text, Snowflake messageId, Snowflake channelId);
+
+    String decrypt(String text, Snowflake messageId, Snowflake channelId);
+
     void cleanUp();
 }
