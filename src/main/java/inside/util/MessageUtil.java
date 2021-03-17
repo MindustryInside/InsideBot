@@ -67,25 +67,17 @@ public abstract class MessageUtil{
 
     public static String effectiveContent(Message message){
         Objects.requireNonNull(message, "message");
-        if(isEmpty(message.getContent())){
-            return "";
+
+        StringBuilder builder = new StringBuilder();
+        if(!isEmpty(message.getContent())){
+            builder.append(message.getContent());
         }
 
-        StringBuilder builder = new StringBuilder(message.getContent());
         if(!message.getAttachments().isEmpty()){
             builder.append("\n---\n");
             message.getAttachments().forEach(a -> builder.append(a.getUrl()).append("\n"));
         }
         return builder.toString();
-    }
-
-    @Nullable
-    public static DateTimeZone find(String id){
-        try{
-            return DateTimeZone.forID(id);
-        }catch(Throwable t){
-            return null;
-        }
     }
 
     public static boolean canParseInt(String message){

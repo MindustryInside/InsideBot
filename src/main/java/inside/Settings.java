@@ -47,12 +47,22 @@ public class Settings{
 
         private int maxClearedCount = 100;
 
+        private boolean encryptMessages = true;
+
         public int getMaxClearedCount(){
             return maxClearedCount;
         }
 
         public void setMaxClearedCount(int maxClearedCount){
             this.maxClearedCount = maxClearedCount;
+        }
+
+        public boolean isEncryptMessages(){
+            return encryptMessages;
+        }
+
+        public void setEncryptMessages(boolean encryptMessages){
+            this.encryptMessages = encryptMessages;
         }
     }
 

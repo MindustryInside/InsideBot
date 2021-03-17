@@ -69,8 +69,8 @@ public class MessageEventHandler extends ReactiveEventAdapter{
             info.userId(userId);
             info.messageId(message.getId());
             info.guildId(guildId);
-            info.timestamp(DateTime.now());
-            info.content(MessageUtil.effectiveContent(message));
+            info.timestamp(new DateTime(message.getTimestamp().toEpochMilli()));
+            info.content(messageService.encrypt(MessageUtil.effectiveContent(message), message.getId(), message.getChannelId()));
             messageService.save(info);
         });
 
@@ -111,11 +111,14 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                         info.messageId(event.getMessageId());
                         info.userId(member.getId());
                         info.guildId(guildId);
-                        info.content(event.getOld().map(MessageUtil::effectiveContent).orElse(""));
+                        info.content(messageService.encrypt(event.getOld()
+                                .map(MessageUtil::effectiveContent)
+                                .orElse(""), message.getId(), message.getChannelId()));
                         info.timestamp(new DateTime(event.getMessageId().getTimestamp().toEpochMilli()));
                     }
-                    String oldContent = info.content();
-                    info.content(newContent);
+
+                    String oldContent = messageService.decrypt(info.content(), message.getId(), message.getChannelId());
+                    info.content(messageService.encrypt(newContent, message.getId(), message.getChannelId()));
                     messageService.save(info);
 
                     Mono<?> command = Mono.defer(() -> {
@@ -176,16 +179,17 @@ public class MessageEventHandler extends ReactiveEventAdapter{
         return event.getChannel()
                 .ofType(TextChannel.class)
                 .flatMap(channel -> {
+                    String decrypted = messageService.decrypt(content, message.getId(), message.getChannelId());
                     AuditActionBuilder builder = auditService.log(guildId, MESSAGE_DELETE)
                             .withChannel(channel)
                             .withUser(user)
                             .withAttribute(USER_URL, user.getAvatarUrl())
-                            .withAttribute(OLD_CONTENT, content);
+                            .withAttribute(OLD_CONTENT, decrypted);
 
                     if(content.length() >= Field.MAX_VALUE_LENGTH){
                         StringInputStream input = new StringInputStream();
                         input.writeString(String.format("%s:%n%s",
-                                messageService.get(context, "audit.message.deleted-content.title"), content
+                                messageService.get(context, "audit.message.deleted-content.title"), decrypted
                         ));
                         builder.withAttachment(MESSAGE_TXT, input);
                     }
