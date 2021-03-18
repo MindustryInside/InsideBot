@@ -74,8 +74,8 @@ public class MessageEventHandler extends ReactiveEventAdapter{
             messageService.save(info);
         });
 
-        Context context = Context.of(KEY_LOCALE, entityRetriever.locale(guildId),
-                KEY_TIMEZONE, entityRetriever.timeZone(guildId));
+        Context context = Context.of(KEY_LOCALE, entityRetriever.getLocale(guildId),
+                KEY_TIMEZONE, entityRetriever.getTimeZone(guildId));
 
         CommandReference reference = CommandReference.builder()
                 .message(message)
@@ -95,8 +95,8 @@ public class MessageEventHandler extends ReactiveEventAdapter{
             return Mono.empty();
         }
 
-        Context context = Context.of(KEY_LOCALE, entityRetriever.locale(guildId),
-                KEY_TIMEZONE, entityRetriever.timeZone(guildId));
+        Context context = Context.of(KEY_LOCALE, entityRetriever.getLocale(guildId),
+                KEY_TIMEZONE, entityRetriever.getTimeZone(guildId));
 
         return Mono.zip(event.getMessage(), event.getChannel().ofType(TextChannel.class))
                 .filter(predicate((message, channel) -> !message.isTts() && !message.isPinned()))
@@ -173,8 +173,8 @@ public class MessageEventHandler extends ReactiveEventAdapter{
         MessageInfo info = messageService.getById(message.getId());
         String content = info.content();
 
-        Context context = Context.of(KEY_LOCALE, entityRetriever.locale(guildId),
-                KEY_TIMEZONE, entityRetriever.timeZone(guildId));
+        Context context = Context.of(KEY_LOCALE, entityRetriever.getLocale(guildId),
+                KEY_TIMEZONE, entityRetriever.getTimeZone(guildId));
 
         return event.getChannel()
                 .ofType(TextChannel.class)

@@ -7,6 +7,7 @@ import org.joda.time.DateTime;
 import reactor.core.publisher.*;
 import reactor.util.annotation.Nullable;
 
+// action service
 public interface AdminService{
 
     Flux<AdminAction> get(AdminActionType type, Snowflake guildId, Snowflake targetId);

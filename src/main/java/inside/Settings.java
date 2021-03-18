@@ -15,8 +15,6 @@ public class Settings{
 
     private final Defaults defaults = new Defaults();
 
-    private final Moderation moderation = new Moderation();
-
     private final Audit audit = new Audit();
 
     public String getToken(){
@@ -33,10 +31,6 @@ public class Settings{
 
     public Defaults getDefaults(){
         return defaults;
-    }
-
-    public Moderation getModeration(){
-        return moderation;
     }
 
     public Audit getAudit(){
@@ -76,6 +70,12 @@ public class Settings{
 
         private Color errorColor = Color.of(0xff3838);
 
+        private int maxWarnings = 3;
+
+        private Duration warnExpire = Duration.ofDays(20);
+
+        private Duration muteEvade = Duration.ofDays(10);
+
         public String getPrefix(){
             return prefix;
         }
@@ -107,19 +107,7 @@ public class Settings{
         public void setErrorColor(int errorColor){
             this.errorColor = Color.of(errorColor);
         }
-    }
 
-    public static class Moderation{
-
-        /* TODO: variable values */
-
-        private int maxWarnings = 3;
-
-        private Duration warnExpire = Duration.ofDays(20);
-
-        private Duration muteEvade = Duration.ofDays(10);
-
-        @Deprecated(forRemoval = true)
         public int getMaxWarnings(){
             return maxWarnings;
         }
@@ -128,7 +116,6 @@ public class Settings{
             this.maxWarnings = maxWarnings;
         }
 
-        @Deprecated(forRemoval = true)
         public Duration getWarnExpire(){
             return warnExpire;
         }
@@ -137,7 +124,6 @@ public class Settings{
             this.warnExpire = warnExpire;
         }
 
-        @Deprecated(forRemoval = true)
         public Duration getMuteEvade(){
             return muteEvade;
         }

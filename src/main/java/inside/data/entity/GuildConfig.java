@@ -28,14 +28,6 @@ public class GuildConfig extends GuildEntity{
     @Column(name = "log_channel_id")
     private String logChannelId;
 
-    @Column(name = "mute_role_id")
-    private String muteRoleId;
-
-    /* lazy initializing */
-    @Type(type = "json")
-    @Column(name = "admin_role_ids", columnDefinition = "json")
-    private List<String> adminRoleIds;
-
     public String prefix(){
         return prefix;
     }
@@ -68,34 +60,13 @@ public class GuildConfig extends GuildEntity{
         this.logChannelId = Objects.requireNonNull(logChannelId, "logChannelId").asString();
     }
 
-    public Optional<Snowflake> muteRoleID(){
-        return Optional.ofNullable(muteRoleId).map(Snowflake::of);
-    }
-
-    public void muteRoleId(Snowflake muteRoleId){
-        this.muteRoleId = Objects.requireNonNull(muteRoleId, "muteRoleId").asString();
-    }
-
-    public List<String> adminRoleIDs(){
-        if(adminRoleIds == null){
-            adminRoleIds = new ArrayList<>();
-        }
-        return adminRoleIds;
-    }
-
-    public void adminRoleIDs(List<String> adminRoleIDs){
-        this.adminRoleIds = Objects.requireNonNull(adminRoleIDs, "adminRoleIDs");
-    }
-
     @Override
     public String toString(){
         return "GuildConfig{" +
-               "prefix='" + prefix + '\'' +
-               ", locale=" + locale +
-               ", timeZone=" + timeZone +
-               ", logChannelId='" + logChannelId + '\'' +
-               ", muteRoleID='" + muteRoleId + '\'' +
-               ", adminRoleIds=" + adminRoleIds +
-               "} " + super.toString();
+                "prefix='" + prefix + '\'' +
+                ", locale=" + locale +
+                ", timeZone=" + timeZone +
+                ", logChannelId='" + logChannelId + '\'' +
+                "} " + super.toString();
     }
 }

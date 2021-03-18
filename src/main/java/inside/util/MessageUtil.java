@@ -3,13 +3,12 @@ package inside.util;
 import arc.util.Strings;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
-import org.joda.time.*;
+import org.joda.time.DateTime;
 import reactor.util.annotation.Nullable;
 
-import java.time.LocalDateTime;
 import java.time.*;
 import java.time.temporal.*;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Function;
 import java.util.regex.*;
 
@@ -36,7 +35,7 @@ public abstract class MessageUtil{
     }
 
     public static boolean isEmpty(@Nullable Message message){
-        return message == null || effectiveContent(message).isBlank();
+        return message == null || effectiveContent(message).isEmpty();
     }
 
     @Nullable
@@ -81,12 +80,21 @@ public abstract class MessageUtil{
     }
 
     public static boolean canParseInt(String message){
-        return Strings.canParseInt(message) && Strings.parseInt(message) > 0;
+        return Strings.parseInt(message) > 0;
     }
 
     public static boolean canParseId(String message){
         try{
             Snowflake.of(message);
+            return true;
+        }catch(Throwable t){
+            return false;
+        }
+    }
+
+    public static boolean canParseLong(String message){
+        try{
+            Long.parseLong(message);
             return true;
         }catch(Throwable t){
             return false;
@@ -118,6 +126,6 @@ public abstract class MessageUtil{
     }
 
     private static <T extends Temporal> T addUnit(T instant, ChronoUnit unit, String amount){
-        return Strings.canParseInt(amount) ? unit.addTo(instant, Long.parseLong(amount)) : instant;
+        return canParseLong(amount) ? unit.addTo(instant, Long.parseLong(amount)) : instant;
     }
 }

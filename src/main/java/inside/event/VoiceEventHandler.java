@@ -30,8 +30,8 @@ public class VoiceEventHandler extends ReactiveEventAdapter{
         if(!event.isJoinEvent() && !event.isLeaveEvent()){
             return Mono.empty();
         }
-        Context context = Context.of(KEY_LOCALE, entityRetriever.locale(guildId),
-                KEY_TIMEZONE, entityRetriever.timeZone(guildId));
+        Context context = Context.of(KEY_LOCALE, entityRetriever.getLocale(guildId),
+                KEY_TIMEZONE, entityRetriever.getTimeZone(guildId));
 
         return Mono.justOrEmpty(event.getOld())
                 .defaultIfEmpty(event.getCurrent())
