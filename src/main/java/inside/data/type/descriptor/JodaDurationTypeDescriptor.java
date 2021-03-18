@@ -25,15 +25,12 @@ public class JodaDurationTypeDescriptor extends AbstractTypeDescriptor<Duration>
         if(duration == null){
             return null;
         }
-
         if(Duration.class.isAssignableFrom(type)){
             return (X)duration;
         }
-
         if(String.class.isAssignableFrom(type)){
             return (X)duration.toString();
         }
-
         throw unknownUnwrap(type);
     }
 
@@ -42,15 +39,12 @@ public class JodaDurationTypeDescriptor extends AbstractTypeDescriptor<Duration>
         if(value == null){
             return null;
         }
-
         if(value instanceof Duration d){
             return d;
         }
-
         if(value instanceof String s){
             return Duration.parse(s);
         }
-
         throw unknownWrap(value.getClass());
     }
 }

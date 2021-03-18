@@ -156,9 +156,7 @@ public class MessageServiceImpl implements MessageService{
     @Override
     @Transactional
     public void delete(MessageInfo message){
-        if(message != null){
-            repository.delete(message);
-        }
+        repository.delete(message);
     }
 
     @Override
