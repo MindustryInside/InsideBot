@@ -47,7 +47,7 @@ public class AdminAction extends GuildEntity{
         return new Builder();
     }
 
-    public AdminAction(){}
+    protected AdminAction(){}
 
     private AdminAction(Snowflake guildId, AdminActionType type,
                         LocalMember admin, LocalMember target,

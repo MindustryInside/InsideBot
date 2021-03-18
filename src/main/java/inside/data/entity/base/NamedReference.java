@@ -13,7 +13,7 @@ public class NamedReference{
     @Column
     private String name;
 
-    public NamedReference(){}
+    protected NamedReference(){}
 
     public NamedReference(Snowflake id, String name){
         this.id = Objects.requireNonNull(id, "id").asString();
