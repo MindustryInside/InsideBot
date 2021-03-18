@@ -51,7 +51,7 @@ public class DiscordServiceImpl implements DiscordService{
                 .login()
                 .block();
 
-        Objects.requireNonNull(gateway); // for ide
+        Objects.requireNonNull(gateway, "impossible"); // for ide
 
         gateway.on(ReactiveEventAdapter.from(handlers)).subscribe();
     }

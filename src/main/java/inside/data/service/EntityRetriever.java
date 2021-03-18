@@ -10,23 +10,29 @@ import java.util.*;
 
 public interface EntityRetriever{
 
-    // guild
+    // guild config
 
     GuildConfig getGuildById(Snowflake guildId);
 
     void save(GuildConfig entity);
 
-    Flux<Snowflake> adminRolesIds(Snowflake guildId);
+    String getPrefix(Snowflake guildId);
 
-    String prefix(Snowflake guildId);
+    Locale getLocale(Snowflake guildId);
 
-    Locale locale(Snowflake guildId);
+    DateTimeZone getTimeZone(Snowflake guildId);
 
-    DateTimeZone timeZone(Snowflake guildId);
+    Optional<Snowflake> getLogChannelId(Snowflake guildId);
 
-    Optional<Snowflake> logChannelId(Snowflake guildId);
+    // admin config
 
-    Optional<Snowflake> muteRoleId(Snowflake guildId);
+    AdminConfig getAdminConfigById(Snowflake guildId);
+
+    Optional<Snowflake> getMuteRoleId(Snowflake guildId);
+
+    List<Snowflake> adminRolesIds(Snowflake guildId);
+
+    void save(AdminConfig config);
 
     // member
 

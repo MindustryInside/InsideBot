@@ -1,10 +1,10 @@
 package inside.data.service.impl;
 
-import discord4j.common.util.Snowflake;
+import discord4j.core.object.entity.Member;
 import inside.Settings;
 import inside.data.entity.LocalMember;
 import inside.data.repository.LocalMemberRepository;
-import inside.data.service.MemberService;
+import inside.data.service.BaseEntityService;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -12,28 +12,28 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class MemberServiceImpl implements MemberService{
+public class MemberServiceImpl extends BaseEntityService<Member, LocalMember, LocalMemberRepository>{
 
-    private final LocalMemberRepository repository;
-
-    private final Settings settings;
-
-    public MemberServiceImpl(@Autowired LocalMemberRepository repository,
-                             @Autowired Settings settings){
-        this.repository = repository;
-        this.settings = settings;
+    protected MemberServiceImpl(@Autowired LocalMemberRepository repository,
+                                @Autowired Settings settings){
+        super(repository, settings);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public LocalMember get(Snowflake guildId, Snowflake userId){
-        return repository.findByGuildIdAndUserId(guildId.asString(), userId.asString());
+    protected LocalMember create(Member id){
+        LocalMember localMember = new LocalMember();
+        localMember.userId(id.getId());
+        localMember.guildId(id.getGuildId());
+        localMember.effectiveName(id.getDisplayName());
+        return localMember;
     }
 
     @Override
     @Transactional
-    public void save(LocalMember member){
-        repository.save(member);
+    protected LocalMember get(Member id){
+        String guildId = id.getGuildId().asString();
+        String userId = id.getId().asString();
+        return repository.findByGuildIdAndUserId(guildId, userId);
     }
 
     @Override

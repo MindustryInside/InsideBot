@@ -13,7 +13,7 @@ import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.rest.util.Permission;
 import inside.Settings;
 import inside.command.model.*;
-import inside.data.entity.AdminAction;
+import inside.data.entity.*;
 import inside.data.service.AdminService;
 import inside.event.audit.*;
 import inside.util.*;
@@ -22,6 +22,7 @@ import org.joda.time.*;
 import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import reactor.bool.BooleanUtils;
 import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
 import reactor.netty.http.client.HttpClient;
@@ -74,9 +75,9 @@ public class Commands{
         public Mono<Void> execute(CommandReference ref, String[] args){
             StringBuilder builder = new StringBuilder();
             Snowflake guildId = ref.getAuthorAsMember().getGuildId();
-            final String prefix = entityRetriever.prefix(guildId);
+            final String prefix = entityRetriever.getPrefix(guildId);
 
-            handler.commandList().forEach(command -> {
+            for(CommandInfo command : handler.commandList()){
                 builder.append(prefix);
                 builder.append("**");
                 builder.append(command.text());
@@ -89,7 +90,7 @@ public class Commands{
                 builder.append(" - ");
                 builder.append(messageService.get(ref.context(), command.description()));
                 builder.append("\n");
-            });
+            }
             builder.append(messageService.get(ref.context(), "command.help.disclaimer.user"));
 
             return messageService.info(ref.getReplyChannel(),"command.help", builder.toString());
@@ -149,7 +150,8 @@ public class Commands{
 
             return result.onErrorResume(t -> t instanceof ArithmeticException || t instanceof Expression.ExpressionException,
                     t -> messageService.error(ref.getReplyChannel(), "command.math.error.title", t.getMessage()).then(Mono.empty()))
-                    .flatMap(decimal -> messageService.text(ref.getReplyChannel(), MessageUtil.substringTo(decimal.toString(), Message.MAX_CONTENT_LENGTH)));
+                    .flatMap(decimal -> messageService.text(ref.getReplyChannel(),
+                            MessageUtil.substringTo(decimal.toString(), Message.MAX_CONTENT_LENGTH)));
         }
 
         private static final LazyOperator shiftRightOperator = new AbstractOperator(">>", 30, true){
@@ -171,13 +173,15 @@ public class Commands{
     public static class ReadCommand extends Command{
         private static final Logger log = Loggers.getLogger(ReadCommand.class);
 
+        private static final int MAX_SIZE = 3145728; // 3mb
+
         private final HttpClient httpClient = ReactorResources.DEFAULT_HTTP_CLIENT.get();
 
         @Override
         public Mono<Void> execute(CommandReference ref, String[] args){
             Mono<String> attachmentUrl = Mono.justOrEmpty(ref.getMessage().getAttachments().stream().findFirst())
                     .switchIfEmpty(messageService.err(ref.getReplyChannel(), "command.read.empty-attachments").then(Mono.never()))
-                    .filter(attachment -> attachment.getSize() < 3145728) // 3mb
+                    .filter(attachment -> attachment.getSize() < MAX_SIZE)
                     .switchIfEmpty(messageService.err(ref.getReplyChannel(), "command.read.under-limit").then(Mono.never()))
                     .filter(attachment -> attachment.getWidth().isEmpty())
                     .switchIfEmpty(messageService.err(ref.getReplyChannel(), "command.read.image").then(Mono.empty()))
@@ -190,7 +194,7 @@ public class Commands{
                             .responseSingle((res, mono) -> {
                                 String type = res.responseHeaders().get(HttpHeaderNames.CONTENT_TYPE).toLowerCase();
                                 if(res.status().equals(HttpResponseStatus.OK) && !type.contains("image") && !type.contains("video")){
-                                    return Strings.parseLong(res.responseHeaders().get(HttpHeaderNames.CONTENT_LENGTH), 0) > 3145728 ?
+                                    return Strings.parseLong(res.responseHeaders().get(HttpHeaderNames.CONTENT_LENGTH), 0) > MAX_SIZE ?
                                     messageService.err(ref.getReplyChannel(), "command.read.under-limit").then(Mono.never()) :
                                     mono.asString(Strings.utf8);
                                 }
@@ -489,7 +493,7 @@ public class Commands{
             Snowflake targetId = MessageUtil.parseUserId(args[0]);
             Snowflake guildId = author.getGuildId();
 
-            if(entityRetriever.muteRoleId(guildId).isEmpty()){
+            if(entityRetriever.getMuteRoleId(guildId).isEmpty()){
                 return messageService.err(channel, "command.disabled.mute");
             }
 
@@ -500,25 +504,24 @@ public class Commands{
 
             return Mono.justOrEmpty(targetId).flatMap(id -> ref.getClient().getMemberById(guildId, id))
                     .switchIfEmpty(messageService.err(channel, "command.incorrect-name").then(Mono.empty()))
-                    .transform(target -> target.filterWhen(member -> adminService.isMuted(member).map(bool -> !bool))
-                            .switchIfEmpty(messageService.err(channel, "command.admin.mute.already-muted").then(Mono.never()))
-                            .filterWhen(member -> Mono.zip(adminService.isAdmin(member), adminService.isOwner(author))
-                                    .map(TupleUtils.function((admin, owner) -> !(admin && !owner))))
-                            .switchIfEmpty(messageService.err(channel, "command.admin.user-is-admin").then(Mono.empty()))
-                            .flatMap(member -> Mono.defer(() -> {
-                                String reason = args.length > 2 ? args[2].trim() : null;
+                    .filterWhen(member -> BooleanUtils.not(adminService.isMuted(member)))
+                    .switchIfEmpty(messageService.err(channel, "command.admin.mute.already-muted").then(Mono.never()))
+                    .filterWhen(member -> Mono.zip(adminService.isAdmin(member), adminService.isOwner(author))
+                            .map(TupleUtils.function((admin, owner) -> !(admin && !owner))))
+                    .switchIfEmpty(messageService.err(channel, "command.admin.user-is-admin").then(Mono.empty()))
+                    .flatMap(member -> Mono.defer(() -> {
+                        String reason = args.length > 2 ? args[2].trim() : null;
 
-                                if(author.equals(member)){
-                                    return messageService.err(channel, "command.admin.mute.self-user");
-                                }
+                        if(author.equals(member)){
+                            return messageService.err(channel, "command.admin.mute.self-user");
+                        }
 
-                                if(reason != null && !reason.isBlank() && reason.length() >= 512){
-                                    return messageService.err(channel, "common.string-limit", 512);
-                                }
+                        if(reason != null && !reason.isBlank() && reason.length() >= 512){
+                            return messageService.err(channel, "common.string-limit", 512);
+                        }
 
-                                return adminService.mute(author, member, delay, reason);
-                            }))
-                            .then())
+                        return adminService.mute(author, member, delay, reason);
+                    }))
                     .and(ref.getMessage().addReaction(ok));
         }
     }
@@ -609,33 +612,34 @@ public class Commands{
             Snowflake guildId = author.getGuildId();
 
             return Mono.justOrEmpty(targetId).flatMap(id -> ref.getClient().getMemberById(guildId, id))
-                    .switchIfEmpty(messageService.err(channel, "command.incorrect-name").then(Mono.empty()))
-                    .transform(target -> target.filterWhen(member -> Mono.zip(adminService.isAdmin(member), adminService.isOwner(author))
+                    .switchIfEmpty(messageService.err(channel, "command.incorrect-name").then(Mono.never()))
+                    .filterWhen(target -> Mono.zip(adminService.isAdmin(target), adminService.isOwner(author))
                             .map(TupleUtils.function((admin, owner) -> !(admin && !owner))))
-                            .switchIfEmpty(messageService.err(channel, "command.admin.user-is-admin").then(Mono.empty()))
-                            .flatMap(member -> {
-                                String reason = args.length > 1 ? args[1].trim() : null;
+                    .switchIfEmpty(messageService.err(channel, "command.admin.user-is-admin").then(Mono.empty()))
+                    .flatMap(member -> {
+                        String reason = args.length > 1 ? args[1].trim() : null;
 
-                                if(Objects.equals(author, member)){
-                                    return messageService.err(channel, "command.admin.warn.self-user");
-                                }
+                        if(Objects.equals(author, member)){
+                            return messageService.err(channel, "command.admin.warn.self-user");
+                        }
 
-                                if(!MessageUtil.isEmpty(reason) && reason.length() >= 512){
-                                    return messageService.err(channel, "common.string-limit", 512);
-                                }
+                        if(!MessageUtil.isEmpty(reason) && reason.length() >= 512){
+                            return messageService.err(channel, "common.string-limit", 512);
+                        }
 
-                                Mono<Void> warnings = Mono.defer(() -> adminService.warnings(member).count()).flatMap(count -> {
-                                    Mono<Void> message = messageService.text(channel, "command.admin.warn", member.getUsername(), count);
+                        Mono<Void> warnings = Mono.defer(() -> adminService.warnings(member).count()).flatMap(count -> {
+                            Mono<Void> message = messageService.text(channel, "command.admin.warn", member.getUsername(), count);
 
-                                    if(count >= settings.getModeration().getMaxWarnings()){
-                                        return message.then(author.getGuild().flatMap(guild ->
-                                                guild.ban(member.getId(), spec -> spec.setDeleteMessageDays(0))));
-                                    }
-                                    return message;
-                                });
+                            AdminConfig config = entityRetriever.getAdminConfigById(guildId);
+                            if(count >= config.maxWarnCount()){
+                                return message.then(author.getGuild().flatMap(guild ->
+                                        guild.ban(member.getId(), spec -> spec.setDeleteMessageDays(0))));
+                            }
+                            return message;
+                        });
 
-                                return adminService.warn(author, member, reason).then(warnings);
-                            }));
+                        return adminService.warn(author, member, reason).then(warnings);
+                    });
         }
     }
 
@@ -713,15 +717,15 @@ public class Commands{
             Snowflake targetId = MessageUtil.parseUserId(args[0]);
             Snowflake guildId = ref.getAuthorAsMember().getGuildId();
 
-            if(entityRetriever.muteRoleId(guildId).isEmpty()){
+            if(entityRetriever.getMuteRoleId(guildId).isEmpty()){
                 return messageService.err(channel, messageService.get(ref.context(), "command.disabled.mute"));
             }
 
             return Mono.justOrEmpty(targetId).flatMap(id -> ref.getClient().getMemberById(guildId, id))
                     .switchIfEmpty(messageService.err(channel, "command.incorrect-name").then(Mono.empty()))
-                    .transform(member -> member.filterWhen(adminService::isMuted)
-                            .flatMap(target -> adminService.unmute(target).thenReturn(target))
-                            .switchIfEmpty(messageService.err(channel, "audit.member.unmute.is-not-muted").then(Mono.empty())))
+                    .filterWhen(adminService::isMuted)
+                    .flatMap(target -> adminService.unmute(target).thenReturn(target))
+                    .switchIfEmpty(messageService.err(channel, "audit.member.unmute.is-not-muted").then(Mono.empty()))
                     .then();
         }
     }

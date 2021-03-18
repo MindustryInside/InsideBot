@@ -17,6 +17,8 @@ import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
 import reactor.util.*;
 
+import java.util.List;
+
 import static inside.event.audit.Attribute.*;
 import static inside.util.ContextUtil.*;
 
@@ -82,7 +84,7 @@ public class AdminServiceImpl implements AdminService{
                 .withAttribute(DELAY, end.getMillis())
                 .save();
 
-        Mono<Void> addRole = Mono.justOrEmpty(entityRetriever.muteRoleId(admin.getGuildId()))
+        Mono<Void> addRole = Mono.justOrEmpty(entityRetriever.getMuteRoleId(admin.getGuildId()))
                 .flatMap(target::addRole);
 
         return Mono.when(add, addRole, log);
@@ -107,7 +109,7 @@ public class AdminServiceImpl implements AdminService{
                 .withTargetUser(target)
                 .save();
 
-        Mono<Void> removeRole = Mono.justOrEmpty(entityRetriever.muteRoleId(localMember.guildId()))
+        Mono<Void> removeRole = Mono.justOrEmpty(entityRetriever.getMuteRoleId(localMember.guildId()))
                 .flatMap(target::removeRole);
 
         return Mono.when(removeRole, log, remove);
@@ -118,6 +120,7 @@ public class AdminServiceImpl implements AdminService{
     public Mono<Void> warn(Member admin, Member target, String reason){
         LocalMember adminLocalMember = entityRetriever.getMember(admin);
         LocalMember targetLocalMember = entityRetriever.getMember(target);
+        AdminConfig config = entityRetriever.getAdminConfigById(admin.getGuildId());
         AdminAction action = AdminAction.builder()
                 .guildId(admin.getGuildId())
                 .type(AdminActionType.warn)
@@ -125,7 +128,7 @@ public class AdminServiceImpl implements AdminService{
                 .target(targetLocalMember)
                 .reason(reason)
                 .timestamp(DateTime.now())
-                .endTimestamp(DateTime.now().plus(settings.getModeration().getWarnExpire().toMillis()))
+                .endTimestamp(DateTime.now().plus(config.warnExpireDelay()))
                 .build();
 
         return Mono.fromRunnable(() -> repository.save(action));
@@ -156,10 +159,10 @@ public class AdminServiceImpl implements AdminService{
         if(member == null){
             return Mono.empty();
         }
-        Flux<Snowflake> roles = entityRetriever.adminRolesIds(member.getGuildId());
+        List<Snowflake> roles = entityRetriever.adminRolesIds(member.getGuildId());
 
         Mono<Boolean> isPermissed = member.getRoles().map(Role::getId)
-                .filterWhen(roleId -> roles.any(roleId::equals))
+                .filter(roles::contains)
                 .hasElements();
 
         Mono<Boolean> isAdmin = member.getRoles().map(Role::getPermissions)
@@ -183,8 +186,8 @@ public class AdminServiceImpl implements AdminService{
                 .filter(AdminAction::isEnd)
                 .flatMap(adminAction -> discordService.gateway()
                         .getMemberById(adminAction.guildId(), adminAction.target().userId()))
-                .flatMap(target -> unmute(target).contextWrite(ctx -> ctx.put(KEY_LOCALE, entityRetriever.locale(target.getGuildId()))
-                        .put(KEY_TIMEZONE, entityRetriever.timeZone(target.getGuildId()))))
+                .flatMap(target -> unmute(target).contextWrite(ctx -> ctx.put(KEY_LOCALE, entityRetriever.getLocale(target.getGuildId()))
+                        .put(KEY_TIMEZONE, entityRetriever.getTimeZone(target.getGuildId()))))
                 .subscribe();
     }
 }

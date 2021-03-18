@@ -5,7 +5,7 @@ import discord4j.core.event.domain.guild.*;
 import discord4j.core.object.audit.ActionType;
 import discord4j.core.object.entity.*;
 import inside.Settings;
-import inside.data.entity.LocalMember;
+import inside.data.entity.*;
 import inside.data.service.*;
 import inside.event.audit.AuditService;
 import inside.util.*;
@@ -48,16 +48,18 @@ public class MemberEventHandler extends ReactiveEventAdapter{
             return Mono.empty();
         }
 
-        Context context = Context.of(KEY_LOCALE, entityRetriever.locale(event.getGuildId()),
-                KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
+        Context context = Context.of(KEY_LOCALE, entityRetriever.getLocale(event.getGuildId()),
+                KEY_TIMEZONE, entityRetriever.getTimeZone(event.getGuildId()));
+
+        AdminConfig config = entityRetriever.getAdminConfigById(member.getGuildId());
 
         Mono<Void> warn = member.getGuild().flatMap(Guild::getOwner)
-                .filterWhen(owner -> adminService.warnings(member).count().map(c -> c >= settings.getModeration().getMaxWarnings()))
+                .filterWhen(owner -> adminService.warnings(member).count().map(c -> c >= config.maxWarnCount()))
                 .flatMap(owner -> adminService.warn(owner, member, messageService.get(context, "audit.member.warn.evade")));
 
         Mono<?> muteEvade = member.getGuild().flatMap(Guild::getOwner)
                 .filterWhen(owner -> adminService.isMuted(member))
-                .flatMap(owner -> adminService.mute(owner, member, DateTime.now().plus(settings.getModeration().getMuteEvade().toMillis()),
+                .flatMap(owner -> adminService.mute(owner, member, DateTime.now().plus(config.muteBaseDelay()),
                         messageService.get(context, "audit.member.mute.evade"))
                         .thenReturn(owner))
                 .switchIfEmpty(warn.then(Mono.empty()));
@@ -75,8 +77,8 @@ public class MemberEventHandler extends ReactiveEventAdapter{
         if(DiscordUtil.isBot(user)){
             return Mono.empty();
         }
-        Context context = Context.of(KEY_LOCALE, entityRetriever.locale(event.getGuildId()),
-                KEY_TIMEZONE, entityRetriever.timeZone(event.getGuildId()));
+        Context context = Context.of(KEY_LOCALE, entityRetriever.getLocale(event.getGuildId()),
+                KEY_TIMEZONE, entityRetriever.getTimeZone(event.getGuildId()));
 
         Mono<Void> log = auditService.log(event.getGuildId(), USER_LEAVE)
                 .withUser(user)

@@ -108,7 +108,7 @@ public class CommandHandler{
         Mono<TextChannel> channel = ref.getReplyChannel().ofType(TextChannel.class);
         Mono<User> self = ref.getClient().getSelf();
 
-        String prefix = entityRetriever.prefix(ref.getAuthorAsMember().getGuildId());
+        String prefix = entityRetriever.getPrefix(ref.getAuthorAsMember().getGuildId());
 
         Mono<Tuple2<String, String>> text = Mono.justOrEmpty(prefix)
                 .filter(message::startsWith)
