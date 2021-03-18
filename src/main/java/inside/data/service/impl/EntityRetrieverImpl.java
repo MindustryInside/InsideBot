@@ -67,7 +67,7 @@ public class EntityRetrieverImpl implements EntityRetriever{
     }
 
     @Override
-    public List<Snowflake> adminRolesIds(Snowflake guildId){
+    public List<Snowflake> getAdminRoleIds(Snowflake guildId){
         return getAdminConfigById(guildId).adminRoleIDs().stream()
                 .map(Snowflake::of)
                 .collect(Collectors.toUnmodifiableList());

@@ -159,7 +159,7 @@ public class AdminServiceImpl implements AdminService{
         if(member == null){
             return Mono.empty();
         }
-        List<Snowflake> roles = entityRetriever.adminRolesIds(member.getGuildId());
+        List<Snowflake> roles = entityRetriever.getAdminRoleIds(member.getGuildId());
 
         Mono<Boolean> isPermissed = member.getRoles().map(Role::getId)
                 .filter(roles::contains)

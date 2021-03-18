@@ -30,7 +30,7 @@ public interface EntityRetriever{
 
     Optional<Snowflake> getMuteRoleId(Snowflake guildId);
 
-    List<Snowflake> adminRolesIds(Snowflake guildId);
+    List<Snowflake> getAdminRoleIds(Snowflake guildId);
 
     void save(AdminConfig config);
 
