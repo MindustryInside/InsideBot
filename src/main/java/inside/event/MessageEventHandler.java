@@ -7,7 +7,7 @@ import discord4j.core.object.Embed.Field;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
 import inside.command.CommandHandler;
-import inside.command.model.CommandReference;
+import inside.command.model.CommandEnvironment;
 import inside.data.entity.*;
 import inside.data.service.*;
 import inside.event.audit.*;
@@ -77,7 +77,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
         Context context = Context.of(KEY_LOCALE, entityRetriever.getLocale(guildId),
                 KEY_TIMEZONE, entityRetriever.getTimeZone(guildId));
 
-        CommandReference reference = CommandReference.builder()
+        CommandEnvironment reference = CommandEnvironment.builder()
                 .message(message)
                 .member(member)
                 .context(context)
@@ -123,7 +123,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
                     Mono<?> command = Mono.defer(() -> {
                         if(messageService.isAwaitEdit(message.getId())){
-                            CommandReference reference = CommandReference.builder()
+                            CommandEnvironment reference = CommandEnvironment.builder()
                                     .localMember(entityRetriever.getMember(member))
                                     .message(message)
                                     .member(member)

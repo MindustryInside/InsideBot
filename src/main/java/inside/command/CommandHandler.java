@@ -102,7 +102,7 @@ public class CommandHandler{
         return commandInfo.values();
     }
 
-    public Mono<?> handleMessage(final CommandReference ref){
+    public Mono<?> handleMessage(final CommandEnvironment ref){
         String message = ref.getMessage().getContent();
         Mono<Guild> guild = ref.getMessage().getGuild();
         Mono<TextChannel> channel = ref.getReplyChannel().ofType(TextChannel.class);

@@ -15,7 +15,7 @@ public interface CommandRequest{
 
     ContextView context();
 
-    LocalMember localMember();
+    LocalMember getLocalMember();
 
     Mono<MessageChannel> getReplyChannel();
 
