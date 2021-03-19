@@ -75,7 +75,7 @@ public class Commands{
         public Mono<Void> execute(CommandEnvironment env, String[] args){
             StringBuilder builder = new StringBuilder();
             Snowflake guildId = env.getAuthorAsMember().getGuildId();
-            final String prefix = entityRetriever.getPrefix(guildId);
+            String prefix = entityRetriever.getPrefix(guildId);
 
             for(CommandInfo command : handler.commandList()){
                 builder.append(prefix);
@@ -119,7 +119,7 @@ public class Commands{
             Mono<String> result = Mono.fromCallable(() -> encode ? Base64Coder.encodeString(args[1]) : Base64Coder.decodeString(args[1]));
             return result.onErrorResume(t -> t instanceof IllegalArgumentException,
                     t -> messageService.err(env.getReplyChannel(), t.getMessage()).then(Mono.empty()))
-                    .flatMap(str -> messageService.text(env.getReplyChannel(), str));
+                    .flatMap(str -> messageService.text(env.getReplyChannel(), MessageUtil.substringTo(str, Message.MAX_CONTENT_LENGTH)));
         }
     }
 
