@@ -7,11 +7,14 @@ import org.joda.time.Duration;
 import reactor.util.annotation.Nullable;
 
 import javax.persistence.*;
+import java.io.Serial;
 import java.util.*;
 
 @Entity
 @Table(name = "admin_config")
 public class AdminConfig extends GuildEntity{
+    @Serial
+    private static final long serialVersionUID = 3870326130058466675L;
 
     @Column(name = "warn_expire_delay")
     private Duration warnExpireDelay;

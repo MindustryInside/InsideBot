@@ -26,7 +26,6 @@ public class MessageInfo extends GuildEntity{
     private String content;
 
     @Column
-    @Type(type = "date-time")
     private DateTime timestamp;
 
     public Snowflake messageId(){

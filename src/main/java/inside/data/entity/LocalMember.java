@@ -22,7 +22,6 @@ public class LocalMember extends GuildEntity{
     @Column(name = "effective_name", length = 32)
     private String effectiveName;
 
-    @Type(type = "date-time")
     @Column(name = "last_sent_message")
     private DateTime lastSentMessage;
 
