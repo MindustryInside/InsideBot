@@ -102,13 +102,13 @@ public class CommandHandler{
         return commandInfo.values();
     }
 
-    public Mono<?> handleMessage(final CommandEnvironment ref){
-        String message = ref.getMessage().getContent();
-        Mono<Guild> guild = ref.getMessage().getGuild();
-        Mono<TextChannel> channel = ref.getReplyChannel().ofType(TextChannel.class);
-        Mono<User> self = ref.getClient().getSelf();
+    public Mono<?> handleMessage(final CommandEnvironment env){
+        String message = env.getMessage().getContent();
+        Mono<Guild> guild = env.getMessage().getGuild();
+        Mono<TextChannel> channel = env.getReplyChannel().ofType(TextChannel.class);
+        Mono<User> self = env.getClient().getSelf();
 
-        String prefix = entityRetriever.getPrefix(ref.getAuthorAsMember().getGuildId());
+        String prefix = entityRetriever.getPrefix(env.getAuthorAsMember().getGuildId());
 
         Mono<Tuple2<String, String>> text = Mono.justOrEmpty(prefix)
                 .filter(message::startsWith)
@@ -119,7 +119,7 @@ public class CommandHandler{
         Mono<Void> suggestion = text.flatMap(t -> {
             CommandInfo closest = MessageUtil.findClosest(commandList(), CommandInfo::text, t.getT1());
 
-            messageService.awaitEdit(ref.getMessage().getId());
+            messageService.awaitEdit(env.getMessage().getId());
             if(closest != null){
                 return messageService.err(channel, "command.response.found-closest", closest.text());
             }
@@ -139,9 +139,9 @@ public class CommandHandler{
 
                     while(true){
                         if(index >= info.params().length && !argstr.isEmpty()){
-                            messageService.awaitEdit(ref.getMessage().getId());
+                            messageService.awaitEdit(env.getMessage().getId());
                             return messageService.error(channel, "command.response.many-arguments.title",
-                                    argsres, prefix, info.text(), messageService.get(ref.context(), info.paramText()));
+                                    argsres, prefix, info.text(), messageService.get(env.context(), info.paramText()));
                         }else if(argstr.isEmpty()){
                             break;
                         }
@@ -158,9 +158,9 @@ public class CommandHandler{
                         int next = argstr.indexOf(" ");
                         if(next == -1){
                             if(!satisfied){
-                                messageService.awaitEdit(ref.getMessage().getId());
+                                messageService.awaitEdit(env.getMessage().getId());
                                 return messageService.error(channel, "command.response.few-arguments.title",
-                                        argsres, prefix, info.text(), messageService.get(ref.context(), info.paramText()));
+                                        argsres, prefix, info.text(), messageService.get(env.context(), info.paramText()));
                             }
                             result.add(argstr);
                             break;
@@ -174,32 +174,32 @@ public class CommandHandler{
                     }
 
                     if(!satisfied && info.params().length > 0 && !info.params()[0].optional()){
-                        messageService.awaitEdit(ref.getMessage().getId());
+                        messageService.awaitEdit(env.getMessage().getId());
                         return messageService.error(channel, "command.response.few-arguments.title",
-                                argsres, prefix, info.text(), messageService.get(ref.context(), info.paramText()));
+                                argsres, prefix, info.text(), messageService.get(env.context(), info.paramText()));
                     }
 
                     Mono<String> execute = Mono.just(command)
-                            .filterWhen(c -> c.apply(ref))
-                            .flatMap(c -> command.execute(ref, result.toArray(new String[0])))
-                            .doFirst(() -> messageService.removeEdit(ref.getMessage().getId()))
+                            .filterWhen(c -> c.apply(env))
+                            .flatMap(c -> command.execute(env, result.toArray(new String[0])))
+                            .doFirst(() -> messageService.removeEdit(env.getMessage().getId()))
                             .then(Mono.empty());
 
                     return Flux.fromIterable(info.permissions())
                             .filterWhen(permission -> channel.zipWith(self.map(User::getId))
                                     .flatMap(TupleUtils.function((targetChannel, selfId) -> targetChannel.getEffectivePermissions(selfId)))
                                     .map(set -> !set.contains(permission)))
-                            .map(permission -> messageService.getEnum(ref.context(), permission))
+                            .map(permission -> messageService.getEnum(env.context(), permission))
                             .collect(Collectors.joining("\n"))
                             .filter(s -> !s.isBlank())
                             .flatMap(s -> messageService.text(channel, String.format("%s%n%n%s",
-                                    messageService.get(ref.context(), "message.error.permission-denied.title"),
-                                    messageService.format(ref.context(), "message.error.permission-denied.description", s)))
+                                    messageService.get(env.context(), "message.error.permission-denied.title"),
+                                    messageService.format(env.context(), "message.error.permission-denied.description", s)))
                                     .onErrorResume(t -> t.getMessage().contains("Missing Permissions"), t ->
                                             guild.flatMap(g -> g.getOwner().flatMap(User::getPrivateChannel))
                                                     .flatMap(c -> c.createMessage(String.format("%s%n%n%s",
-                                                    messageService.get(ref.context(), "message.error.permission-denied.title"),
-                                                    messageService.format(ref.context(), "message.error.permission-denied.description", s))))
+                                                    messageService.get(env.context(), "message.error.permission-denied.title"),
+                                                    messageService.format(env.context(), "message.error.permission-denied.description", s))))
                                                     .then())
                                     .thenReturn(s))
                             .switchIfEmpty(execute);
