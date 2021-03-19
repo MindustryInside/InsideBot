@@ -9,8 +9,10 @@ import java.util.Objects;
 
 @TypeDefs({
         @TypeDef(name = "json", typeClass = JsonType.class),
-        @TypeDef(name = "date-time", typeClass = DateTimeType.class),
-        @TypeDef(name = "date-time-zone", typeClass = DateTimeZoneType.class),
+        @TypeDef(name = "date-time", typeClass = DateTimeType.class,
+                 defaultForType = org.joda.time.DateTime.class),
+        @TypeDef(name = "date-time-zone", typeClass = DateTimeZoneType.class,
+                 defaultForType = org.joda.time.DateTimeZone.class),
         @TypeDef(name = "joda-duration", typeClass = JodaDurationType.class,
                  defaultForType = org.joda.time.Duration.class)
 })

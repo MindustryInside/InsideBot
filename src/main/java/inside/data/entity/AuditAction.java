@@ -18,7 +18,6 @@ public class AuditAction extends GuildEntity{
     private static final long serialVersionUID = 165904719880729938L;
 
     @Column
-    @Type(type = "date-time")
     private DateTime timestamp;
 
     @Column

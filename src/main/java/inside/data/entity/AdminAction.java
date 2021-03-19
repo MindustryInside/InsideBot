@@ -36,10 +36,8 @@ public class AdminAction extends GuildEntity{
     private String reason;
 
     @Column
-    @Type(type = "date-time")
     private DateTime timestamp;
 
-    @Type(type = "date-time")
     @Column(name = "end_timestamp")
     private DateTime endTimestamp;
 

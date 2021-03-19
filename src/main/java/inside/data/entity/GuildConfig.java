@@ -21,7 +21,6 @@ public class GuildConfig extends GuildEntity{
     @Column
     private Locale locale;
 
-    @Type(type = "date-time-zone")
     @Column(name = "time_zone")
     private DateTimeZone timeZone;
 
