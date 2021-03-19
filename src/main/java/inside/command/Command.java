@@ -19,7 +19,7 @@ public abstract class Command implements Function<CommandRequest, Mono<Boolean>>
         return Mono.just(true);
     }
 
-    public Mono<Void> execute(CommandReference reference, String[] args){
+    public Mono<Void> execute(CommandEnvironment env, String[] args){
         return Mono.empty();
     }
 

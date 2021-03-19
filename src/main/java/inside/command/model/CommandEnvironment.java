@@ -11,7 +11,7 @@ import reactor.util.context.ContextView;
 import java.util.Objects;
 import java.util.function.*;
 
-public class CommandReference implements CommandRequest, CommandResponse{
+public class CommandEnvironment implements CommandRequest, CommandResponse{
     private final Member member;
     private final Message message;
     private final ContextView context; // TODO(Skat): use Mono#deferContextual
@@ -19,9 +19,9 @@ public class CommandReference implements CommandRequest, CommandResponse{
     private final Scheduler replyScheduler;
     private final LocalMember localMember;
 
-    CommandReference(Member member, Message message, ContextView context,
-                     Supplier<Mono<? extends MessageChannel>> replyChannel,
-                     Scheduler replyScheduler, LocalMember localMember){
+    CommandEnvironment(Member member, Message message, ContextView context,
+                       Supplier<Mono<? extends MessageChannel>> replyChannel,
+                       Scheduler replyScheduler, LocalMember localMember){
         this.member = member;
         this.message = message;
         this.context = context;
@@ -50,7 +50,7 @@ public class CommandReference implements CommandRequest, CommandResponse{
     }
 
     @Override
-    public LocalMember localMember(){
+    public LocalMember getLocalMember(){
         return localMember;
     }
 
@@ -66,17 +66,17 @@ public class CommandReference implements CommandRequest, CommandResponse{
 
     @Override
     public CommandResponse withDirectMessage(){
-        return new CommandReference(member, message, context, () -> getPrivateChannel().cast(MessageChannel.class), replyScheduler, localMember);
+        return new CommandEnvironment(member, message, context, () -> getPrivateChannel().cast(MessageChannel.class), replyScheduler, localMember);
     }
 
     @Override
     public CommandResponse withReplyChannel(Mono<? extends MessageChannel> channelSource){
-        return new CommandReference(member, message, context, () -> channelSource, replyScheduler, localMember);
+        return new CommandEnvironment(member, message, context, () -> channelSource, replyScheduler, localMember);
     }
 
     @Override
     public CommandResponse withScheduler(Scheduler scheduler){
-        return new CommandReference(member, message, context, replyChannel, scheduler, localMember);
+        return new CommandEnvironment(member, message, context, replyChannel, scheduler, localMember);
     }
 
     @Override
@@ -133,14 +133,14 @@ public class CommandReference implements CommandRequest, CommandResponse{
             return this;
         }
 
-        public CommandReference build(){
+        public CommandEnvironment build(){
             if(channel == null){
                 channel = () -> message.getChannel();
             }
             if(scheduler == null){
                 scheduler = Schedulers.boundedElastic();
             }
-            return new CommandReference(member, message, contextView, channel, scheduler, localMember);
+            return new CommandEnvironment(member, message, contextView, channel, scheduler, localMember);
         }
     }
 }
