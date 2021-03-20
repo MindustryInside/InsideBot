@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.util.annotation.Nullable;
 
 @Service
 public class MemberServiceImpl extends BaseEntityService<Member, LocalMember, LocalMemberRepository>{
@@ -28,6 +29,7 @@ public class MemberServiceImpl extends BaseEntityService<Member, LocalMember, Lo
         return localMember;
     }
 
+    @Nullable
     @Override
     @Transactional
     protected LocalMember get(Member id){

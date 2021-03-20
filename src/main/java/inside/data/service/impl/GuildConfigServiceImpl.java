@@ -8,6 +8,7 @@ import inside.data.service.BaseEntityService;
 import inside.util.LocaleUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.util.annotation.Nullable;
 
 @Service
 public class GuildConfigServiceImpl extends BaseEntityService<Snowflake, GuildConfig, GuildConfigRepository>{
@@ -26,6 +27,7 @@ public class GuildConfigServiceImpl extends BaseEntityService<Snowflake, GuildCo
         return guildConfig;
     }
 
+    @Nullable
     @Override
     @Transactional
     protected GuildConfig get(Snowflake id){
