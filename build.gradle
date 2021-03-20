@@ -1,6 +1,7 @@
 plugins{
     id 'org.springframework.boot' version '2.4.3'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'com.github.ben-manes.versions' version '0.38.0'
     id 'java'
 }
 
@@ -12,9 +13,9 @@ repositories{
 }
 
 ext{
-    arc_version = 'v115'
+    arc_version = 'v125.1'
     joda_version = 'v2.10.10'
-    caffeine_version = '3.0.0'
+    caffeine_version = '3.0.1'
 
     jaxb_version = '2.3.1'
     hibernate_version = '5.4.28.Final'

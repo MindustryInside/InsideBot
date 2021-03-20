@@ -37,7 +37,7 @@ import java.util.function.Function;
 import java.util.function.*;
 import java.util.stream.Collectors;
 
-import static inside.data.service.MessageService.ok;
+import static inside.service.MessageService.ok;
 import static inside.event.audit.Attribute.COUNT;
 import static inside.event.audit.BaseAuditProvider.MESSAGE_TXT;
 import static inside.util.ContextUtil.*;

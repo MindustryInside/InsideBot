@@ -4,10 +4,10 @@ import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.guild.*;
 import discord4j.core.object.audit.ActionType;
 import discord4j.core.object.entity.*;
-import inside.Settings;
 import inside.data.entity.*;
 import inside.data.service.*;
 import inside.event.audit.AuditService;
+import inside.service.MessageService;
 import inside.util.*;
 import org.joda.time.DateTime;
 import org.reactivestreams.Publisher;
@@ -37,9 +37,6 @@ public class MemberEventHandler extends ReactiveEventAdapter{
 
     @Autowired
     private MessageService messageService;
-
-    @Autowired
-    private Settings settings;
 
     @Override
     public Publisher<?> onMemberJoin(MemberJoinEvent event){

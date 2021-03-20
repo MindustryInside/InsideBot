@@ -11,13 +11,13 @@ import inside.command.model.CommandEnvironment;
 import inside.data.entity.*;
 import inside.data.service.*;
 import inside.event.audit.*;
+import inside.service.MessageService;
 import inside.util.*;
 import org.joda.time.DateTime;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
-import reactor.util.*;
 import reactor.util.context.Context;
 import reactor.util.function.Tuples;
 
@@ -29,8 +29,6 @@ import static reactor.function.TupleUtils.*;
 
 @Component
 public class MessageEventHandler extends ReactiveEventAdapter{
-    private static final Logger log = Loggers.getLogger(MessageEventHandler.class);
-
     @Autowired
     private CommandHandler commandHandler;
 
@@ -47,18 +45,13 @@ public class MessageEventHandler extends ReactiveEventAdapter{
     public Publisher<?> onMessageCreate(MessageCreateEvent event){
         Message message = event.getMessage();
         Member member = event.getMember().orElse(null);
-        if(member == null || MessageUtil.isEmpty(message) || message.getType() != Message.Type.DEFAULT || message.isTts() || !message.getEmbeds().isEmpty()){
+        if(DiscordUtil.isBot(member) || MessageUtil.isEmpty(message) || message.getType() != Message.Type.DEFAULT || message.isTts() || !message.getEmbeds().isEmpty()){
             return Mono.empty();
         }
 
         Mono<MessageChannel> channel = message.getChannel();
-        User user = message.getAuthor().orElse(null);
-        Snowflake guildId = event.getGuildId().orElse(null);
-        if(DiscordUtil.isBot(user) || guildId == null){
-            return Mono.empty();
-        }
+        Snowflake guildId = event.getGuildId().orElseThrow(IllegalStateException::new); // Guaranteed above, see DiscordUtil#isBot
 
-        Snowflake userId = user.getId();
         LocalMember localMember = entityRetriever.getMember(member);
 
         localMember.lastSentMessage(DateTime.now());
@@ -66,7 +59,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
         Mono<Void> messageInfo = Mono.fromRunnable(() -> {
             MessageInfo info = new MessageInfo();
-            info.userId(userId);
+            info.userId(member.getId());
             info.messageId(message.getId());
             info.guildId(guildId);
             info.timestamp(new DateTime(message.getTimestamp().toEpochMilli()));
@@ -166,11 +159,15 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
         User user = message.getAuthor().orElse(null);
         Snowflake guildId = event.getGuildId().orElse(null);
-        if(DiscordUtil.isBot(user) || guildId == null || !messageService.exists(message.getId())){
+        if(DiscordUtil.isBot(user) || guildId == null){
             return Mono.empty();
         }
 
         MessageInfo info = messageService.getById(message.getId());
+        if(info == null){
+            return Mono.empty();
+        }
+
         String content = info.content();
 
         Context context = Context.of(KEY_LOCALE, entityRetriever.getLocale(guildId),

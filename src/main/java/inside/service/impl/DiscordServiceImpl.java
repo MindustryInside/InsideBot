@@ -1,4 +1,4 @@
-package inside.data.service.impl;
+package inside.service.impl;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.*;
@@ -10,7 +10,7 @@ import discord4j.rest.request.RouteMatcher;
 import discord4j.rest.response.ResponseFunction;
 import discord4j.rest.route.Routes;
 import inside.Settings;
-import inside.data.service.DiscordService;
+import inside.service.DiscordService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
