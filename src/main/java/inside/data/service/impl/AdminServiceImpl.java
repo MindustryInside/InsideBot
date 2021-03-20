@@ -48,13 +48,13 @@ public class AdminServiceImpl implements AdminService{
     @Override
     @Transactional(readOnly = true)
     public Flux<AdminAction> get(AdminActionType type, Snowflake guildId, Snowflake targetId){
-        return Flux.fromIterable(repository.find(type, guildId.asString(), targetId.asString()));
+        return Flux.defer(() -> Flux.fromIterable(repository.find(type, guildId.asString(), targetId.asString())));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Flux<AdminAction> getAll(AdminActionType type){
-        return Flux.fromIterable(repository.findAll(type));
+        return Flux.defer(() -> Flux.fromIterable(repository.findAll(type)));
     }
 
     @Override
@@ -134,8 +134,8 @@ public class AdminServiceImpl implements AdminService{
     @Override
     @Transactional
     public Mono<Void> unwarn(Snowflake guildId, Snowflake targetId, int index){
-        AdminAction action = repository.find(AdminActionType.warn, guildId.asString(), targetId.asString()).get(index);
-        return Mono.justOrEmpty(action).doOnNext(repository::delete).then();
+        return warnings(guildId, targetId).elementAt(index)
+                .flatMap(action -> Mono.fromRunnable(() -> repository.delete(action)));
     }
 
     @Override
