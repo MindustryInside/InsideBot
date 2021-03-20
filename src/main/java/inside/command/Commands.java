@@ -35,7 +35,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.*;
-import java.util.stream.Collectors;
+import java.util.stream.*;
 
 import static inside.service.MessageService.ok;
 import static inside.event.audit.Attribute.COUNT;
@@ -73,27 +73,29 @@ public class Commands{
 
         @Override
         public Mono<Void> execute(CommandEnvironment env, String[] args){
-            StringBuilder builder = new StringBuilder();
             Snowflake guildId = env.getAuthorAsMember().getGuildId();
             String prefix = entityRetriever.getPrefix(guildId);
 
-            for(CommandInfo command : handler.commandList()){
-                builder.append(prefix);
-                builder.append("**");
-                builder.append(command.text());
-                builder.append("**");
-                if(command.params().length > 0){
-                    builder.append(" *");
-                    builder.append(messageService.get(env.context(), command.paramText()));
-                    builder.append("*");
-                }
-                builder.append(" - ");
-                builder.append(messageService.get(env.context(), command.description()));
-                builder.append("\n");
-            }
-            builder.append(messageService.get(env.context(), "command.help.disclaimer.user"));
-
-            return messageService.info(env.getReplyChannel(),"command.help", builder.toString());
+            return Flux.fromIterable(handler.commandList())
+                    .filterWhen(commandInfo -> handler.commands().get(commandInfo.text()).apply(env))
+                    .collect(Collector.of(StringBuilder::new,
+                            (builder, commandInfo) -> {
+                                builder.append(prefix);
+                                builder.append("**");
+                                builder.append(commandInfo.text());
+                                builder.append("**");
+                                if(commandInfo.params().length > 0){
+                                    builder.append(" *");
+                                    builder.append(messageService.get(env.context(), commandInfo.paramText()));
+                                    builder.append("*");
+                                }
+                                builder.append(" - ");
+                                builder.append(messageService.get(env.context(), commandInfo.description()));
+                                builder.append("\n");
+                            },
+                            StringBuilder::append))
+                    .map(builder -> builder.append(messageService.get(env.context(), "command.help.disclaimer.user")))
+                    .flatMap(builder -> messageService.info(env.getReplyChannel(),"command.help", builder.toString()));
         }
     }
 
