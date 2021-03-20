@@ -7,6 +7,8 @@ import inside.data.repository.AdminConfigRepository;
 import inside.data.service.BaseEntityService;
 import org.joda.time.Duration;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import reactor.util.annotation.Nullable;
 
 @Service
 public class AdminConfigServiceImpl extends BaseEntityService<Snowflake, AdminConfig, AdminConfigRepository>{
@@ -26,7 +28,9 @@ public class AdminConfigServiceImpl extends BaseEntityService<Snowflake, AdminCo
         return adminConfig;
     }
 
+    @Nullable
     @Override
+    @Transactional
     protected AdminConfig get(Snowflake id){
         String guildId = id.asString();
         return repository.findByGuildId(guildId);

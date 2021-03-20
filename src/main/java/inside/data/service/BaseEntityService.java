@@ -4,6 +4,7 @@ import inside.Settings;
 import inside.data.entity.base.GuildEntity;
 import inside.data.repository.base.GuildRepository;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.util.annotation.Nullable;
 
 import java.util.Objects;
 
@@ -58,6 +59,7 @@ public abstract class BaseEntityService<K, V extends GuildEntity, R extends Guil
 
     protected abstract V create(K id);
 
+    @Nullable
     protected abstract V get(K id);
 
     protected void cleanUp(){
