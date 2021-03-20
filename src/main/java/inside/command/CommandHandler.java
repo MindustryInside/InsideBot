@@ -114,7 +114,7 @@ public class CommandHandler{
         Mono<Tuple2<String, String>> text = Mono.justOrEmpty(prefix)
                 .filter(message::startsWith)
                 .map(s -> message.substring(s.length()).trim())
-                .zipWhen(s -> Mono.justOrEmpty(s.contains(" ") ? s.substring(0, s.indexOf(" ")) : s))
+                .zipWhen(s -> Mono.just(s.contains(" ") ? s.substring(0, s.indexOf(" ")) : s).map(String::toLowerCase))
                 .cache();
 
         Mono<Void> suggestion = text.flatMap(t -> {

@@ -16,6 +16,15 @@ import reactor.util.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/*
+ * All entity services are delay
+ * generators as they block threads!
+ * This is terrible, but r2dbc technology is too raw!
+ *
+ * We also have action services,
+ * shells that wrap synchronous
+ * code and work with asynchronous parts of code
+ */
 @Service
 public class EntityRetrieverImpl implements EntityRetriever{
     private static final Logger log = Loggers.getLogger(EntityRetriever.class);
