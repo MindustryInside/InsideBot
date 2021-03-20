@@ -2,6 +2,7 @@ package inside.command;
 
 import inside.command.model.*;
 import inside.data.service.*;
+import inside.service.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 

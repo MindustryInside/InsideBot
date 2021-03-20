@@ -1,4 +1,4 @@
-package inside.data.service;
+package inside.service;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.channel.MessageChannel;
@@ -6,6 +6,7 @@ import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.EmbedCreateSpec;
 import inside.data.entity.MessageInfo;
 import reactor.core.publisher.Mono;
+import reactor.util.annotation.Nullable;
 import reactor.util.context.ContextView;
 
 import java.util.function.Consumer;
@@ -45,9 +46,8 @@ public interface MessageService{
 
     boolean isAwaitEdit(Snowflake messageId);
 
+    @Nullable
     MessageInfo getById(Snowflake messageId);
-
-    boolean exists(Snowflake messageId);
 
     void save(MessageInfo message);
 

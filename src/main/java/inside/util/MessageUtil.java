@@ -38,6 +38,8 @@ public abstract class MessageUtil{
         return message == null || effectiveContent(message).isEmpty();
     }
 
+    /* TODO: Change #findClosest generics from String to CharSequence for better compatibility */
+
     @Nullable
     public static <T> T findClosest(Iterable<? extends T> all, Function<T, String> comp, String wrong){
         return findClosest(all, comp, wrong, DEFAULT_LEVENSHTEIN_DST);

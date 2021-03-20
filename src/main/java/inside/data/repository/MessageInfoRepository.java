@@ -8,8 +8,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface MessageInfoRepository extends GuildRepository<MessageInfo>{
 
-    boolean existsByMessageId(String messageId);
-
     MessageInfo findByMessageId(String messageId);
 
     void deleteByMessageId(String messageId);

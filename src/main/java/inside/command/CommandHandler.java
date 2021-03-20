@@ -4,6 +4,7 @@ import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
 import inside.command.model.*;
 import inside.data.service.*;
+import inside.service.MessageService;
 import inside.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

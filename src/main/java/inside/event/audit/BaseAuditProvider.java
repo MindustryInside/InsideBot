@@ -2,7 +2,7 @@ package inside.event.audit;
 
 import discord4j.core.spec.*;
 import inside.data.entity.*;
-import inside.data.service.*;
+import inside.service.*;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.springframework.beans.factory.annotation.Autowired;

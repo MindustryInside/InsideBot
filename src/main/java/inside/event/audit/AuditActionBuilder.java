@@ -7,6 +7,7 @@ import inside.data.entity.*;
 import inside.data.entity.base.NamedReference;
 import org.joda.time.DateTime;
 import reactor.core.publisher.Mono;
+import reactor.util.annotation.Nullable;
 import reactor.util.function.*;
 
 import java.io.InputStream;
@@ -60,7 +61,7 @@ public abstract class AuditActionBuilder{
         return this;
     }
 
-    public <T> AuditActionBuilder withAttribute(Attribute<T> key, T value){
+    public <T> AuditActionBuilder withAttribute(Attribute<T> key, @Nullable T value){
         action.attributes().put(key.name, getReferenceForObject(value));
         return this;
     }
@@ -73,7 +74,7 @@ public abstract class AuditActionBuilder{
         return this;
     }
 
-    private Object getReferenceForObject(Object object){
+    private Object getReferenceForObject(@Nullable Object object){
         if(object instanceof Member member){
             return getReference(member);
         }else if(object instanceof User user){

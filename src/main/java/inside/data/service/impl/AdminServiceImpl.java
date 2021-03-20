@@ -3,11 +3,11 @@ package inside.data.service.impl;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import discord4j.rest.util.Permission;
-import inside.Settings;
 import inside.data.entity.*;
 import inside.data.repository.AdminActionRepository;
 import inside.data.service.*;
 import inside.event.audit.*;
+import inside.service.DiscordService;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
 import reactor.util.*;
+import reactor.util.annotation.Nullable;
 
 import java.util.List;
 
@@ -32,19 +33,15 @@ public class AdminServiceImpl implements AdminService{
 
     private final DiscordService discordService;
 
-    private final Settings settings;
-
     private final AuditService auditService;
 
     public AdminServiceImpl(@Autowired AdminActionRepository repository,
                             @Autowired EntityRetriever entityRetriever,
                             @Autowired DiscordService discordService,
-                            @Autowired Settings settings,
                             @Autowired AuditService auditService){
         this.repository = repository;
         this.entityRetriever = entityRetriever;
         this.discordService = discordService;
-        this.settings = settings;
         this.auditService = auditService;
     }
 
@@ -62,7 +59,7 @@ public class AdminServiceImpl implements AdminService{
 
     @Override
     @Transactional
-    public Mono<Void> mute(Member admin, Member target, DateTime end, String reason){
+    public Mono<Void> mute(Member admin, Member target, DateTime end, @Nullable String reason){
         LocalMember adminLocalMember = entityRetriever.getMember(admin);
         LocalMember targetLocalMember = entityRetriever.getMember(target);
         AdminAction action = AdminAction.builder()
@@ -117,7 +114,7 @@ public class AdminServiceImpl implements AdminService{
 
     @Override
     @Transactional
-    public Mono<Void> warn(Member admin, Member target, String reason){
+    public Mono<Void> warn(Member admin, Member target, @Nullable String reason){
         LocalMember adminLocalMember = entityRetriever.getMember(admin);
         LocalMember targetLocalMember = entityRetriever.getMember(target);
         AdminConfig config = entityRetriever.getAdminConfigById(admin.getGuildId());
@@ -148,17 +145,11 @@ public class AdminServiceImpl implements AdminService{
 
     @Override
     public Mono<Boolean> isOwner(Member member){
-        if(member == null){
-            return Mono.empty();
-        }
         return member.getGuild().map(Guild::getOwnerId).map(ownerId -> member.getId().equals(ownerId));
     }
 
     @Override
     public Mono<Boolean> isAdmin(Member member){
-        if(member == null){
-            return Mono.empty();
-        }
         List<Snowflake> roles = entityRetriever.getAdminRoleIds(member.getGuildId());
 
         Mono<Boolean> isPermissed = member.getRoles().map(Role::getId)

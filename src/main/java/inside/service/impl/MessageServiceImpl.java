@@ -1,4 +1,4 @@
-package inside.data.service.impl;
+package inside.service.impl;
 
 import com.github.benmanes.caffeine.cache.*;
 import discord4j.common.util.Snowflake;
@@ -8,7 +8,7 @@ import discord4j.rest.util.AllowedMentions;
 import inside.Settings;
 import inside.data.entity.MessageInfo;
 import inside.data.repository.MessageInfoRepository;
-import inside.data.service.MessageService;
+import inside.service.MessageService;
 import inside.util.*;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -127,12 +127,6 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public boolean isAwaitEdit(Snowflake messageId){
         return Boolean.TRUE.equals(waitingMessage.getIfPresent(messageId));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public boolean exists(Snowflake messageId){
-        return repository.existsByMessageId(messageId.asString());
     }
 
     @Override
