@@ -1,8 +1,5 @@
 package inside.command;
 
-import arc.struct.StringMap;
-import arc.util.*;
-import arc.util.serialization.Base64Coder;
 import com.udojava.evalex.*;
 import discord4j.common.ReactorResources;
 import discord4j.common.util.Snowflake;
@@ -23,6 +20,7 @@ import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import reactor.bool.BooleanUtils;
+import reactor.core.Exceptions;
 import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
 import reactor.netty.http.client.HttpClient;
@@ -37,9 +35,10 @@ import java.util.function.Function;
 import java.util.function.*;
 import java.util.stream.*;
 
-import static inside.service.MessageService.ok;
+import static inside.command.Commands.TranslitCommand.*;
 import static inside.event.audit.Attribute.COUNT;
 import static inside.event.audit.BaseAuditProvider.MESSAGE_TXT;
+import static inside.service.MessageService.ok;
 import static inside.util.ContextUtil.*;
 
 public class Commands{
@@ -108,7 +107,8 @@ public class Commands{
                     .flatMap(channel -> channel.createMessage(
                             messageService.get(env.context(), "command.ping.testing")))
                     .flatMap(message -> message.edit(spec -> spec.setContent(
-                            messageService.format(env.context(), "command.ping.completed", Time.timeSinceMillis(start)))))
+                            messageService.format(env.context(), "command.ping.completed",
+                                    System.currentTimeMillis() - start))))
                     .then();
         }
     }
@@ -118,10 +118,13 @@ public class Commands{
         @Override
         public Mono<Void> execute(CommandEnvironment env, String[] args){
             boolean encode = args[0].matches("(?i)enc(ode)?");
-            Mono<String> result = Mono.fromCallable(() -> encode ? Base64Coder.encodeString(args[1]) : Base64Coder.decodeString(args[1]));
+            Mono<String> result = Mono.fromCallable(() ->
+                    encode ? Base64Coder.encodeString(args[1]) : Base64Coder.decodeString(args[1]));
+
             return result.onErrorResume(t -> t instanceof IllegalArgumentException,
                     t -> messageService.err(env.getReplyChannel(), t.getMessage()).then(Mono.empty()))
-                    .flatMap(str -> messageService.text(env.getReplyChannel(), MessageUtil.substringTo(str, Message.MAX_CONTENT_LENGTH)));
+                    .flatMap(str -> messageService.text(env.getReplyChannel(),
+                            MessageUtil.substringTo(str, Message.MAX_CONTENT_LENGTH)));
         }
     }
 
@@ -175,6 +178,8 @@ public class Commands{
     public static class ReadCommand extends Command{
         private static final Logger log = Loggers.getLogger(ReadCommand.class);
 
+        private static final String IP_PATTERN = "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
+
         private static final int MAX_SIZE = 3145728; // 3mb
 
         private final HttpClient httpClient = ReactorResources.DEFAULT_HTTP_CLIENT.get();
@@ -197,13 +202,15 @@ public class Commands{
                                 String type = res.responseHeaders().get(HttpHeaderNames.CONTENT_TYPE).toLowerCase();
                                 if(res.status().equals(HttpResponseStatus.OK) && !type.contains("image") && !type.contains("video")){
                                     return Strings.parseLong(res.responseHeaders().get(HttpHeaderNames.CONTENT_LENGTH), 0) > MAX_SIZE ?
-                                    messageService.err(env.getReplyChannel(), "command.read.under-limit").then(Mono.never()) :
-                                    mono.asString(Strings.utf8);
+                                           messageService.err(env.getReplyChannel(), "command.read.under-limit").then(Mono.never()) :
+                                           mono.asString(Strings.utf8);
                                 }
                                 return Mono.empty();
                             }))
                     .onErrorResume(t -> true, t -> Mono.fromRunnable(() -> log.debug("Failed to request file.", t)))
                     .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.read.error").then(Mono.empty()))
+                    .map(content -> content.replaceAll(IP_PATTERN,
+                            messageService.get(env.context(), "command.read.ip-address")))
                     .map(content -> MessageUtil.substringTo(content, Message.MAX_CONTENT_LENGTH))
                     .flatMap(content -> messageService.text(env.getReplyChannel(), content));
         }
@@ -258,11 +265,11 @@ public class Commands{
 
     @DiscordCommand(key = "1337", params = "command.1337.params", description = "command.1337.description")
     public static class LeetCommand extends Command{
-        public static final StringMap rusLeetSpeak;
-        public static final StringMap latLeetSpeak;
+        public static final Map<String, String> rusLeetSpeak;
+        public static final Map<String, String> latLeetSpeak;
 
         static{
-            rusLeetSpeak = StringMap.of(
+            rusLeetSpeak = of(
                     "а", "4", "б", "6", "в", "8", "г", "g",
                     "д", "d", "е", "3", "ё", "3", "ж", "zh",
                     "з", "e", "и", "i", "й", "\\`i", "к", "k",
@@ -274,7 +281,7 @@ public class Commands{
                     "я", "9"
             );
 
-            latLeetSpeak = StringMap.of(
+            latLeetSpeak = of(
                     "a", "4", "b", "8", "c", "c", "d", "d",
                     "e", "3", "f", "ph", "g", "9", "h", "h",
                     "i", "1", "j", "g", "k", "k", "l", "l",
@@ -292,11 +299,11 @@ public class Commands{
         }
 
         public String leeted(String text, boolean lat){
-            StringMap map = lat ? latLeetSpeak : rusLeetSpeak;
+            Map<String, String> map = lat ? latLeetSpeak : rusLeetSpeak;
             UnaryOperator<String> get = s -> {
                 String result = map.get(s.toLowerCase());
                 if(result == null){
-                    result = map.findKey(s.toLowerCase(), false);
+                    result = translit.keySet().stream().filter(s::equalsIgnoreCase).findFirst().orElse(null);
                 }
                 return result != null ? s.chars().anyMatch(Character::isUpperCase) ? result.toUpperCase() : result : "";
             };
@@ -310,9 +317,9 @@ public class Commands{
             for(int i = 0; i < len; ){
                 String c = text.substring(i, i <= len - 2 ? i + 2 : i + 1);
                 String leeted = get.apply(c);
-                if(MessageUtil.isEmpty(leeted)){
+                if(Strings.isEmpty(leeted)){
                     leeted = get.apply(c.charAt(0) + "");
-                    result.append(MessageUtil.isEmpty(leeted) ? c.charAt(0) : leeted);
+                    result.append(Strings.isEmpty(leeted) ? c.charAt(0) : leeted);
                     i++;
                 }else{
                     result.append(leeted);
@@ -325,10 +332,10 @@ public class Commands{
 
     @DiscordCommand(key = "tr", params = "command.translit.params", description = "command.translit.description")
     public static class TranslitCommand extends Command{
-        public static final StringMap translit;
+        public static final Map<String, String> translit;
 
         static{
-            translit = StringMap.of(
+            translit = of(
                     "a", "а", "b", "б", "v", "в", "g", "г",
                     "d", "д", "e", "е", "yo", "ё", "zh", "ж",
                     "z", "з", "i", "и", "j", "й", "k", "к",
@@ -341,6 +348,17 @@ public class Commands{
             );
         }
 
+        @SuppressWarnings("unchecked")
+        public static <K, V> Map<K, V> of(Object... values) {
+            Map<K, V> map = new HashMap<>();
+
+            for(int i = 0; i < values.length / 2; ++i) {
+                map.put((K)values[i * 2], (V)values[i * 2 + 1]);
+            }
+
+            return Map.copyOf(map);
+        }
+
         @Override
         public Mono<Void> execute(CommandEnvironment env, String[] args){
             return messageService.text(env.getReplyChannel(), MessageUtil.substringTo(translit(args[0]), Message.MAX_CONTENT_LENGTH));
@@ -350,7 +368,7 @@ public class Commands{
             UnaryOperator<String> get = s -> {
                 String result = translit.get(s.toLowerCase());
                 if(result == null){
-                    result = translit.findKey(s.toLowerCase(), false);
+                    result = translit.keySet().stream().filter(s::equalsIgnoreCase).findFirst().orElse(null);
                 }
                 return result != null ? s.chars().anyMatch(Character::isUpperCase) ? result.toUpperCase() : result : "";
             };
@@ -364,9 +382,9 @@ public class Commands{
             for(int i = 0; i < len; ){
                 String c = text.substring(i, i <= len - 2 ? i + 2 : i + 1);
                 String translited = get.apply(c);
-                if(MessageUtil.isEmpty(translited)){
+                if(Strings.isEmpty(translited)){
                     translited = get.apply(c.charAt(0) + "");
-                    result.append(MessageUtil.isEmpty(translited) ? c.charAt(0) : translited);
+                    result.append(Strings.isEmpty(translited) ? c.charAt(0) : translited);
                     i++;
                 }else{
                     result.append(translited);
@@ -421,7 +439,7 @@ public class Commands{
                     .flatMap(guildConfig -> Mono.defer(() -> {
                         DateTimeZone timeZone = find(args[0]);
                         if(timeZone == null){
-                            String suggest = MessageUtil.findClosest(DateTimeZone.getAvailableIDs(), Function.identity(), args[0]);
+                            String suggest = Strings.findClosest(DateTimeZone.getAvailableIDs(), Function.identity(), args[0]);
 
                             if(suggest != null){
                                 return messageService.err(channel, "command.config.unknown-timezone.suggest", suggest);
@@ -556,7 +574,7 @@ public class Commands{
                     .withLocale(env.context().get(KEY_LOCALE))
                     .withZone(env.context().get(KEY_TIMEZONE));
 
-            StringInputStream input = new StringInputStream();
+            ReusableByteInputStream input = new ReusableByteInputStream();
             BiConsumer<Message, Member> appendInfo = (message, member) -> {
                 result.append("[").append(formatter.print(message.getTimestamp().toEpochMilli())).append("] ");
                 if(DiscordUtil.isBot(member)){
@@ -625,7 +643,7 @@ public class Commands{
                             return messageService.err(channel, "command.admin.warn.self-user");
                         }
 
-                        if(!MessageUtil.isEmpty(reason) && reason.length() >= 512){
+                        if(!Strings.isEmpty(reason) && reason.length() >= 512){
                             return messageService.err(channel, "common.string-limit", 512);
                         }
 

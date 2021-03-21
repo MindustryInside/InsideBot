@@ -1,6 +1,5 @@
 package inside.util;
 
-import arc.util.Strings;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import org.joda.time.DateTime;
@@ -8,14 +7,12 @@ import reactor.util.annotation.Nullable;
 
 import java.time.*;
 import java.time.temporal.*;
-import java.util.*;
-import java.util.function.Function;
+import java.util.Objects;
 import java.util.regex.*;
 
 import static java.util.regex.Pattern.compile;
 
 public abstract class MessageUtil{
-    private static final int DEFAULT_LEVENSHTEIN_DST = 3;
 
     private static final Pattern timeUnitPattern = compile(
             "^" +
@@ -30,35 +27,8 @@ public abstract class MessageUtil{
 
     private MessageUtil(){}
 
-    public static boolean isEmpty(@Nullable CharSequence cs){
-        return cs == null || cs.length() == 0;
-    }
-
     public static boolean isEmpty(@Nullable Message message){
         return message == null || effectiveContent(message).isEmpty();
-    }
-
-    /* TODO: Change #findClosest generics from String to CharSequence for better compatibility */
-
-    @Nullable
-    public static <T> T findClosest(Iterable<? extends T> all, Function<T, String> comp, String wrong){
-        return findClosest(all, comp, wrong, DEFAULT_LEVENSHTEIN_DST);
-    }
-
-    @Nullable
-    public static <T> T findClosest(Iterable<? extends T> all, Function<T, String> comp, String wrong, int max){
-        int min = 0;
-        T closest = null;
-
-        for(T t : all){
-            int dst = Strings.levenshtein(comp.apply(t), wrong);
-            if(dst < max && (closest == null || dst < min)){
-                min = dst;
-                closest = t;
-            }
-        }
-
-        return closest;
     }
 
     public static String substringTo(String message, int maxLength){
@@ -70,7 +40,7 @@ public abstract class MessageUtil{
         Objects.requireNonNull(message, "message");
 
         StringBuilder builder = new StringBuilder();
-        if(!isEmpty(message.getContent())){
+        if(!Strings.isEmpty(message.getContent())){
             builder.append(message.getContent());
         }
 
@@ -85,28 +55,13 @@ public abstract class MessageUtil{
         return Strings.parseInt(message) > 0;
     }
 
-    public static boolean canParseId(String message){
-        try{
-            Snowflake.of(message);
-            return true;
-        }catch(Throwable t){
-            return false;
-        }
-    }
-
-    public static boolean canParseLong(String message){
-        try{
-            Long.parseLong(message);
-            return true;
-        }catch(Throwable t){
-            return false;
-        }
-    }
-
     @Nullable
     public static Snowflake parseUserId(String message){
-        message = message.replaceAll("[<>@!]", "");
-        return canParseId(message) ? Snowflake.of(message) : null;
+        try{
+            return Snowflake.of(message.replaceAll("[<>@!]", ""));
+        }catch(Throwable t){
+            return null;
+        }
     }
 
     @Nullable
@@ -128,6 +83,6 @@ public abstract class MessageUtil{
     }
 
     private static <T extends Temporal> T addUnit(T instant, ChronoUnit unit, String amount){
-        return canParseLong(amount) ? unit.addTo(instant, Long.parseLong(amount)) : instant;
+        return unit.addTo(instant, Strings.parseLong(amount, 0));
     }
 }
