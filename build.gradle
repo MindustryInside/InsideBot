@@ -13,7 +13,6 @@ repositories{
 }
 
 ext{
-    arc_version = 'v125.1'
     joda_version = 'v2.10.10'
     caffeine_version = '3.0.1'
     evalex_version = '2.5'
@@ -29,7 +28,6 @@ tasks.withType(JavaCompile){
 
 dependencies{
     implementation "com.discord4j.discord4j:discord4j-core:master-SNAPSHOT"
-    implementation "com.github.Anuken.Arc:arc-core:$arc_version"
     implementation "com.github.JodaOrg:joda-time:$joda_version"
     implementation "com.github.ben-manes.caffeine:caffeine:$caffeine_version"
     implementation "com.udojava:EvalEx:$evalex_version"

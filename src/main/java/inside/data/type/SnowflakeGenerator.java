@@ -1,7 +1,7 @@
 package inside.data.type;
 
-import arc.util.Strings;
 import discord4j.common.util.Snowflake;
+import inside.util.Strings;
 import org.hibernate.*;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.id.*;

@@ -118,7 +118,7 @@ public class CommandHandler{
                 .cache();
 
         Mono<Void> suggestion = text.flatMap(t -> {
-            CommandInfo closest = MessageUtil.findClosest(commandList(), CommandInfo::text, t.getT1());
+            CommandInfo closest = Strings.findClosest(commandList(), CommandInfo::text, t.getT1());
 
             messageService.awaitEdit(env.getMessage().getId());
             if(closest != null){
