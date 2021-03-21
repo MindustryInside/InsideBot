@@ -75,24 +75,26 @@ public class Commands{
             Snowflake guildId = env.getAuthorAsMember().getGuildId();
             String prefix = entityRetriever.getPrefix(guildId);
 
+            Collector<CommandInfo, StringBuilder, StringBuilder> collector = Collector.of(StringBuilder::new,
+                    (builder, commandInfo) -> {
+                        builder.append(prefix);
+                        builder.append("**");
+                        builder.append(commandInfo.text());
+                        builder.append("**");
+                        if(commandInfo.params().length > 0){
+                            builder.append(" *");
+                            builder.append(messageService.get(env.context(), commandInfo.paramText()));
+                            builder.append("*");
+                        }
+                        builder.append(" - ");
+                        builder.append(messageService.get(env.context(), commandInfo.description()));
+                        builder.append("\n");
+                    },
+                    StringBuilder::append);
+
             return Flux.fromIterable(handler.commandList())
                     .filterWhen(commandInfo -> handler.commands().get(commandInfo.text()).apply(env))
-                    .collect(Collector.of(StringBuilder::new,
-                            (builder, commandInfo) -> {
-                                builder.append(prefix);
-                                builder.append("**");
-                                builder.append(commandInfo.text());
-                                builder.append("**");
-                                if(commandInfo.params().length > 0){
-                                    builder.append(" *");
-                                    builder.append(messageService.get(env.context(), commandInfo.paramText()));
-                                    builder.append("*");
-                                }
-                                builder.append(" - ");
-                                builder.append(messageService.get(env.context(), commandInfo.description()));
-                                builder.append("\n");
-                            },
-                            StringBuilder::append))
+                    .collect(collector)
                     .map(builder -> builder.append(messageService.get(env.context(), "command.help.disclaimer.user")))
                     .flatMap(builder -> messageService.info(env.getReplyChannel(),"command.help", builder.toString()));
         }
@@ -439,7 +441,7 @@ public class Commands{
                     .flatMap(guildConfig -> Mono.defer(() -> {
                         DateTimeZone timeZone = find(args[0]);
                         if(timeZone == null){
-                            String suggest = Strings.findClosest(DateTimeZone.getAvailableIDs(), Function.identity(), args[0]);
+                            String suggest = Strings.findClosest(DateTimeZone.getAvailableIDs(), args[0]);
 
                             if(suggest != null){
                                 return messageService.err(channel, "command.config.unknown-timezone.suggest", suggest);

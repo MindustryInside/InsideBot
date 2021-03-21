@@ -88,7 +88,7 @@ public abstract class Strings{
         }
     }
 
-    public static int levenshtein(String x, String y){
+    public static int levenshtein(CharSequence x, CharSequence y){
         int[][] dp = new int[x.length() + 1][y.length() + 1];
 
         for(int i = 0; i <= x.length(); i++){
@@ -108,15 +108,18 @@ public abstract class Strings{
         return dp[x.length()][y.length()];
     }
 
-    /* TODO: Change #findClosest generics from String to CharSequence for better compatibility */
+    @Nullable
+    public static <T extends CharSequence> T findClosest(Iterable<? extends T> all, CharSequence wrong){
+        return findClosest(all, Function.identity(), wrong);
+    }
 
     @Nullable
-    public static <T> T findClosest(Iterable<? extends T> all, Function<T, String> comp, String wrong){
+    public static <T> T findClosest(Iterable<? extends T> all, Function<T, ? extends CharSequence> comp, CharSequence wrong){
         return findClosest(all, comp, wrong, DEFAULT_LEVENSHTEIN_DST);
     }
 
     @Nullable
-    public static <T> T findClosest(Iterable<? extends T> all, Function<T, String> comp, String wrong, int max){
+    public static <T> T findClosest(Iterable<? extends T> all, Function<T, ? extends CharSequence> comp, CharSequence wrong, int max){
         int min = 0;
         T closest = null;
 
