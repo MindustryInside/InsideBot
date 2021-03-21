@@ -20,7 +20,6 @@ import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import reactor.bool.BooleanUtils;
-import reactor.core.Exceptions;
 import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
 import reactor.netty.http.client.HttpClient;
@@ -31,7 +30,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.function.Function;
 import java.util.function.*;
 import java.util.stream.*;
 
@@ -188,27 +186,19 @@ public class Commands{
 
         @Override
         public Mono<Void> execute(CommandEnvironment env, String[] args){
-            Mono<String> attachmentUrl = Mono.justOrEmpty(env.getMessage().getAttachments().stream().findFirst())
-                    .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.read.empty-attachments").then(Mono.never()))
-                    .filter(attachment -> attachment.getSize() < MAX_SIZE)
-                    .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.read.under-limit").then(Mono.never()))
-                    .filter(attachment -> attachment.getWidth().isEmpty())
-                    .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.read.image").then(Mono.empty()))
-                    .map(Attachment::getUrl);
-
-            return Mono.justOrEmpty(args.length > 0 ? args[0] : null)
-                    .switchIfEmpty(attachmentUrl)
-                    .flatMap(url -> httpClient.get()
-                            .uri(url)
-                            .responseSingle((res, mono) -> {
-                                String type = res.responseHeaders().get(HttpHeaderNames.CONTENT_TYPE).toLowerCase();
-                                if(res.status().equals(HttpResponseStatus.OK) && !type.contains("image") && !type.contains("video")){
-                                    return Strings.parseLong(res.responseHeaders().get(HttpHeaderNames.CONTENT_LENGTH), 0) > MAX_SIZE ?
-                                           messageService.err(env.getReplyChannel(), "command.read.under-limit").then(Mono.never()) :
-                                           mono.asString(Strings.utf8);
-                                }
-                                return Mono.empty();
-                            }))
+            return Mono.just(args[0]).flatMap(url -> httpClient.get()
+                    .uri(url)
+                    .responseSingle((res, mono) -> {
+                        String type = res.responseHeaders().get(HttpHeaderNames.CONTENT_TYPE).toLowerCase();
+                        long size = Strings.parseLong(res.responseHeaders().get(HttpHeaderNames.CONTENT_LENGTH));
+                        if(res.status().equals(HttpResponseStatus.OK) && !type.contains("audio") && !type.contains("image")
+                                && !type.contains("video") && size != Long.MIN_VALUE){
+                            return size > MAX_SIZE ?
+                                   messageService.err(env.getReplyChannel(), "command.read.under-limit").then(Mono.never()) :
+                                   mono.asString(Strings.utf8);
+                        }
+                        return Mono.empty();
+                    }))
                     .onErrorResume(t -> true, t -> Mono.fromRunnable(() -> log.debug("Failed to request file.", t)))
                     .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.read.error").then(Mono.empty()))
                     .map(content -> content.replaceAll(IP_PATTERN,
