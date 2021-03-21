@@ -92,7 +92,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                 KEY_TIMEZONE, entityRetriever.getTimeZone(guildId));
 
         return Mono.zip(event.getMessage(), event.getChannel().ofType(TextChannel.class))
-                .filter(predicate((message, channel) -> !message.isTts() && !message.isPinned()))
+                .filter(predicate((message, channel) -> !message.isTts()))
                 .zipWhen(tuple -> tuple.getT1().getAuthorAsMember(),
                         (tuple, user) -> Tuples.of(tuple.getT1(), tuple.getT2(), user))
                 .filter(predicate((message, channel, member) -> DiscordUtil.isNotBot(member)))
@@ -113,6 +113,10 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                     String oldContent = messageService.decrypt(info.content(), message.getId(), message.getChannelId());
                     info.content(messageService.encrypt(newContent, message.getId(), message.getChannelId()));
                     messageService.save(info);
+
+                    if(newContent.equals(oldContent)){ // message was pinned
+                        return Mono.empty();
+                    }
 
                     Mono<?> command = Mono.defer(() -> {
                         if(messageService.isAwaitEdit(message.getId())){
