@@ -24,6 +24,10 @@ public abstract class Command implements Function<CommandRequest, Mono<Boolean>>
         return Mono.empty();
     }
 
+    public Mono<Void> help(CommandEnvironment env){
+        return messageService.text(env.getReplyChannel(), "command.help.default");
+    }
+
     protected DiscordCommand getAnnotation(){
         return getClass().getDeclaredAnnotation(DiscordCommand.class);
     }
