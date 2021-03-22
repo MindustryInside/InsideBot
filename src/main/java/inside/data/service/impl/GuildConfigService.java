@@ -11,9 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.util.annotation.Nullable;
 
 @Service
-public class GuildConfigServiceImpl extends BaseEntityService<Snowflake, GuildConfig, GuildConfigRepository>{
+public class GuildConfigService extends BaseEntityService<Snowflake, GuildConfig, GuildConfigRepository>{
 
-    protected GuildConfigServiceImpl(GuildConfigRepository repository, Settings settings){
+    protected GuildConfigService(GuildConfigRepository repository, Settings settings){
         super(repository, settings);
     }
 

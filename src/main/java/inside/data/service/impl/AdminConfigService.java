@@ -11,9 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.util.annotation.Nullable;
 
 @Service
-public class AdminConfigServiceImpl extends BaseEntityService<Snowflake, AdminConfig, AdminConfigRepository>{
+public class AdminConfigService extends BaseEntityService<Snowflake, AdminConfig, AdminConfigRepository>{
 
-    protected AdminConfigServiceImpl(AdminConfigRepository repository, Settings settings){
+    protected AdminConfigService(AdminConfigRepository repository, Settings settings){
         super(repository, settings);
     }
 
