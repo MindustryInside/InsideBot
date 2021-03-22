@@ -93,7 +93,9 @@ public class Commands{
             return Flux.fromIterable(handler.commandList())
                     .filterWhen(commandInfo -> handler.commands().get(commandInfo.text()).apply(env))
                     .collect(collector)
-                    .map(builder -> builder.append(messageService.get(env.context(), "command.help.disclaimer.user")))
+                    .map(builder -> builder.append(messageService.get(env.context(), "command.help.disclaimer.user"))
+                            .append("\n")
+                            .append(messageService.format(env.context(), "command.help.disclaimer.help", prefix)))
                     .flatMap(builder -> messageService.info(env.getReplyChannel(),"command.help", builder.toString()));
         }
     }
@@ -157,6 +159,13 @@ public class Commands{
                     t -> messageService.error(env.getReplyChannel(), "command.math.error.title", t.getMessage()).then(Mono.empty()))
                     .flatMap(decimal -> messageService.text(env.getReplyChannel(),
                             MessageUtil.substringTo(decimal.toString(), Message.MAX_CONTENT_LENGTH)));
+        }
+
+        @Override
+        public Mono<Void> help(CommandEnvironment env){
+            String prefix = entityRetriever.getPrefix(env.getAuthorAsMember().getGuildId());
+            return messageService.info(env.getReplyChannel(), messageService.get(env.context(), "command.help.title"),
+                    "command.math.help", prefix);
         }
 
         private static final LazyOperator shiftRightOperator = new AbstractOperator(">>", 30, true){
