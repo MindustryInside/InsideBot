@@ -138,11 +138,11 @@ public class CommandHandler{
                     String argsres = info.paramText().isEmpty() ? "command.response.incorrect-arguments.empty" :
                                      "command.response.incorrect-arguments";
 
-                    while(true){
-                        if(argstr.equalsIgnoreCase("help")){
-                            return command.apply(env).flatMap(bool -> bool ? command.help(env) : Mono.empty());
-                        }
+                    if(argstr.equalsIgnoreCase("help")){
+                        return command.apply(env).flatMap(bool -> bool ? command.help(env) : Mono.empty());
+                    }
 
+                    while(true){
                         if(index >= info.params().length && !argstr.isEmpty()){
                             messageService.awaitEdit(env.getMessage().getId());
                             return messageService.error(channel, "command.response.many-arguments.title",
