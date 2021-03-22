@@ -1,7 +1,9 @@
 package inside.event.audit;
 
+import discord4j.core.object.entity.channel.VoiceChannel;
 import discord4j.core.spec.*;
 import inside.data.entity.*;
+import inside.data.entity.base.NamedReference;
 import inside.service.*;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
@@ -36,12 +38,28 @@ public abstract class BaseAuditProvider implements AuditProvider{
                 .then();
     }
 
-    // oh no, why we use DateTime#now, we have an action timestamp(?)
-    protected void addTimestamp(ContextView context, EmbedCreateSpec embed){
+    protected void addTimestamp(ContextView context, AuditAction action, EmbedCreateSpec embed){
         embed.setFooter(DateTimeFormat.longDateTime()
                 .withLocale(context.get(KEY_LOCALE))
                 .withZone(context.get(KEY_TIMEZONE))
-                .print(DateTime.now()), null);
+                .print(action.timestamp()), null);
+    }
+
+    protected String getChannelReference(ContextView context, NamedReference reference){
+        return getReferenceContent(context, reference, true);
+    }
+
+    protected String getUserReference(ContextView context, NamedReference reference){
+        return getReferenceContent(context, reference, false);
+    }
+
+    protected String getShortReference(ContextView context, NamedReference reference){
+        return messageService.format(context, "audit.reference.short", reference.name());
+    }
+
+    private String getReferenceContent(ContextView context, NamedReference reference, boolean channel){
+        return messageService.format(context, "audit.reference", reference.name(),
+                (channel ? "<#" : "<@") + reference.id() + ">");
     }
 
     protected abstract void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed);

@@ -65,7 +65,9 @@ public abstract class Strings{
                     return defaultValue;
                 }
 
-                if(len == 1) return defaultValue;
+                if(len == 1){
+                    return defaultValue;
+                }
 
                 ++i;
             }
