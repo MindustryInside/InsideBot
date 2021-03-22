@@ -13,10 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.util.annotation.Nullable;
 
 @Service
-public class MemberServiceImpl extends BaseEntityService<Member, LocalMember, LocalMemberRepository>{
+public class MemberService extends BaseEntityService<Member, LocalMember, LocalMemberRepository>{
 
-    protected MemberServiceImpl(@Autowired LocalMemberRepository repository,
-                                @Autowired Settings settings){
+    protected MemberService(@Autowired LocalMemberRepository repository,
+                            @Autowired Settings settings){
         super(repository, settings);
     }
 

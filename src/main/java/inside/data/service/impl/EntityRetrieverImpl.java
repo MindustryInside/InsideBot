@@ -1,16 +1,12 @@
 package inside.data.service.impl;
 
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.entity.*;
-import inside.Settings;
+import discord4j.core.object.entity.Member;
 import inside.data.entity.*;
-import inside.data.repository.*;
-import inside.data.service.*;
-import inside.util.LocaleUtil;
-import org.joda.time.*;
+import inside.data.service.EntityRetriever;
+import org.joda.time.DateTimeZone;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
 import reactor.util.*;
 
 import java.util.*;
@@ -29,16 +25,16 @@ import java.util.stream.Collectors;
 public class EntityRetrieverImpl implements EntityRetriever{
     private static final Logger log = Loggers.getLogger(EntityRetriever.class);
 
-    private final BaseEntityService<Snowflake, GuildConfig, GuildConfigRepository> guildConfigService;
+    private final GuildConfigService guildConfigService;
 
-    private final BaseEntityService<Snowflake, AdminConfig, AdminConfigRepository> adminConfigService;
+    private final AdminConfigService adminConfigService;
 
-    private final BaseEntityService<Member, LocalMember, LocalMemberRepository> memberService;
+    private final MemberService memberService;
 
     public EntityRetrieverImpl(
-            @Autowired BaseEntityService<Snowflake, GuildConfig, GuildConfigRepository> guildConfigService,
-            @Autowired BaseEntityService<Snowflake, AdminConfig, AdminConfigRepository> adminConfigService,
-            @Autowired BaseEntityService<Member, LocalMember, LocalMemberRepository> memberService
+            @Autowired GuildConfigService guildConfigService,
+            @Autowired AdminConfigService adminConfigService,
+            @Autowired MemberService memberService
     ){
         this.guildConfigService = guildConfigService;
         this.adminConfigService = adminConfigService;
