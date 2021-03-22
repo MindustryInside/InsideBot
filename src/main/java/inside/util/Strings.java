@@ -30,11 +30,11 @@ public abstract class Strings{
         }
     }
 
-    public static long parseLong(String s){
+    public static long parseLong(@Nullable String s){
         return parseLong(s, Long.MIN_VALUE);
     }
 
-    public static long parseLong(String s, long defaultValue){
+    public static long parseLong(@Nullable String s, long defaultValue){
         return parseLong(s, 10, defaultValue);
     }
 
@@ -52,7 +52,7 @@ public abstract class Strings{
 
         boolean negative = false;
         int i = start, len = end - start;
-        long limit = -9223372036854775807L;
+        long limit = Long.MIN_VALUE;
         if(len <= 0){
             return defaultValue;
         }else{
@@ -60,7 +60,7 @@ public abstract class Strings{
             if(firstChar < '0'){
                 if(firstChar == '-'){
                     negative = true;
-                    limit = -9223372036854775808L;
+                    limit = Long.MIN_VALUE;
                 }else if(firstChar != '+'){
                     return defaultValue;
                 }
