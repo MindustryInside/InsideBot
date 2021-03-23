@@ -1,7 +1,10 @@
 package inside.util;
 
+import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import reactor.util.annotation.Nullable;
+
+import java.util.Objects;
 
 public abstract class DiscordUtil{
 
@@ -13,5 +16,15 @@ public abstract class DiscordUtil{
 
     public static boolean isNotBot(@Nullable User user){
         return !isBot(user);
+    }
+
+    public static String getUserMention(Snowflake id){
+        Objects.requireNonNull(id, "id");
+        return "<@" + id.asString() + ">";
+    }
+
+    public static String getMemberMention(Snowflake id){
+        Objects.requireNonNull(id, "id");
+        return "<@!" + id.asString() + ">";
     }
 }
