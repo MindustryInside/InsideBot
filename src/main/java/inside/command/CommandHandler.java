@@ -146,7 +146,7 @@ public class CommandHandler{
                     String argsres = info.paramText().isEmpty() ? "command.response.incorrect-arguments.empty" :
                                      "command.response.incorrect-arguments";
 
-                    if(argstr.equalsIgnoreCase("help")){
+                    if(argstr.matches("(?i)(help|\\?)")){
                         return command.apply(env).flatMap(bool -> bool ? command.help(env) : Mono.empty());
                     }
 
