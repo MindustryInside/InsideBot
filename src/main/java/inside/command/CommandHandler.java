@@ -1,5 +1,6 @@
 package inside.command;
 
+import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
 import inside.command.model.*;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
+import reactor.util.*;
 import reactor.util.context.Context;
 import reactor.util.function.Tuple2;
 
@@ -20,6 +22,7 @@ import static inside.util.ContextUtil.KEY_LOCALE;
 
 @Service
 public class CommandHandler{
+    private static final Logger log = Loggers.getLogger(CommandHandler.class);
 
     private final EntityRetriever entityRetriever;
 
@@ -107,12 +110,17 @@ public class CommandHandler{
         String message = env.getMessage().getContent();
         Mono<Guild> guild = env.getMessage().getGuild();
         Mono<TextChannel> channel = env.getReplyChannel().ofType(TextChannel.class);
-        Mono<User> self = env.getClient().getSelf();
+        Snowflake selfId = env.getClient().getSelfId();
 
         String prefix = entityRetriever.getPrefix(env.getAuthorAsMember().getGuildId());
 
-        Mono<Tuple2<String, String>> text = Mono.justOrEmpty(prefix)
+        Mono<String> mention = Mono.just(message)
+                .filter(s -> env.getMessage().getUserMentionIds().contains(selfId))
+                .map(s -> s.startsWith(DiscordUtil.getMemberMention(selfId)) ? DiscordUtil.getMemberMention(selfId) : DiscordUtil.getUserMention(selfId));
+
+        Mono<Tuple2<String, String>> text = Mono.just(prefix)
                 .filter(message::startsWith)
+                .switchIfEmpty(mention)
                 .map(s -> message.substring(s.length()).trim())
                 .zipWhen(s -> Mono.just(s.contains(" ") ? s.substring(0, s.indexOf(" ")) : s).map(String::toLowerCase))
                 .cache();
@@ -191,8 +199,8 @@ public class CommandHandler{
                             .then(Mono.empty());
 
                     return Flux.fromIterable(info.permissions())
-                            .filterWhen(permission -> channel.zipWith(self.map(User::getId))
-                                    .flatMap(TupleUtils.function((targetChannel, selfId) -> targetChannel.getEffectivePermissions(selfId)))
+                            .filterWhen(permission -> channel.flatMap(targetChannel ->
+                                    targetChannel.getEffectivePermissions(selfId))
                                     .map(set -> !set.contains(permission)))
                             .map(permission -> messageService.getEnum(env.context(), permission))
                             .collect(Collectors.joining("\n"))
