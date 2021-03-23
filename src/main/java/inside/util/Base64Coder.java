@@ -250,14 +250,16 @@ public class Base64Coder{
             int i2 = ip < iEnd ? in[ip++] : 'A';
             int i3 = ip < iEnd ? in[ip++] : 'A';
             if(i0 > 127 || i1 > 127 || i2 > 127 || i3 > 127){
-                throw new IllegalArgumentException("Illegal character in Base64 encoded data. One of the four characters are the latter characters in the ASCII table!");
+                throw new IllegalArgumentException("Illegal character in Base64 encoded data. " +
+                        "One of the four characters are the latter characters in the ASCII table!");
             }
             int b0 = inverseCharMap[i0];
             int b1 = inverseCharMap[i1];
             int b2 = inverseCharMap[i2];
             int b3 = inverseCharMap[i3];
             if(b0 < 0 || b1 < 0 || b2 < 0 || b3 < 0){
-                throw new IllegalArgumentException("Illegal character in Base64 encoded data. One of the 4 characters are first characters in the ASCII table!!");
+                throw new IllegalArgumentException("Illegal character in Base64 encoded data. " +
+                        "One of the 4 characters are first characters in the ASCII table!");
             }
             int o0 = (b0 << 2) | (b1 >>> 4);
             int o1 = ((b1 & 0xf) << 4) | (b2 >>> 2);

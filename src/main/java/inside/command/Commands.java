@@ -128,6 +128,12 @@ public class Commands{
                     .flatMap(str -> messageService.text(env.getReplyChannel(),
                             MessageUtil.substringTo(str, Message.MAX_CONTENT_LENGTH)));
         }
+
+        @Override
+        public Mono<Void> help(CommandEnvironment env){
+            String prefix = entityRetriever.getPrefix(env.getAuthorAsMember().getGuildId());
+            return messageService.info(env.getReplyChannel(), "command.help.title", "command.base64.help", prefix);
+        }
     }
 
     @DiscordCommand(key = "avatar", params = "command.avatar.params", description = "command.avatar.description")
@@ -164,8 +170,7 @@ public class Commands{
         @Override
         public Mono<Void> help(CommandEnvironment env){
             String prefix = entityRetriever.getPrefix(env.getAuthorAsMember().getGuildId());
-            return messageService.info(env.getReplyChannel(), messageService.get(env.context(), "command.help.title"),
-                    "command.math.help", prefix);
+            return messageService.info(env.getReplyChannel(), "command.help.title", "command.math.help", prefix);
         }
 
         private static final LazyOperator shiftRightOperator = new AbstractOperator(">>", 30, true){
