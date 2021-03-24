@@ -22,8 +22,6 @@ import static inside.util.ContextUtil.KEY_LOCALE;
 
 @Service
 public class CommandHandler{
-    private static final Logger log = Loggers.getLogger(CommandHandler.class);
-
     private final EntityRetriever entityRetriever;
 
     private final MessageService messageService;
