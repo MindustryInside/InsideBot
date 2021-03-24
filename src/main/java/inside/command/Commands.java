@@ -21,6 +21,7 @@ import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import reactor.bool.BooleanUtils;
+import reactor.core.Exceptions;
 import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
 import reactor.netty.http.client.HttpClient;
@@ -196,7 +197,7 @@ public class Commands{
 
         private static final String IP_PATTERN = "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
 
-        private static final int MAX_SIZE = 3145728; // 3mb
+        private static final int MAX_SIZE = 3 * 1024 * 1024; // 3mb
 
         private final HttpClient httpClient = ReactorResources.DEFAULT_HTTP_CLIENT.get();
 
@@ -471,6 +472,7 @@ public class Commands{
             try{
                 return DateTimeZone.forID(id);
             }catch(Throwable t){
+                Exceptions.throwIfJvmFatal(t);
                 return null;
             }
         }
@@ -629,9 +631,6 @@ public class Commands{
     @DiscordCommand(key = "warn", params = "command.admin.warn.params", description = "command.admin.warn.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.BAN_MEMBERS})
     public static class WarnCommand extends ModeratorCommand{
-        @Autowired
-        private Settings settings;
-
         @Override
         public Mono<Void> execute(CommandEnvironment env, String[] args){
             Member author = env.getAuthorAsMember();
@@ -685,13 +684,15 @@ public class Commands{
 
             Collector<Tuple2<Long, AdminAction>, ImmutableEmbedData.Builder, EmbedData> collector = Collector.of(EmbedData::builder,
                     (spec, tuple) -> {
+                        long index = tuple.getT1();
+                        AdminAction warn = tuple.getT2();
                         String value = String.format("%s%n%s",
-                                messageService.format(env.context(), "common.admin", tuple.getT2().admin().effectiveName()),
-                                messageService.format(env.context(), "common.reason", tuple.getT2().reason()
+                                messageService.format(env.context(), "common.admin", warn.admin().effectiveName()),
+                                messageService.format(env.context(), "common.reason", warn.reason()
                                         .orElse(messageService.get(env.context(), "common.not-defined"))));
 
                         EmbedFieldData field = EmbedFieldData.builder()
-                                .name(String.format("%2s. %s", tuple.getT1() + 1, formatter.print(tuple.getT2().timestamp())))
+                                .name(String.format("%2s. %s", index + 1, formatter.print(warn.timestamp())))
                                 .value(value)
                                 .inline(true)
                                 .build();
@@ -701,9 +702,9 @@ public class Commands{
                     (builder0, builder1) -> builder0, /* non-mergable */
                     ImmutableEmbedData.Builder::build);
 
-            return Mono.justOrEmpty(targetId).flatMap(id -> env.getClient().getMemberById(guildId, id))
+            return Mono.justOrEmpty(targetId).filterWhen(id -> env.getClient().getMemberById(guildId, id).hasElement())
                     .switchIfEmpty(messageService.err(channel, "command.incorrect-name").then(Mono.empty()))
-                    .flatMapMany(target -> adminService.warnings(target.getGuildId(), target.getId()))
+                    .flatMapMany(id -> adminService.warnings(guildId, id))
                     .switchIfEmpty(messageService.text(channel, "command.admin.warnings.empty").then(Mono.never()))
                     .limitRequest(21).index()
                     .collect(collector).flatMap(embed -> messageService.info(channel, spec -> spec.from(embed)));
