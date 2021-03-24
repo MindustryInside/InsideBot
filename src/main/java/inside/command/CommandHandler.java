@@ -190,11 +190,10 @@ public class CommandHandler{
                                 argsres, prefix, info.text(), messageService.get(env.context(), info.paramText()));
                     }
 
-                    Mono<String> execute = Mono.just(command)
+                    Mono<Void> execute = Mono.just(command)
                             .filterWhen(c -> c.apply(env))
                             .flatMap(c -> command.execute(env, result.toArray(new String[0])))
-                            .doFirst(() -> messageService.removeEdit(env.getMessage().getId()))
-                            .then(Mono.empty());
+                            .doFirst(() -> messageService.removeEdit(env.getMessage().getId()));
 
                     return Flux.fromIterable(info.permissions())
                             .filterWhen(permission -> channel.flatMap(targetChannel ->
@@ -213,7 +212,7 @@ public class CommandHandler{
                                                     messageService.format(env.context(), "message.error.permission-denied.description", s))))
                                                     .then())
                                     .thenReturn(s))
-                            .switchIfEmpty(execute);
+                            .switchIfEmpty(execute.then(Mono.empty()));
                 })));
     }
 }

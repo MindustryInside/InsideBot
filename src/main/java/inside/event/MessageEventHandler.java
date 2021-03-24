@@ -70,7 +70,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
         Context context = Context.of(KEY_LOCALE, entityRetriever.getLocale(guildId),
                 KEY_TIMEZONE, entityRetriever.getTimeZone(guildId));
 
-        CommandEnvironment reference = CommandEnvironment.builder()
+        CommandEnvironment environment = CommandEnvironment.builder()
                 .message(message)
                 .member(member)
                 .context(context)
@@ -78,7 +78,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                 .channel(() -> channel)
                 .build();
 
-        return commandHandler.handleMessage(reference).and(messageInfo).contextWrite(context);
+        return commandHandler.handleMessage(environment).and(messageInfo).contextWrite(context);
     }
 
     @Override
@@ -120,14 +120,14 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
                     Mono<?> command = Mono.defer(() -> {
                         if(messageService.isAwaitEdit(message.getId())){
-                            CommandEnvironment reference = CommandEnvironment.builder()
+                            CommandEnvironment environment = CommandEnvironment.builder()
                                     .localMember(entityRetriever.getMember(member))
                                     .message(message)
                                     .member(member)
                                     .context(context)
                                     .build();
 
-                            return commandHandler.handleMessage(reference);
+                            return commandHandler.handleMessage(environment);
                         }
                         return Mono.empty();
                     });
@@ -142,7 +142,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
                     if(newContent.length() >= Field.MAX_VALUE_LENGTH || oldContent.length() >= Field.MAX_VALUE_LENGTH){
                         ReusableByteInputStream input = new ReusableByteInputStream();
-                        input.writeString(String.format("%s:%n%s%n%n%s:%n%s",
+                        input.writeString(String.format("%s%n%s%n%n%s%n%s",
                                 messageService.get(context, "audit.message.old-content.title"), oldContent,
                                 messageService.get(context, "audit.message.new-content.title"), newContent
                         ));
@@ -189,7 +189,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
                     if(content.length() >= Field.MAX_VALUE_LENGTH){
                         ReusableByteInputStream input = new ReusableByteInputStream();
-                        input.writeString(String.format("%s:%n%s",
+                        input.writeString(String.format("%s%n%s",
                                 messageService.get(context, "audit.message.deleted-content.title"), decrypted
                         ));
                         builder.withAttachment(MESSAGE_TXT, input);
