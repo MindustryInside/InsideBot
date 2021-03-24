@@ -7,6 +7,7 @@ import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
 import discord4j.core.object.presence.Presence;
 import discord4j.core.retriever.EntityRetrievalStrategy;
+import discord4j.discordjson.json.*;
 import discord4j.rest.util.Permission;
 import inside.Settings;
 import inside.command.model.*;
@@ -25,6 +26,7 @@ import reactor.function.TupleUtils;
 import reactor.netty.http.client.HttpClient;
 import reactor.util.*;
 import reactor.util.annotation.Nullable;
+import reactor.util.function.Tuple2;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -681,23 +683,30 @@ public class Commands{
                     .withLocale(env.context().get(KEY_LOCALE))
                     .withZone(env.context().get(KEY_TIMEZONE));
 
+            Collector<Tuple2<Long, AdminAction>, ImmutableEmbedData.Builder, EmbedData> collector = Collector.of(EmbedData::builder,
+                    (spec, tuple) -> {
+                        String value = String.format("%s%n%s",
+                                messageService.format(env.context(), "common.admin", tuple.getT2().admin().effectiveName()),
+                                messageService.format(env.context(), "common.reason", tuple.getT2().reason()
+                                        .orElse(messageService.get(env.context(), "common.not-defined"))));
+
+                        EmbedFieldData field = EmbedFieldData.builder()
+                                .name(String.format("%2s. %s", tuple.getT1() + 1, formatter.print(tuple.getT2().timestamp())))
+                                .value(value)
+                                .inline(true)
+                                .build();
+
+                        spec.addField(field);
+                    },
+                    (builder0, builder1) -> builder0, /* non-mergable */
+                    ImmutableEmbedData.Builder::build);
+
             return Mono.justOrEmpty(targetId).flatMap(id -> env.getClient().getMemberById(guildId, id))
                     .switchIfEmpty(messageService.err(channel, "command.incorrect-name").then(Mono.empty()))
-                    .flatMap(target -> {
-                        Flux<AdminAction> warnings = adminService.warnings(target.getGuildId(), target.getId()).limitRequest(21);
-
-                        Mono<Void> warningMessage = Mono.defer(() -> messageService.info(channel, embed ->
-                                warnings.index().subscribe(TupleUtils.consumer((index, warn) ->
-                                        embed.setTitle(messageService.format(env.context(), "command.admin.warnings.title", target.getDisplayName()))
-                                        .addField(String.format("%2s. %s", index + 1, formatter.print(warn.timestamp())), String.format("%s%n%s",
-                                        messageService.format(env.context(), "common.admin", warn.admin().effectiveName()),
-                                        messageService.format(env.context(), "common.reason", warn.reason()
-                                                .orElse(messageService.get(env.context(), "common.not-defined")))
-                                        ), true)))
-                                ));
-
-                        return warnings.hasElements().flatMap(bool -> !bool ? messageService.text(channel, "command.admin.warnings.empty") : warningMessage);
-                    });
+                    .flatMapMany(target -> adminService.warnings(target.getGuildId(), target.getId()))
+                    .switchIfEmpty(messageService.text(channel, "command.admin.warnings.empty").then(Mono.never()))
+                    .limitRequest(21).index()
+                    .collect(collector).flatMap(embed -> messageService.info(channel, spec -> spec.from(embed)));
         }
     }
 
