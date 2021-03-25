@@ -146,7 +146,8 @@ public class Commands{
             Mono<MessageChannel> channel = env.getReplyChannel();
             Snowflake targetId = args.length > 0 ? MessageUtil.parseUserId(args[0]) : env.getAuthorAsMember().getId();
 
-            return Mono.justOrEmpty(targetId).flatMap(id -> env.getClient().withRetrievalStrategy(EntityRetrievalStrategy.REST).getUserById(id))
+            return Mono.justOrEmpty(targetId).flatMap(id -> env.getClient()
+                    .withRetrievalStrategy(EntityRetrievalStrategy.REST).getUserById(id))
                     .switchIfEmpty(messageService.err(channel, "command.incorrect-name").then(Mono.empty()))
                     .flatMap(user -> messageService.info(channel, embed -> embed.setImage(user.getAvatarUrl() + "?size=512")
                             .setDescription(messageService.format(env.context(), "command.avatar.text", user.getUsername()))));
@@ -414,7 +415,7 @@ public class Commands{
             Member member = env.getAuthorAsMember();
             Mono<MessageChannel> channel = env.getReplyChannel();
 
-            return Mono.justOrEmpty(entityRetriever.getGuildById(member.getGuildId()))
+            return Mono.just(entityRetriever.getGuildById(member.getGuildId()))
                     .filterWhen(guildConfig -> adminService.isOwner(member))
                     .switchIfEmpty(messageService.err(channel, "command.owner-only").then(Mono.empty()))
                     .flatMap(guildConfig -> {
