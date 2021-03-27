@@ -209,8 +209,11 @@ public class Commands{
                     .responseSingle((res, mono) -> {
                         String type = res.responseHeaders().get(HttpHeaderNames.CONTENT_TYPE).toLowerCase();
                         long size = Strings.parseLong(res.responseHeaders().get(HttpHeaderNames.CONTENT_LENGTH));
+                        if(log.isTraceEnabled()){
+                            log.trace("type: {}, size: {}", type, size);
+                        }
                         if(res.status().equals(HttpResponseStatus.OK) && !type.contains("audio") && !type.contains("image")
-                                && !type.contains("video") && size != Long.MIN_VALUE){
+                                && !type.contains("video")){
                             return size > MAX_SIZE ?
                                    messageService.err(env.getReplyChannel(), "command.read.under-limit").then(Mono.never()) :
                                    mono.asString(Strings.utf8);
@@ -260,14 +263,14 @@ public class Commands{
 
         public String text2rus(String text){
             for(int i = 0; i < latPattern.length; i++){
-                text = text.replaceAll("(?u)" + latPattern[i], rusPattern[i]);
+                text = text.replaceAll(latPattern[i], rusPattern[i]);
             }
             return text;
         }
 
         public String text2lat(String text){
             for(int i = 0; i < rusPattern.length; i++){
-                text = text.replaceAll("(?u)" + rusPattern[i], latPattern[i]);
+                text = text.replaceAll(rusPattern[i], latPattern[i]);
             }
             return text;
         }
@@ -551,9 +554,9 @@ public class Commands{
                             return messageService.err(channel, "common.string-limit", 512);
                         }
 
-                        return adminService.mute(author, member, delay, reason);
-                    }))
-                    .and(env.getMessage().addReaction(ok));
+                        return adminService.mute(author, member, delay, reason)
+                                .and(env.getMessage().addReaction(ok));
+                    }));
         }
     }
 
@@ -647,7 +650,7 @@ public class Commands{
                     .flatMap(member -> {
                         String reason = args.length > 1 ? args[1].trim() : null;
 
-                        if(Objects.equals(author, member)){
+                        if(author.equals(member)){
                             return messageService.err(channel, "command.admin.warn.self-user");
                         }
 
@@ -755,13 +758,13 @@ public class Commands{
             Snowflake guildId = env.getAuthorAsMember().getGuildId();
 
             if(entityRetriever.getMuteRoleId(guildId).isEmpty()){
-                return messageService.err(channel, messageService.get(env.context(), "command.disabled.mute"));
+                return messageService.err(channel, "command.disabled.mute");
             }
 
             return Mono.justOrEmpty(targetId).flatMap(id -> env.getClient().getMemberById(guildId, id))
                     .switchIfEmpty(messageService.err(channel, "command.incorrect-name").then(Mono.empty()))
                     .filterWhen(adminService::isMuted)
-                    .flatMap(target -> adminService.unmute(target).thenReturn(target))
+                    .flatMap(target -> adminService.unmute(target).and(env.getMessage().addReaction(ok)).thenReturn(target))
                     .switchIfEmpty(messageService.err(channel, "audit.member.unmute.is-not-muted").then(Mono.empty()))
                     .then();
         }
