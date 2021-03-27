@@ -18,7 +18,7 @@ import reactor.function.TupleUtils;
 import reactor.util.*;
 import reactor.util.annotation.Nullable;
 
-import java.util.List;
+import java.util.*;
 
 import static inside.event.audit.Attribute.*;
 import static inside.util.ContextUtil.*;
@@ -82,6 +82,7 @@ public class AdminServiceImpl implements AdminService{
                 .save();
 
         Mono<Void> addRole = Mono.justOrEmpty(entityRetriever.getMuteRoleId(admin.getGuildId()))
+                .switchIfEmpty(Mono.error(new IllegalStateException("Mute role id is absent")))
                 .flatMap(target::addRole);
 
         return Mono.when(add, addRole, log);
