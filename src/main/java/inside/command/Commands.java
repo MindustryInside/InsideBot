@@ -711,7 +711,8 @@ public class Commands{
                     .flatMapMany(id -> adminService.warnings(guildId, id))
                     .switchIfEmpty(messageService.text(channel, "command.admin.warnings.empty").then(Mono.never()))
                     .limitRequest(21).index()
-                    .collect(collector).flatMap(embed -> messageService.info(channel, spec -> spec.from(embed)));
+                    .collect(collector).flatMap(embed -> messageService.info(channel, spec -> spec.from(embed)
+                            .setTitle(messageService.get(env.context(), "command.admin.warnings.title"))));
         }
     }
 
