@@ -4,6 +4,7 @@ import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.AbstractTypeDescriptor;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
+import reactor.util.annotation.Nullable;
 
 import java.sql.Timestamp;
 
@@ -29,7 +30,7 @@ public class DateTimeTypeDescriptor extends AbstractTypeDescriptor<DateTime>{
 
     @Override
     @SuppressWarnings("unchecked")
-    public <X> X unwrap(DateTime value, Class<X> type, WrapperOptions options){
+    public <X> X unwrap(@Nullable DateTime value, Class<X> type, WrapperOptions options){
         if(value == null){
             return null;
         }
@@ -43,7 +44,7 @@ public class DateTimeTypeDescriptor extends AbstractTypeDescriptor<DateTime>{
     }
 
     @Override
-    public <X> DateTime wrap(X value, WrapperOptions options){
+    public <X> DateTime wrap(@Nullable X value, WrapperOptions options){
         if(value == null){
             return null;
         }

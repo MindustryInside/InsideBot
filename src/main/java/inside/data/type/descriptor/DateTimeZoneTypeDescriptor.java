@@ -3,6 +3,7 @@ package inside.data.type.descriptor;
 import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.AbstractTypeDescriptor;
 import org.joda.time.DateTimeZone;
+import reactor.util.annotation.Nullable;
 
 public class DateTimeZoneTypeDescriptor extends AbstractTypeDescriptor<DateTimeZone>{
     public static final DateTimeZoneTypeDescriptor instance = new DateTimeZoneTypeDescriptor();
@@ -18,7 +19,7 @@ public class DateTimeZoneTypeDescriptor extends AbstractTypeDescriptor<DateTimeZ
 
     @SuppressWarnings("unchecked")
     @Override
-    public <X> X unwrap(DateTimeZone value, Class<X> type, WrapperOptions options){
+    public <X> X unwrap(@Nullable DateTimeZone value, Class<X> type, WrapperOptions options){
         if(value == null){
             return null;
         }
@@ -29,7 +30,7 @@ public class DateTimeZoneTypeDescriptor extends AbstractTypeDescriptor<DateTimeZ
     }
 
     @Override
-    public <X> DateTimeZone wrap(X value, WrapperOptions options){
+    public <X> DateTimeZone wrap(@Nullable X value, WrapperOptions options){
         if(value == null){
             return null;
         }

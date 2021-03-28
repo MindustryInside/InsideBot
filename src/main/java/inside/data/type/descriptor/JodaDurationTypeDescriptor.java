@@ -3,6 +3,7 @@ package inside.data.type.descriptor;
 import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.*;
 import org.joda.time.Duration;
+import reactor.util.annotation.Nullable;
 
 public class JodaDurationTypeDescriptor extends AbstractTypeDescriptor<Duration>{
     public static final JodaDurationTypeDescriptor instance = new JodaDurationTypeDescriptor();
@@ -21,7 +22,7 @@ public class JodaDurationTypeDescriptor extends AbstractTypeDescriptor<Duration>
 
     @Override
     @SuppressWarnings("unchecked")
-    public <X> X unwrap(Duration duration, Class<X> type, WrapperOptions options){
+    public <X> X unwrap(@Nullable Duration duration, Class<X> type, WrapperOptions options){
         if(duration == null){
             return null;
         }
@@ -35,7 +36,7 @@ public class JodaDurationTypeDescriptor extends AbstractTypeDescriptor<Duration>
     }
 
     @Override
-    public <X> Duration wrap(X value, WrapperOptions options){
+    public <X> Duration wrap(@Nullable X value, WrapperOptions options){
         if(value == null){
             return null;
         }
