@@ -751,8 +751,7 @@ public class Commands{
     }
 
     @DiscordCommand(key = "poll", params = "command.poll.params", description = "command.poll.description")
-    public static class SimpleTestCommand extends Command{
-        private static final Logger log = Loggers.getLogger(SimpleTestCommand.class);
+    public static class PollCommand extends Command{
 
         public static final ReactionEmoji[] emojis;
 
