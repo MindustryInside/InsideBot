@@ -5,6 +5,7 @@ import org.hibernate.annotations.common.reflection.java.JavaXMember;
 import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.*;
 import org.hibernate.usertype.DynamicParameterizedType;
+import reactor.util.annotation.Nullable;
 
 import java.io.Serial;
 import java.lang.reflect.*;
@@ -74,7 +75,7 @@ public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implement
     }
 
     @Override
-    public <X> X unwrap(Object value, Class<X> type, WrapperOptions options){
+    public <X> X unwrap(@Nullable Object value, Class<X> type, WrapperOptions options){
         if(value == null) return null;
         else if(String.class.isAssignableFrom(type)) return (X)toString(value);
         else if(Object.class.isAssignableFrom(type)) return (X)JacksonUtil.toJsonNode(value);
@@ -82,7 +83,7 @@ public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implement
     }
 
     @Override
-    public <X> Object wrap(X value, WrapperOptions options){
+    public <X> Object wrap(@Nullable X value, WrapperOptions options){
         return value == null ? null : fromString(value.toString());
     }
 }
