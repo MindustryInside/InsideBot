@@ -8,7 +8,7 @@ import inside.data.entity.*;
 import inside.data.service.*;
 import inside.event.audit.AuditService;
 import inside.service.MessageService;
-import inside.util.*;
+import inside.util.DiscordUtil;
 import org.joda.time.DateTime;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +41,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
     @Override
     public Publisher<?> onMemberJoin(MemberJoinEvent event){
         Member member = event.getMember();
-        if(DiscordUtil.isBot(member)){
+        if(DiscordUtil.isBot(member)){ // TODO: remove bot check
             return Mono.empty();
         }
 

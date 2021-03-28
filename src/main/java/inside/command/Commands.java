@@ -6,6 +6,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
 import discord4j.core.object.presence.Presence;
+import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.discordjson.json.*;
 import discord4j.rest.util.Permission;
@@ -23,7 +24,6 @@ import org.springframework.context.annotation.Lazy;
 import reactor.bool.BooleanUtils;
 import reactor.core.Exceptions;
 import reactor.core.publisher.*;
-import reactor.function.TupleUtils;
 import reactor.netty.http.client.HttpClient;
 import reactor.util.*;
 import reactor.util.annotation.Nullable;
@@ -41,6 +41,7 @@ import static inside.event.audit.Attribute.COUNT;
 import static inside.event.audit.BaseAuditProvider.MESSAGE_TXT;
 import static inside.service.MessageService.ok;
 import static inside.util.ContextUtil.*;
+import static reactor.function.TupleUtils.function;
 
 public class Commands{
 
@@ -541,7 +542,7 @@ public class Commands{
                     .filterWhen(member -> BooleanUtils.not(adminService.isMuted(member)))
                     .switchIfEmpty(messageService.err(channel, "command.admin.mute.already-muted").then(Mono.never()))
                     .filterWhen(member -> Mono.zip(adminService.isAdmin(member), adminService.isOwner(author))
-                            .map(TupleUtils.function((admin, owner) -> !(admin && !owner))))
+                            .map(function((admin, owner) -> !(admin && !owner))))
                     .switchIfEmpty(messageService.err(channel, "command.admin.user-is-admin").then(Mono.empty()))
                     .flatMap(member -> Mono.defer(() -> {
                         String reason = args.length > 2 ? args[2].trim() : null;
@@ -645,7 +646,7 @@ public class Commands{
             return Mono.justOrEmpty(targetId).flatMap(id -> env.getClient().getMemberById(guildId, id))
                     .switchIfEmpty(messageService.err(channel, "command.incorrect-name").then(Mono.never()))
                     .filterWhen(target -> Mono.zip(adminService.isAdmin(target), adminService.isOwner(author))
-                            .map(TupleUtils.function((admin, owner) -> !(admin && !owner))))
+                            .map(function((admin, owner) -> !(admin && !owner))))
                     .switchIfEmpty(messageService.err(channel, "command.admin.user-is-admin").then(Mono.empty()))
                     .flatMap(member -> {
                         String reason = args.length > 1 ? args[1].trim() : null;
@@ -746,6 +747,65 @@ public class Commands{
                         return messageService.text(channel, "command.admin.unwarn", target.getUsername(), warn)
                                 .and(adminService.unwarn(target, warn - 1));
                     }));
+        }
+    }
+
+    @DiscordCommand(key = "poll", params = "command.poll.params", description = "command.poll.description")
+    public static class SimpleTestCommand extends Command{
+        private static final Logger log = Loggers.getLogger(SimpleTestCommand.class);
+
+        public static final ReactionEmoji[] emojis;
+
+        static{
+            emojis = new ReactionEmoji[]{
+                ReactionEmoji.unicode("1\u20E3"),
+                ReactionEmoji.unicode("2\u20E3"),
+                ReactionEmoji.unicode("3\u20E3"),
+                ReactionEmoji.unicode("3\u20E3"),
+                ReactionEmoji.unicode("4\u20E3"),
+                ReactionEmoji.unicode("5\u20E3"),
+                ReactionEmoji.unicode("6\u20E3"),
+                ReactionEmoji.unicode("7\u20E3"),
+                ReactionEmoji.unicode("8\u20E3"),
+                ReactionEmoji.unicode("9\u20E3"),
+                ReactionEmoji.unicode("\uD83D\uDD1F")
+            };
+        }
+
+        @Autowired
+        private Settings settings;
+
+        @Override
+        public Mono<Void> execute(CommandEnvironment env, String[] args){
+            Mono<MessageChannel> channel = env.getReplyChannel();
+            Member author = env.getAuthorAsMember();
+
+            String title = args[0].startsWith("**") && args[0].lastIndexOf("**") != -1 ?
+                    args[0].substring(0, args[0].lastIndexOf("**") + 2) : null;
+
+            if(title == null || title.equals("**")){
+                return messageService.err(env.getReplyChannel(), "command.poll.title").then(Mono.empty());
+            }
+
+            String striped = args[0].substring(title.length());
+            int count = striped.split("((\\d+)(\\.)?\\s+.+)").length;
+            if(count > emojis.length){
+                return messageService.err(env.getReplyChannel(), "common.limit-number", 10);
+            }
+
+            BiFunction<Message, Integer, Mono<Message>> reactions = (message, integer) -> Flux.fromArray(emojis)
+                    .limitRequest(integer)
+                    .flatMap(message::addReaction)
+                    .then(Mono.just(message));
+
+            Mono<Void> message = channel.flatMap(reply -> reply.createMessage(spec -> spec.setEmbed(embed -> embed.setTitle(title)
+                    .setColor(settings.getDefaults().getNormalColor())
+                    .setDescription(args[0].substring(title.length()))
+                    .setAuthor(author.getUsername(), null, author.getAvatarUrl()))))
+                    .flatMap(poll -> Mono.defer(() -> reactions.apply(poll, count)))
+                    .then();
+
+            return message.and(env.getMessage().delete());
         }
     }
 
