@@ -4,14 +4,12 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.EmbedCreateSpec;
-import inside.data.entity.MessageInfo;
 import reactor.core.publisher.Mono;
-import reactor.util.annotation.Nullable;
 import reactor.util.context.ContextView;
 
 import java.util.function.Consumer;
 
-public interface MessageService{
+public interface MessageService extends MessageHolderService{
 
     ReactionEmoji ok = ReactionEmoji.unicode("✅");
 
@@ -40,24 +38,7 @@ public interface MessageService{
 
     // data
 
-    void awaitEdit(Snowflake messageId);
-
-    void removeEdit(Snowflake messageId);
-
-    boolean isAwaitEdit(Snowflake messageId);
-
-    @Nullable
-    MessageInfo getById(Snowflake messageId);
-
-    void save(MessageInfo message);
-
-    void deleteById(Snowflake messageId);
-
-    void delete(MessageInfo message);
-
     String encrypt(String text, Snowflake messageId, Snowflake channelId);
 
     String decrypt(String text, Snowflake messageId, Snowflake channelId);
-
-    void cleanUp();
 }
