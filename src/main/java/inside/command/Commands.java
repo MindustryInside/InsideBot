@@ -787,7 +787,11 @@ public class Commands{
             }
 
             String striped = args[0].substring(title.length());
-            int count = striped.split("((\\d+)(\\.)?\\s+.+)").length;
+            int count = striped.split("\\d+.+").length;
+            if(count <= 0 || striped.isEmpty()){
+                return messageService.err(env.getReplyChannel(), "command.poll.empty-variants");
+            }
+
             if(count > emojis.length){
                 return messageService.err(env.getReplyChannel(), "common.limit-number", 10);
             }
@@ -805,6 +809,12 @@ public class Commands{
                     .then();
 
             return message.and(env.getMessage().delete());
+        }
+
+        @Override
+        public Mono<Void> help(CommandEnvironment env){
+            String prefix = entityRetriever.getPrefix(env.getAuthorAsMember().getGuildId());
+            return messageService.info(env.getReplyChannel(), "command.help.title", "command.poll.help", prefix);
         }
     }
 
