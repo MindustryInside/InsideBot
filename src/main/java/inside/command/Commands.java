@@ -5,7 +5,7 @@ import discord4j.common.ReactorResources;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
-import discord4j.core.object.presence.Presence;
+import discord4j.core.object.presence.ClientPresence;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.discordjson.json.*;
@@ -235,10 +235,10 @@ public class Commands{
         @Override
         public Mono<Void> execute(CommandEnvironment env, String[] args){
             return switch(args[0].toLowerCase()){
-                case "online" -> env.getClient().updatePresence(Presence.online());
-                case "dnd" -> env.getClient().updatePresence(Presence.doNotDisturb());
-                case "idle" -> env.getClient().updatePresence(Presence.idle());
-                case "invisible" -> env.getClient().updatePresence(Presence.invisible());
+                case "online" -> env.getClient().updatePresence(ClientPresence.online());
+                case "dnd" -> env.getClient().updatePresence(ClientPresence.doNotDisturb());
+                case "idle" -> env.getClient().updatePresence(ClientPresence.idle());
+                case "invisible" -> env.getClient().updatePresence(ClientPresence.invisible());
                 default -> messageService.err(env.getReplyChannel(), "command.status.unknown-presence");
             };
         }
