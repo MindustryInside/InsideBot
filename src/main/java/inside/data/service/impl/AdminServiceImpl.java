@@ -18,7 +18,7 @@ import reactor.function.TupleUtils;
 import reactor.util.*;
 import reactor.util.annotation.Nullable;
 
-import java.util.*;
+import java.util.List;
 
 import static inside.event.audit.Attribute.*;
 import static inside.util.ContextUtil.*;
@@ -98,8 +98,7 @@ public class AdminServiceImpl implements AdminService{
     public Mono<Void> unmute(Member target){
         LocalMember localMember = entityRetriever.getMember(target);
 
-        Mono<Void> remove = get(AdminActionType.mute, localMember.guildId(), localMember.userId())
-                .next()
+        Mono<Void> remove = get(AdminActionType.mute, localMember.guildId(), localMember.userId()).next()
                 .flatMap(adminAction -> Mono.fromRunnable(() -> repository.delete(adminAction)))
                 .then();
 
