@@ -4,14 +4,13 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
 import inside.command.model.*;
-import inside.data.service.*;
+import inside.data.service.EntityRetriever;
 import inside.service.MessageService;
 import inside.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
-import reactor.util.*;
 import reactor.util.context.Context;
 import reactor.util.function.Tuple2;
 
@@ -104,7 +103,7 @@ public class CommandHandler{
         return commandInfo.values();
     }
 
-    public Mono<?> handleMessage(final CommandEnvironment env){
+    public Mono<Void> handleMessage(final CommandEnvironment env){
         String message = env.getMessage().getContent();
         Mono<Guild> guild = env.getMessage().getGuild();
         Mono<TextChannel> channel = env.getReplyChannel().ofType(TextChannel.class);
@@ -212,7 +211,8 @@ public class CommandHandler{
                                                     messageService.format(env.context(), "message.error.permission-denied.description", s))))
                                                     .then())
                                     .thenReturn(s))
-                            .switchIfEmpty(execute.then(Mono.empty()));
+                            .switchIfEmpty(execute.then(Mono.empty()))
+                            .then();
                 })));
     }
 }
