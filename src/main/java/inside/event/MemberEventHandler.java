@@ -24,7 +24,7 @@ import static inside.util.ContextUtil.*;
 
 @Component
 public class MemberEventHandler extends ReactiveEventAdapter{
-    public static final long TIMEOUT_MILLIS = 2500L;
+    protected static final long TIMEOUT_MILLIS = 2500L;
 
     @Autowired
     private EntityRetriever entityRetriever;
