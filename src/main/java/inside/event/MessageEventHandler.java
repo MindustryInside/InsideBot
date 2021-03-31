@@ -4,12 +4,15 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.message.*;
 import discord4j.core.object.Embed.Field;
+import discord4j.core.object.audit.ActionType;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
+import discord4j.discordjson.json.AuditEntryInfoData;
+import discord4j.discordjson.possible.Possible;
 import inside.command.CommandHandler;
 import inside.command.model.CommandEnvironment;
 import inside.data.entity.*;
-import inside.data.service.*;
+import inside.data.service.EntityRetriever;
 import inside.event.audit.*;
 import inside.service.MessageService;
 import inside.util.*;
@@ -157,13 +160,13 @@ public class MessageEventHandler extends ReactiveEventAdapter{
     @Override
     public Publisher<?> onMessageDelete(MessageDeleteEvent event){
         Message message = event.getMessage().orElse(null);
-        if(message == null){
+        if(message == null || !message.getEmbeds().isEmpty()){
             return Mono.empty();
         }
 
-        User user = message.getAuthor().orElse(null);
+        User author = message.getAuthor().orElse(null);
         Snowflake guildId = event.getGuildId().orElse(null);
-        if(DiscordUtil.isBot(user) || guildId == null){
+        if(DiscordUtil.isBot(author) || guildId == null){
             return Mono.empty();
         }
 
@@ -172,22 +175,18 @@ public class MessageEventHandler extends ReactiveEventAdapter{
             return Mono.empty();
         }
 
-        String content = info.content();
-
         Context context = Context.of(KEY_LOCALE, entityRetriever.getLocale(guildId),
                 KEY_TIMEZONE, entityRetriever.getTimeZone(guildId));
 
         return event.getChannel()
                 .ofType(TextChannel.class)
                 .flatMap(channel -> {
-                    String decrypted = messageService.decrypt(content, message.getId(), message.getChannelId());
+                    String decrypted = messageService.decrypt(info.content(), message.getId(), message.getChannelId());
                     AuditActionBuilder builder = auditService.log(guildId, MESSAGE_DELETE)
                             .withChannel(channel)
-                            .withUser(user)
-                            .withAttribute(USER_URL, user.getAvatarUrl())
                             .withAttribute(OLD_CONTENT, decrypted);
 
-                    if(content.length() >= Field.MAX_VALUE_LENGTH){
+                    if(decrypted.length() >= Field.MAX_VALUE_LENGTH){
                         ReusableByteInputStream input = new ReusableByteInputStream();
                         input.writeString(String.format("%s%n%s",
                                 messageService.get(context, "audit.message.deleted-content.title"), decrypted
@@ -196,7 +195,19 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                     }
 
                     messageService.delete(info);
-                    return builder.save();
+                    Mono<User> responsibleUser = event.getGuild()
+                            .flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MESSAGE_DELETE)))
+                            .filter(entry -> entry.getTargetId().map(id -> id.equals(info.userId())).orElse(false) &&
+                                    entry.getData().options().toOptional()
+                                            .map(AuditEntryInfoData::channelId)
+                                            .flatMap(Possible::toOptional)
+                                            .map(Snowflake::of)
+                                            .map(id -> id.equals(message.getChannelId())).orElse(false))
+                            .next()
+                            .flatMap(entry -> event.getClient().getUserById(entry.getResponsibleUserId()));
+                    return responsibleUser.defaultIfEmpty(author).map(user -> builder.withUser(user)
+                            .withAttribute(USER_URL, user.getAvatarUrl()))
+                            .flatMap(AuditActionBuilder::save);
                 })
                 .contextWrite(context);
     }
