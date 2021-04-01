@@ -51,11 +51,11 @@ public class MemberEventHandler extends ReactiveEventAdapter{
         AdminConfig config = entityRetriever.getAdminConfigById(member.getGuildId());
 
         Mono<Void> warn = member.getGuild().flatMap(Guild::getOwner)
-                .filterWhen(owner -> adminService.warnings(member).count().map(c -> c >= config.maxWarnCount()))
+                .filterWhen(ignored -> adminService.warnings(member).count().map(c -> c >= config.maxWarnCount()))
                 .flatMap(owner -> adminService.warn(owner, member, messageService.get(context, "audit.member.warn.evade")));
 
         Mono<?> muteEvade = member.getGuild().flatMap(Guild::getOwner)
-                .filterWhen(owner -> adminService.isMuted(member))
+                .filterWhen(ignored -> adminService.isMuted(member))
                 .flatMap(owner -> adminService.mute(owner, member, DateTime.now().plus(config.muteBaseDelay()),
                         messageService.get(context, "audit.member.mute.evade"))
                         .thenReturn(owner))
@@ -85,6 +85,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                 .flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MEMBER_KICK)))
                 .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)) &&
                         entry.getTargetId().map(target -> target.equals(user.getId())).orElse(false))
+                .next()
                 .flatMap(entry -> event.getGuild().flatMap(guild -> guild.getMemberById(entry.getResponsibleUserId()))
                         .flatMap(admin -> auditService.log(event.getGuildId(), USER_KICK)
                                 .withUser(admin)
@@ -100,6 +101,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                 .flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MEMBER_BAN_ADD)))
                 .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)) &&
                         entry.getTargetId().map(target -> target.equals(user.getId())).orElse(false))
+                .next()
                 .flatMap(entry -> event.getGuild().flatMap(guild -> guild.getMemberById(entry.getResponsibleUserId()))
                         .flatMap(admin -> auditService.log(event.getGuildId(), USER_BAN)
                                 .withUser(admin)
