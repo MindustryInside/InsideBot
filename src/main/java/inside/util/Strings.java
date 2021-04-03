@@ -1,5 +1,6 @@
 package inside.util;
 
+import reactor.core.Exceptions;
 import reactor.util.annotation.Nullable;
 
 import java.nio.charset.*;
@@ -25,68 +26,22 @@ public abstract class Strings{
     public static int parseInt(String s, int defaultValue){
         try{
             return Integer.parseInt(s);
-        }catch(Exception e){
+        }catch(Throwable t){
+            Exceptions.throwIfJvmFatal(t);
             return defaultValue;
         }
     }
 
-    public static long parseLong(@Nullable String s){
+    public static long parseLong(String s){
         return parseLong(s, Long.MIN_VALUE);
     }
 
-    public static long parseLong(@Nullable String s, long defaultValue){
-        return parseLong(s, 10, defaultValue);
-    }
-
-    public static long parseLong(@Nullable String s, int radix, long defaultValue){
-        if(s == null){
+    public static long parseLong(String s, long defaultValue){
+        try{
+            return Long.parseLong(s);
+        }catch(Throwable t){
+            Exceptions.throwIfJvmFatal(t);
             return defaultValue;
-        }
-        return parseLong(s, radix, 0, s.length(), defaultValue);
-    }
-
-    public static long parseLong(@Nullable String s, int radix, int start, int end, long defaultValue){
-        if(s == null){
-            return defaultValue;
-        }
-
-        boolean negative = false;
-        int i = start, len = end - start;
-        long limit = Long.MIN_VALUE;
-        if(len <= 0){
-            return defaultValue;
-        }else{
-            char firstChar = s.charAt(i);
-            if(firstChar < '0'){
-                if(firstChar == '-'){
-                    negative = true;
-                    limit = Long.MIN_VALUE;
-                }else if(firstChar != '+'){
-                    return defaultValue;
-                }
-
-                if(len == 1){
-                    return defaultValue;
-                }
-
-                ++i;
-            }
-
-            long result;
-            int digit;
-            for(result = 0L; i < end; result -= digit){
-                digit = Character.digit(s.charAt(i++), radix);
-                if(digit < 0){
-                    return defaultValue;
-                }
-
-                result *= radix;
-                if(result < limit + (long)digit){
-                    return defaultValue;
-                }
-            }
-
-            return negative ? result : -result;
         }
     }
 
