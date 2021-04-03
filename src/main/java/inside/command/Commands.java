@@ -381,19 +381,11 @@ public class Commands{
             return Mono.just(entityRetriever.getGuildById(member.getGuildId()))
                     .filterWhen(guildConfig -> adminService.isOwner(member))
                     .switchIfEmpty(messageService.err(channel, "command.owner-only").then(Mono.empty()))
-                    .flatMap(guildConfig -> {
-                        if(args.length == 0){
-                            return messageService.text(channel, "command.config.prefix", guildConfig.prefix());
-                        }else{
-                            if(!args[0].isBlank()){
-                                guildConfig.prefix(args[0]);
-                                entityRetriever.save(guildConfig);
-                                return messageService.text(channel, "command.config.prefix-updated", guildConfig.prefix());
-                            }
-                        }
-
-                        return Mono.empty();
-                    });
+                    .flatMap(guildConfig -> Mono.defer(() -> {
+                        guildConfig.prefix(args[0]);
+                        entityRetriever.save(guildConfig);
+                        return messageService.text(channel, "command.config.prefix-updated", guildConfig.prefix());
+                    }));
         }
     }
 
