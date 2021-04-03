@@ -1,7 +1,6 @@
 package inside.command;
 
 import com.udojava.evalex.*;
-import discord4j.common.ReactorResources;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
@@ -16,7 +15,6 @@ import inside.data.entity.*;
 import inside.data.service.AdminService;
 import inside.event.audit.*;
 import inside.util.*;
-import io.netty.handler.codec.http.*;
 import org.joda.time.*;
 import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,8 +22,6 @@ import org.springframework.context.annotation.Lazy;
 import reactor.bool.BooleanUtils;
 import reactor.core.Exceptions;
 import reactor.core.publisher.*;
-import reactor.netty.http.client.HttpClient;
-import reactor.util.*;
 import reactor.util.annotation.Nullable;
 import reactor.util.function.Tuple2;
 
@@ -191,43 +187,6 @@ public class Commands{
                 return v1.movePointLeft(v2.toBigInteger().intValue());
             }
         };
-    }
-
-    @DiscordCommand(key = "read", params = "command.read.params", description = "command.read.description")
-    public static class ReadCommand extends Command{
-        private static final Logger log = Loggers.getLogger(ReadCommand.class);
-
-        private static final String IP_PATTERN = "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
-
-        private static final int MAX_SIZE = 3 * 1024 * 1024; // 3mb
-
-        private final HttpClient httpClient = ReactorResources.DEFAULT_HTTP_CLIENT.get();
-
-        @Override
-        public Mono<Void> execute(CommandEnvironment env, String[] args){
-            return Mono.just(args[0]).flatMap(url -> httpClient.get()
-                    .uri(url)
-                    .responseSingle((res, mono) -> {
-                        String type = res.responseHeaders().get(HttpHeaderNames.CONTENT_TYPE).toLowerCase();
-                        long size = Strings.parseLong(res.responseHeaders().get(HttpHeaderNames.CONTENT_LENGTH));
-                        if(log.isTraceEnabled()){
-                            log.trace("type: {}, size: {}", type, size);
-                        }
-                        if(res.status().equals(HttpResponseStatus.OK) && !type.contains("audio") && !type.contains("image")
-                                && !type.contains("video")){
-                            return size > MAX_SIZE ?
-                                   messageService.err(env.getReplyChannel(), "command.read.under-limit").then(Mono.never()) :
-                                   mono.asString(Strings.utf8);
-                        }
-                        return Mono.empty();
-                    }))
-                    .onErrorResume(t -> true, t -> Mono.fromRunnable(() -> log.debug("Failed to request file.", t)))
-                    .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.read.error").then(Mono.empty()))
-                    .map(content -> content.replaceAll(IP_PATTERN,
-                            messageService.get(env.context(), "command.read.ip-address")))
-                    .map(content -> MessageUtil.substringTo(content, Message.MAX_CONTENT_LENGTH))
-                    .flatMap(content -> messageService.text(env.getReplyChannel(), content));
-        }
     }
 
     @DiscordCommand(key = "status", params = "command.status.params", description = "command.status.description")
@@ -711,9 +670,10 @@ public class Commands{
                     .switchIfEmpty(messageService.err(channel, "command.incorrect-name").then(Mono.empty()))
                     .flatMapMany(id -> adminService.warnings(guildId, id))
                     .switchIfEmpty(messageService.text(channel, "command.admin.warnings.empty").then(Mono.never()))
-                    .limitRequest(21).index()
-                    .collect(collector).flatMap(embed -> messageService.info(channel, spec -> spec.from(embed)
-                            .setTitle(messageService.get(env.context(), "command.admin.warnings.title"))));
+                    .limitRequest(21).index().collect(collector)
+                    .zipWith(env.getClient().getMemberById(guildId, targetId))
+                    .flatMap(function((embed, target) -> messageService.info(channel, spec -> spec.from(embed)
+                            .setTitle(messageService.format(env.context(), "command.admin.warnings.title", target.getDisplayName())))));
         }
     }
 

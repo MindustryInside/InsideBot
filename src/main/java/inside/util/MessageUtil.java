@@ -3,6 +3,7 @@ package inside.util;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import org.joda.time.DateTime;
+import reactor.core.Exceptions;
 import reactor.util.annotation.Nullable;
 
 import java.time.*;
@@ -60,6 +61,7 @@ public abstract class MessageUtil{
         try{
             return Snowflake.of(message.replaceAll("[<>@!]", ""));
         }catch(Throwable t){
+            Exceptions.throwIfJvmFatal(t);
             return null;
         }
     }
