@@ -530,7 +530,7 @@ public class Commands{
             }
 
             int number = Strings.parseInt(args[0]);
-            if(number >= settings.getDiscord().getMaxClearedCount()){
+            if(number > settings.getDiscord().getMaxClearedCount()){
                 return messageService.err(reply, "common.limit-number", settings.getDiscord().getMaxClearedCount());
             }
 

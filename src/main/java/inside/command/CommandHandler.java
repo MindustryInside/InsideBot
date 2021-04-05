@@ -191,7 +191,7 @@ public class CommandHandler{
 
                     Mono<Void> execute = Mono.just(command)
                             .filterWhen(c -> c.apply(env))
-                            .flatMap(c -> command.execute(env, result.toArray(new String[0])))
+                            .flatMap(c -> c.execute(env, result.toArray(new String[0])))
                             .doFirst(() -> messageService.removeEdit(env.getMessage().getId()));
 
                     return Flux.fromIterable(info.permissions())
