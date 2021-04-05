@@ -62,7 +62,7 @@ public class Settings{
 
     public static class Defaults{
 
-        private String prefix = "$";
+        private String prefix = "#";
 
         private DateTimeZone timeZone = DateTimeZone.forID("Etc/Greenwich");
 
@@ -72,9 +72,9 @@ public class Settings{
 
         private int maxWarnings = 3;
 
-        private Duration warnExpire = Duration.ofDays(20);
+        private Duration warnExpire = Duration.ofDays(21);
 
-        private Duration muteEvade = Duration.ofDays(10);
+        private Duration muteEvade = Duration.ofDays(15);
 
         public String getPrefix(){
             return prefix;

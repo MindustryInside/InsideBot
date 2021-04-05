@@ -11,13 +11,15 @@ repositories{
     maven { url 'https://www.jitpack.io' }
 }
 
-ext{
+ext{ junit_version = '5.7.1'
     joda_version = 'v2.10.10'
     caffeine_version = '3.0.1'
     evalex_version = '2.5'
 
     jaxb_version = '2.3.1'
     hibernate_version = '5.4.28.Final'
+
+    junit_version = '5.7.1'
 }
 
 tasks.withType(JavaCompile){
@@ -40,4 +42,11 @@ dependencies{
     implementation "org.springframework.boot:spring-boot-starter-data-jpa"
     implementation "org.springframework.boot:spring-boot-starter-security"
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+
+    testImplementation "org.junit.jupiter:junit-jupiter-engine:$junit_version"
+}
+
+test{
+    useJUnitPlatform()
+    jvmArgs += ["--enable-preview"]
 }
