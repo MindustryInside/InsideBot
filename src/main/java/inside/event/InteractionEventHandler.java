@@ -18,19 +18,14 @@ import java.util.Optional;
 @Component
 public class InteractionEventHandler extends ReactiveEventAdapter{
 
-    private final EntityRetriever entityRetriever;
+    @Autowired
+    private EntityRetriever entityRetriever;
 
-    private final Settings settings;
+    @Autowired
+    private Settings settings;
 
-    private final DiscordService discordService;
-
-    public InteractionEventHandler(@Autowired EntityRetriever entityRetriever,
-                                   @Autowired Settings settings,
-                                   @Autowired DiscordService discordService){
-        this.entityRetriever = entityRetriever;
-        this.settings = settings;
-        this.discordService = discordService;
-    }
+    @Autowired
+    private DiscordService discordService;
 
     @Override
     public Publisher<?> onInteractionCreate(InteractionCreateEvent event){
