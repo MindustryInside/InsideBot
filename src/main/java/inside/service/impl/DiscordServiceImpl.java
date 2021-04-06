@@ -10,13 +10,14 @@ import discord4j.rest.request.RouteMatcher;
 import discord4j.rest.response.ResponseFunction;
 import discord4j.rest.route.Routes;
 import inside.Settings;
+import inside.interaction.*;
 import inside.service.DiscordService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.PreDestroy;
-import java.util.Objects;
+import java.util.*;
 
 @Service
 public class DiscordServiceImpl implements DiscordService{
@@ -24,12 +25,14 @@ public class DiscordServiceImpl implements DiscordService{
 
     private GatewayDiscordClient gateway;
 
+    private List<InteractionCommand> commands;
+
     public DiscordServiceImpl(@Autowired Settings settings){
         this.settings = settings;
     }
 
     @Autowired(required = false)
-    public void init(ReactiveEventAdapter[] handlers){
+    public void init(ReactiveEventAdapter[] handlers, List<InteractionCommand> commands){
         String token = settings.getToken();
         Objects.requireNonNull(token, "token");
 
@@ -53,7 +56,24 @@ public class DiscordServiceImpl implements DiscordService{
 
         Objects.requireNonNull(gateway, "impossible"); // for ide
 
+        this.commands = commands;
+
+        long applicationId = gateway.rest().getApplicationId().block();
+        for(InteractionCommand command : commands){
+            gateway.rest().getApplicationService()
+                    .createGlobalApplicationCommand(applicationId, command.getRequest())
+                    .subscribe();
+        }
+
         gateway.on(ReactiveEventAdapter.from(handlers)).subscribe();
+    }
+
+    @Override
+    public Mono<Void> handle(InteractionCommandEnvironment env){
+        return Mono.justOrEmpty(commands.stream()
+                .filter(cmd -> cmd.getRequest().name().equals(cmd.getRequest().name()))
+                .findFirst())
+                .flatMap(cmd -> cmd.execute(env));
     }
 
     @PreDestroy
