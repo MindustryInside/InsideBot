@@ -10,7 +10,6 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 public class InteractionCommandEnvironment{
-
     private final InteractionCreateEvent event;
     private final Context context;
     private final Supplier<Mono<MessageChannel>> replyChannel;
@@ -35,8 +34,7 @@ public class InteractionCommandEnvironment{
     }
 
     public Mono<MessageChannel> getReplyChannel(){
-        return getClient().getChannelById(event.getInteraction().getChannelId())
-                .cast(MessageChannel.class);
+        return replyChannel.get();
     }
 
     public GatewayDiscordClient getClient(){
@@ -64,6 +62,10 @@ public class InteractionCommandEnvironment{
         }
 
         public InteractionCommandEnvironment build(){
+            if(replyChannel == null){
+                this.replyChannel = () -> event.getClient().getChannelById(event.getInteraction().getChannelId())
+                        .cast(MessageChannel.class);
+            }
             return new InteractionCommandEnvironment(this);
         }
     }
