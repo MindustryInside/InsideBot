@@ -71,7 +71,7 @@ public class DiscordServiceImpl implements DiscordService{
     @Override
     public Mono<Void> handle(InteractionCommandEnvironment env){
         return Mono.justOrEmpty(commands.stream()
-                .filter(cmd -> cmd.getRequest().name().equals(cmd.getRequest().name()))
+                .filter(cmd -> cmd.getRequest().name().equals(env.event().getCommandName()))
                 .findFirst())
                 .flatMap(cmd -> cmd.execute(env));
     }
@@ -79,6 +79,11 @@ public class DiscordServiceImpl implements DiscordService{
     @PreDestroy
     public void destroy(){
         gateway.logout().block();
+    }
+
+    @Override
+    public List<InteractionCommand> getCommands(){
+        return commands;
     }
 
     @Override // for monitors
