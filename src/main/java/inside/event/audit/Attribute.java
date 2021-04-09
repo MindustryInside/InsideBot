@@ -16,7 +16,7 @@ public final class Attribute<T>{
 
     public static final Attribute<Snowflake> MESSAGE_ID = new Attribute<>("message_id");
 
-    public static final Attribute<Integer> COUNT = new Attribute<>("count");
+    public static final Attribute<Long> COUNT = new Attribute<>("count");
 
     public final String name;
 

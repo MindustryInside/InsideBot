@@ -2,17 +2,132 @@ package inside.interaction;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.*;
-import discord4j.core.object.entity.channel.MessageChannel;
+import discord4j.core.object.entity.*;
+import discord4j.core.object.entity.channel.*;
 import discord4j.discordjson.json.*;
 import discord4j.rest.util.ApplicationCommandOptionType;
 import inside.Settings;
+import inside.event.audit.*;
 import inside.interaction.model.InteractionDiscordCommand;
+import inside.util.*;
+import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.function.BiConsumer;
+
+import static inside.event.audit.Attribute.COUNT;
+import static inside.event.audit.BaseAuditProvider.MESSAGE_TXT;
+import static inside.util.ContextUtil.*;
 
 public class InteractionCommands{
 
     private InteractionCommands(){}
+
+    @InteractionDiscordCommand
+    public static class DeleteCommand extends InteractionCommand{
+        @Autowired
+        private Settings settings;
+
+        @Autowired
+        private AuditService auditService;
+
+        @Override
+        public Mono<Void> execute(InteractionCommandEnvironment env){
+            Optional<Member> author = env.event().getInteraction().getMember();
+            if(author.isEmpty()){
+                return env.event().reply(spec -> spec.addEmbed(embed -> embed.setColor(settings.getDefaults().getErrorColor())
+                        .setTitle(messageService.get(env.context(), "message.error.general.title"))
+                        .setDescription(messageService.get(env.context(), "command.interaction.only-guild"))));
+            }
+
+            Mono<TextChannel> reply = env.getReplyChannel().cast(TextChannel.class);
+
+            long number = env.event().getInteraction().getCommandInteraction()
+                    .getOption("count")
+                    .flatMap(ApplicationCommandInteractionOption::getValue)
+                    .map(ApplicationCommandInteractionOptionValue::asLong)
+                    .orElse(0L);
+
+            if(number <= 0){
+                return env.event().reply(spec -> spec.addEmbed(embed -> embed.setColor(settings.getDefaults().getErrorColor())
+                        .setTitle(messageService.get(env.context(), "message.error.general.title"))
+                        .setDescription(messageService.get(env.context(), "command.incorrect-number"))));
+            }else if(number > settings.getDiscord().getMaxClearedCount()){
+                return env.event().reply(spec -> spec.addEmbed(embed -> embed.setColor(settings.getDefaults().getErrorColor())
+                        .setTitle(messageService.get(env.context(), "message.error.general.title"))
+                        .setDescription(messageService.format(env.context(), "common.limit-number",
+                                settings.getDiscord().getMaxClearedCount()))));
+            }
+
+            StringBuffer result = new StringBuffer();
+            Instant limit = Instant.now().minus(14, ChronoUnit.DAYS);
+            DateTimeFormatter formatter = DateTimeFormat.forPattern("MM-dd-yyyy HH:mm:ss")
+                    .withLocale(env.context().get(KEY_LOCALE))
+                    .withZone(env.context().get(KEY_TIMEZONE));
+
+            ReusableByteInputStream input = new ReusableByteInputStream();
+            BiConsumer<Message, Member> appendInfo = (message, member) -> {
+                result.append("[").append(formatter.print(message.getTimestamp().toEpochMilli())).append("] ");
+                if(DiscordUtil.isBot(member)){
+                    result.append("[BOT] ");
+                }
+
+                result.append(member.getUsername());
+                member.getNickname().ifPresent(nickname -> result.append(" (").append(nickname).append(")"));
+                result.append(" >");
+                String content = MessageUtil.effectiveContent(message);
+                if(!content.isBlank()){
+                    result.append(" ").append(content);
+                }
+                if(!message.getEmbeds().isEmpty()){
+                    result.append(" (... ").append(message.getEmbeds().size()).append(" embed(s))");
+                }
+                result.append("\n");
+            };
+
+            Mono<Void> history = reply.flatMapMany(channel -> channel.getLastMessage()
+                    .flatMapMany(message -> channel.getMessagesBefore(message.getId()))
+                    .limitRequest(number)
+                    .sort(Comparator.comparing(Message::getId))
+                    .filter(message -> message.getTimestamp().isAfter(limit))
+                    .flatMap(message -> message.getAuthorAsMember()
+                            .doOnNext(member -> {
+                                appendInfo.accept(message, member);
+                                messageService.deleteById(message.getId());
+                            })
+                            .thenReturn(message))
+                    .transform(messages -> number != 1 ? channel.bulkDeleteMessages(messages).then() : messages.next().flatMap(Message::delete).then()))
+                    .then();
+
+            Mono<Void> log = Mono.justOrEmpty(author).flatMap(member -> reply.flatMap(channel ->
+                    auditService.log(member.getGuildId(), AuditActionType.MESSAGE_CLEAR)
+                    .withUser(member)
+                    .withChannel(channel)
+                    .withAttribute(COUNT, number)
+                    .withAttachment(MESSAGE_TXT, input.writeString(result.toString()))
+                    .save()));
+
+            return history.then(log).and(env.event().reply("✅"));
+        }
+
+        @Override
+        public ApplicationCommandRequest getRequest(){
+            return ApplicationCommandRequest.builder()
+                    .name("delete")
+                    .description("Delete some messages.")
+                    .addOption(ApplicationCommandOptionData.builder()
+                            .name("count")
+                            .description("How many messages to delete")
+                            .type(ApplicationCommandOptionType.INTEGER.getValue())
+                            .required(true)
+                            .build())
+                    .build();
+        }
+    }
 
     @InteractionDiscordCommand
     public static class AvatarCommand extends InteractionCommand{
@@ -38,9 +153,9 @@ public class InteractionCommands{
                     .description("Get user avatar.")
                     .addOption(ApplicationCommandOptionData.builder()
                             .name("target")
+                            .description("Whose avatar needs to get. By default, your avatar")
                             .type(ApplicationCommandOptionType.USER.getValue())
                             .required(false)
-                            .description("Target user or self")
                             .build())
                     .build();
         }

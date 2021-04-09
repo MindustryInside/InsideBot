@@ -79,7 +79,7 @@ public class AuditProviders{
     public static class MessageClearAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
-            Integer count = action.getAttribute(COUNT);
+            Long count = action.getAttribute(COUNT);
             if(count == null){
                 return;
             }

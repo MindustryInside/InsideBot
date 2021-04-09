@@ -529,7 +529,7 @@ public class Commands{
                 return messageService.err(reply, "command.incorrect-number");
             }
 
-            int number = Strings.parseInt(args[0]);
+            long number = Strings.parseInt(args[0]);
             if(number > settings.getDiscord().getMaxClearedCount()){
                 return messageService.err(reply, "common.limit-number", settings.getDiscord().getMaxClearedCount());
             }
