@@ -73,6 +73,7 @@ public class DiscordServiceImpl implements DiscordService{
         return Mono.justOrEmpty(commands.stream()
                 .filter(cmd -> cmd.getRequest().name().equals(env.event().getCommandName()))
                 .findFirst())
+                .filterWhen(cmd -> cmd.apply(env))
                 .flatMap(cmd -> cmd.execute(env));
     }
 
