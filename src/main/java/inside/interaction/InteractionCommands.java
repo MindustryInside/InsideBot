@@ -27,13 +27,9 @@ public class InteractionCommands{
 
     private InteractionCommands(){}
 
-    @InteractionDiscordCommand
-    public static class DeleteCommand extends InteractionCommand{
+    public static abstract class GuildCommand extends InteractionCommand{
         @Autowired
-        private Settings settings;
-
-        @Autowired
-        private AuditService auditService;
+        protected Settings settings;
 
         @Override
         public Mono<Boolean> apply(InteractionCommandEnvironment env){
@@ -45,6 +41,12 @@ public class InteractionCommands{
             }
             return Mono.just(true);
         }
+    }
+
+    @InteractionDiscordCommand
+    public static class DeleteCommand extends GuildCommand{
+        @Autowired
+        private AuditService auditService;
 
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
