@@ -16,7 +16,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.Comparator;
 import java.util.function.BiConsumer;
 
 import static inside.event.audit.Attribute.COUNT;
@@ -36,13 +36,20 @@ public class InteractionCommands{
         private AuditService auditService;
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
-            Optional<Member> author = env.event().getInteraction().getMember();
-            if(author.isEmpty()){
+        public Mono<Boolean> apply(InteractionCommandEnvironment env){
+            if(env.event().getInteraction().getMember().isEmpty()){
                 return env.event().reply(spec -> spec.addEmbed(embed -> embed.setColor(settings.getDefaults().getErrorColor())
                         .setTitle(messageService.get(env.context(), "message.error.general.title"))
-                        .setDescription(messageService.get(env.context(), "command.interaction.only-guild"))));
+                        .setDescription(messageService.get(env.context(), "command.interaction.only-guild"))))
+                        .then(Mono.empty());
             }
+            return Mono.just(true);
+        }
+
+        @Override
+        public Mono<Void> execute(InteractionCommandEnvironment env){
+            Member author = env.event().getInteraction().getMember()
+                    .orElseThrow(IllegalStateException::new);
 
             Mono<TextChannel> reply = env.getReplyChannel().cast(TextChannel.class);
 
@@ -103,13 +110,12 @@ public class InteractionCommands{
                     .transform(messages -> number != 1 ? channel.bulkDeleteMessages(messages).then() : messages.next().flatMap(Message::delete).then()))
                     .then();
 
-            Mono<Void> log = Mono.justOrEmpty(author).flatMap(member -> reply.flatMap(channel ->
-                    auditService.log(member.getGuildId(), AuditActionType.MESSAGE_CLEAR)
-                    .withUser(member)
+            Mono<Void> log = reply.flatMap(channel -> auditService.log(author.getGuildId(), AuditActionType.MESSAGE_CLEAR)
+                    .withUser(author)
                     .withChannel(channel)
                     .withAttribute(COUNT, number)
                     .withAttachment(MESSAGE_TXT, input.writeString(result.toString()))
-                    .save()));
+                    .save());
 
             return history.then(log).and(env.event().reply("✅"));
         }
