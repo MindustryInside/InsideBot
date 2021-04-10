@@ -32,7 +32,7 @@ import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
 
-import static inside.command.Commands.TranslitCommand.*;
+import static inside.command.Commands.TranslitCommand.of;
 import static inside.event.audit.Attribute.COUNT;
 import static inside.event.audit.BaseAuditProvider.MESSAGE_TXT;
 import static inside.service.MessageService.ok;
@@ -239,7 +239,7 @@ public class Commands{
     @DiscordCommand(key = "1337", params = "command.1337.params", description = "command.1337.description")
     public static class LeetCommand extends Command{
         public static final Map<String, String> rusLeetSpeak;
-        public static final Map<String, String> latLeetSpeak;
+        public static final Map<String, String> engLeetSpeak;
 
         static{
             rusLeetSpeak = of(
@@ -254,7 +254,7 @@ public class Commands{
                     "я", "9"
             );
 
-            latLeetSpeak = of(
+            engLeetSpeak = of(
                     "a", "4", "b", "8", "c", "c", "d", "d",
                     "e", "3", "f", "ph", "g", "9", "h", "h",
                     "i", "1", "j", "g", "k", "k", "l", "l",
@@ -267,18 +267,19 @@ public class Commands{
 
         @Override
         public Mono<Void> execute(CommandEnvironment env, String[] args){
-            boolean lat = args[0].equalsIgnoreCase("lat");
-            return messageService.text(env.getReplyChannel(), MessageUtil.substringTo(leeted(args[1], lat), Message.MAX_CONTENT_LENGTH));
+            boolean ru = args[0].equalsIgnoreCase("ru");
+            return messageService.text(env.getReplyChannel(), MessageUtil.substringTo(leeted(args[1], ru), Message.MAX_CONTENT_LENGTH));
         }
 
-        public String leeted(String text, boolean lat){
-            Map<String, String> map = lat ? latLeetSpeak : rusLeetSpeak;
+        public static String leeted(String text, boolean russian){
+            Map<String, String> map = russian ? rusLeetSpeak : engLeetSpeak;
             UnaryOperator<String> get = s -> {
-                String result = map.get(s.toLowerCase());
-                if(result == null){
-                    result = translit.keySet().stream().filter(s::equalsIgnoreCase).findFirst().orElse(null);
-                }
-                return result != null ? s.chars().anyMatch(Character::isUpperCase) ? result.toUpperCase() : result : "";
+                String result = Optional.ofNullable(map.get(s.toLowerCase()))
+                        .orElse(map.keySet().stream()
+                                .filter(s::equalsIgnoreCase)
+                                .findFirst().orElse(""));
+
+                return s.chars().anyMatch(Character::isUpperCase) ? result.toUpperCase() : result;
             };
 
             int len = text.length();
@@ -337,13 +338,14 @@ public class Commands{
             return messageService.text(env.getReplyChannel(), MessageUtil.substringTo(translit(args[0]), Message.MAX_CONTENT_LENGTH));
         }
 
-        public String translit(String text){
+        public static String translit(String text){
             UnaryOperator<String> get = s -> {
-                String result = translit.get(s.toLowerCase());
-                if(result == null){
-                    result = translit.keySet().stream().filter(s::equalsIgnoreCase).findFirst().orElse(null);
-                }
-                return result != null ? s.chars().anyMatch(Character::isUpperCase) ? result.toUpperCase() : result : "";
+                String result = Optional.ofNullable(translit.get(s.toLowerCase()))
+                        .orElse(translit.keySet().stream()
+                                .filter(s::equalsIgnoreCase)
+                                .findFirst().orElse(""));
+
+                return s.chars().anyMatch(Character::isUpperCase) ? result.toUpperCase() : result;
             };
 
             int len = text.length();
@@ -570,7 +572,7 @@ public class Commands{
                                 messageService.deleteById(message.getId());
                             })
                             .thenReturn(message))
-                    .transform(messages -> number != 1 ? channel.bulkDeleteMessages(messages).then() : messages.next().flatMap(Message::delete).then()))
+                    .transform(messages -> number > 1 ? channel.bulkDeleteMessages(messages).then() : messages.next().flatMap(Message::delete).then()))
                     .then();
 
             Mono<Void> log =  reply.flatMap(channel -> auditService.log(author.getGuildId(), AuditActionType.MESSAGE_CLEAR)

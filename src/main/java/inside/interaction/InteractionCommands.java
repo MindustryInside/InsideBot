@@ -7,11 +7,15 @@ import discord4j.core.object.entity.channel.*;
 import discord4j.discordjson.json.*;
 import discord4j.rest.util.ApplicationCommandOptionType;
 import inside.Settings;
+import inside.command.Commands;
+import inside.data.service.AdminService;
 import inside.event.audit.*;
 import inside.interaction.model.InteractionDiscordCommand;
 import inside.util.*;
 import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import reactor.bool.BooleanUtils;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
@@ -44,9 +48,96 @@ public class InteractionCommands{
     }
 
     @InteractionDiscordCommand
+    public static class LeetSpeakCommand extends InteractionCommand{
+        @Override
+        public Mono<Void> execute(InteractionCommandEnvironment env){
+            boolean russian = env.event().getInteraction().getCommandInteraction()
+                    .getOption("type")
+                    .flatMap(ApplicationCommandInteractionOption::getValue)
+                    .map(ApplicationCommandInteractionOptionValue::asString)
+                    .map(str -> str.equalsIgnoreCase("ru"))
+                    .orElse(false);
+
+            String text = env.event().getInteraction().getCommandInteraction()
+                    .getOption("text")
+                    .flatMap(ApplicationCommandInteractionOption::getValue)
+                    .map(ApplicationCommandInteractionOptionValue::asString)
+                    .orElseThrow(AssertionError::new);
+
+            return env.event().reply(Commands.LeetCommand.leeted(text, russian));
+        }
+
+        @Override
+        public ApplicationCommandRequest getRequest(){
+            return ApplicationCommandRequest.builder()
+                    .name("1337")
+                    .description("Translate text into leet speak.")
+                    .addOption(ApplicationCommandOptionData.builder()
+                            .name("type")
+                            .description("Leet speak type")
+                            .type(ApplicationCommandOptionType.STRING.getValue())
+                            .required(true)
+                            .addChoice(ApplicationCommandOptionChoiceData.builder()
+                                    .name("English leet")
+                                    .value("en")
+                                    .build())
+                            .addChoice(ApplicationCommandOptionChoiceData.builder()
+                                    .name("Russian leet")
+                                    .value("ru")
+                                    .build())
+                            .build())
+                    .addOption(ApplicationCommandOptionData.builder()
+                            .name("text")
+                            .description("Target text")
+                            .type(ApplicationCommandOptionType.STRING.getValue())
+                            .required(true)
+                            .build())
+                    .build();
+        }
+    }
+
+    @InteractionDiscordCommand
+    public static class TranslitCommand extends InteractionCommand{
+        @Override
+        public Mono<Void> execute(InteractionCommandEnvironment env){
+            String text = env.event().getInteraction().getCommandInteraction()
+                    .getOption("text")
+                    .flatMap(ApplicationCommandInteractionOption::getValue)
+                    .map(ApplicationCommandInteractionOptionValue::asString)
+                    .orElseThrow(AssertionError::new);
+
+            return env.event().reply(Commands.TranslitCommand.translit(text));
+        }
+
+        @Override
+        public ApplicationCommandRequest getRequest(){
+            return ApplicationCommandRequest.builder()
+                    .name("tr")
+                    .description("Translating text into transliteration.")
+                    .addOption(ApplicationCommandOptionData.builder()
+                            .name("text")
+                            .description("Translation text")
+                            .type(ApplicationCommandOptionType.STRING.getValue())
+                            .required(true)
+                            .build())
+                    .build();
+        }
+    }
+
+    @InteractionDiscordCommand
     public static class DeleteCommand extends GuildCommand{
         @Autowired
         private AuditService auditService;
+
+        @Lazy
+        @Autowired
+        private AdminService adminService;
+
+        @Override
+        public Mono<Boolean> apply(InteractionCommandEnvironment env){
+            return super.apply(env).filterWhen(bool -> BooleanUtils.and(Mono.just(bool), adminService.isAdmin(env.event().getInteraction()
+                    .getMember().orElseThrow(IllegalStateException::new))));
+        }
 
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
@@ -109,7 +200,7 @@ public class InteractionCommands{
                                 messageService.deleteById(message.getId());
                             })
                             .thenReturn(message))
-                    .transform(messages -> number != 1 ? channel.bulkDeleteMessages(messages).then() : messages.next().flatMap(Message::delete).then()))
+                    .transform(messages -> number > 1 ? channel.bulkDeleteMessages(messages).then() : messages.next().flatMap(Message::delete).then()))
                     .then();
 
             Mono<Void> log = reply.flatMap(channel -> auditService.log(author.getGuildId(), AuditActionType.MESSAGE_CLEAR)
