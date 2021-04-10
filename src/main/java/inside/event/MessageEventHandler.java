@@ -24,6 +24,9 @@ import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 import reactor.util.function.Tuples;
 
+import java.time.Instant;
+
+import static inside.event.MemberEventHandler.TIMEOUT_MILLIS;
 import static inside.event.audit.Attribute.*;
 import static inside.event.audit.AuditActionType.*;
 import static inside.event.audit.BaseAuditProvider.MESSAGE_TXT;
@@ -197,7 +200,8 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                     messageService.delete(info);
                     Mono<User> responsibleUser = event.getGuild()
                             .flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MESSAGE_DELETE)))
-                            .filter(entry -> entry.getTargetId().map(id -> id.equals(info.userId())).orElse(false) &&
+                            .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)) &&
+                                    entry.getTargetId().map(id -> id.equals(info.userId())).orElse(false) &&
                                     entry.getData().options().toOptional()
                                             .map(AuditEntryInfoData::channelId)
                                             .flatMap(Possible::toOptional)
