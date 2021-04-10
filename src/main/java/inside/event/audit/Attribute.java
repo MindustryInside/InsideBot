@@ -12,7 +12,7 @@ public final class Attribute<T>{
 
     public static final Attribute<Long> DELAY = new Attribute<>("delay");
 
-    public static final Attribute<String> USER_URL = new Attribute<>("user_url");
+    public static final Attribute<String> AVATAR_URL = new Attribute<>("avatar_url");
 
     public static final Attribute<Snowflake> MESSAGE_ID = new Attribute<>("message_id");
 

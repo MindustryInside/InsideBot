@@ -1,104 +1,62 @@
 package inside.command.model;
 
+import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.entity.*;
-import discord4j.core.object.entity.channel.*;
-import discord4j.core.spec.*;
+import discord4j.core.object.entity.channel.MessageChannel;
 import inside.data.entity.LocalMember;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.*;
 import reactor.util.context.ContextView;
 
 import java.util.Objects;
-import java.util.function.*;
+import java.util.function.Supplier;
 
-public class CommandEnvironment implements CommandRequest, CommandResponse{
+public class CommandEnvironment{
     private final Member member;
     private final Message message;
     private final ContextView context; // TODO(Skat): use Mono#deferContextual
-    private final Supplier<Mono<? extends MessageChannel>> replyChannel;
-    private final Scheduler replyScheduler;
     private final LocalMember localMember;
 
-    CommandEnvironment(Member member, Message message, ContextView context,
-                       Supplier<Mono<? extends MessageChannel>> replyChannel,
-                       Scheduler replyScheduler, LocalMember localMember){
-        this.member = member;
-        this.message = message;
-        this.context = context;
-        this.replyChannel = replyChannel;
-        this.replyScheduler = replyScheduler;
-        this.localMember = localMember;
+    CommandEnvironment(Builder builder){
+        Objects.requireNonNull(builder, "builder");
+        this.member = builder.member;
+        this.message = builder.message;
+        this.context = builder.context;
+        this.localMember = builder.localMember;
     }
 
     public static Builder builder(){
         return new Builder();
     }
 
-    @Override
     public Member getAuthorAsMember(){
         return member;
     }
 
-    @Override
     public Message getMessage(){
         return message;
     }
 
-    @Override
     public ContextView context(){
         return context;
     }
 
-    @Override
     public LocalMember getLocalMember(){
         return localMember;
     }
 
-    @Override
     public Mono<MessageChannel> getReplyChannel(){
         return getMessage().getChannel();
     }
 
-    @Override
-    public Mono<PrivateChannel> getPrivateChannel(){
-        return Mono.justOrEmpty(getMessage().getAuthor()).flatMap(User::getPrivateChannel);
-    }
-
-    @Override
-    public CommandResponse withDirectMessage(){
-        return new CommandEnvironment(member, message, context, () -> getPrivateChannel().cast(MessageChannel.class), replyScheduler, localMember);
-    }
-
-    @Override
-    public CommandResponse withReplyChannel(Mono<? extends MessageChannel> channelSource){
-        return new CommandEnvironment(member, message, context, () -> channelSource, replyScheduler, localMember);
-    }
-
-    @Override
-    public CommandResponse withScheduler(Scheduler scheduler){
-        return new CommandEnvironment(member, message, context, replyChannel, scheduler, localMember);
-    }
-
-    @Override
-    public Mono<Void> sendMessage(Consumer<? super MessageCreateSpec> spec){
-        return replyChannel.get()
-                .publishOn(replyScheduler)
-                .flatMap(channel -> channel.createMessage(spec))
-                .then();
-    }
-
-    @Override
-    public Mono<Void> sendEmbed(Consumer<? super EmbedCreateSpec> spec){
-        return replyChannel.get()
-                .publishOn(replyScheduler)
-                .flatMap(channel -> channel.createEmbed(spec))
-                .then();
+    public GatewayDiscordClient getClient(){
+        return getMessage().getClient();
     }
 
     public static class Builder{
         private Member member;
         private Message message;
-        private ContextView contextView;
+        private ContextView context;
         private LocalMember localMember;
         private Supplier<Mono<? extends MessageChannel>> channel;
         private Scheduler scheduler;
@@ -114,7 +72,7 @@ public class CommandEnvironment implements CommandRequest, CommandResponse{
         }
 
         public Builder context(ContextView context){
-            this.contextView = Objects.requireNonNull(context, "context");
+            this.context = Objects.requireNonNull(context, "context");
             return this;
         }
 
@@ -128,11 +86,6 @@ public class CommandEnvironment implements CommandRequest, CommandResponse{
             return this;
         }
 
-        public Builder scheduler(Scheduler scheduler){
-            this.scheduler = scheduler;
-            return this;
-        }
-
         public CommandEnvironment build(){
             if(channel == null){
                 channel = () -> message.getChannel();
@@ -140,7 +93,7 @@ public class CommandEnvironment implements CommandRequest, CommandResponse{
             if(scheduler == null){
                 scheduler = Schedulers.boundedElastic();
             }
-            return new CommandEnvironment(member, message, contextView, channel, scheduler, localMember);
+            return new CommandEnvironment(this);
         }
     }
 }

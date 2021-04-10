@@ -23,7 +23,7 @@ public class AuditProviders{
             Snowflake messageId = action.getAttribute(MESSAGE_ID);
             String oldContent = action.getAttribute(OLD_CONTENT);
             String newContent = action.getAttribute(NEW_CONTENT);
-            String url = action.getAttribute(USER_URL);
+            String url = action.getAttribute(AVATAR_URL);
             if(messageId == null || oldContent == null || newContent == null || url == null){
                 return;
             }
@@ -56,7 +56,7 @@ public class AuditProviders{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
             String oldContent = action.getAttribute(OLD_CONTENT);
-            String url = action.getAttribute(USER_URL);
+            String url = action.getAttribute(AVATAR_URL);
             if(oldContent == null || url == null){
                 return;
             }
