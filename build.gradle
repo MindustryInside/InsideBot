@@ -11,7 +11,8 @@ repositories{
     maven { url 'https://www.jitpack.io' }
 }
 
-ext{ junit_version = '5.7.1'
+ext{
+    junit_version = '5.7.1'
     joda_version = 'v2.10.10'
     caffeine_version = '3.0.1'
     evalex_version = '2.5'
