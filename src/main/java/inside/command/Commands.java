@@ -49,17 +49,17 @@ public class Commands{
         protected AdminService adminService;
 
         @Override
-        public Mono<Boolean> apply(CommandRequest req){
-            return adminService.isAdmin(req.getAuthorAsMember());
+        public Mono<Boolean> apply(CommandEnvironment env){
+            return adminService.isAdmin(env.getAuthorAsMember());
         }
     }
 
     public static abstract class TestCommand extends Command{
         @Override
-        public Mono<Boolean> apply(CommandRequest req){
-            return req.getClient().getApplicationInfo()
+        public Mono<Boolean> apply(CommandEnvironment env){
+            return env.getClient().getApplicationInfo()
                     .map(ApplicationInfo::getOwnerId)
-                    .map(owner -> owner.equals(req.getAuthorAsMember().getId()));
+                    .map(owner -> owner.equals(env.getAuthorAsMember().getId()));
         }
     }
 
@@ -531,7 +531,7 @@ public class Commands{
                 return messageService.err(reply, "command.incorrect-number");
             }
 
-            long number = Strings.parseInt(args[0]);
+            long number = Strings.parseInt(args[0]); // TODO: replace to #parseLong
             if(number > settings.getDiscord().getMaxClearedCount()){
                 return messageService.err(reply, "common.limit-number", settings.getDiscord().getMaxClearedCount());
             }

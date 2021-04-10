@@ -43,6 +43,8 @@ public class Settings{
 
         private boolean encryptMessages = true;
 
+        private boolean auditLogSaving = false;
+
         public int getMaxClearedCount(){
             return maxClearedCount;
         }
@@ -57,6 +59,14 @@ public class Settings{
 
         public void setEncryptMessages(boolean encryptMessages){
             this.encryptMessages = encryptMessages;
+        }
+
+        public boolean isAuditLogSaving(){
+            return auditLogSaving;
+        }
+
+        public void setAuditLogSaving(boolean auditLogSaving){
+            this.auditLogSaving = auditLogSaving;
         }
     }
 

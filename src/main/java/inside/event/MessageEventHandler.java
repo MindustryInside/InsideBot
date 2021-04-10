@@ -143,7 +143,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                             .withUser(member)
                             .withAttribute(OLD_CONTENT, oldContent)
                             .withAttribute(NEW_CONTENT, newContent)
-                            .withAttribute(USER_URL, member.getAvatarUrl())
+                            .withAttribute(AVATAR_URL, member.getAvatarUrl())
                             .withAttribute(MESSAGE_ID, message.getId());
 
                     if(newContent.length() >= Field.MAX_VALUE_LENGTH || oldContent.length() >= Field.MAX_VALUE_LENGTH){
@@ -210,7 +210,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                             .next()
                             .flatMap(entry -> event.getClient().getUserById(entry.getResponsibleUserId()));
                     return responsibleUser.defaultIfEmpty(author).map(user -> builder.withUser(user)
-                            .withAttribute(USER_URL, user.getAvatarUrl()))
+                            .withAttribute(AVATAR_URL, user.getAvatarUrl()))
                             .flatMap(AuditActionBuilder::save);
                 })
                 .contextWrite(context);

@@ -9,7 +9,6 @@ import reactor.core.publisher.Mono;
 import java.util.function.Function;
 
 public abstract class InteractionCommand implements Function<InteractionCommandEnvironment, Mono<Boolean>>{
-
     @Autowired
     protected MessageService messageService;
 

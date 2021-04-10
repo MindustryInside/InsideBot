@@ -9,7 +9,7 @@ import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 import reactor.util.*;
 import reactor.util.function.Tuple2;
@@ -45,7 +45,7 @@ public class AuditServiceImpl implements AuditService{
         GuildConfig config = entityRetriever.getGuildById(action.guildId());
         AuditProvider forwardProvider = providers.get(action.type());
         if(forwardProvider != null){
-            if(false){ // I don't see the point in clogging up the database yet
+            if(settings.getDiscord().isAuditLogSaving()){
                 repository.save(action);
             }
             return forwardProvider.send(config, action, attachments);
@@ -72,7 +72,7 @@ public class AuditServiceImpl implements AuditService{
 
     @Autowired(required = false)
     public void init(List<AuditProvider> providers){
-        this.providers = providers.stream().collect(Collectors.toConcurrentMap(
+        this.providers = providers.stream().collect(Collectors.toMap(
                 p -> p.getClass().getAnnotation(ForwardAuditProvider.class).value(), Function.identity()
         ));
     }

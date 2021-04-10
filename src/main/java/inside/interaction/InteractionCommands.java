@@ -142,7 +142,7 @@ public class InteractionCommands{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
             Member author = env.event().getInteraction().getMember()
-                    .orElseThrow(IllegalStateException::new);
+                    .orElseThrow(AssertionError::new);
 
             Mono<TextChannel> reply = env.getReplyChannel().cast(TextChannel.class);
 
@@ -210,7 +210,7 @@ public class InteractionCommands{
                     .withAttachment(MESSAGE_TXT, input.writeString(result.toString()))
                     .save());
 
-            return history.then(log).and(env.event().reply("✅"));
+            return history.then(log).and(env.event().reply("\u2063✅"));
         }
 
         @Override
@@ -240,9 +240,9 @@ public class InteractionCommands{
                     .flatMap(ApplicationCommandInteractionOption::getValue)
                     .map(ApplicationCommandInteractionOptionValue::asUser)
                     .orElse(Mono.just(env.event().getInteraction().getUser()))
-                    .flatMap(avatar -> env.event().reply(spec -> spec.addEmbed(embed -> embed.setImage(avatar.getAvatarUrl() + "?size=512")
+                    .flatMap(user -> env.event().reply(spec -> spec.addEmbed(embed -> embed.setImage(user.getAvatarUrl() + "?size=512")
                             .setColor(settings.getDefaults().getNormalColor())
-                            .setDescription(messageService.format(env.context(), "command.avatar.text", avatar.getUsername())))));
+                            .setDescription(messageService.format(env.context(), "command.avatar.text", user.getUsername())))));
         }
 
         @Override
