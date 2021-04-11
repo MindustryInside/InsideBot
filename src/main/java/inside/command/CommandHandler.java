@@ -136,7 +136,7 @@ public class CommandHandler{
                 .switchIfEmpty(suggestion.then(Mono.empty()))
                 .flatMap(command -> {
                     CommandInfo info = commandInfo.get(command);
-                    List<String> result = new ArrayList<>();
+                    List<CommandOption> result = new ArrayList<>();
                     String argstr = commandstr.contains(" ") ? commandstr.substring(cmd.length() + 1) : "";
                     int index = 0;
                     boolean satisfied = false;
@@ -161,7 +161,7 @@ public class CommandHandler{
                         }
 
                         if(info.params()[index].variadic()){
-                            result.add(argstr);
+                            result.add(new CommandOption(info.params()[index], argstr));
                             break;
                         }
 
@@ -172,12 +172,12 @@ public class CommandHandler{
                                 return messageService.error(channel, "command.response.few-arguments.title",
                                         argsres, prefix, info.text(), messageService.get(env.context(), info.paramText()));
                             }
-                            result.add(argstr);
+                            result.add(new CommandOption(info.params()[index], argstr));
                             break;
                         }else{
                             String arg = argstr.substring(0, next);
                             argstr = argstr.substring(arg.length() + 1);
-                            result.add(arg);
+                            result.add(new CommandOption(info.params()[index], arg));
                         }
 
                         index++;
@@ -191,7 +191,7 @@ public class CommandHandler{
 
                     Mono<Void> execute = Mono.just(command)
                             .filterWhen(c -> c.apply(env))
-                            .flatMap(c -> c.execute(env, result.toArray(new String[0])))
+                            .flatMap(c -> c.execute(env, new CommandInteraction(cmd, result)))
                             .doFirst(() -> messageService.removeEdit(env.getMessage().getId()));
 
                     return Flux.fromIterable(info.permissions())

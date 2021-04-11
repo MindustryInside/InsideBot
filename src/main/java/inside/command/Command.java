@@ -20,7 +20,7 @@ public abstract class Command implements Function<CommandEnvironment, Mono<Boole
         return Mono.just(true);
     }
 
-    public Mono<Void> execute(CommandEnvironment env, String[] args){
+    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
         return Mono.empty();
     }
 

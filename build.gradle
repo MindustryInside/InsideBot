@@ -20,6 +20,8 @@ ext{
     jaxb_version = '2.3.1'
     hibernate_version = '5.4.28.Final'
 
+
+
     junit_version = '5.7.1'
 }
 
@@ -43,6 +45,9 @@ dependencies{
     implementation "org.springframework.boot:spring-boot-starter-data-jpa"
     implementation "org.springframework.boot:spring-boot-starter-security"
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+
+    compileOnly "org.immutables:value:2.8.2"
+    annotationProcessor "org.immutables:value:2.8.2"
 
     testImplementation "org.junit.jupiter:junit-jupiter-engine:$junit_version"
 }

@@ -19,6 +19,10 @@ public abstract class Strings{
         return cs == null || cs.length() == 0;
     }
 
+    public static boolean isNotEmpty(@Nullable CharSequence cs){
+        return !isEmpty(cs);
+    }
+
     public static int parseInt(String s){
         return parseInt(s, Integer.MIN_VALUE);
     }
