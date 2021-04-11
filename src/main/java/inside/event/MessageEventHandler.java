@@ -6,7 +6,7 @@ import discord4j.core.event.domain.message.*;
 import discord4j.core.object.Embed.Field;
 import discord4j.core.object.audit.ActionType;
 import discord4j.core.object.entity.*;
-import discord4j.core.object.entity.channel.*;
+import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.discordjson.json.AuditEntryInfoData;
 import discord4j.discordjson.possible.Possible;
 import inside.command.CommandHandler;
@@ -55,7 +55,6 @@ public class MessageEventHandler extends ReactiveEventAdapter{
             return Mono.empty();
         }
 
-        Mono<MessageChannel> channel = message.getChannel();
         Snowflake guildId = event.getGuildId().orElseThrow(IllegalStateException::new); // Guaranteed above, see DiscordUtil#isBot
 
         LocalMember localMember = entityRetriever.getMember(member);
@@ -81,7 +80,6 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                 .member(member)
                 .context(context)
                 .localMember(localMember)
-                .channel(() -> channel)
                 .build();
 
         return commandHandler.handleMessage(environment).and(messageInfo).contextWrite(context);

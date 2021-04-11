@@ -69,7 +69,7 @@ public class Commands{
         private CommandHandler handler;
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env, String[] args){
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Snowflake guildId = env.getAuthorAsMember().getGuildId();
             String prefix = entityRetriever.getPrefix(guildId);
 
@@ -103,7 +103,7 @@ public class Commands{
     @DiscordCommand(key = "ping", description = "command.ping.description")
     public static class PingCommand extends Command{
         @Override
-        public Mono<Void> execute(CommandEnvironment env, String[] args){
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             long start = System.currentTimeMillis();
             return env.getReplyChannel()
                     .flatMap(channel -> channel.createMessage(
@@ -118,10 +118,20 @@ public class Commands{
     @DiscordCommand(key = "base64", params = "command.base64.params", description = "command.base64.description")
     public static class Base64Command extends Command{
         @Override
-        public Mono<Void> execute(CommandEnvironment env, String[] args){
-            boolean encode = args[0].matches("(?i)enc(ode)?");
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            boolean encode = interaction.getOption("encode/decode")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .map(str -> str.matches("(?i)enc(ode)?"))
+                    .orElse(false);
+
+            String text = interaction.getOption("text")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .orElse("");
+
             Mono<String> result = Mono.fromCallable(() ->
-                    encode ? Base64Coder.encodeString(args[1]) : Base64Coder.decodeString(args[1]));
+                    encode ? Base64Coder.encodeString(text) : Base64Coder.decodeString(text));
 
             return result.onErrorResume(t -> t instanceof IllegalArgumentException,
                     t -> messageService.err(env.getReplyChannel(), t.getMessage()).then(Mono.empty()))
@@ -139,9 +149,11 @@ public class Commands{
     @DiscordCommand(key = "avatar", params = "command.avatar.params", description = "command.avatar.description")
     public static class AvatarCommand extends Command{
         @Override
-        public Mono<Void> execute(CommandEnvironment env, String[] args){
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Mono<MessageChannel> channel = env.getReplyChannel();
-            Snowflake targetId = args.length > 0 ? MessageUtil.parseUserId(args[0]) : env.getAuthorAsMember().getId();
+            Snowflake targetId = interaction.getOption("@user").flatMap(CommandOption::getValue)
+                    .map(OptionValue::asSnowflake)
+                    .orElse(env.getAuthorAsMember().getId());
 
             return Mono.justOrEmpty(targetId).flatMap(id -> env.getClient()
                     .withRetrievalStrategy(EntityRetrievalStrategy.REST).getUserById(id))
@@ -154,9 +166,14 @@ public class Commands{
     @DiscordCommand(key = "math", params = "command.math.params", description = "command.math.description")
     public static class MathCommand extends Command{
         @Override
-        public Mono<Void> execute(CommandEnvironment env, String[] args){
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            String text = interaction.getOption("math expression")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .orElse("");
+
             Mono<BigDecimal> result = Mono.fromCallable(() -> {
-                Expression exp = new Expression(args[0]).setPrecision(10);
+                Expression exp = new Expression(text).setPrecision(10);
                 exp.addOperator(shiftRightOperator);
                 exp.addOperator(shiftLeftOperator);
                 return exp.eval();
@@ -192,8 +209,14 @@ public class Commands{
     @DiscordCommand(key = "status", params = "command.status.params", description = "command.status.description")
     public static class StatusCommand extends TestCommand{
         @Override
-        public Mono<Void> execute(CommandEnvironment env, String[] args){
-            return switch(args[0].toLowerCase()){
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            String activity = interaction.getOption("status")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .map(String::toLowerCase)
+                    .orElseThrow(AssertionError::new);
+
+            return switch(activity){
                 case "online" -> env.getClient().updatePresence(ClientPresence.online());
                 case "dnd" -> env.getClient().updatePresence(ClientPresence.doNotDisturb());
                 case "idle" -> env.getClient().updatePresence(ClientPresence.idle());
@@ -216,9 +239,19 @@ public class Commands{
         }
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env, String[] args){
-            boolean lat = args[0].equalsIgnoreCase("lat");
-            return messageService.text(env.getReplyChannel(), lat ? text2rus(args[1]) : text2lat(args[1]));
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            boolean lat = interaction.getOption("from ru/lat")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .map("lat"::equalsIgnoreCase)
+                    .orElse(false);
+
+            String text = interaction.getOption("text")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .orElseThrow(AssertionError::new);
+
+            return messageService.text(env.getReplyChannel(), lat ? text2rus(text) : text2lat(text));
         }
 
         public String text2rus(String text){
@@ -266,9 +299,19 @@ public class Commands{
         }
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env, String[] args){
-            boolean ru = args[0].equalsIgnoreCase("ru");
-            return messageService.text(env.getReplyChannel(), MessageUtil.substringTo(leeted(args[1], ru), Message.MAX_CONTENT_LENGTH));
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            boolean ru = interaction.getOption("ru/lat")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .map("ru"::equalsIgnoreCase)
+                    .orElse(false);
+
+            String text = interaction.getOption("text")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .orElseThrow(AssertionError::new);
+
+            return messageService.text(env.getReplyChannel(), MessageUtil.substringTo(leeted(text, ru), Message.MAX_CONTENT_LENGTH));
         }
 
         public static String leeted(String text, boolean russian){
@@ -334,8 +377,14 @@ public class Commands{
         }
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env, String[] args){
-            return messageService.text(env.getReplyChannel(), MessageUtil.substringTo(translit(args[0]), Message.MAX_CONTENT_LENGTH));
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            String translited = interaction.getOption("text")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .map(str -> MessageUtil.substringTo(translit(str), Message.MAX_CONTENT_LENGTH))
+                    .orElse("");
+
+            return messageService.text(env.getReplyChannel(), translited);
         }
 
         public static String translit(String text){
@@ -376,15 +425,20 @@ public class Commands{
         private AdminService adminService;
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env, String[] args){
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Member member = env.getAuthorAsMember();
             Mono<MessageChannel> channel = env.getReplyChannel();
+
+            String prefix = interaction.getOption("prefix")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .orElseThrow(AssertionError::new);
 
             return Mono.just(entityRetriever.getGuildById(member.getGuildId()))
                     .filterWhen(guildConfig -> adminService.isOwner(member))
                     .switchIfEmpty(messageService.err(channel, "command.owner-only").then(Mono.empty()))
                     .flatMap(guildConfig -> Mono.defer(() -> {
-                        guildConfig.prefix(args[0]);
+                        guildConfig.prefix(prefix);
                         entityRetriever.save(guildConfig);
                         return messageService.text(channel, "command.config.prefix-updated", guildConfig.prefix());
                     }));
@@ -397,16 +451,28 @@ public class Commands{
         private AdminService adminService;
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env, String[] args){
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Member member = env.getAuthorAsMember();
             Mono<MessageChannel> channel = env.getReplyChannel();
 
+            boolean present = interaction.getOption("timezone").isPresent();
+
+            DateTimeZone timeZone = interaction.getOption("timezone")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .map(this::find)
+                    .orElse(null);
+
+            String str =  interaction.getOption("timezone")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .orElseThrow(AssertionError::new);
+
             return Mono.just(entityRetriever.getGuildById(member.getGuildId()))
-                    .filterWhen(guildConfig -> adminService.isOwner(member).map(bool -> bool && args.length > 0))
+                    .filterWhen(guildConfig -> adminService.isOwner(member).map(bool -> bool && present))
                     .flatMap(guildConfig -> Mono.defer(() -> {
-                        DateTimeZone timeZone = find(args[0]);
                         if(timeZone == null){
-                            String suggest = Strings.findClosest(DateTimeZone.getAvailableIDs(), args[0]);
+                            String suggest = Strings.findClosest(DateTimeZone.getAvailableIDs(), str);
 
                             if(suggest != null){
                                 return messageService.err(channel, "command.config.unknown-timezone.suggest", suggest);
@@ -419,9 +485,9 @@ public class Commands{
                         return Mono.deferContextual(ctx -> messageService.text(channel, "command.config.timezone-updated", ctx.<Locale>get(KEY_TIMEZONE)))
                                 .contextWrite(ctx -> ctx.put(KEY_TIMEZONE, timeZone));
                     }).thenReturn(guildConfig))
-                    .switchIfEmpty(args.length == 0 ?
-                            messageService.text(channel, "command.config.timezone", env.context().<Locale>get(KEY_TIMEZONE)).then(Mono.empty()) :
-                            messageService.err(channel, "command.owner-only").then(Mono.empty()))
+                    .switchIfEmpty(present ?
+                            messageService.err(channel, "command.owner-only").then(Mono.empty()) :
+                            messageService.text(channel, "command.config.timezone", env.context().<Locale>get(KEY_TIMEZONE)).then(Mono.empty()))
                     .then(Mono.empty());
         }
 
@@ -442,14 +508,21 @@ public class Commands{
         private AdminService adminService;
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env, String[] args){
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Member member = env.getAuthorAsMember();
             Mono<MessageChannel> channel = env.getReplyChannel();
 
+            boolean present = interaction.getOption("locale").isPresent();
+
+            Locale locale = interaction.getOption("locale")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .map(LocaleUtil::get)
+                    .orElse(null);
+
             return Mono.just(entityRetriever.getGuildById(member.getGuildId()))
-                    .filterWhen(guildConfig -> adminService.isOwner(member).map(bool -> bool && args.length > 0))
+                    .filterWhen(guildConfig -> adminService.isOwner(member).map(bool -> bool && present))
                     .flatMap(guildConfig -> Mono.defer(() -> {
-                        Locale locale = LocaleUtil.get(args[0]);
                         if(locale == null){
                             String all = LocaleUtil.locales.values().stream()
                                     .map(Locale::toString)
@@ -463,9 +536,9 @@ public class Commands{
                         return Mono.deferContextual(ctx -> messageService.text(channel, "command.config.locale-updated", ctx.<Locale>get(KEY_LOCALE)))
                                 .contextWrite(ctx -> ctx.put(KEY_LOCALE, locale));
                     }).thenReturn(guildConfig))
-                    .switchIfEmpty(args.length == 0 ?
-                            messageService.text(channel, "command.config.locale", env.context().<Locale>get(KEY_LOCALE)).then(Mono.empty()) :
-                            messageService.err(channel, "command.owner-only").then(Mono.empty()))
+                    .switchIfEmpty(present ?
+                            messageService.err(channel, "command.owner-only").then(Mono.empty()) :
+                            messageService.text(channel, "command.config.locale", env.context().<Locale>get(KEY_LOCALE)).then(Mono.empty()))
                     .then(Mono.empty());
         }
     }
@@ -474,21 +547,35 @@ public class Commands{
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_ROLES})
     public static class MuteCommand extends ModeratorCommand{
         @Override
-        public Mono<Void> execute(CommandEnvironment env, String[] args){
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Mono<MessageChannel> channel = env.getReplyChannel();
 
             Member author = env.getAuthorAsMember();
-            Snowflake targetId = MessageUtil.parseUserId(args[0]);
+
+            Optional<Snowflake> targetId = interaction.getOption("@user")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asSnowflake);
+
             Snowflake guildId = author.getGuildId();
 
             if(entityRetriever.getMuteRoleId(guildId).isEmpty()){
                 return messageService.err(channel, "command.disabled.mute");
             }
 
-            DateTime delay = MessageUtil.parseTime(args[1]);
+            DateTime delay = interaction.getOption("delay")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asDateTime)
+                    .orElse(null);
+
             if(delay == null){
                 return messageService.err(channel, "message.error.invalid-time");
             }
+
+            String reason = interaction.getOption("reason")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .map(String::trim)
+                    .orElse(null);
 
             return Mono.justOrEmpty(targetId).flatMap(id -> env.getClient().getMemberById(guildId, id))
                     .switchIfEmpty(messageService.err(channel, "command.incorrect-name").then(Mono.empty()))
@@ -498,8 +585,6 @@ public class Commands{
                             .map(function((admin, owner) -> !(admin && !owner))))
                     .switchIfEmpty(messageService.err(channel, "command.admin.user-is-admin").then(Mono.empty()))
                     .flatMap(member -> Mono.defer(() -> {
-                        String reason = args.length > 2 ? args[2].trim() : null;
-
                         if(author.equals(member)){
                             return messageService.err(channel, "command.admin.mute.self-user");
                         }
@@ -524,14 +609,19 @@ public class Commands{
         private AuditService auditService;
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env, String[] args){
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Member author = env.getAuthorAsMember();
             Mono<TextChannel> reply = env.getReplyChannel().cast(TextChannel.class);
-            if(!MessageUtil.canParseInt(args[0])){
+
+            Optional<String> arg = interaction.getOption("count")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString);
+
+            if(arg.filter(MessageUtil::canParseInt).isEmpty()){
                 return messageService.err(reply, "command.incorrect-number");
             }
 
-            long number = Strings.parseInt(args[0]); // TODO: replace to #parseLong
+            long number = arg.map(Strings::parseInt).orElse(0); // TODO: replace to #parseLong
             if(number > settings.getDiscord().getMaxClearedCount()){
                 return messageService.err(reply, "common.limit-number", settings.getDiscord().getMaxClearedCount());
             }
@@ -590,10 +680,20 @@ public class Commands{
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.BAN_MEMBERS})
     public static class WarnCommand extends ModeratorCommand{
         @Override
-        public Mono<Void> execute(CommandEnvironment env, String[] args){
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Member author = env.getAuthorAsMember();
             Mono<MessageChannel> channel = env.getReplyChannel();
-            Snowflake targetId = MessageUtil.parseUserId(args[0]);
+
+            Optional<Snowflake> targetId = interaction.getOption("@user")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asSnowflake);
+
+            String reason = interaction.getOption("reason")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .map(String::trim)
+                    .orElse(null);
+
             Snowflake guildId = author.getGuildId();
 
             return Mono.justOrEmpty(targetId).flatMap(id -> env.getClient().getMemberById(guildId, id))
@@ -602,8 +702,6 @@ public class Commands{
                             .map(function((admin, owner) -> !(admin && !owner))))
                     .switchIfEmpty(messageService.err(channel, "command.admin.user-is-admin").then(Mono.empty()))
                     .flatMap(member -> {
-                        String reason = args.length > 1 ? args[1].trim() : null;
-
                         if(author.equals(member)){
                             return messageService.err(channel, "command.admin.warn.self-user");
                         }
@@ -631,9 +729,13 @@ public class Commands{
     @DiscordCommand(key = "warnings", params = "command.admin.warnings.params", description = "command.admin.warnings.description")
     public static class WarningsCommand extends ModeratorCommand{
         @Override
-        public Mono<Void> execute(CommandEnvironment env, String[] args){
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Mono<MessageChannel> channel = env.getReplyChannel();
-            Snowflake targetId = MessageUtil.parseUserId(args[0]);
+
+            Optional<Snowflake> targetId = interaction.getOption("@user")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asSnowflake);
+
             Snowflake guildId = env.getAuthorAsMember().getGuildId();
 
             DateTimeFormatter formatter = DateTimeFormat.shortDateTime()
@@ -665,7 +767,7 @@ public class Commands{
                     .flatMapMany(id -> adminService.warnings(guildId, id))
                     .switchIfEmpty(messageService.text(channel, "command.admin.warnings.empty").then(Mono.never()))
                     .limitRequest(21).index().collect(collector)
-                    .zipWith(env.getClient().getMemberById(guildId, targetId))
+                    .zipWith(env.getClient().getMemberById(guildId, targetId.orElseThrow(AssertionError::new)))
                     .flatMap(function((embed, target) -> messageService.info(channel, spec -> spec.from(embed)
                             .setTitle(messageService.format(env.context(), "command.admin.warnings.title", target.getDisplayName())))));
         }
@@ -674,13 +776,21 @@ public class Commands{
     @DiscordCommand(key = "unwarn", params = "command.admin.unwarn.params", description = "command.admin.unwarn.description")
     public static class UnwarnCommand extends ModeratorCommand{
         @Override
-        public Mono<Void> execute(CommandEnvironment env, String[] args){
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Member author = env.getAuthorAsMember();
             Mono<MessageChannel> channel = env.getReplyChannel();
-            Snowflake targetId = MessageUtil.parseUserId(args[0]);
+
+            Optional<Snowflake> targetId = interaction.getOption("@user")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asSnowflake);
+
             Snowflake guildId = env.getAuthorAsMember().getGuildId();
 
-            if(args.length > 1 && !MessageUtil.canParseInt(args[1])){
+            Optional<String> index = interaction.getOption("index")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString);
+
+            if(index.filter(MessageUtil::canParseInt).isEmpty()){
                 return messageService.err(channel, "command.incorrect-number");
             }
 
@@ -689,7 +799,7 @@ public class Commands{
                     .filterWhen(target -> adminService.isOwner(author).map(owner -> !target.equals(author) || owner))
                     .switchIfEmpty(messageService.err(channel, "command.admin.unwarn.permission-denied").then(Mono.empty()))
                     .flatMap(target -> adminService.warnings(target).count().flatMap(count -> {
-                        int warn = args.length > 1 ? Strings.parseInt(args[1]) : 1;
+                        int warn = index.map(Strings::parseInt).orElse(1);
                         if(count == 0){
                             return messageService.text(channel, "command.admin.warnings.empty");
                         }
@@ -729,18 +839,23 @@ public class Commands{
         private Settings settings;
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env, String[] args){
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Mono<MessageChannel> channel = env.getReplyChannel();
             Member author = env.getAuthorAsMember();
 
-            String title = args[0].startsWith("**") && args[0].lastIndexOf("**") != -1 ?
-                    args[0].substring(0, args[0].lastIndexOf("**") + 2) : null;
+            String text = interaction.getOption("poll text")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .orElseThrow(AssertionError::new);
+
+            String title = text.startsWith("**") && text.lastIndexOf("**") != -1 ?
+                    text.substring(0, text.lastIndexOf("**") + 2) : null;
 
             if(title == null || title.equals("**")){
                 return messageService.err(env.getReplyChannel(), "command.poll.title").then(Mono.empty());
             }
 
-            String striped = args[0].substring(title.length());
+            String striped = text.substring(title.length());
             int count = striped.split("\\d+.+").length;
             if(count <= 0 || striped.isEmpty()){
                 return messageService.err(env.getReplyChannel(), "command.poll.empty-variants");
@@ -757,7 +872,7 @@ public class Commands{
 
             Mono<Void> message = channel.flatMap(reply -> reply.createMessage(spec -> spec.setEmbed(embed -> embed.setTitle(title)
                     .setColor(settings.getDefaults().getNormalColor())
-                    .setDescription(args[0].substring(title.length()))
+                    .setDescription(text.substring(title.length()))
                     .setAuthor(author.getUsername(), null, author.getAvatarUrl()))))
                     .flatMap(poll -> Mono.defer(() -> reactions.apply(poll, count)))
                     .then();
@@ -776,9 +891,13 @@ public class Commands{
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_ROLES})
     public static class UnmuteCommand extends ModeratorCommand{
         @Override
-        public Mono<Void> execute(CommandEnvironment env, String[] args){
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Mono<MessageChannel> channel = env.getReplyChannel();
-            Snowflake targetId = MessageUtil.parseUserId(args[0]);
+
+            Optional<Snowflake> targetId = interaction.getOption("@user")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asSnowflake);
+
             Snowflake guildId = env.getAuthorAsMember().getGuildId();
 
             if(entityRetriever.getMuteRoleId(guildId).isEmpty()){
