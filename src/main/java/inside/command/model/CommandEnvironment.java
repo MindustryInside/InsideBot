@@ -5,11 +5,9 @@ import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.MessageChannel;
 import inside.data.entity.LocalMember;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.*;
 import reactor.util.context.ContextView;
 
 import java.util.Objects;
-import java.util.function.Supplier;
 
 public class CommandEnvironment{
     private final Member member;
@@ -17,12 +15,11 @@ public class CommandEnvironment{
     private final ContextView context; // TODO(Skat): use Mono#deferContextual
     private final LocalMember localMember;
 
-    CommandEnvironment(Builder builder){
-        Objects.requireNonNull(builder, "builder");
-        this.member = builder.member;
-        this.message = builder.message;
-        this.context = builder.context;
-        this.localMember = builder.localMember;
+    public CommandEnvironment(Member member, Message message, ContextView context, LocalMember localMember){
+        this.member = Objects.requireNonNull(member, "member");
+        this.message = Objects.requireNonNull(message, "message");
+        this.context = Objects.requireNonNull(context, "context");
+        this.localMember = Objects.requireNonNull(localMember, "localMember");
     }
 
     public static Builder builder(){
@@ -58,8 +55,6 @@ public class CommandEnvironment{
         private Message message;
         private ContextView context;
         private LocalMember localMember;
-        private Supplier<Mono<? extends MessageChannel>> channel;
-        private Scheduler scheduler;
 
         public Builder member(Member member){
             this.member = Objects.requireNonNull(member, "member");
@@ -81,19 +76,8 @@ public class CommandEnvironment{
             return this;
         }
 
-        public Builder channel(Supplier<Mono<? extends MessageChannel>> channel){
-            this.channel = channel;
-            return this;
-        }
-
         public CommandEnvironment build(){
-            if(channel == null){
-                channel = () -> message.getChannel();
-            }
-            if(scheduler == null){
-                scheduler = Schedulers.boundedElastic();
-            }
-            return new CommandEnvironment(this);
+            return new CommandEnvironment(member, message, context, localMember);
         }
     }
 }
