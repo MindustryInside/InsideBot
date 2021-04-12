@@ -33,4 +33,11 @@ public class OptionValue{
     public DateTime asDateTime(){
         return MessageUtil.parseTime(value);
     }
+
+    @Override
+    public String toString(){
+        return "OptionValue{" +
+                "value='" + value + '\'' +
+                '}';
+    }
 }
