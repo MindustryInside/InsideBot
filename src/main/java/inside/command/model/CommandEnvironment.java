@@ -15,7 +15,7 @@ public class CommandEnvironment{
     private final ContextView context; // TODO(Skat): use Mono#deferContextual
     private final LocalMember localMember;
 
-    public CommandEnvironment(Member member, Message message, ContextView context, LocalMember localMember){
+    private CommandEnvironment(Member member, Message message, ContextView context, LocalMember localMember){
         this.member = Objects.requireNonNull(member, "member");
         this.message = Objects.requireNonNull(message, "message");
         this.context = Objects.requireNonNull(context, "context");

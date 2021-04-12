@@ -28,4 +28,12 @@ public class CommandInteraction{
                 .filter(option -> option.getName().equals(name))
                 .findFirst();
     }
+
+    @Override
+    public String toString(){
+        return "CommandInteraction{" +
+                "commandName='" + commandName + '\'' +
+                ", options=" + options +
+                '}';
+    }
 }
