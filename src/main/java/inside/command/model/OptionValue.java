@@ -21,7 +21,7 @@ public class OptionValue{
     }
 
     public boolean asBoolean(){
-        return Boolean.getBoolean(value);
+        return Boolean.parseBoolean(value);
     }
 
     @Nullable
