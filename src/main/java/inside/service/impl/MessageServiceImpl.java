@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-import reactor.util.*;
 import reactor.util.context.ContextView;
 
 import java.time.Duration;
@@ -30,7 +29,6 @@ import static inside.util.ContextUtil.KEY_LOCALE;
 
 @Service
 public class MessageServiceImpl implements MessageService{
-    private static final Logger log = Loggers.getLogger(MessageService.class);
 
     private final MessageInfoRepository repository;
 
@@ -82,7 +80,7 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public Mono<Void> text(Mono<? extends MessageChannel> channel, String text, Object... args){
         return Mono.deferContextual(ctx -> channel.publishOn(Schedulers.boundedElastic())
-                .flatMap(c -> c.createMessage(spec -> spec.setContent(text.isBlank() ? ":eyes: (?)" : format(ctx, text, args))
+                .flatMap(c -> c.createMessage(spec -> spec.setContent(text.isBlank() ? placeholder : format(ctx, text, args))
                         .setAllowedMentions(AllowedMentions.suppressAll())))
                 .then());
     }
