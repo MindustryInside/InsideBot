@@ -64,48 +64,24 @@ public class AdminAction extends GuildEntity{
         return type;
     }
 
-    public void type(AdminActionType type){
-        this.type = Objects.requireNonNull(type, "type");
-    }
-
     public LocalMember admin(){
         return admin;
-    }
-
-    public void admin(LocalMember admin){
-        this.admin = Objects.requireNonNull(admin, "admin");
     }
 
     public LocalMember target(){
         return target;
     }
 
-    public void target(LocalMember target){
-        this.target = Objects.requireNonNull(target, "target");
-    }
-
     public Optional<String> reason(){
         return Optional.ofNullable(reason);
-    }
-
-    public void reason(@Nullable String reason){
-        this.reason = reason;
     }
 
     public DateTime timestamp(){
         return timestamp;
     }
 
-    public void timestamp(DateTime timestamp){
-        this.timestamp = Objects.requireNonNull(timestamp, "timestamp");
-    }
-
     public Optional<DateTime> endTimestamp(){
         return Optional.ofNullable(endTimestamp);
-    }
-
-    public void endTimestamp(@Nullable DateTime endTimestamp){
-        this.endTimestamp = endTimestamp;
     }
 
     @Transient

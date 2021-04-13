@@ -59,15 +59,16 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
         LocalMember localMember = entityRetriever.getMember(member);
 
-        localMember.lastSentMessage(DateTime.now());
+        DateTime time = new DateTime(message.getTimestamp().toEpochMilli());
+        localMember.lastSentMessage(time);
         entityRetriever.save(localMember);
 
-        Mono<Void> messageInfo = Mono.fromRunnable(() -> {
+        Mono<Void> safeMessageInfo = Mono.fromRunnable(() -> {
             MessageInfo info = new MessageInfo();
             info.userId(member.getId());
             info.messageId(message.getId());
             info.guildId(guildId);
-            info.timestamp(new DateTime(message.getTimestamp().toEpochMilli()));
+            info.timestamp(time);
             info.content(messageService.encrypt(MessageUtil.effectiveContent(message), message.getId(), message.getChannelId()));
             messageService.save(info);
         });
@@ -82,7 +83,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                 .localMember(localMember)
                 .build();
 
-        return commandHandler.handleMessage(environment).and(messageInfo).contextWrite(context);
+        return commandHandler.handleMessage(environment).and(safeMessageInfo).contextWrite(context);
     }
 
     @Override
