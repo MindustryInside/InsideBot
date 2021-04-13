@@ -32,7 +32,7 @@ import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
 
-import static inside.command.Commands.TranslitCommand.of;
+import static inside.command.Commands.TransliterationCommand.of;
 import static inside.event.audit.Attribute.COUNT;
 import static inside.event.audit.BaseAuditProvider.MESSAGE_TXT;
 import static inside.service.MessageService.ok;
@@ -128,7 +128,7 @@ public class Commands{
             String text = interaction.getOption("text")
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
-                    .orElse("");
+                    .orElseThrow(AssertionError::new);
 
             Mono<String> result = Mono.fromCallable(() ->
                     encode ? Base64Coder.encodeString(text) : Base64Coder.decodeString(text));
@@ -170,7 +170,7 @@ public class Commands{
             String text = interaction.getOption("math expression")
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
-                    .orElse("");
+                    .orElseThrow(AssertionError::new);
 
             Mono<BigDecimal> result = Mono.fromCallable(() -> {
                 Expression exp = new Expression(text).setPrecision(10);
@@ -270,7 +270,7 @@ public class Commands{
     }
 
     @DiscordCommand(key = "1337", params = "command.1337.params", description = "command.1337.description")
-    public static class LeetCommand extends Command{
+    public static class LeetSpeakCommand extends Command{
         public static final Map<String, String> rusLeetSpeak;
         public static final Map<String, String> engLeetSpeak;
 
@@ -347,8 +347,8 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "tr", params = "command.translit.params", description = "command.translit.description")
-    public static class TranslitCommand extends Command{
+    @DiscordCommand(key = "tr", params = "command.transliteration.params", description = "command.transliteration.description")
+    public static class TransliterationCommand extends Command{
         public static final Map<String, String> translit;
 
         static{
@@ -669,7 +669,7 @@ public class Commands{
                     .withUser(author)
                     .withChannel(channel)
                     .withAttribute(COUNT, number)
-                    .withAttachment(MESSAGE_TXT, input.writeString(result.toString()))
+                    .withAttachment(MESSAGE_TXT, input.withString(result.toString()))
                     .save());
 
             return history.then(log).and(env.getMessage().addReaction(ok));

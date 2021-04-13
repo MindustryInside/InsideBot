@@ -3,13 +3,10 @@ package inside.util;
 import reactor.core.Exceptions;
 import reactor.util.annotation.Nullable;
 
-import java.nio.charset.*;
 import java.util.function.Function;
 
 public abstract class Strings{
     public static final int DEFAULT_LEVENSHTEIN_DST = 3;
-
-    public static final Charset utf8 = StandardCharsets.UTF_8;
 
     private Strings(){
 

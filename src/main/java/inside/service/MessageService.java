@@ -13,6 +13,8 @@ public interface MessageService extends MessageHolderService{
 
     ReactionEmoji ok = ReactionEmoji.unicode("✅");
 
+    String placeholder = ":eyes: (?)";
+
     // bundle
 
     String get(ContextView ctx, String key);

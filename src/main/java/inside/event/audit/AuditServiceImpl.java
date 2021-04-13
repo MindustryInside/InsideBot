@@ -11,7 +11,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
-import reactor.util.*;
 import reactor.util.function.Tuple2;
 
 import java.io.InputStream;
@@ -21,7 +20,6 @@ import java.util.stream.Collectors;
 
 @Service
 public class AuditServiceImpl implements AuditService{
-    private static final Logger log = Loggers.getLogger(AuditService.class);
 
     private final EntityRetriever entityRetriever;
 
@@ -50,7 +48,7 @@ public class AuditServiceImpl implements AuditService{
             }
             return forwardProvider.send(config, action, attachments);
         }
-        return Mono.empty();
+        return Mono.error(new NoSuchElementException("Missed audit provider for type: " + action.type()));
     }
 
     @Override

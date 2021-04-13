@@ -11,6 +11,7 @@ import inside.command.Commands;
 import inside.data.service.AdminService;
 import inside.event.audit.*;
 import inside.interaction.model.InteractionDiscordCommand;
+import inside.service.MessageService;
 import inside.util.*;
 import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,9 +63,10 @@ public class InteractionCommands{
                     .getOption("text")
                     .flatMap(ApplicationCommandInteractionOption::getValue)
                     .map(ApplicationCommandInteractionOptionValue::asString)
-                    .orElseThrow(AssertionError::new);
+                    .map(str -> Commands.LeetSpeakCommand.leeted(str, russian))
+                    .orElse(MessageService.placeholder);
 
-            return env.event().reply(Commands.LeetCommand.leeted(text, russian));
+            return env.event().reply(text);
         }
 
         @Override
@@ -104,9 +106,10 @@ public class InteractionCommands{
                     .getOption("text")
                     .flatMap(ApplicationCommandInteractionOption::getValue)
                     .map(ApplicationCommandInteractionOptionValue::asString)
-                    .orElseThrow(AssertionError::new);
+                    .map(Commands.TransliterationCommand::translit)
+                    .orElse(MessageService.placeholder);
 
-            return env.event().reply(Commands.TranslitCommand.translit(text));
+            return env.event().reply(text);
         }
 
         @Override
@@ -156,7 +159,9 @@ public class InteractionCommands{
                 return env.event().reply(spec -> spec.addEmbed(embed -> embed.setColor(settings.getDefaults().getErrorColor())
                         .setTitle(messageService.get(env.context(), "message.error.general.title"))
                         .setDescription(messageService.get(env.context(), "command.incorrect-number"))));
-            }else if(number > settings.getDiscord().getMaxClearedCount()){
+            }
+
+            if(number > settings.getDiscord().getMaxClearedCount()){
                 return env.event().reply(spec -> spec.addEmbed(embed -> embed.setColor(settings.getDefaults().getErrorColor())
                         .setTitle(messageService.get(env.context(), "message.error.general.title"))
                         .setDescription(messageService.format(env.context(), "common.limit-number",
@@ -207,10 +212,10 @@ public class InteractionCommands{
                     .withUser(author)
                     .withChannel(channel)
                     .withAttribute(COUNT, number)
-                    .withAttachment(MESSAGE_TXT, input.writeString(result.toString()))
+                    .withAttachment(MESSAGE_TXT, input.withString(result.toString()))
                     .save());
 
-            return history.then(log).and(env.event().reply("\u2063✅"));
+            return history.then(log).and(env.event().reply("\u2063✅")); // to reduce emoji size
         }
 
         @Override

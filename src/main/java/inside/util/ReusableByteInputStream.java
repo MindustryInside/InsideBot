@@ -1,6 +1,7 @@
 package inside.util;
 
 import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 public class ReusableByteInputStream extends ByteArrayInputStream{
@@ -9,9 +10,9 @@ public class ReusableByteInputStream extends ByteArrayInputStream{
         super(new byte[0]);
     }
 
-    public ReusableByteInputStream writeString(String data){
+    public ReusableByteInputStream withString(String data){
         Objects.requireNonNull(data, "data");
-        setBytes(data.getBytes(Strings.utf8));
+        setBytes(data.getBytes(StandardCharsets.UTF_8));
         return this;
     }
 

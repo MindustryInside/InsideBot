@@ -146,7 +146,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
                     if(newContent.length() >= Field.MAX_VALUE_LENGTH || oldContent.length() >= Field.MAX_VALUE_LENGTH){
                         ReusableByteInputStream input = new ReusableByteInputStream();
-                        input.writeString(String.format("%s%n%s%n%n%s%n%s",
+                        input.withString(String.format("%s%n%s%n%n%s%n%s",
                                 messageService.get(context, "audit.message.old-content.title"), oldContent,
                                 messageService.get(context, "audit.message.new-content.title"), newContent
                         ));
@@ -189,7 +189,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
                     if(decrypted.length() >= Field.MAX_VALUE_LENGTH){
                         ReusableByteInputStream input = new ReusableByteInputStream();
-                        input.writeString(String.format("%s%n%s",
+                        input.withString(String.format("%s%n%s",
                                 messageService.get(context, "audit.message.deleted-content.title"), decrypted
                         ));
                         builder.withAttachment(MESSAGE_TXT, input);

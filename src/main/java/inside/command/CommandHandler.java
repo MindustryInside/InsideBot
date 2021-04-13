@@ -15,6 +15,7 @@ import reactor.util.context.Context;
 import reactor.util.function.Tuple2;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static inside.util.ContextUtil.KEY_LOCALE;
@@ -194,6 +195,17 @@ public class CommandHandler{
                             .flatMap(c -> c.execute(env, new CommandInteraction(cmd, result)))
                             .doFirst(() -> messageService.removeEdit(env.getMessage().getId()));
 
+                    Function<String, Mono<String>> fallback = s -> messageService.text(channel, String.format("%s%n%n%s",
+                            messageService.get(env.context(), "message.error.permission-denied.title"),
+                            messageService.format(env.context(), "message.error.permission-denied.description", s)))
+                            .onErrorResume(t -> t.getMessage().contains("Missing Permissions"), t ->
+                                    guild.flatMap(g -> g.getOwner().flatMap(User::getPrivateChannel))
+                                            .flatMap(c -> c.createMessage(String.format("%s%n%n%s",
+                                                    messageService.get(env.context(), "message.error.permission-denied.title"),
+                                                    messageService.format(env.context(), "message.error.permission-denied.description", s))))
+                                            .then())
+                            .thenReturn(s);
+
                     return Flux.fromIterable(info.permissions())
                             .filterWhen(permission -> channel.flatMap(targetChannel ->
                                     targetChannel.getEffectivePermissions(selfId))
@@ -201,16 +213,7 @@ public class CommandHandler{
                             .map(permission -> messageService.getEnum(env.context(), permission))
                             .collect(Collectors.joining("\n"))
                             .filter(s -> !s.isBlank())
-                            .flatMap(s -> messageService.text(channel, String.format("%s%n%n%s",
-                                    messageService.get(env.context(), "message.error.permission-denied.title"),
-                                    messageService.format(env.context(), "message.error.permission-denied.description", s)))
-                                    .onErrorResume(t -> t.getMessage().contains("Missing Permissions"), t ->
-                                            guild.flatMap(g -> g.getOwner().flatMap(User::getPrivateChannel))
-                                                    .flatMap(c -> c.createMessage(String.format("%s%n%n%s",
-                                                    messageService.get(env.context(), "message.error.permission-denied.title"),
-                                                    messageService.format(env.context(), "message.error.permission-denied.description", s))))
-                                                    .then())
-                                    .thenReturn(s))
+                            .flatMap(fallback)
                             .switchIfEmpty(execute.then(Mono.empty()))
                             .then();
                 })));

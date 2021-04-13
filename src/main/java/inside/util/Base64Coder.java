@@ -1,5 +1,7 @@
 package inside.util;
 
+import java.nio.charset.StandardCharsets;
+
 public class Base64Coder{
     public static final CharMap regularMap = new CharMap('+', '/'), urlsafeMap = new CharMap('-', '_');
 
@@ -18,7 +20,7 @@ public class Base64Coder{
     }
 
     public static String encodeString(String s, boolean useUrlsafeEncoding){
-        return new String(encode(s.getBytes(Strings.utf8), useUrlsafeEncoding ? urlsafeMap.encodingMap : regularMap.encodingMap));
+        return new String(encode(s.getBytes(StandardCharsets.UTF_8), useUrlsafeEncoding ? urlsafeMap.encodingMap : regularMap.encodingMap));
     }
 
     /**

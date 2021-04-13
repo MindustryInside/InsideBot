@@ -48,8 +48,10 @@ public abstract class BaseEntityService<K, V extends GuildEntity, R extends Guil
     @Transactional
     public void delete(K id){
         Objects.requireNonNull(id, "id");
-        V entity = Objects.requireNonNull(get(id), "entity");
-        repository.delete(entity);
+        V entity = get(id);
+        if(entity != null){
+            repository.delete(entity);
+        }
     }
 
     @Override

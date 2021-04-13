@@ -21,10 +21,9 @@ public class AdminConfigService extends BaseEntityService<Snowflake, AdminConfig
     protected AdminConfig create(Snowflake id){
         AdminConfig adminConfig = new AdminConfig();
         adminConfig.guildId(id);
-        adminConfig.maxWarnCount(3);
+        adminConfig.maxWarnCount(settings.getDefaults().getMaxWarnings());
         adminConfig.muteBaseDelay(Duration.millis(settings.getDefaults().getMuteEvade().toMillis())); // TODO: use joda or java.time?
         adminConfig.warnExpireDelay(Duration.millis(settings.getDefaults().getWarnExpire().toMillis()));
-
         return adminConfig;
     }
 

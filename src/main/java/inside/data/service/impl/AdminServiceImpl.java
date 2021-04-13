@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
-import reactor.util.*;
 import reactor.util.annotation.Nullable;
 
 import java.util.List;
@@ -25,7 +24,6 @@ import static inside.util.ContextUtil.*;
 
 @Service
 public class AdminServiceImpl implements AdminService{
-    private static final Logger log = Loggers.getLogger(AdminService.class);
 
     private final AdminActionRepository repository;
 
