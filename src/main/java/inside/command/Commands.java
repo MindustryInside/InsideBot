@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Lazy;
 import reactor.bool.BooleanUtils;
 import reactor.core.Exceptions;
 import reactor.core.publisher.*;
+import reactor.util.*;
 import reactor.util.annotation.Nullable;
 import reactor.util.function.Tuple2;
 
@@ -228,22 +229,22 @@ public class Commands{
 
     @DiscordCommand(key = "r", params = "command.text-layout.params", description = "command.text-layout.description")
     public static class TextLayoutCommand extends Command{
-        private static final String[] latPattern;
+        private static final String[] engPattern;
         private static final String[] rusPattern;
 
         static{
-            String lat = "Q-W-E-R-T-Y-U-I-O-P-A-S-D-F-G-H-J-K-L-Z-X-C-V-B-N-M";
+            String eng = "Q-W-E-R-T-Y-U-I-O-P-A-S-D-F-G-H-J-K-L-Z-X-C-V-B-N-M";
             String rus = "Й-Ц-У-К-Е-Н-Г-Ш-Щ-З-Ф-Ы-В-А-П-Р-О-Л-Д-Я-Ч-С-М-И-Т-Ь";
-            latPattern = (lat + "-" + lat.toLowerCase() + "-\\^-:-\\$-@-&-~-`-\\{-\\[-\\}-\\]-\"-'-<->-;-\\?-\\/-\\.-,-#").split("-");
+            engPattern = (eng + "-" + eng.toLowerCase() + "-\\^-:-\\$-@-&-~-`-\\{-\\[-\\}-\\]-\"-'-<->-;-\\?-\\/-\\.-,-#").split("-");
             rusPattern = (rus + "-" + rus.toLowerCase() + "-:-Ж-;-\"-\\?-Ё-ё-Х-х-Ъ-ъ-Э-э-Б-Ю-ж-,-\\.-ю-б-№").split("-");
         }
 
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            boolean lat = interaction.getOption("from ru/lat")
+            boolean en = interaction.getOption("from ru/en")
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
-                    .map("lat"::equalsIgnoreCase)
+                    .map("en"::equalsIgnoreCase)
                     .orElse(false);
 
             String text = interaction.getOption("text")
@@ -251,19 +252,19 @@ public class Commands{
                     .map(OptionValue::asString)
                     .orElseThrow(AssertionError::new);
 
-            return messageService.text(env.getReplyChannel(), lat ? text2rus(text) : text2lat(text));
+            return messageService.text(env.getReplyChannel(), en ? text2rus(text) : text2lat(text));
         }
 
         public String text2rus(String text){
-            for(int i = 0; i < latPattern.length; i++){
-                text = text.replaceAll(latPattern[i], rusPattern[i]);
+            for(int i = 0; i < engPattern.length; i++){
+                text = text.replaceAll(engPattern[i], rusPattern[i]);
             }
             return text;
         }
 
         public String text2lat(String text){
             for(int i = 0; i < rusPattern.length; i++){
-                text = text.replaceAll(rusPattern[i], latPattern[i]);
+                text = text.replaceAll(rusPattern[i], engPattern[i]);
             }
             return text;
         }
@@ -300,7 +301,7 @@ public class Commands{
 
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            boolean ru = interaction.getOption("ru/lat")
+            boolean ru = interaction.getOption("ru/en")
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
                     .map("ru"::equalsIgnoreCase)
@@ -358,10 +359,10 @@ public class Commands{
                     "z", "з", "i", "и", "j", "й", "k", "к",
                     "l", "л", "m", "м", "n", "н", "o", "о",
                     "p", "п", "r", "р", "s", "с", "t", "т",
-                    "u", "у", "f", "ф", "h", "х", "ts", "ц",
-                    "ch", "ч", "sh", "ш", "\\`", "ъ", "y", "у",
-                    "'", "ь", "yu", "ю", "ya", "я", "x", "кс",
-                    "v", "в", "q", "к", "iy", "ий"
+                    "u", "у", "f", "ф", "h", "х", "x", "кс",
+                    "ts", "ц", "ch", "ч", "sh", "ш", "sh'", "щ",
+                    "\\`", "ъ", "y'", "ы", "'", "ь", "e\\`", "э",
+                    "yu", "ю", "ya", "я", "iy", "ий"
             );
         }
 
@@ -417,6 +418,8 @@ public class Commands{
             }
             return result.toString();
         }
+
+        private static final Logger log = Loggers.getLogger(TransliterationCommand.class);
     }
 
     @DiscordCommand(key = "prefix", params = "command.config.prefix.params", description = "command.config.prefix.description")

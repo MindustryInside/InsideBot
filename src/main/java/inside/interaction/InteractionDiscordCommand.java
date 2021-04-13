@@ -1,4 +1,4 @@
-package inside.interaction.model;
+package inside.interaction;
 
 import org.springframework.stereotype.Component;
 

@@ -10,7 +10,6 @@ import inside.Settings;
 import inside.command.Commands;
 import inside.data.service.AdminService;
 import inside.event.audit.*;
-import inside.interaction.model.InteractionDiscordCommand;
 import inside.service.MessageService;
 import inside.util.*;
 import org.joda.time.format.*;
@@ -99,7 +98,7 @@ public class InteractionCommands{
     }
 
     @InteractionDiscordCommand
-    public static class TranslitCommand extends InteractionCommand{
+    public static class TransliterationCommand extends InteractionCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
             String text = env.event().getInteraction().getCommandInteraction()
@@ -138,8 +137,11 @@ public class InteractionCommands{
 
         @Override
         public Mono<Boolean> apply(InteractionCommandEnvironment env){
-            return super.apply(env).filterWhen(bool -> BooleanUtils.and(Mono.just(bool), adminService.isAdmin(env.event().getInteraction()
-                    .getMember().orElseThrow(IllegalStateException::new))));
+            Mono<Boolean> isAdmin = env.event().getInteraction().getMember()
+                    .map(adminService::isAdmin)
+                    .orElse(Mono.just(false));
+
+            return super.apply(env).filterWhen(bool -> BooleanUtils.and(Mono.just(bool), isAdmin));
         }
 
         @Override
@@ -257,7 +259,7 @@ public class InteractionCommands{
                     .description("Get user avatar.")
                     .addOption(ApplicationCommandOptionData.builder()
                             .name("target")
-                            .description("Whose avatar needs to get. By default, your avatar")
+                            .description("Whose avatar needs to get. By default your avatar")
                             .type(ApplicationCommandOptionType.USER.getValue())
                             .required(false)
                             .build())
