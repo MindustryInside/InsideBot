@@ -7,17 +7,14 @@ import reactor.core.publisher.Mono;
 import reactor.util.context.ContextView;
 
 import java.util.Objects;
-import java.util.function.Supplier;
 
 public class InteractionCommandEnvironment{
     private final InteractionCreateEvent event;
     private final ContextView context;
-    private final Supplier<Mono<MessageChannel>> replyChannel;
 
-    InteractionCommandEnvironment(InteractionCreateEvent event, ContextView context, Supplier<Mono<MessageChannel>> replyChannel){
+    InteractionCommandEnvironment(InteractionCreateEvent event, ContextView context){
         this.event = Objects.requireNonNull(event, "event");
         this.context = Objects.requireNonNull(context, "context");
-        this.replyChannel = Objects.requireNonNull(replyChannel, "replyChannel");
     }
 
     public static Builder builder(){
@@ -33,7 +30,7 @@ public class InteractionCommandEnvironment{
     }
 
     public Mono<MessageChannel> getReplyChannel(){
-        return replyChannel.get();
+        return event.getInteraction().getChannel();
     }
 
     public GatewayDiscordClient getClient(){
@@ -43,7 +40,6 @@ public class InteractionCommandEnvironment{
     public static class Builder{
         private InteractionCreateEvent event;
         private ContextView context;
-        private Supplier<Mono<MessageChannel>> replyChannel;
 
         public Builder event(InteractionCreateEvent event){
             this.event = event;
@@ -55,17 +51,8 @@ public class InteractionCommandEnvironment{
             return this;
         }
 
-        public Builder replyChannel(Supplier<Mono<MessageChannel>> replyChannel){
-            this.replyChannel = replyChannel;
-            return this;
-        }
-
         public InteractionCommandEnvironment build(){
-            if(replyChannel == null){
-                this.replyChannel = () -> event.getClient().getChannelById(event.getInteraction().getChannelId())
-                        .cast(MessageChannel.class);
-            }
-            return new InteractionCommandEnvironment(event, context, replyChannel);
+            return new InteractionCommandEnvironment(event, context);
         }
     }
 }
