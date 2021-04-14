@@ -47,6 +47,12 @@ public class EntityRetrieverImpl implements EntityRetriever{
     }
 
     @Override
+    public boolean existsGuildConfigById(Snowflake guildId){
+        Objects.requireNonNull(guildId, "guildId");
+        return guildConfigService.get(guildId) != null;
+    }
+
+    @Override
     public String getPrefix(Snowflake guildId){
         return getGuildById(guildId).prefix();
     }

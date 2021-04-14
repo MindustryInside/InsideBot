@@ -1,6 +1,5 @@
 package inside.util;
 
-import discord4j.core.object.Region;
 import reactor.util.annotation.Nullable;
 
 import java.util.*;
@@ -37,15 +36,6 @@ public abstract class LocaleUtil{
                         "other", Pattern.compile("^\\d+$")
                 )
         );
-    }
-
-    public static Locale get(Region region){
-        for(Map.Entry<String, Locale> entry : locales.entrySet()){
-            if(entry.getKey().equalsIgnoreCase(region.getName().substring(0, 2))){
-                return entry.getValue();
-            }
-        }
-        return getDefaultLocale();
     }
 
     @Nullable
