@@ -252,17 +252,17 @@ public class Commands{
                     .map(OptionValue::asString)
                     .orElseThrow(AssertionError::new);
 
-            return messageService.text(env.getReplyChannel(), en ? text2rus(text) : text2lat(text));
+            return messageService.text(env.getReplyChannel(), en ? text2rus(text) : text2eng(text));
         }
 
-        public String text2rus(String text){
+        public static String text2rus(String text){
             for(int i = 0; i < engPattern.length; i++){
                 text = text.replaceAll(engPattern[i], rusPattern[i]);
             }
             return text;
         }
 
-        public String text2lat(String text){
+        public static String text2eng(String text){
             for(int i = 0; i < rusPattern.length; i++){
                 text = text.replaceAll(rusPattern[i], engPattern[i]);
             }

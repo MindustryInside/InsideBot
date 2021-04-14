@@ -48,6 +48,56 @@ public class InteractionCommands{
     }
 
     @InteractionDiscordCommand
+    public static class TextLayoutCommand extends InteractionCommand{
+        @Override
+        public Mono<Void> execute(InteractionCommandEnvironment env){
+            boolean russian = env.event().getInteraction().getCommandInteraction()
+                    .getOption("type")
+                    .flatMap(ApplicationCommandInteractionOption::getValue)
+                    .map(ApplicationCommandInteractionOptionValue::asString)
+                    .map(str -> str.equalsIgnoreCase("ru"))
+                    .orElse(false);
+
+            String text = env.event().getInteraction().getCommandInteraction()
+                    .getOption("text")
+                    .flatMap(ApplicationCommandInteractionOption::getValue)
+                    .map(ApplicationCommandInteractionOptionValue::asString)
+                    .map(str -> russian ? Commands.TextLayoutCommand.text2eng(str) : Commands.TextLayoutCommand.text2rus(str))
+                    .orElse(MessageService.placeholder);
+
+            return env.event().reply(text);
+        }
+
+        @Override
+        public ApplicationCommandRequest getRequest(){
+            return ApplicationCommandRequest.builder()
+                    .name("r")
+                    .description("Change text layout.")
+                    .addOption(ApplicationCommandOptionData.builder()
+                            .name("type")
+                            .description("Text layout type")
+                            .type(ApplicationCommandOptionType.STRING.getValue())
+                            .required(true)
+                            .addChoice(ApplicationCommandOptionChoiceData.builder()
+                                    .name("English layout")
+                                    .value("en")
+                                    .build())
+                            .addChoice(ApplicationCommandOptionChoiceData.builder()
+                                    .name("Russian layout")
+                                    .value("ru")
+                                    .build())
+                            .build())
+                    .addOption(ApplicationCommandOptionData.builder()
+                            .name("text")
+                            .description("Target text")
+                            .type(ApplicationCommandOptionType.STRING.getValue())
+                            .required(true)
+                            .build())
+                    .build();
+        }
+    }
+
+    @InteractionDiscordCommand
     public static class LeetSpeakCommand extends InteractionCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){

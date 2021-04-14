@@ -4,7 +4,6 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
 import inside.data.entity.*;
 import org.joda.time.DateTimeZone;
-import reactor.core.publisher.Flux;
 
 import java.util.*;
 
@@ -13,6 +12,8 @@ public interface EntityRetriever{
     // guild config
 
     GuildConfig getGuildById(Snowflake guildId);
+
+    boolean existsGuildConfigById(Snowflake guildId);
 
     void save(GuildConfig entity);
 
