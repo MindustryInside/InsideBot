@@ -16,23 +16,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import javax.annotation.PreDestroy;
+import javax.annotation.*;
 import java.util.*;
 
 @Service
 public class DiscordServiceImpl implements DiscordService{
-    private final Settings settings;
 
     private GatewayDiscordClient gateway;
 
+    @Autowired(required = false)
     private List<InteractionCommand> commands;
 
-    public DiscordServiceImpl(@Autowired Settings settings){
-        this.settings = settings;
-    }
-
     @Autowired(required = false)
-    public void init(ReactiveEventAdapter[] handlers, List<InteractionCommand> commands){
+    private ReactiveEventAdapter[] adapters;
+
+    @Autowired
+    private Settings settings;
+
+    @PostConstruct
+    public void init(){
         String token = settings.getToken();
         Objects.requireNonNull(token, "token");
 
@@ -56,8 +58,6 @@ public class DiscordServiceImpl implements DiscordService{
 
         Objects.requireNonNull(gateway, "impossible"); // for ide
 
-        this.commands = commands;
-
         long applicationId = gateway.rest().getApplicationId().block();
         for(InteractionCommand command : commands){
             gateway.rest().getApplicationService()
@@ -65,7 +65,7 @@ public class DiscordServiceImpl implements DiscordService{
                     .subscribe();
         }
 
-        gateway.on(ReactiveEventAdapter.from(handlers)).subscribe();
+        gateway.on(ReactiveEventAdapter.from(adapters)).subscribe();
     }
 
     @Override

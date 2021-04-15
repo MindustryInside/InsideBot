@@ -22,7 +22,6 @@ import org.springframework.context.annotation.Lazy;
 import reactor.bool.BooleanUtils;
 import reactor.core.Exceptions;
 import reactor.core.publisher.*;
-import reactor.util.*;
 import reactor.util.annotation.Nullable;
 import reactor.util.function.Tuple2;
 
@@ -418,8 +417,6 @@ public class Commands{
             }
             return result.toString();
         }
-
-        private static final Logger log = Loggers.getLogger(TransliterationCommand.class);
     }
 
     @DiscordCommand(key = "prefix", params = "command.config.prefix.params", description = "command.config.prefix.description")
