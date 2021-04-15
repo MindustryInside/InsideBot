@@ -50,8 +50,23 @@ public class InteractionCommands{
         }
     }
 
+    public static abstract class AdminCommand extends GuildCommand{
+        @Lazy
+        @Autowired
+        protected AdminService adminService;
+
+        @Override
+        public Mono<Boolean> apply(InteractionCommandEnvironment env){
+            Mono<Boolean> isAdmin = env.event().getInteraction().getMember()
+                    .map(adminService::isAdmin)
+                    .orElse(Mono.just(false));
+
+            return super.apply(env).filterWhen(bool -> BooleanUtils.and(Mono.just(bool), isAdmin));
+        }
+    }
+
     @InteractionDiscordCommand
-    public static class SettingsCommand extends GuildCommand{
+    public static class SettingsCommand extends AdminCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
             Snowflake guildId = env.event().getInteraction().getGuildId()
@@ -303,22 +318,9 @@ public class InteractionCommands{
     }
 
     @InteractionDiscordCommand
-    public static class DeleteCommand extends GuildCommand{
+    public static class DeleteCommand extends AdminCommand{
         @Autowired
         private AuditService auditService;
-
-        @Lazy
-        @Autowired
-        private AdminService adminService;
-
-        @Override
-        public Mono<Boolean> apply(InteractionCommandEnvironment env){
-            Mono<Boolean> isAdmin = env.event().getInteraction().getMember()
-                    .map(adminService::isAdmin)
-                    .orElse(Mono.just(false));
-
-            return super.apply(env).filterWhen(bool -> BooleanUtils.and(Mono.just(bool), isAdmin));
-        }
 
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
