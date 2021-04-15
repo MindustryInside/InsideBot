@@ -9,7 +9,7 @@ import reactor.util.context.ContextView;
 
 import java.util.function.Consumer;
 
-public interface MessageService extends MessageHolderService{
+public interface MessageService extends MessageHolderService, InteractionMessageService{
 
     ReactionEmoji ok = ReactionEmoji.unicode("✅");
 

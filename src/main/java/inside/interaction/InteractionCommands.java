@@ -1,5 +1,6 @@
 package inside.interaction;
 
+import com.udojava.evalex.Expression;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.*;
 import discord4j.core.object.entity.*;
@@ -20,6 +21,7 @@ import org.springframework.context.annotation.Lazy;
 import reactor.bool.BooleanUtils;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -41,9 +43,7 @@ public class InteractionCommands{
         @Override
         public Mono<Boolean> apply(InteractionCommandEnvironment env){
             if(env.event().getInteraction().getMember().isEmpty()){
-                return env.event().reply(spec -> spec.addEmbed(embed -> embed.setColor(settings.getDefaults().getErrorColor())
-                        .setTitle(messageService.get(env.context(), "message.error.general.title"))
-                        .setDescription(messageService.get(env.context(), "command.interaction.only-guild"))))
+                return messageService.info(env.event(), "message.error.general.title", "command.interaction.only-guild")
                         .then(Mono.empty());
             }
             return Mono.just(true);
@@ -79,8 +79,8 @@ public class InteractionCommands{
 
                         Mono<Void> timezoneCommand = Mono.justOrEmpty(group.getOption("timezone"))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")))
-                                .switchIfEmpty(env.event().reply(messageService.format(env.context(), "command.config.current-timezone",
-                                        guildConfig.timeZone())).then(Mono.empty()))
+                                .switchIfEmpty(messageService.text(env.event(), "command.config.current-timezone",
+                                        guildConfig.timeZone()).then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
                                         .map(ApplicationCommandInteractionOptionValue::asString))
                                 .flatMap(str -> Mono.defer(() -> {
@@ -89,24 +89,23 @@ public class InteractionCommands{
                                         String suggest = Strings.findClosest(DateTimeZone.getAvailableIDs(), str);
 
                                         if(suggest != null){
-                                            return env.event().reply(messageService.format(env.context(),
-                                                    "command.config.unknown-timezone.suggest", suggest));
+                                            return messageService.err(env.event(), "command.config.unknown-timezone.suggest", suggest);
                                         }
-                                        return env.event().reply(messageService.get(env.context(), "command.config.unknown-timezone"));
+                                        return messageService.err(env.event(), "command.config.unknown-timezone");
                                     }
 
                                     guildConfig.timeZone(timeZone);
                                     entityRetriever.save(guildConfig);
-                                    return Mono.deferContextual(ctx -> env.event().reply(messageService.format(ctx,
-                                            "command.config.timezone-updated", ctx.<DateTimeZone>get(KEY_TIMEZONE))))
+                                    return Mono.deferContextual(ctx -> messageService.text(env.event(),
+                                            "command.config.timezone-updated", ctx.<Locale>get(KEY_TIMEZONE)))
                                             .contextWrite(ctx -> ctx.put(KEY_TIMEZONE, timeZone));
                                 }));
 
                         Mono<Void> localeCommand = Mono.justOrEmpty(group.getOption("locale"))
                                 .switchIfEmpty(timezoneCommand.then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")))
-                                .switchIfEmpty(env.event().reply(messageService.format(env.context(), "command.config.current-locale",
-                                        guildConfig.locale())).then(Mono.empty()))
+                                .switchIfEmpty(messageService.text(env.event(), "command.config.current-locale",
+                                        guildConfig.locale()).then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
                                         .map(ApplicationCommandInteractionOptionValue::asString))
                                 .flatMap(str -> Mono.defer(() -> {
@@ -116,27 +115,27 @@ public class InteractionCommands{
                                                 .map(Locale::toString)
                                                 .collect(Collectors.joining(", "));
 
-                                        return env.event().reply(messageService.format(env.context(), "command.config.unknown-locale", all));
+                                        return messageService.text(env.event(), "command.config.unknown-locale", all);
                                     }
 
                                     guildConfig.locale(locale);
                                     entityRetriever.save(guildConfig);
-                                    return Mono.deferContextual(ctx -> env.event().reply(messageService.format(ctx,
-                                            "command.config.locale-updated", ctx.<Locale>get(KEY_LOCALE))))
+                                    return Mono.deferContextual(ctx -> messageService.text(env.event(), "command.config.locale-updated",
+                                            ctx.<Locale>get(KEY_LOCALE)))
                                             .contextWrite(ctx -> ctx.put(KEY_LOCALE, locale));
                                 }));
 
                         return Mono.justOrEmpty(group.getOption("prefix"))
                                 .switchIfEmpty(localeCommand.then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")))
-                                .switchIfEmpty(env.event().reply(messageService.format(env.context(), "command.config.current-prefix",
-                                        guildConfig.prefix())).then(Mono.empty()))
+                                .switchIfEmpty(messageService.text(env.event(), "command.config.current-prefix",
+                                        guildConfig.prefix()).then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
                                         .map(ApplicationCommandInteractionOptionValue::asString))
                                 .flatMap(str -> Mono.defer(() -> {
                                     guildConfig.prefix(str);
                                     entityRetriever.save(guildConfig);
-                                    return env.event().reply(messageService.format(env.context(), "command.config.prefix-updated", guildConfig.prefix()));
+                                    return messageService.text(env.event(), "command.config.prefix-updated", guildConfig.prefix());
                                 }));
 
                     });
@@ -336,16 +335,11 @@ public class InteractionCommands{
                     .orElse(0L);
 
             if(number <= 0){
-                return env.event().reply(spec -> spec.addEmbed(embed -> embed.setColor(settings.getDefaults().getErrorColor())
-                        .setTitle(messageService.get(env.context(), "message.error.general.title"))
-                        .setDescription(messageService.get(env.context(), "command.incorrect-number"))));
+                return messageService.err(env.event(), "command.incorrect-number");
             }
 
             if(number > settings.getDiscord().getMaxClearedCount()){
-                return env.event().reply(spec -> spec.addEmbed(embed -> embed.setColor(settings.getDefaults().getErrorColor())
-                        .setTitle(messageService.get(env.context(), "message.error.general.title"))
-                        .setDescription(messageService.format(env.context(), "common.limit-number",
-                                settings.getDiscord().getMaxClearedCount()))));
+                return messageService.err(env.event(), "common.limit-number", settings.getDiscord().getMaxClearedCount());
             }
 
             StringBuffer result = new StringBuffer();
@@ -415,9 +409,6 @@ public class InteractionCommands{
 
     @InteractionDiscordCommand
     public static class AvatarCommand extends InteractionCommand{
-        @Autowired
-        private Settings settings;
-
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
             return env.event().getInteraction().getCommandInteraction()
@@ -425,9 +416,8 @@ public class InteractionCommands{
                     .flatMap(ApplicationCommandInteractionOption::getValue)
                     .map(ApplicationCommandInteractionOptionValue::asUser)
                     .orElse(Mono.just(env.event().getInteraction().getUser()))
-                    .flatMap(user -> env.event().reply(spec -> spec.addEmbed(embed -> embed.setImage(user.getAvatarUrl() + "?size=512")
-                            .setColor(settings.getDefaults().getNormalColor())
-                            .setDescription(messageService.format(env.context(), "command.avatar.text", user.getUsername())))));
+                    .flatMap(user -> messageService.info(env.event(), embed -> embed.setImage(user.getAvatarUrl() + "?size=512")
+                            .setDescription(messageService.format(env.context(), "command.avatar.text", user.getUsername()))));
         }
 
         @Override
@@ -466,6 +456,42 @@ public class InteractionCommands{
                     .description("Get bot ping.")
                     .build();
         }
+    }
 
+    @InteractionDiscordCommand
+    public static class MathCommand extends InteractionCommand{
+        @Override
+        public Mono<Void> execute(InteractionCommandEnvironment env){
+            String expression = env.event().getInteraction().getCommandInteraction()
+                    .getOption("expression")
+                    .flatMap(ApplicationCommandInteractionOption::getValue)
+                    .map(ApplicationCommandInteractionOptionValue::asString)
+                    .orElseThrow(AssertionError::new);
+
+            Mono<BigDecimal> result = Mono.fromCallable(() -> {
+                Expression exp = new Expression(expression).setPrecision(10);
+                exp.addOperator(Commands.MathCommand.shiftRightOperator);
+                exp.addOperator(Commands.MathCommand.shiftLeftOperator);
+                return exp.eval();
+            });
+
+            return result.onErrorResume(t -> t instanceof ArithmeticException || t instanceof Expression.ExpressionException,
+                    t -> messageService.error(env.event(), "command.math.error.title", t.getMessage()).then(Mono.empty()))
+                    .flatMap(decimal -> messageService.text(env.event(), MessageUtil.substringTo(decimal.toString(), Message.MAX_CONTENT_LENGTH)));
+        }
+
+        @Override
+        public ApplicationCommandRequest getRequest(){
+            return ApplicationCommandRequest.builder()
+                    .name("math")
+                    .description("Calculate math expression.")
+                    .addOption(ApplicationCommandOptionData.builder()
+                            .name("expression")
+                            .description("Math expression")
+                            .type(ApplicationCommandOptionType.STRING.getValue())
+                            .required(true)
+                            .build())
+                    .build();
+        }
     }
 }
