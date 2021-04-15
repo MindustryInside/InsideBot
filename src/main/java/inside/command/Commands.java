@@ -460,7 +460,7 @@ public class Commands{
             DateTimeZone timeZone = interaction.getOption("timezone")
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
-                    .map(this::find)
+                    .map(TimezoneCommand::findTimeZone)
                     .orElse(null);
 
             String str =  interaction.getOption("timezone")
@@ -492,7 +492,7 @@ public class Commands{
         }
 
         @Nullable
-        private DateTimeZone find(String id){
+        public static DateTimeZone findTimeZone(String id){
             try{
                 return DateTimeZone.forID(id);
             }catch(Throwable t){
