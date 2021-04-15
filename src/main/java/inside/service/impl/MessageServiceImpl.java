@@ -2,6 +2,7 @@ package inside.service.impl;
 
 import com.github.benmanes.caffeine.cache.*;
 import discord4j.common.util.Snowflake;
+import discord4j.core.event.domain.InteractionCreateEvent;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.AllowedMentions;
@@ -109,6 +110,36 @@ public class MessageServiceImpl implements MessageService{
                         .setDescription(format(ctx, text, args))
                         .setTitle(get(ctx, title))))
                 .flatMap(message -> Mono.delay(settings.getDiscord().getErrorEmbedTtl()).then(message.delete())));
+    }
+
+    @Override
+    public Mono<Void> text(InteractionCreateEvent event, String text, Object... args){
+        return Mono.deferContextual(ctx -> event.reply(spec -> spec.setAllowedMentions(AllowedMentions.suppressAll())
+                .setContent(text.isBlank() ? placeholder : format(ctx, text, args))));
+    }
+
+    @Override
+    public Mono<Void> info(InteractionCreateEvent event, String title, String text, Object... args){
+        return Mono.deferContextual(ctx -> info(event, embed -> embed.setTitle(get(ctx, title))
+                .setDescription(format(ctx, text, args))));
+    }
+
+    @Override
+    public Mono<Void> info(InteractionCreateEvent event, Consumer<EmbedCreateSpec> embed){
+        return event.reply(spec -> spec.addEmbed(embed.andThen(embedSpec ->
+                embedSpec.setColor(settings.getDefaults().getNormalColor()))));
+    }
+
+    @Override
+    public Mono<Void> err(InteractionCreateEvent event, String text, Object... args){
+        return error(event, "message.error.general.title", text, args);
+    }
+
+    @Override
+    public Mono<Void> error(InteractionCreateEvent event, String title, String text, Object... args){
+        return Mono.deferContextual(ctx -> event.reply(spec -> spec.addEmbed(embed -> embed.setColor(settings.getDefaults().getErrorColor())
+                        .setDescription(format(ctx, text, args))
+                        .setTitle(get(ctx, title)))));
     }
 
     @Override

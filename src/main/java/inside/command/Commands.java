@@ -190,14 +190,14 @@ public class Commands{
             return messageService.info(env.getReplyChannel(), "command.help.title", "command.math.help", prefix);
         }
 
-        private static final LazyOperator shiftRightOperator = new AbstractOperator(">>", 30, true){
+        public static final LazyOperator shiftRightOperator = new AbstractOperator(">>", 30, true){
             @Override
             public BigDecimal eval(BigDecimal v1, BigDecimal v2){
                 return v1.movePointRight(v2.toBigInteger().intValue());
             }
         };
 
-        private static final LazyOperator shiftLeftOperator = new AbstractOperator("<<", 30, true){
+        public static final LazyOperator shiftLeftOperator = new AbstractOperator("<<", 30, true){
             @Override
             public BigDecimal eval(BigDecimal v1, BigDecimal v2){
                 return v1.movePointLeft(v2.toBigInteger().intValue());
@@ -213,7 +213,7 @@ public class Commands{
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
                     .map(String::toLowerCase)
-                    .orElseThrow(AssertionError::new);
+                    .orElse("");
 
             return switch(activity){
                 case "online" -> env.getClient().updatePresence(ClientPresence.online());
@@ -487,7 +487,7 @@ public class Commands{
                     }).thenReturn(guildConfig))
                     .switchIfEmpty(present ?
                             messageService.err(channel, "command.owner-only").then(Mono.empty()) :
-                            messageService.text(channel, "command.config.timezone", env.context().<Locale>get(KEY_TIMEZONE)).then(Mono.empty()))
+                            messageService.text(channel, "command.config.current-timezone", env.context().<Locale>get(KEY_TIMEZONE)).then(Mono.empty()))
                     .then(Mono.empty());
         }
 
@@ -538,7 +538,7 @@ public class Commands{
                     }).thenReturn(guildConfig))
                     .switchIfEmpty(present ?
                             messageService.err(channel, "command.owner-only").then(Mono.empty()) :
-                            messageService.text(channel, "command.config.locale", env.context().<Locale>get(KEY_LOCALE)).then(Mono.empty()))
+                            messageService.text(channel, "command.config.current-locale", env.context().<Locale>get(KEY_LOCALE)).then(Mono.empty()))
                     .then(Mono.empty());
         }
     }
