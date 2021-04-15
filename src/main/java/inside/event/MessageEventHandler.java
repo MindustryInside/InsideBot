@@ -207,7 +207,9 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                                             .map(Snowflake::of)
                                             .map(id -> id.equals(message.getChannelId())).orElse(false))
                             .next()
-                            .flatMap(entry -> event.getClient().getUserById(entry.getResponsibleUserId()));
+                            .flatMap(entry -> Mono.justOrEmpty(entry.getUserId())
+                                    .flatMap(event.getClient()::getUserById));
+
                     return responsibleUser.defaultIfEmpty(author).map(user -> builder.withUser(user)
                             .withAttribute(AVATAR_URL, user.getAvatarUrl()))
                             .flatMap(AuditActionBuilder::save);
