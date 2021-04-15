@@ -8,10 +8,12 @@ import discord4j.discordjson.json.*;
 import discord4j.rest.util.ApplicationCommandOptionType;
 import inside.Settings;
 import inside.command.Commands;
+import inside.data.entity.GuildConfig;
 import inside.data.service.AdminService;
 import inside.event.audit.*;
 import inside.service.MessageService;
 import inside.util.*;
+import org.joda.time.DateTimeZone;
 import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -20,8 +22,9 @@ import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Comparator;
+import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 import static inside.event.audit.Attribute.COUNT;
 import static inside.event.audit.BaseAuditProvider.MESSAGE_TXT;
@@ -48,6 +51,129 @@ public class InteractionCommands{
     }
 
     @InteractionDiscordCommand
+    public static class SettingsCommand extends GuildCommand{
+        @Override
+        public Mono<Void> execute(InteractionCommandEnvironment env){
+            Snowflake guildId = env.event().getInteraction().getGuildId()
+                    .orElseThrow(AssertionError::new);
+
+            Mono<Void> handleCommon = Mono.justOrEmpty(env.event().getInteraction().getCommandInteraction()
+                    .getOption("common"))
+                    .flatMap(group -> {
+                        GuildConfig guildConfig = entityRetriever.getGuildById(guildId);
+
+                        Mono<Void> timezoneCommand = Mono.justOrEmpty(group.getOption("timezone"))
+                                .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")))
+                                .switchIfEmpty(env.event().reply(messageService.format(env.context(), "command.config.current-timezone",
+                                        guildConfig.timeZone())).then(Mono.empty()))
+                                .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
+                                        .map(ApplicationCommandInteractionOptionValue::asString))
+                                .flatMap(str -> Mono.defer(() -> {
+                                    DateTimeZone timeZone = Commands.TimezoneCommand.findTimeZone(str);
+                                    if(timeZone == null){
+                                        String suggest = Strings.findClosest(DateTimeZone.getAvailableIDs(), str);
+
+                                        if(suggest != null){
+                                            return env.event().reply(messageService.format(env.context(),
+                                                    "command.config.unknown-timezone.suggest", suggest));
+                                        }
+                                        return env.event().reply(messageService.get(env.context(), "command.config.unknown-timezone"));
+                                    }
+
+                                    guildConfig.timeZone(timeZone);
+                                    entityRetriever.save(guildConfig);
+                                    return Mono.deferContextual(ctx -> env.event().reply(messageService.format(ctx,
+                                            "command.config.timezone-updated", ctx.<DateTimeZone>get(KEY_TIMEZONE))))
+                                            .contextWrite(ctx -> ctx.put(KEY_TIMEZONE, timeZone));
+                                }));
+
+                        Mono<Void> localeCommand = Mono.justOrEmpty(group.getOption("locale"))
+                                .switchIfEmpty(timezoneCommand.then(Mono.empty()))
+                                .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")))
+                                .switchIfEmpty(env.event().reply(messageService.format(env.context(), "command.config.current-locale",
+                                        guildConfig.locale())).then(Mono.empty()))
+                                .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
+                                        .map(ApplicationCommandInteractionOptionValue::asString))
+                                .flatMap(str -> Mono.defer(() -> {
+                                    Locale locale = LocaleUtil.get(str);
+                                    if(locale == null){
+                                        String all = LocaleUtil.locales.values().stream()
+                                                .map(Locale::toString)
+                                                .collect(Collectors.joining(", "));
+
+                                        return env.event().reply(messageService.format(env.context(), "command.config.unknown-locale", all));
+                                    }
+
+                                    guildConfig.locale(locale);
+                                    entityRetriever.save(guildConfig);
+                                    return Mono.deferContextual(ctx -> env.event().reply(messageService.format(ctx,
+                                            "command.config.locale-updated", ctx.<Locale>get(KEY_LOCALE))))
+                                            .contextWrite(ctx -> ctx.put(KEY_LOCALE, locale));
+                                }));
+
+                        return Mono.justOrEmpty(group.getOption("prefix"))
+                                .switchIfEmpty(localeCommand.then(Mono.empty()))
+                                .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")))
+                                .switchIfEmpty(env.event().reply(messageService.format(env.context(), "command.config.current-prefix",
+                                        guildConfig.prefix())).then(Mono.empty()))
+                                .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
+                                        .map(ApplicationCommandInteractionOptionValue::asString))
+                                .flatMap(str -> Mono.defer(() -> {
+                                    guildConfig.prefix(str);
+                                    entityRetriever.save(guildConfig);
+                                    return env.event().reply(messageService.format(env.context(), "command.config.prefix-updated", guildConfig.prefix()));
+                                }));
+
+                    });
+
+            return handleCommon;
+        }
+
+        @Override
+        public ApplicationCommandRequest getRequest(){
+            return ApplicationCommandRequest.builder()
+                    .name("settings")
+                    .description("Configure guild settings.")
+                    .addOption(ApplicationCommandOptionData.builder()
+                            .name("common")
+                            .description("Different bot settings")
+                            .type(ApplicationCommandOptionType.SUB_COMMAND_GROUP.getValue())
+                            .addOption(ApplicationCommandOptionData.builder()
+                                    .name("prefix")
+                                    .description("Configure bot prefix")
+                                    .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
+                                    .addOption(ApplicationCommandOptionData.builder()
+                                            .name("value")
+                                            .description("New prefix")
+                                            .type(ApplicationCommandOptionType.STRING.getValue())
+                                            .build())
+                                    .build())
+                            .addOption(ApplicationCommandOptionData.builder()
+                                    .name("locale")
+                                    .description("Configure bot locale")
+                                    .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
+                                    .addOption(ApplicationCommandOptionData.builder()
+                                            .name("value")
+                                            .description("New locale")
+                                            .type(ApplicationCommandOptionType.STRING.getValue())
+                                            .build())
+                                    .build())
+                            .addOption(ApplicationCommandOptionData.builder()
+                                    .name("timezone")
+                                    .description("Configure bot time zone")
+                                    .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
+                                    .addOption(ApplicationCommandOptionData.builder()
+                                            .name("value")
+                                            .description("New time zone")
+                                            .type(ApplicationCommandOptionType.STRING.getValue())
+                                            .build())
+                                    .build())
+                            .build())
+                    .build();
+        }
+    }
+
+    @InteractionDiscordCommand
     public static class TextLayoutCommand extends InteractionCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
@@ -55,7 +181,7 @@ public class InteractionCommands{
                     .getOption("type")
                     .flatMap(ApplicationCommandInteractionOption::getValue)
                     .map(ApplicationCommandInteractionOptionValue::asString)
-                    .map(str -> str.equalsIgnoreCase("ru"))
+                    .map("ru"::equalsIgnoreCase)
                     .orElse(false);
 
             String text = env.event().getInteraction().getCommandInteraction()
