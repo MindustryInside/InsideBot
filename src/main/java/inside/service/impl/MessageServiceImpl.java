@@ -21,7 +21,6 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.context.ContextView;
 
-import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -109,7 +108,7 @@ public class MessageServiceImpl implements MessageService{
                 .flatMap(c -> c.createEmbed(embed -> embed.setColor(settings.getDefaults().getErrorColor())
                         .setDescription(format(ctx, text, args))
                         .setTitle(get(ctx, title))))
-                .flatMap(message -> Mono.delay(Duration.ofSeconds(5)).then(message.delete())));
+                .flatMap(message -> Mono.delay(settings.getDiscord().getErrorEmbedTtl()).then(message.delete())));
     }
 
     @Override

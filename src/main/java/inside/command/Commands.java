@@ -80,9 +80,8 @@ public class Commands{
                         builder.append(commandInfo.text());
                         builder.append("**");
                         if(commandInfo.params().length > 0){
-                            builder.append(" *");
+                            builder.append(" ");
                             builder.append(messageService.get(env.context(), commandInfo.paramText()));
-                            builder.append("*");
                         }
                         builder.append(" - ");
                         builder.append(messageService.get(env.context(), commandInfo.description()));

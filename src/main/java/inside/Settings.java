@@ -45,6 +45,8 @@ public class Settings{
 
         private boolean auditLogSaving = false;
 
+        private Duration errorEmbedTtl = Duration.ofSeconds(7);
+
         public int getMaxClearedCount(){
             return maxClearedCount;
         }
@@ -67,6 +69,14 @@ public class Settings{
 
         public void setAuditLogSaving(boolean auditLogSaving){
             this.auditLogSaving = auditLogSaving;
+        }
+
+        public Duration getErrorEmbedTtl(){
+            return errorEmbedTtl;
+        }
+
+        public void setErrorEmbedTtl(Duration errorEmbedTtl){
+            this.errorEmbedTtl = errorEmbedTtl;
         }
     }
 
