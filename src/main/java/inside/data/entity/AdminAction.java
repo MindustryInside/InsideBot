@@ -138,7 +138,7 @@ public class AdminAction extends GuildEntity{
         }
 
         public Builder timestamp(DateTime timestamp){
-            this.timestamp = timestamp;
+            this.timestamp = Objects.requireNonNull(timestamp, "timestamp");
             return this;
         }
 
