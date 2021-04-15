@@ -138,8 +138,8 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public Mono<Void> error(InteractionCreateEvent event, String title, String text, Object... args){
         return Mono.deferContextual(ctx -> event.reply(spec -> spec.addEmbed(embed -> embed.setColor(settings.getDefaults().getErrorColor())
-                        .setDescription(format(ctx, text, args))
-                        .setTitle(get(ctx, title)))));
+                .setDescription(format(ctx, text, args))
+                .setTitle(get(ctx, title)))));
     }
 
     @Override

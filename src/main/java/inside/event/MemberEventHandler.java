@@ -1,5 +1,6 @@
 package inside.event;
 
+import discord4j.common.util.Snowflake;
 import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.guild.*;
 import discord4j.core.object.audit.ActionType;
@@ -74,6 +75,9 @@ public class MemberEventHandler extends ReactiveEventAdapter{
         if(DiscordUtil.isBot(user)){
             return Mono.empty();
         }
+
+        Snowflake guildId = event.getGuildId();
+
         Context context = Context.of(KEY_LOCALE, entityRetriever.getLocale(event.getGuildId()),
                 KEY_TIMEZONE, entityRetriever.getTimeZone(event.getGuildId()));
 
@@ -86,8 +90,9 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                 .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)) &&
                         entry.getTargetId().map(target -> target.equals(user.getId())).orElse(false))
                 .next()
-                .flatMap(entry -> event.getGuild().flatMap(guild -> guild.getMemberById(entry.getResponsibleUserId()))
-                        .flatMap(admin -> auditService.log(event.getGuildId(), USER_KICK)
+                .flatMap(entry -> Mono.justOrEmpty(entry.getUserId())
+                        .flatMap(userId -> event.getClient().getMemberById(guildId, userId))
+                        .flatMap(admin -> auditService.log(guildId, USER_KICK)
                                 .withUser(admin)
                                 .withTargetUser(user)
                                 .withAttribute(REASON, entry.getReason()
@@ -102,8 +107,9 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                 .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)) &&
                         entry.getTargetId().map(target -> target.equals(user.getId())).orElse(false))
                 .next()
-                .flatMap(entry -> event.getGuild().flatMap(guild -> guild.getMemberById(entry.getResponsibleUserId()))
-                        .flatMap(admin -> auditService.log(event.getGuildId(), USER_BAN)
+                .flatMap(entry -> Mono.justOrEmpty(entry.getUserId())
+                        .flatMap(userId -> event.getClient().getMemberById(guildId, userId))
+                        .flatMap(admin -> auditService.log(guildId, USER_BAN)
                                 .withUser(admin)
                                 .withTargetUser(user)
                                 .withAttribute(REASON, entry.getReason()
