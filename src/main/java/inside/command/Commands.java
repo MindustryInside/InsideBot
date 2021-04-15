@@ -309,9 +309,10 @@ public class Commands{
             String text = interaction.getOption("text")
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
-                    .orElseThrow(AssertionError::new);
+                    .map(str -> MessageUtil.substringTo(leeted(str, ru), Message.MAX_CONTENT_LENGTH))
+                    .orElse("");
 
-            return messageService.text(env.getReplyChannel(), MessageUtil.substringTo(leeted(text, ru), Message.MAX_CONTENT_LENGTH));
+            return messageService.text(env.getReplyChannel(), text);
         }
 
         public static String leeted(String text, boolean russian){
@@ -435,7 +436,7 @@ public class Commands{
                     .orElseThrow(AssertionError::new);
 
             return Mono.just(entityRetriever.getGuildById(member.getGuildId()))
-                    .filterWhen(guildConfig -> adminService.isOwner(member))
+                    .filterWhen(guildConfig -> adminService.isAdmin(member))
                     .switchIfEmpty(messageService.err(channel, "command.owner-only").then(Mono.empty()))
                     .flatMap(guildConfig -> Mono.defer(() -> {
                         guildConfig.prefix(prefix);
@@ -466,10 +467,10 @@ public class Commands{
             String str =  interaction.getOption("timezone")
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
-                    .orElseThrow(AssertionError::new);
+                    .orElse("");
 
             return Mono.just(entityRetriever.getGuildById(member.getGuildId()))
-                    .filterWhen(guildConfig -> adminService.isOwner(member).map(bool -> bool && present))
+                    .filterWhen(guildConfig -> adminService.isAdmin(member).map(bool -> bool && present))
                     .flatMap(guildConfig -> Mono.defer(() -> {
                         if(timeZone == null){
                             String suggest = Strings.findClosest(DateTimeZone.getAvailableIDs(), str);
