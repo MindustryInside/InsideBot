@@ -7,15 +7,13 @@ import reactor.core.Exceptions;
 import reactor.util.annotation.Nullable;
 
 import java.time.*;
-import java.time.temporal.*;
+import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.regex.*;
 
-import static java.util.regex.Pattern.compile;
-
 public abstract class MessageUtil{
 
-    private static final Pattern timeUnitPattern = compile(
+    private static final Pattern timeUnitPattern = Pattern.compile(
             "^" +
             "((\\d+)(y|year|years|г|год|года|лет))?" +
             "((\\d+)(m|mon|month|months|мес|месяц|месяца|месяцев))?" +
@@ -23,7 +21,17 @@ public abstract class MessageUtil{
             "((\\d+)(d|day|days|д|день|дня|дней))?" +
             "((\\d+)(h|hour|hours|ч|час|часа|часов))?" +
             "((\\d+)(min|mins|minute|minutes|мин|минута|минуту|минуты|минут))?" +
-            "((\\d+)(s|sec|secs|second|seconds|с|c|сек|секунда|секунду|секунды|секунд))?$"
+            "((\\d+)(s|sec|secs|second|seconds|с|c|сек|секунда|секунду|секунды|секунд))?$",
+            Pattern.CASE_INSENSITIVE
+    );
+
+    private static final Pattern durationTimeUnitPattern = Pattern.compile(
+            "^" +
+            "((\\d+)(d|day|days|д|день|дня|дней))?" +
+            "((\\d+)(h|hour|hours|ч|час|часа|часов))?" +
+            "((\\d+)(m|min|mins|minute|minutes|мин|минута|минуту|минуты|минут))?" +
+            "((\\d+)(s|sec|secs|second|seconds|с|c|сек|секунда|секунду|секунды|секунд))?$",
+            Pattern.CASE_INSENSITIVE
     );
 
     private MessageUtil(){}
@@ -67,24 +75,37 @@ public abstract class MessageUtil{
     }
 
     @Nullable
+    public static Duration parseDuration(String message){
+        Matcher matcher = durationTimeUnitPattern.matcher(message);
+        if(!matcher.matches()){
+            try{
+                return Duration.parse(message);
+            }catch(Throwable ignored){}
+            return null;
+        }
+
+        return Duration.ZERO
+                .plus(Strings.parseLong(matcher.group(11), 0), ChronoUnit.SECONDS)
+                .plus(Strings.parseLong(matcher.group(8), 0), ChronoUnit.MINUTES)
+                .plus(Strings.parseLong(matcher.group(5), 0), ChronoUnit.HOURS)
+                .plus(Strings.parseLong(matcher.group(2), 0), ChronoUnit.DAYS);
+    }
+
+    @Nullable
     public static DateTime parseTime(String message){
-        Matcher matcher = timeUnitPattern.matcher(message.toLowerCase());
+        Matcher matcher = timeUnitPattern.matcher(message);
         if(!matcher.matches()){
             return null;
         }
 
-        LocalDateTime offsetDateTime = LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC);
-        offsetDateTime = addUnit(offsetDateTime, ChronoUnit.YEARS, matcher.group(2));
-        offsetDateTime = addUnit(offsetDateTime, ChronoUnit.MONTHS, matcher.group(5));
-        offsetDateTime = addUnit(offsetDateTime, ChronoUnit.WEEKS, matcher.group(8));
-        offsetDateTime = addUnit(offsetDateTime, ChronoUnit.DAYS, matcher.group(11));
-        offsetDateTime = addUnit(offsetDateTime, ChronoUnit.HOURS, matcher.group(14));
-        offsetDateTime = addUnit(offsetDateTime, ChronoUnit.MINUTES, matcher.group(17));
-        offsetDateTime = addUnit(offsetDateTime, ChronoUnit.SECONDS, matcher.group(20));
-        return DateTime.now().plus(offsetDateTime.toEpochSecond(ZoneOffset.UTC) * 1000);
-    }
-
-    private static <T extends Temporal> T addUnit(T instant, ChronoUnit unit, String amount){
-        return unit.addTo(instant, Strings.parseLong(amount, 0));
+        return DateTime.now().plus(LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC)
+                .plus(Strings.parseLong(matcher.group(2), 0), ChronoUnit.YEARS)
+                .plus(Strings.parseLong(matcher.group(5), 0), ChronoUnit.MONTHS)
+                .plus(Strings.parseLong(matcher.group(8), 0), ChronoUnit.WEEKS)
+                .plus(Strings.parseLong(matcher.group(11), 0), ChronoUnit.DAYS)
+                .plus(Strings.parseLong(matcher.group(14), 0), ChronoUnit.HOURS)
+                .plus(Strings.parseLong(matcher.group(17), 0), ChronoUnit.MINUTES)
+                .plus(Strings.parseLong(matcher.group(20), 0), ChronoUnit.SECONDS)
+                .toEpochSecond(ZoneOffset.UTC) * 1000);
     }
 }
