@@ -43,7 +43,7 @@ public class Commands{
 
     private Commands(){}
 
-    public static abstract class ModeratorCommand extends Command{
+    public static abstract class AdminCommand extends Command{
         @Lazy
         @Autowired
         protected AdminService adminService;
@@ -545,7 +545,7 @@ public class Commands{
 
     @DiscordCommand(key = "mute", params = "command.admin.mute.params", description = "command.admin.mute.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_ROLES})
-    public static class MuteCommand extends ModeratorCommand{
+    public static class MuteCommand extends AdminCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Mono<MessageChannel> channel = env.getReplyChannel();
@@ -601,7 +601,7 @@ public class Commands{
 
     @DiscordCommand(key = "delete", params = "command.admin.delete.params", description = "command.admin.delete.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_MESSAGES, Permission.READ_MESSAGE_HISTORY})
-    public static class DeleteCommand extends ModeratorCommand{
+    public static class DeleteCommand extends AdminCommand{
         @Autowired
         private Settings settings;
 
@@ -678,7 +678,7 @@ public class Commands{
 
     @DiscordCommand(key = "warn", params = "command.admin.warn.params", description = "command.admin.warn.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.BAN_MEMBERS})
-    public static class WarnCommand extends ModeratorCommand{
+    public static class WarnCommand extends AdminCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Member author = env.getAuthorAsMember();
@@ -727,7 +727,7 @@ public class Commands{
     }
 
     @DiscordCommand(key = "warnings", params = "command.admin.warnings.params", description = "command.admin.warnings.description")
-    public static class WarningsCommand extends ModeratorCommand{
+    public static class WarningsCommand extends AdminCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Mono<MessageChannel> channel = env.getReplyChannel();
@@ -774,7 +774,7 @@ public class Commands{
     }
 
     @DiscordCommand(key = "unwarn", params = "command.admin.unwarn.params", description = "command.admin.unwarn.description")
-    public static class UnwarnCommand extends ModeratorCommand{
+    public static class UnwarnCommand extends AdminCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Member author = env.getAuthorAsMember();
@@ -889,7 +889,7 @@ public class Commands{
 
     @DiscordCommand(key = "unmute", params = "command.admin.unmute.params", description = "command.admin.unmute.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_ROLES})
-    public static class UnmuteCommand extends ModeratorCommand{
+    public static class UnmuteCommand extends AdminCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Mono<MessageChannel> channel = env.getReplyChannel();

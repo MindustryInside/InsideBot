@@ -5,9 +5,9 @@ import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 
 import java.io.InputStream;
-import java.util.*;
+import java.util.List;
 
 public interface AuditProvider{
 
-    Mono<Void> send(GuildConfig config, AuditAction action, List<Tuple2<String, InputStream>> attachments);
+    Mono<Void> send(AuditConfig config, AuditAction action, List<Tuple2<String, InputStream>> attachments);
 }

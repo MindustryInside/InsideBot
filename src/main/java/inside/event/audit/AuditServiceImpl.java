@@ -40,7 +40,7 @@ public class AuditServiceImpl implements AuditService{
     @Override
     @Transactional
     public Mono<Void> save(AuditAction action, List<Tuple2<String, InputStream>> attachments){
-        GuildConfig config = entityRetriever.getGuildById(action.guildId());
+        AuditConfig config = entityRetriever.getAuditConfigById(action.guildId());
         AuditProvider forwardProvider = providers.get(action.type());
         if(forwardProvider != null){
             if(settings.getDiscord().isAuditLogSaving()){
