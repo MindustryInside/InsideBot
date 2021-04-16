@@ -13,8 +13,6 @@ public interface EntityRetriever{
 
     GuildConfig getGuildById(Snowflake guildId);
 
-    boolean existsGuildConfigById(Snowflake guildId);
-
     void save(GuildConfig entity);
 
     String getPrefix(Snowflake guildId);
@@ -23,7 +21,13 @@ public interface EntityRetriever{
 
     DateTimeZone getTimeZone(Snowflake guildId);
 
+    // audit config
+
+    AuditConfig getAuditConfigById(Snowflake guildId);
+
     Optional<Snowflake> getLogChannelId(Snowflake guildId);
+
+    void save(AuditConfig auditConfig);
 
     // admin config
 

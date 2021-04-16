@@ -31,25 +31,23 @@ public class EntityRetrieverImpl implements EntityRetriever{
 
     private final MemberService memberService;
 
+    private final AuditConfigService auditConfigService;
+
     public EntityRetrieverImpl(
             @Autowired GuildConfigService guildConfigService,
             @Autowired AdminConfigService adminConfigService,
-            @Autowired MemberService memberService
+            @Autowired MemberService memberService,
+            @Autowired AuditConfigService auditConfigService
     ){
         this.guildConfigService = guildConfigService;
         this.adminConfigService = adminConfigService;
         this.memberService = memberService;
+        this.auditConfigService = auditConfigService;
     }
 
     @Override
     public GuildConfig getGuildById(Snowflake guildId){
         return guildConfigService.find(guildId);
-    }
-
-    @Override
-    public boolean existsGuildConfigById(Snowflake guildId){
-        Objects.requireNonNull(guildId, "guildId");
-        return guildConfigService.get(guildId) != null;
     }
 
     @Override
@@ -68,13 +66,23 @@ public class EntityRetrieverImpl implements EntityRetriever{
     }
 
     @Override
-    public Optional<Snowflake> getLogChannelId(Snowflake guildId){
-        return getGuildById(guildId).logChannelId();
+    public void save(GuildConfig entity){
+        guildConfigService.save(entity);
     }
 
     @Override
-    public void save(GuildConfig entity){
-        guildConfigService.save(entity);
+    public AuditConfig getAuditConfigById(Snowflake guildId){
+        return auditConfigService.find(guildId);
+    }
+
+    @Override
+    public Optional<Snowflake> getLogChannelId(Snowflake guildId){
+        return getAuditConfigById(guildId).logChannelId();
+    }
+
+    @Override
+    public void save(AuditConfig auditConfig){
+        auditConfigService.save(auditConfig);
     }
 
     @Override

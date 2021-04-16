@@ -9,7 +9,7 @@ import discord4j.discordjson.json.*;
 import discord4j.rest.util.ApplicationCommandOptionType;
 import inside.Settings;
 import inside.command.Commands;
-import inside.data.entity.GuildConfig;
+import inside.data.entity.*;
 import inside.data.service.AdminService;
 import inside.event.audit.*;
 import inside.service.MessageService;
@@ -20,17 +20,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import reactor.bool.BooleanUtils;
 import reactor.core.publisher.Mono;
+import reactor.util.function.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.function.BiConsumer;
+import java.util.function.*;
 import java.util.stream.Collectors;
 
 import static inside.event.audit.Attribute.COUNT;
 import static inside.event.audit.BaseAuditProvider.MESSAGE_TXT;
 import static inside.util.ContextUtil.*;
+import static reactor.function.TupleUtils.*;
 
 public class InteractionCommands{
 
@@ -61,7 +63,7 @@ public class InteractionCommands{
                     .map(adminService::isAdmin)
                     .orElse(Mono.just(false));
 
-            return super.apply(env).filterWhen(bool -> BooleanUtils.and(Mono.just(bool), isAdmin));
+            return BooleanUtils.and(super.apply(env), isAdmin);
         }
     }
 
@@ -72,8 +74,123 @@ public class InteractionCommands{
             Snowflake guildId = env.event().getInteraction().getGuildId()
                     .orElseThrow(AssertionError::new);
 
-            Mono<Void> handleCommon = Mono.justOrEmpty(env.event().getInteraction().getCommandInteraction()
+            Mono<Void> handleAudit = Mono.justOrEmpty(env.event().getInteraction().getCommandInteraction()
+                    .getOption("audit"))
+                    .flatMap(group -> {
+                        AuditConfig auditConfig = entityRetriever.getAuditConfigById(guildId);
+
+                        Mono<Void> channelCommand = Mono.justOrEmpty(group.getOption("channel"))
+                                .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")))
+                                .switchIfEmpty(messageService.text(env.event(), "command.config.current-channel",
+                                        auditConfig.logChannelId().map(DiscordUtil::getChannelMention)
+                                                .orElse(messageService.get(env.context(), "command.config.channel-absent"))).then(Mono.empty()))
+                                .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
+                                        .flatMap(ApplicationCommandInteractionOptionValue::asChannel))
+                                .map(Channel::getId)
+                                .flatMap(channelId -> Mono.defer(() -> {
+                                    auditConfig.logChannelId(channelId);
+                                    entityRetriever.save(auditConfig);
+                                    return messageService.text(env.event(), "command.config.channel-updated", DiscordUtil.getChannelMention(channelId));
+                                }));
+
+                        Mono<Void> typesCommand = Mono.justOrEmpty(group.getOption("types"))
+                                .switchIfEmpty(channelCommand.then(Mono.empty()))
+                                .flatMap(opt -> Mono.justOrEmpty(opt.getOption("type"))
+                                        .flatMap(subopt -> Mono.justOrEmpty(subopt.getValue()))
+                                        .map(ApplicationCommandInteractionOptionValue::asString)
+                                        .filter(str -> !str.equalsIgnoreCase("help"))
+                                        .switchIfEmpty(messageService.text(env.event(), "command.config.all", Arrays.stream(AuditActionType.values())
+                                                .map(type -> messageService.getEnum(env.context(), type))
+                                                .collect(Collectors.toList())).then(Mono.empty()))
+                                        .zipWith(Mono.justOrEmpty(opt.getOption("value"))
+                                                .switchIfEmpty(messageService.text(env.event(), "command.config.current-types",
+                                                        auditConfig.enabled().stream()
+                                                                .map(type -> messageService.getEnum(env.context(), type))
+                                                                .collect(Collectors.joining(", "))).then(Mono.empty()))
+                                                .flatMap(subopt -> Mono.justOrEmpty(subopt.getValue()))
+                                                .map(ApplicationCommandInteractionOptionValue::asString)))
+                                .flatMap(function((choice, enums) -> Mono.defer(() -> {
+                                    List<Tuple2<AuditActionType, String>> all = Arrays.stream(AuditActionType.values())
+                                            .map(type -> Tuples.of(type, messageService.getEnum(env.context(), type)))
+                                            .collect(Collectors.toUnmodifiableList());
+
+                                    List<String> onlyNames = all.stream().map(Tuple2::getT2)
+                                            .collect(Collectors.toUnmodifiableList());
+
+                                    boolean add = choice.equalsIgnoreCase("add");
+
+                                    List<String> toHelp = new ArrayList<>();
+                                    List<String> removed = new ArrayList<>();
+                                    Set<AuditActionType> flags = auditConfig.enabled();
+                                    String[] text = enums.split("(\\s+)?,(\\s+)?");
+                                    for(String s : text){
+                                        all.stream().filter(predicate((type, str) -> str.equalsIgnoreCase(s)))
+                                                .findFirst()
+                                                .ifPresentOrElse(consumer((type, str) -> {
+                                                    if(add){
+                                                        if(!flags.add(type)){
+                                                            toHelp.add(messageService.format(env.context(), "command.config.types.response.already-set", s));
+                                                        }
+                                                    }else{
+                                                        if(!flags.remove(type)){
+                                                            toHelp.add(messageService.format(env.context(), "command.config.types.response.already-remove", s));
+                                                        }else{
+                                                            removed.add(str);
+                                                        }
+                                                    }
+                                                }), () -> {
+                                                    String suggest = Strings.findClosest(onlyNames, s);
+                                                    String response = suggest != null ? messageService.format(env.context(),
+                                                        "command.config.types.response.unknown.suggest", s, suggest) :
+                                                            messageService.format(env.context(), "command.config.types.response.unknown", s);
+                                                    toHelp.add(response);
+                                                });
+                                    }
+
+                                    if(toHelp.isEmpty()){
+                                        auditConfig.enabled(flags);
+                                        entityRetriever.save(auditConfig);
+                                        if(add){
+                                            String formatted = flags.stream()
+                                                    .map(type -> messageService.getEnum(env.context(), type))
+                                                    .collect(Collectors.joining(", "));
+
+                                            return messageService.text(env.event(), "command.config.types.added", formatted);
+                                        }
+
+                                        return messageService.text(env.event(), "command.config.types.removed", String.join(", ", removed));
+                                    }else{
+                                        StringBuilder response = new StringBuilder();
+                                        for(String s : toHelp){
+                                            response.append(" • ");
+                                            response.append(s);
+                                            response.append("\n");
+                                        }
+
+                                        return messageService.error(env.event(), "command.config.types.conflicted.title", response.toString());
+                                    }
+                                })));
+
+                        Function<Boolean, String> formatBool = bool ->
+                                messageService.get(env.context(), bool ? "command.config.enabled" : "command.config.disabled");
+
+                        return Mono.justOrEmpty(group.getOption("enable"))
+                                .switchIfEmpty(typesCommand.then(Mono.empty()))
+                                .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")))
+                                .flatMap(opt -> Mono.justOrEmpty(opt.getValue()))
+                                .map(ApplicationCommandInteractionOptionValue::asBoolean)
+                                .switchIfEmpty(messageService.text(env.event(), "command.config.enable-updated",
+                                        formatBool.apply(auditConfig.isEnable())).then(Mono.empty()))
+                                .flatMap(bool -> Mono.defer(() -> {
+                                    auditConfig.setEnable(bool);
+                                    entityRetriever.save(auditConfig);
+                                    return messageService.text(env.event(), "command.config.enable-updated", formatBool.apply(bool));
+                                }));
+                    });
+
+            return Mono.justOrEmpty(env.event().getInteraction().getCommandInteraction()
                     .getOption("common"))
+                    .switchIfEmpty(handleAudit.then(Mono.empty()))
                     .flatMap(group -> {
                         GuildConfig guildConfig = entityRetriever.getGuildById(guildId);
 
@@ -139,8 +256,6 @@ public class InteractionCommands{
                                 }));
 
                     });
-
-            return handleCommon;
         }
 
         @Override
@@ -179,6 +294,59 @@ public class InteractionCommands{
                                     .addOption(ApplicationCommandOptionData.builder()
                                             .name("value")
                                             .description("New time zone")
+                                            .type(ApplicationCommandOptionType.STRING.getValue())
+                                            .build())
+                                    .build())
+                            .build())
+                    .addOption(ApplicationCommandOptionData.builder()
+                            .name("audit")
+                            .description("Audit log settings")
+                            .type(ApplicationCommandOptionType.SUB_COMMAND_GROUP.getValue())
+                            .addOption(ApplicationCommandOptionData.builder()
+                                    .name("enable")
+                                    .description("Enable audit logging")
+                                    .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
+                                    .addOption(ApplicationCommandOptionData.builder()
+                                            .name("value")
+                                            .description("Boolean value")
+                                            .type(ApplicationCommandOptionType.BOOLEAN.getValue())
+                                            .build())
+                                    .build())
+                            .addOption(ApplicationCommandOptionData.builder()
+                                    .name("channel")
+                                    .description("Configure log channel")
+                                    .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
+                                    .addOption(ApplicationCommandOptionData.builder()
+                                            .name("value")
+                                            .description("Log channel")
+                                            .type(ApplicationCommandOptionType.CHANNEL.getValue())
+                                            .build())
+                                    .build())
+                            .addOption(ApplicationCommandOptionData.builder()
+                                    .name("types")
+                                    .description("Configure bot locale")
+                                    .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
+                                    .addOption(ApplicationCommandOptionData.builder()
+                                            .name("type")
+                                            .description("Action type")
+                                            .type(ApplicationCommandOptionType.STRING.getValue())
+                                            .required(true)
+                                            .addChoice(ApplicationCommandOptionChoiceData.builder()
+                                                    .name("Get a help")
+                                                    .value("help")
+                                                    .build())
+                                            .addChoice(ApplicationCommandOptionChoiceData.builder()
+                                                    .name("Add audit action type")
+                                                    .value("add")
+                                                    .build())
+                                            .addChoice(ApplicationCommandOptionChoiceData.builder()
+                                                    .name("Remove audit action type")
+                                                    .value("remove")
+                                                    .build())
+                                            .build())
+                                    .addOption(ApplicationCommandOptionData.builder()
+                                            .name("value")
+                                            .description("Audit action type")
                                             .type(ApplicationCommandOptionType.STRING.getValue())
                                             .build())
                                     .build())
