@@ -79,8 +79,8 @@ public class InteractionCommands{
                     .flatMap(group -> {
                         AuditConfig auditConfig = entityRetriever.getAuditConfigById(guildId);
 
-                        Mono<Void> channelCommand = Mono.justOrEmpty(group.getOption("channel"))
-                                .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")))
+                        Mono<Void> channelCommand = Mono.justOrEmpty(group.getOption("channel")
+                                .flatMap(command -> command.getOption("value")))
                                 .switchIfEmpty(messageService.text(env.event(), "command.config.current-channel",
                                         auditConfig.logChannelId().map(DiscordUtil::getChannelMention)
                                                 .orElse(messageService.get(env.context(), "command.config.channel-absent"))).then(Mono.empty()))
@@ -95,8 +95,8 @@ public class InteractionCommands{
 
                         Mono<Void> typesCommand = Mono.justOrEmpty(group.getOption("types"))
                                 .switchIfEmpty(channelCommand.then(Mono.empty()))
-                                .flatMap(opt -> Mono.justOrEmpty(opt.getOption("type"))
-                                        .flatMap(subopt -> Mono.justOrEmpty(subopt.getValue()))
+                                .flatMap(opt -> Mono.justOrEmpty(opt.getOption("type")
+                                        .flatMap(ApplicationCommandInteractionOption::getValue))
                                         .map(ApplicationCommandInteractionOptionValue::asString)
                                         .filter(str -> !str.equalsIgnoreCase("help"))
                                         .switchIfEmpty(messageService.text(env.event(), "command.config.all", Arrays.stream(AuditActionType.values())
@@ -148,8 +148,8 @@ public class InteractionCommands{
                                                     }), () -> {
                                                         String suggest = Strings.findClosest(onlyNames, s);
                                                         String response = suggest != null ? messageService.format(env.context(),
-                                                                "command.config.types.response.unknown.suggest", s, suggest) :
-                                                                          messageService.format(env.context(), "command.config.types.response.unknown", s);
+                                                            "command.config.types.response.unknown.suggest", s, suggest) :
+                                                                messageService.format(env.context(), "command.config.types.response.unknown", s);
                                                         toHelp.add(response);
                                                     });
                                         }
@@ -184,8 +184,8 @@ public class InteractionCommands{
 
                         return Mono.justOrEmpty(group.getOption("enable"))
                                 .switchIfEmpty(typesCommand.then(Mono.empty()))
-                                .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")))
-                                .flatMap(opt -> Mono.justOrEmpty(opt.getValue()))
+                                .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")
+                                        .flatMap(ApplicationCommandInteractionOption::getValue)))
                                 .map(ApplicationCommandInteractionOptionValue::asBoolean)
                                 .switchIfEmpty(messageService.text(env.event(), "command.config.enable-updated",
                                         formatBool.apply(auditConfig.isEnable())).then(Mono.empty()))
@@ -202,8 +202,8 @@ public class InteractionCommands{
                     .flatMap(group -> {
                         GuildConfig guildConfig = entityRetriever.getGuildById(guildId);
 
-                        Mono<Void> timezoneCommand = Mono.justOrEmpty(group.getOption("timezone"))
-                                .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")))
+                        Mono<Void> timezoneCommand = Mono.justOrEmpty(group.getOption("timezone")
+                                .flatMap(command -> command.getOption("value")))
                                 .switchIfEmpty(messageService.text(env.event(), "command.config.current-timezone",
                                         guildConfig.timeZone()).then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
