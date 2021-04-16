@@ -122,29 +122,37 @@ public class InteractionCommands{
                                     List<String> toHelp = new ArrayList<>();
                                     List<String> removed = new ArrayList<>();
                                     Set<AuditActionType> flags = auditConfig.enabled();
-                                    String[] text = enums.split("(\\s+)?,(\\s+)?");
-                                    for(String s : text){
-                                        all.stream().filter(predicate((type, str) -> str.equalsIgnoreCase(s)))
-                                                .findFirst()
-                                                .ifPresentOrElse(consumer((type, str) -> {
-                                                    if(add){
-                                                        if(!flags.add(type)){
-                                                            toHelp.add(messageService.format(env.context(), "command.config.types.response.already-set", s));
-                                                        }
-                                                    }else{
-                                                        if(!flags.remove(type)){
-                                                            toHelp.add(messageService.format(env.context(), "command.config.types.response.already-remove", s));
+                                    if(enums.equalsIgnoreCase("all")){
+                                        if(add){
+                                            flags.addAll(all.stream().map(Tuple2::getT1).collect(Collectors.toSet()));
+                                        }else{
+                                            flags.clear();
+                                        }
+                                    }else{
+                                        String[] text = enums.split("(\\s+)?,(\\s+)?");
+                                        for(String s : text){
+                                            all.stream().filter(predicate((type, str) -> str.equalsIgnoreCase(s)))
+                                                    .findFirst()
+                                                    .ifPresentOrElse(consumer((type, str) -> {
+                                                        if(add){
+                                                            if(!flags.add(type)){
+                                                                toHelp.add(messageService.format(env.context(), "command.config.types.response.already-set", s));
+                                                            }
                                                         }else{
-                                                            removed.add(str);
+                                                            if(!flags.remove(type)){
+                                                                toHelp.add(messageService.format(env.context(), "command.config.types.response.already-remove", s));
+                                                            }else{
+                                                                removed.add(str);
+                                                            }
                                                         }
-                                                    }
-                                                }), () -> {
-                                                    String suggest = Strings.findClosest(onlyNames, s);
-                                                    String response = suggest != null ? messageService.format(env.context(),
-                                                        "command.config.types.response.unknown.suggest", s, suggest) :
-                                                            messageService.format(env.context(), "command.config.types.response.unknown", s);
-                                                    toHelp.add(response);
-                                                });
+                                                    }), () -> {
+                                                        String suggest = Strings.findClosest(onlyNames, s);
+                                                        String response = suggest != null ? messageService.format(env.context(),
+                                                                "command.config.types.response.unknown.suggest", s, suggest) :
+                                                                          messageService.format(env.context(), "command.config.types.response.unknown", s);
+                                                        toHelp.add(response);
+                                                    });
+                                        }
                                     }
 
                                     if(toHelp.isEmpty()){
