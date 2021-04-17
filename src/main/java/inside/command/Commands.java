@@ -92,7 +92,7 @@ public class Commands{
                     .filterWhen(commandInfo -> handler.commands().get(commandInfo.text()).apply(env))
                     .collect(collector)
                     .flatMap(builder -> prefix.map(str -> builder.append(messageService.get(env.context(), "command.help.disclaimer.user")).append("\n")
-                            .append(messageService.format(env.context(), "command.help.disclaimer.help", str))
+                            .append(messageService.get(env.context(), "command.help.disclaimer.help"))
                             .insert(0, messageService.format(env.context(), "command.help.disclaimer.prefix", str) + "\n\n")))
                     .flatMap(builder -> messageService.info(env.getReplyChannel(),"command.help", builder.toString()));
         }
