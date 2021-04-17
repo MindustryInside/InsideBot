@@ -38,6 +38,12 @@ public class DefaultEntityStoreLayout implements EntityStoreLayout{
     }
 
     @Override
+    public Mono<MessageInfo> getMessageInfoById(long messageId){
+        return storeHolder.getMessageInfoService()
+                .find(messageId);
+    }
+
+    @Override
     public Mono<Void> onGuildConfigSave(GuildConfig guildConfig){
         return storeHolder.getGuildConfigService()
                 .save(guildConfig);
@@ -59,5 +65,17 @@ public class DefaultEntityStoreLayout implements EntityStoreLayout{
     public Mono<Void> onLocalMemberSave(LocalMember localMember){
         return storeHolder.getLocalMemberService()
                 .save(localMember);
+    }
+
+    @Override
+    public Mono<Void> onMessageInfoSave(MessageInfo messageInfo){
+        return storeHolder.getMessageInfoService()
+                .save(messageInfo);
+    }
+
+    @Override
+    public Mono<Void> onMessageInfoDelete(MessageInfo messageInfo){
+        return storeHolder.getMessageInfoService()
+                .delete(messageInfo);
     }
 }

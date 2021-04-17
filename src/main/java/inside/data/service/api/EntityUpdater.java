@@ -12,4 +12,8 @@ public interface EntityUpdater{
     Mono<Void> onAuditConfigSave(AuditConfig auditConfig);
 
     Mono<Void> onLocalMemberSave(LocalMember localMember);
+
+    Mono<Void> onMessageInfoSave(MessageInfo messageInfo);
+
+    Mono<Void> onMessageInfoDelete(MessageInfo messageInfo);
 }

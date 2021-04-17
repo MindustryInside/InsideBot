@@ -23,6 +23,10 @@ public class ReadStoreActions{
         return new GetLocalMemberAction(userId, guildId);
     }
 
+    public static GetMessageInfoAction getMessageInfoById(long messageId){
+        return new GetMessageInfoAction(messageId);
+    }
+
     public static class GetGuildConfigAction implements EntityStoreAction<GuildConfig>{
         public final long guildId;
 
@@ -54,6 +58,14 @@ public class ReadStoreActions{
         private GetLocalMemberAction(long userId, long guildId){
             this.userId = userId;
             this.guildId = guildId;
+        }
+    }
+
+    public static class GetMessageInfoAction implements EntityStoreAction<MessageInfo>{
+        public final long messageId;
+
+        public GetMessageInfoAction(long messageId){
+            this.messageId = messageId;
         }
     }
 }

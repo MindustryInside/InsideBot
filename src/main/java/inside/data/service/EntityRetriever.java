@@ -1,7 +1,7 @@
 package inside.data.service;
 
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.entity.Member;
+import discord4j.core.object.entity.*;
 import inside.data.entity.*;
 import reactor.core.publisher.Mono;
 
@@ -35,6 +35,16 @@ public interface EntityRetriever{
 
     Mono<Void> save(LocalMember localMember);
 
+    // message info
+
+    Mono<MessageInfo> getMessageInfoById(Snowflake messageId);
+
+    Mono<Void> delete(MessageInfo messageInfo);
+
+    Mono<Void> save(MessageInfo messageInfo);
+
+    // factory methods
+
     Mono<GuildConfig> createGuildConfig(Snowflake guildId);
 
     Mono<AdminConfig> createAdminConfig(Snowflake guildId);
@@ -42,6 +52,8 @@ public interface EntityRetriever{
     Mono<AuditConfig> createAuditConfig(Snowflake guildId);
 
     Mono<LocalMember> createLocalMember(Snowflake userId, Snowflake guildId, String effectiveNickname);
+
+    Mono<MessageInfo> createMessageInfo(Message message);
 
     default Mono<LocalMember> createLocalMember(Member member){
         return createLocalMember(member.getId(), member.getGuildId(), member.getDisplayName());

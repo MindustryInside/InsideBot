@@ -619,10 +619,8 @@ public class InteractionCommands{
                     .sort(Comparator.comparing(Message::getId))
                     .filter(message -> message.getTimestamp().isAfter(limit))
                     .flatMap(message -> message.getAuthorAsMember()
-                            .doOnNext(member -> {
-                                appendInfo.accept(message, member);
-                                messageService.deleteById(message.getId());
-                            })
+                            .doOnNext(member -> appendInfo.accept(message, member))
+                            .flatMap(ignored -> entityRetriever.getMessageInfoById(message.getId()).flatMap(entityRetriever::delete)) // TODO: create deleteById method
                             .thenReturn(message))
                     .transform(messages -> number > 1 ? channel.bulkDeleteMessages(messages).then() : messages.next().flatMap(Message::delete).then()))
                     .then();

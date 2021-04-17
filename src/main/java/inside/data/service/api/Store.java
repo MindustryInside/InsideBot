@@ -34,6 +34,7 @@ public class Store{
                 .map(GetAdminConfigAction.class, action -> entityAccessor.getAdminConfigById(action.guildId))
                 .map(GetAuditConfigAction.class, action -> entityAccessor.getAuditConfigById(action.guildId))
                 .map(GetLocalMemberAction.class, action -> entityAccessor.getLocalMemberById(action.userId, action.guildId))
+                .map(GetMessageInfoAction.class, action -> entityAccessor.getMessageInfoById(action.messageId))
                 .build();
     }
 
@@ -44,6 +45,9 @@ public class Store{
                 .map(AdminConfigSaveAction.class, action -> entityUpdater.onAdminConfigSave(action.adminConfig))
                 .map(AuditConfigSaveAction.class, action -> entityUpdater.onAuditConfigSave(action.auditConfig))
                 .map(LocalMemberSaveAction.class, action -> entityUpdater.onLocalMemberSave(action.localMember))
+                .map(LocalMemberSaveAction.class, action -> entityUpdater.onLocalMemberSave(action.localMember))
+                .map(MessageInfoSaveAction.class, action -> entityUpdater.onMessageInfoSave(action.messageInfo))
+                .map(MessageInfoDeleteAction.class, action -> entityUpdater.onMessageInfoDelete(action.messageInfo))
                 .build();
     }
 
