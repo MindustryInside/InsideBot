@@ -1,0 +1,3 @@
+rootProject.name = 'InsideBot'
+
+include 'encoding'

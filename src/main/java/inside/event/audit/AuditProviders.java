@@ -131,7 +131,8 @@ public class AuditProviders{
             }
 
             embed.setDescription(messageService.format(context, "audit.member.kick.title", getUserReference(context, target)));
-            embed.addField(messageService.get(context, "audit.member.admin"), getUserReference(context, action.user()), true);
+            embed.addField(messageService.get(context, "audit.member.admin"),
+                    getUserReference(context, action.user()), true);
             embed.addField(messageService.get(context, "audit.member.reason"), reason, true);
             addTimestamp(context, action, embed);
         }
@@ -148,7 +149,8 @@ public class AuditProviders{
             }
 
             embed.setDescription(messageService.format(context, "audit.member.ban.title", getUserReference(context, target)));
-            embed.addField(messageService.get(context, "audit.member.admin"), getUserReference(context, action.user()), true);
+            embed.addField(messageService.get(context, "audit.member.admin"),
+                    getUserReference(context, action.user()), true);
             embed.addField(messageService.get(context, "audit.member.reason"), reason, true);
             addTimestamp(context, action, embed);
         }
@@ -188,7 +190,8 @@ public class AuditProviders{
                     .withZone(context.get(KEY_TIMEZONE));
 
             embed.setDescription(messageService.format(context, "audit.member.mute.title", getUserReference(context, target)));
-            embed.addField(messageService.get(context, "audit.member.admin"), getUserReference(context, action.user()), true);
+            embed.addField(messageService.get(context, "audit.member.admin"),
+                    getUserReference(context, action.user()), true);
             embed.addField(messageService.get(context, "audit.member.reason"), reason, true);
             embed.addField(messageService.get(context, "audit.member.mute.delay"), formatter.print(delay), true);
             addTimestamp(context, action, embed);
