@@ -17,7 +17,6 @@ import reactor.core.publisher.*;
 import reactor.util.annotation.Nullable;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static inside.event.audit.Attribute.*;
 import static inside.util.ContextUtil.*;
@@ -47,7 +46,7 @@ public class AdminServiceImpl implements AdminService{
     @Override
     @Transactional(readOnly = true)
     public Flux<AdminAction> get(AdminActionType type, Snowflake guildId, Snowflake targetId){
-        return Flux.defer(() -> Flux.fromIterable(repository.find(type, guildId.asString(), targetId.asString())));
+        return Flux.defer(() -> Flux.fromIterable(repository.find(type, guildId.asLong(), targetId.asLong())));
     }
 
     @Override
@@ -148,9 +147,7 @@ public class AdminServiceImpl implements AdminService{
     @Override
     public Mono<Boolean> isAdmin(Member member){
         Mono<List<Snowflake>> roles = entityRetriever.getAdminConfigById(member.getGuildId())
-                .map(adminConfig -> adminConfig.adminRoleIDs().stream()
-                        .map(Snowflake::of)
-                        .collect(Collectors.toUnmodifiableList()));
+                .map(AdminConfig::adminRoleIDs);
 
         Mono<Boolean> isPermissed = member.getRoles().map(Role::getId)
                 .filterWhen(id -> roles.map(list -> list.contains(id)))

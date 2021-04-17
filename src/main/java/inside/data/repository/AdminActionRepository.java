@@ -15,5 +15,5 @@ public interface AdminActionRepository extends GuildRepository<AdminAction>{
     List<AdminAction> findAll(AdminActionType type);
 
     @Query("select a from AdminAction a where a.guildId = :#{#guildId} and a.target.userId = :#{#targetId} and a.type = :type")
-    List<AdminAction> find(AdminActionType type, String guildId, String targetId);
+    List<AdminAction> find(AdminActionType type, long guildId, long targetId);
 }
