@@ -1,13 +1,14 @@
-*.class
-/bin/
-/modules/
-/.settings/
-/.gradle/
-/build/
-.classpath
-.project
-/.idea/
-/out/
+# IntelliJ
+.idea
 
-/src/main/resources/application.yml
-/logs/
+# Build artifacts
+*.jar
+build/
+
+# Gradle
+.gradle
+!gradle-wrapper.jar
+
+# Misc
+logs/
+src/main/resources/application.yml
