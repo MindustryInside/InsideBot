@@ -52,7 +52,7 @@ public class AuditAction extends GuildEntity{
     public AuditAction(){}
 
     public AuditAction(Snowflake guildId){
-        this.guildId = Objects.requireNonNull(guildId, "guildId").asString();
+        this.guildId = Objects.requireNonNull(guildId, "guildId").asLong();
     }
 
     public DateTime timestamp(){

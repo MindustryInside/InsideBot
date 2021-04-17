@@ -9,7 +9,6 @@ import discord4j.discordjson.json.*;
 import discord4j.rest.util.ApplicationCommandOptionType;
 import inside.Settings;
 import inside.command.Commands;
-import inside.data.entity.*;
 import inside.data.service.AdminService;
 import inside.event.audit.*;
 import inside.service.MessageService;
@@ -75,9 +74,9 @@ public class InteractionCommands{
 
             Mono<Void> handleAudit = Mono.justOrEmpty(env.event().getInteraction().getCommandInteraction()
                     .getOption("audit"))
-                    .flatMap(group -> {
-                        AuditConfig auditConfig = entityRetriever.getAuditConfigById(guildId);
-
+                    .zipWith(entityRetriever.getAuditConfigById(guildId)
+                            .switchIfEmpty(entityRetriever.createAuditConfig(guildId)))
+                    .flatMap(function((group, auditConfig) -> {
                         Mono<Void> channelCommand = Mono.justOrEmpty(group.getOption("channel")
                                 .flatMap(command -> command.getOption("value")))
                                 .switchIfEmpty(messageService.text(env.event(), "command.config.current-channel",
@@ -88,8 +87,8 @@ public class InteractionCommands{
                                 .map(Channel::getId)
                                 .flatMap(channelId -> Mono.defer(() -> {
                                     auditConfig.logChannelId(channelId);
-                                    entityRetriever.save(auditConfig);
-                                    return messageService.text(env.event(), "command.config.channel-updated", DiscordUtil.getChannelMention(channelId));
+                                    return messageService.text(env.event(), "command.config.channel-updated", DiscordUtil.getChannelMention(channelId))
+                                            .and(entityRetriever.save(auditConfig));
                                 }));
 
                         Mono<Void> typesCommand = Mono.justOrEmpty(group.getOption("types"))
@@ -156,7 +155,6 @@ public class InteractionCommands{
 
                                     if(toHelp.isEmpty()){
                                         auditConfig.enabled(flags);
-                                        entityRetriever.save(auditConfig);
                                         if(add){
                                             String formatted = flags.stream()
                                                     .map(type -> messageService.getEnum(env.context(), type))
@@ -176,7 +174,7 @@ public class InteractionCommands{
 
                                         return messageService.error(env.event(), "command.config.types.conflicted.title", response.toString());
                                     }
-                                })));
+                                }))).and(entityRetriever.save(auditConfig));
 
                         Function<Boolean, String> formatBool = bool ->
                                 messageService.get(env.context(), bool ? "command.config.enabled" : "command.config.disabled");
@@ -190,17 +188,16 @@ public class InteractionCommands{
                                         formatBool.apply(auditConfig.isEnable())).then(Mono.empty()))
                                 .flatMap(bool -> Mono.defer(() -> {
                                     auditConfig.setEnable(bool);
-                                    entityRetriever.save(auditConfig);
-                                    return messageService.text(env.event(), "command.config.enable-updated", formatBool.apply(bool));
+                                    return messageService.text(env.event(), "command.config.enable-updated", formatBool.apply(bool))
+                                            .and(entityRetriever.save(auditConfig));
                                 }));
-                    });
+                    }));
 
             return Mono.justOrEmpty(env.event().getInteraction().getCommandInteraction()
                     .getOption("common"))
                     .switchIfEmpty(handleAudit.then(Mono.empty()))
-                    .flatMap(group -> {
-                        GuildConfig guildConfig = entityRetriever.getGuildById(guildId);
-
+                    .zipWith(entityRetriever.getGuildConfigById(guildId))
+                    .flatMap(function((group, guildConfig) -> {
                         Mono<Void> timezoneCommand = Mono.justOrEmpty(group.getOption("timezone")
                                 .flatMap(command -> command.getOption("value")))
                                 .switchIfEmpty(messageService.text(env.event(), "command.config.current-timezone",
@@ -219,10 +216,10 @@ public class InteractionCommands{
                                     }
 
                                     guildConfig.timeZone(timeZone);
-                                    entityRetriever.save(guildConfig);
                                     return Mono.deferContextual(ctx -> messageService.text(env.event(),
                                             "command.config.timezone-updated", ctx.<Locale>get(KEY_TIMEZONE)))
-                                            .contextWrite(ctx -> ctx.put(KEY_TIMEZONE, timeZone));
+                                            .contextWrite(ctx -> ctx.put(KEY_TIMEZONE, timeZone))
+                                            .and(entityRetriever.save(guildConfig));
                                 }));
 
                         Mono<Void> localeCommand = Mono.justOrEmpty(group.getOption("locale"))
@@ -243,10 +240,10 @@ public class InteractionCommands{
                                     }
 
                                     guildConfig.locale(locale);
-                                    entityRetriever.save(guildConfig);
                                     return Mono.deferContextual(ctx -> messageService.text(env.event(), "command.config.locale-updated",
                                             ctx.<Locale>get(KEY_LOCALE)))
-                                            .contextWrite(ctx -> ctx.put(KEY_LOCALE, locale));
+                                            .contextWrite(ctx -> ctx.put(KEY_LOCALE, locale))
+                                            .and(entityRetriever.save(guildConfig));
                                 }));
 
                         return Mono.justOrEmpty(group.getOption("prefix"))
@@ -258,11 +255,11 @@ public class InteractionCommands{
                                         .map(ApplicationCommandInteractionOptionValue::asString))
                                 .flatMap(str -> Mono.defer(() -> {
                                     guildConfig.prefix(str);
-                                    entityRetriever.save(guildConfig);
-                                    return messageService.text(env.event(), "command.config.prefix-updated", guildConfig.prefix());
+                                    return messageService.text(env.event(), "command.config.prefix-updated", guildConfig.prefix())
+                                            .and(entityRetriever.save(guildConfig));
                                 }));
 
-                    });
+                    }));
         }
 
         @Override

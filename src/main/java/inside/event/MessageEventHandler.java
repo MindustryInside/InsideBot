@@ -57,33 +57,46 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
         Snowflake guildId = event.getGuildId().orElseThrow(IllegalStateException::new); // Guaranteed above, see DiscordUtil#isBot
 
-        LocalMember localMember = entityRetriever.getMember(member);
+        Mono<LocalMember> localMember = entityRetriever.getLocalMemberById(member)
+                .switchIfEmpty(entityRetriever.createLocalMember(member));
 
         DateTime time = new DateTime(message.getTimestamp().toEpochMilli());
-        localMember.lastSentMessage(time);
-        entityRetriever.save(localMember);
 
-        Mono<Void> safeMessageInfo = Mono.fromRunnable(() -> {
+        Mono<Void> updateLastSendMessage = localMember.flatMap(localMember0 -> {
+            localMember0.lastSentMessage(time);
+            return entityRetriever.save(localMember0);
+        });
+
+        Mono<Void> safeMessageInfo = entityRetriever.getAuditConfigById(guildId).flatMap(auditConfig -> {
+            if(!auditConfig.isEnabled(MESSAGE_CREATE)){
+                return Mono.empty();
+            }
             MessageInfo info = new MessageInfo();
             info.userId(member.getId());
             info.messageId(message.getId());
             info.guildId(guildId);
             info.timestamp(time);
             info.content(messageService.encrypt(MessageUtil.effectiveContent(message), message.getId(), message.getChannelId()));
-            messageService.save(info);
+            return Mono.fromRunnable(() -> messageService.save(info));
         });
 
-        Context context = Context.of(KEY_LOCALE, entityRetriever.getLocale(guildId),
-                KEY_TIMEZONE, entityRetriever.getTimeZone(guildId));
+        Mono<Context> initContext = entityRetriever.getGuildConfigById(guildId)
+                .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
+                .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
+                        KEY_TIMEZONE, guildConfig.timeZone()));
 
-        CommandEnvironment environment = CommandEnvironment.builder()
-                .message(message)
-                .member(member)
-                .context(context)
-                .localMember(localMember)
-                .build();
+        Mono<Void> handleMessage = localMember.zipWith(initContext)
+                .map(function((localMember0, context) -> CommandEnvironment.builder()
+                        .message(message)
+                        .member(member)
+                        .context(context)
+                        .localMember(localMember0)
+                        .build()))
+                .flatMap(environment -> commandHandler.handleMessage(environment));
 
-        return commandHandler.handleMessage(environment).and(safeMessageInfo).contextWrite(context);
+        // TODO: cleanup
+
+        return initContext.flatMap(context -> Mono.when(updateLastSendMessage, safeMessageInfo, handleMessage).contextWrite(context));
     }
 
     @Override
@@ -93,10 +106,12 @@ public class MessageEventHandler extends ReactiveEventAdapter{
             return Mono.empty();
         }
 
-        Context context = Context.of(KEY_LOCALE, entityRetriever.getLocale(guildId),
-                KEY_TIMEZONE, entityRetriever.getTimeZone(guildId));
+        Mono<Context> initContext = entityRetriever.getGuildConfigById(guildId)
+                .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
+                .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
+                        KEY_TIMEZONE, guildConfig.timeZone()));
 
-        return Mono.zip(event.getMessage(), event.getChannel().ofType(TextChannel.class))
+        return initContext.flatMap(context ->Mono.zip(event.getMessage(), event.getChannel().ofType(TextChannel.class))
                 .filter(predicate((message, channel) -> !message.isTts()))
                 .zipWhen(tuple -> tuple.getT1().getAuthorAsMember(),
                         (tuple, user) -> Tuples.of(tuple.getT1(), tuple.getT2(), user))
@@ -125,14 +140,14 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
                     Mono<?> command = Mono.defer(() -> {
                         if(messageService.isAwaitEdit(message.getId())){
-                            CommandEnvironment environment = CommandEnvironment.builder()
-                                    .localMember(entityRetriever.getMember(member))
-                                    .message(message)
-                                    .member(member)
-                                    .context(context)
-                                    .build();
-
-                            return commandHandler.handleMessage(environment);
+                            return entityRetriever.getLocalMemberById(member)
+                                    .switchIfEmpty(entityRetriever.createLocalMember(member))
+                                    .flatMap(localMember -> commandHandler.handleMessage(CommandEnvironment.builder()
+                                            .localMember(localMember)
+                                            .message(message)
+                                            .member(member)
+                                            .context(context)
+                                            .build()));
                         }
                         return Mono.empty();
                     });
@@ -156,7 +171,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
                     return builder.save().and(command);
                 }))
-                .contextWrite(context);
+                .contextWrite(context));
     }
 
     @Override
@@ -177,10 +192,12 @@ public class MessageEventHandler extends ReactiveEventAdapter{
             return Mono.empty();
         }
 
-        Context context = Context.of(KEY_LOCALE, entityRetriever.getLocale(guildId),
-                KEY_TIMEZONE, entityRetriever.getTimeZone(guildId));
+        Mono<Context> initContext = entityRetriever.getGuildConfigById(guildId)
+                .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
+                .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
+                        KEY_TIMEZONE, guildConfig.timeZone()));
 
-        return event.getChannel()
+        return initContext.flatMap(context -> event.getChannel()
                 .ofType(TextChannel.class)
                 .flatMap(channel -> {
                     String decrypted = messageService.decrypt(info.content(), message.getId(), message.getChannelId());
@@ -214,6 +231,6 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                             .withAttribute(AVATAR_URL, user.getAvatarUrl()))
                             .flatMap(AuditActionBuilder::save);
                 })
-                .contextWrite(context);
+                .contextWrite(context));
     }
 }

@@ -1,14 +1,15 @@
 package inside.data.service;
 
 import inside.data.entity.base.BaseEntity;
+import reactor.core.publisher.Mono;
 
 public interface EntityService<K, V extends BaseEntity>{
 
-    V find(K id);
+    Mono<V> find(K id);
 
-    void save(V entity);
+    Mono<Void> save(V entity);
 
-    void delete(K id);
+    Mono<Void> delete(K id);
 
-    void delete(V entity);
+    Mono<Void> delete(V entity);
 }

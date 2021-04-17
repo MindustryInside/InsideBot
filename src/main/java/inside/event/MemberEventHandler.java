@@ -5,7 +5,7 @@ import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.guild.*;
 import discord4j.core.object.audit.ActionType;
 import discord4j.core.object.entity.*;
-import inside.data.entity.*;
+import inside.data.entity.AdminConfig;
 import inside.data.service.*;
 import inside.event.audit.AuditService;
 import inside.service.MessageService;
@@ -46,27 +46,31 @@ public class MemberEventHandler extends ReactiveEventAdapter{
             return Mono.empty();
         }
 
-        Context context = Context.of(KEY_LOCALE, entityRetriever.getLocale(event.getGuildId()),
-                KEY_TIMEZONE, entityRetriever.getTimeZone(event.getGuildId()));
+        Snowflake guildId = member.getGuildId();
 
-        AdminConfig config = entityRetriever.getAdminConfigById(member.getGuildId());
+        Mono<Context> initContext = entityRetriever.getGuildConfigById(guildId)
+                .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
+                .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
+                        KEY_TIMEZONE, guildConfig.timeZone()));
 
-        Mono<Void> warn = member.getGuild().flatMap(Guild::getOwner)
-                .filterWhen(ignored -> adminService.warnings(member).count().map(c -> c >= config.maxWarnCount()))
-                .flatMap(owner -> adminService.warn(owner, member, messageService.get(context, "audit.member.warn.evade")));
+        Mono<AdminConfig> adminConfig = entityRetriever.getAdminConfigById(member.getGuildId());
 
-        Mono<?> muteEvade = member.getGuild().flatMap(Guild::getOwner)
+        Mono<Void> warn = initContext.flatMap(context -> member.getGuild().flatMap(Guild::getOwner)
+                .filterWhen(ignored -> adminConfig.flatMap(config -> adminService.warnings(member).count().map(c -> c >= config.maxWarnCount())))
+                .flatMap(owner -> adminService.warn(owner, member, messageService.get(context, "audit.member.warn.evade"))));
+
+        Mono<?> muteEvade = initContext.flatMap(context -> member.getGuild().flatMap(Guild::getOwner)
                 .filterWhen(ignored -> adminService.isMuted(member))
-                .flatMap(owner -> adminService.mute(owner, member, DateTime.now().plus(config.muteBaseDelay()),
+                .flatMap(owner -> adminConfig.flatMap(config -> adminService.mute(owner, member, DateTime.now().plus(config.muteBaseDelay()),
                         messageService.get(context, "audit.member.mute.evade"))
-                        .thenReturn(owner))
-                .switchIfEmpty(warn.then(Mono.empty()));
+                        .thenReturn(owner)))
+                .switchIfEmpty(warn.then(Mono.empty())));
 
-        return auditService.log(event.getGuildId(), USER_JOIN)
+        return initContext.flatMap(context -> auditService.log(event.getGuildId(), USER_JOIN)
                 .withUser(member)
                 .save()
                 .and(muteEvade)
-                .contextWrite(context);
+                .contextWrite(context));
     }
 
     @Override
@@ -78,14 +82,16 @@ public class MemberEventHandler extends ReactiveEventAdapter{
 
         Snowflake guildId = event.getGuildId();
 
-        Context context = Context.of(KEY_LOCALE, entityRetriever.getLocale(event.getGuildId()),
-                KEY_TIMEZONE, entityRetriever.getTimeZone(event.getGuildId()));
+        Mono<Context> initContext = entityRetriever.getGuildConfigById(guildId)
+                .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
+                .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
+                        KEY_TIMEZONE, guildConfig.timeZone()));
 
         Mono<Void> log = auditService.log(event.getGuildId(), USER_LEAVE)
                 .withUser(user)
                 .save();
 
-        Mono<Void> kick = event.getGuild()
+        Mono<Void> kick = initContext.flatMap(context -> event.getGuild()
                 .flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MEMBER_KICK)))
                 .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)) &&
                         entry.getTargetId().map(target -> target.equals(user.getId())).orElse(false))
@@ -100,9 +106,9 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                                 .save())
                         .thenReturn(entry))
                 .switchIfEmpty(log.then(Mono.empty()))
-                .then();
+                .then());
 
-        return event.getGuild()
+        return initContext.flatMap(context -> event.getGuild()
                 .flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MEMBER_BAN_ADD)))
                 .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)) &&
                         entry.getTargetId().map(target -> target.equals(user.getId())).orElse(false))
@@ -117,17 +123,18 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                                 .save())
                         .thenReturn(entry))
                 .switchIfEmpty(kick.then(Mono.empty()))
-                .contextWrite(context);
+                .contextWrite(context));
     }
 
     @Override
     public Publisher<?> onMemberUpdate(MemberUpdateEvent event){
         return event.getMember()
                 .filter(DiscordUtil::isNotBot)
-                .flatMap(member -> Mono.fromRunnable(() -> {
-                    LocalMember localMember = entityRetriever.getMember(member);
-                    localMember.effectiveName(event.getCurrentNickname().orElse(member.getUsername()));
-                    entityRetriever.save(localMember);
-                }));
+                .flatMap(member -> entityRetriever.getLocalMemberById(member.getId(), member.getGuildId())
+                        .switchIfEmpty(entityRetriever.createLocalMember(member))
+                        .flatMap(localMember -> {
+                            localMember.effectiveName(event.getCurrentNickname().orElse(member.getUsername()));
+                            return entityRetriever.save(localMember);
+                        }));
     }
 }

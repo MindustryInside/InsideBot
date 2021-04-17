@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface LocalMemberRepository extends GuildRepository<LocalMember>{
 
-    LocalMember findByGuildIdAndUserId(String guildId, String userId);
+    LocalMember findByUserIdAndGuildId(long userId, long guildId);
 
     void deleteByLastSentMessageBefore(DateTime timestamp);
 }

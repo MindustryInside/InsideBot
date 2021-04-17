@@ -1,119 +1,110 @@
 package inside.data.service.impl;
 
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.entity.Member;
+import inside.Settings;
 import inside.data.entity.*;
 import inside.data.service.EntityRetriever;
-import org.joda.time.DateTimeZone;
+import inside.data.service.actions.*;
+import inside.data.service.api.Store;
+import inside.util.LocaleUtil;
+import org.joda.time.Duration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import reactor.util.*;
+import reactor.core.publisher.Mono;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
-/*
- * All entity services are delay
- * generators as they block threads!
- * This is terrible, but r2dbc technology is too raw!
- *
- * We also have action services,
- * shells that wrap synchronous
- * code and work with asynchronous parts of code
- */
 @Service
 public class EntityRetrieverImpl implements EntityRetriever{
-    private static final Logger log = Loggers.getLogger(EntityRetriever.class);
 
-    private final GuildConfigService guildConfigService;
+    private final Store store;
 
-    private final AdminConfigService adminConfigService;
+    private final Settings settings;
 
-    private final MemberService memberService;
-
-    private final AuditConfigService auditConfigService;
-
-    public EntityRetrieverImpl(
-            @Autowired GuildConfigService guildConfigService,
-            @Autowired AdminConfigService adminConfigService,
-            @Autowired MemberService memberService,
-            @Autowired AuditConfigService auditConfigService
-    ){
-        this.guildConfigService = guildConfigService;
-        this.adminConfigService = adminConfigService;
-        this.memberService = memberService;
-        this.auditConfigService = auditConfigService;
+    public EntityRetrieverImpl(@Autowired Store store, @Autowired Settings settings){
+        this.store = store;
+        this.settings = settings;
     }
 
     @Override
-    public GuildConfig getGuildById(Snowflake guildId){
-        return guildConfigService.find(guildId);
+    public Mono<GuildConfig> getGuildConfigById(Snowflake guildId){
+        return Mono.from(store.execute(ReadStoreActions.getGuildConfigById(guildId.asLong())));
     }
 
     @Override
-    public String getPrefix(Snowflake guildId){
-        return getGuildById(guildId).prefix();
+    public Mono<Void> save(GuildConfig guildConfig){
+        return Mono.from(store.execute(UpdateStoreActions.guildConfigSave(guildConfig)));
     }
 
     @Override
-    public Locale getLocale(Snowflake guildId){
-        return getGuildById(guildId).locale();
+    public Mono<AdminConfig> getAdminConfigById(Snowflake guildId){
+        return Mono.from(store.execute(ReadStoreActions.getAdminConfigById(guildId.asLong())));
     }
 
     @Override
-    public DateTimeZone getTimeZone(Snowflake guildId){
-        return getGuildById(guildId).timeZone();
+    public Mono<Void> save(AdminConfig adminConfig){
+        return Mono.from(store.execute(UpdateStoreActions.adminConfigSave(adminConfig)));
     }
 
     @Override
-    public void save(GuildConfig entity){
-        guildConfigService.save(entity);
+    public Mono<AuditConfig> getAuditConfigById(Snowflake guildId){
+        return Mono.from(store.execute(ReadStoreActions.getAuditConfigById(guildId.asLong())));
     }
 
     @Override
-    public AuditConfig getAuditConfigById(Snowflake guildId){
-        return auditConfigService.find(guildId);
+    public Mono<Void> save(AuditConfig auditConfig){
+        return Mono.from(store.execute(UpdateStoreActions.auditConfigSave(auditConfig)));
     }
 
     @Override
-    public Optional<Snowflake> getLogChannelId(Snowflake guildId){
-        return getAuditConfigById(guildId).logChannelId();
+    public Mono<LocalMember> getLocalMemberById(Snowflake userId, Snowflake guildId){
+        return Mono.from(store.execute(ReadStoreActions.getLocalMemberById(userId.asLong(), guildId.asLong())));
     }
 
     @Override
-    public void save(AuditConfig auditConfig){
-        auditConfigService.save(auditConfig);
+    public Mono<Void> save(LocalMember localMember){
+        return Mono.from(store.execute(UpdateStoreActions.localMemberSave(localMember)));
     }
 
     @Override
-    public List<Snowflake> getAdminRoleIds(Snowflake guildId){
-        return getAdminConfigById(guildId).adminRoleIDs().stream()
-                .map(Snowflake::of)
-                .collect(Collectors.toUnmodifiableList());
+    public Mono<GuildConfig> createGuildConfig(Snowflake guildId){
+        return Mono.defer(() -> {
+            GuildConfig guildConfig = new GuildConfig();
+            guildConfig.guildId(guildId);
+            guildConfig.prefix(settings.getDefaults().getPrefix());
+            guildConfig.locale(LocaleUtil.getDefaultLocale());
+            guildConfig.timeZone(settings.getDefaults().getTimeZone());
+            return save(guildConfig).thenReturn(guildConfig);
+        });
     }
 
     @Override
-    public void save(AdminConfig config){
-        adminConfigService.save(config);
+    public Mono<AdminConfig> createAdminConfig(Snowflake guildId){
+        return Mono.defer(() -> {
+            AdminConfig adminConfig = new AdminConfig();
+            adminConfig.guildId(guildId);
+            adminConfig.maxWarnCount(settings.getDefaults().getMaxWarnings());
+            adminConfig.muteBaseDelay(Duration.millis(settings.getDefaults().getMuteEvade().toMillis())); // TODO: use joda or java.time?
+            adminConfig.warnExpireDelay(Duration.millis(settings.getDefaults().getWarnExpire().toMillis()));
+            return save(adminConfig).thenReturn(adminConfig);
+        });
     }
 
     @Override
-    public AdminConfig getAdminConfigById(Snowflake guildId){
-        return adminConfigService.find(guildId);
+    public Mono<AuditConfig> createAuditConfig(Snowflake guildId){
+        return Mono.defer(() -> {
+            AuditConfig auditConfig = new AuditConfig();
+            auditConfig.guildId(guildId);
+            return save(auditConfig).thenReturn(auditConfig);
+        });
     }
 
     @Override
-    public Optional<Snowflake> getMuteRoleId(Snowflake guildId){
-        return getAdminConfigById(guildId).muteRoleID();
-    }
-
-    @Override
-    public LocalMember getMember(Member member){
-        return memberService.find(member);
-    }
-
-    @Override
-    public void save(LocalMember member){
-        memberService.save(member);
+    public Mono<LocalMember> createLocalMember(Snowflake userId, Snowflake guildId, String effectiveNickname){
+        return Mono.defer(() -> {
+            LocalMember localMember = new LocalMember();
+            localMember.userId(userId);
+            localMember.guildId(guildId);
+            localMember.effectiveName(effectiveNickname);
+            return save(localMember).thenReturn(localMember);
+        });
     }
 }

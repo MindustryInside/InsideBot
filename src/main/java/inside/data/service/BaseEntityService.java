@@ -1,20 +1,17 @@
 package inside.data.service;
 
 import inside.Settings;
-import inside.data.entity.base.GuildEntity;
-import inside.data.repository.base.GuildRepository;
+import inside.data.entity.base.BaseEntity;
+import inside.data.repository.base.BaseRepository;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Mono;
 import reactor.util.annotation.Nullable;
 
-import java.util.Objects;
-
-public abstract class BaseEntityService<K, V extends GuildEntity, R extends GuildRepository<V>> implements EntityService<K, V>{
+public abstract class BaseEntityService<K, V extends BaseEntity, R extends BaseRepository<V>> implements EntityService<K, V>{
 
     protected final R repository;
 
     protected final Settings settings;
-
-    protected final Object $lock = new Object[0];
 
     protected BaseEntityService(R repository, Settings settings){
         this.repository = repository;
@@ -22,48 +19,30 @@ public abstract class BaseEntityService<K, V extends GuildEntity, R extends Guil
     }
 
     @Override
-    public V find(K id){
-        Objects.requireNonNull(id, "id");
-
-        V entity = get(id);
-        if(entity == null){
-            synchronized($lock){
-                entity = get(id);
-                if(entity == null){
-                    entity = create(id);
-                    save(entity);
-                }
-            }
-        }
-        return entity;
+    public Mono<V> find(K id){
+        return Mono.defer(() -> Mono.justOrEmpty(find0(id)));
     }
-
-    @Override
-    @Transactional
-    public void save(V entity){
-        repository.save(entity);
-    }
-
-    @Override
-    @Transactional
-    public void delete(K id){
-        Objects.requireNonNull(id, "id");
-        V entity = get(id);
-        if(entity != null){
-            repository.delete(entity);
-        }
-    }
-
-    @Override
-    @Transactional
-    public void delete(V entity){
-        repository.delete(entity);
-    }
-
-    protected abstract V create(K id);
 
     @Nullable
-    protected abstract V get(K id);
+    protected abstract V find0(K id);
+
+    @Override
+    @Transactional
+    public Mono<Void> save(V entity){
+        return Mono.fromRunnable(() -> repository.save(entity));
+    }
+
+    @Override
+    @Transactional
+    public Mono<Void> delete(K id){
+        return find(id).flatMap(this::delete);
+    }
+
+    @Override
+    @Transactional
+    public Mono<Void> delete(V entity){
+        return Mono.fromRunnable(() -> repository.delete(entity));
+    }
 
     protected void cleanUp(){
         // no-op
