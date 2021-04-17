@@ -10,15 +10,12 @@ import java.util.*;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class JacksonUtil{
-    private static final ObjectMapper mapper = new ObjectMapper();
-
-    static{
-        mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE);
-        mapper.setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.PUBLIC_ONLY);
-        mapper.setVisibility(PropertyAccessor.CREATOR, JsonAutoDetect.Visibility.ANY);
-        mapper.registerModule(new Jdk8Module());
-        mapper.registerModule(new PossibleModule());
-    }
+    private static final ObjectMapper mapper = new ObjectMapper()
+            .setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
+            .setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.PUBLIC_ONLY)
+            .setVisibility(PropertyAccessor.CREATOR, JsonAutoDetect.Visibility.ANY)
+            .registerModule(new Jdk8Module())
+            .registerModule(new PossibleModule());
 
     public static ObjectMapper mapper(){
         return mapper;

@@ -219,7 +219,8 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                                     .flatMap(event.getClient()::getUserById));
 
                     return responsibleUser.defaultIfEmpty(author).map(user -> builder.withUser(user)
-                            .withAttribute(AVATAR_URL, user.getAvatarUrl()))
+                            .withTargetUser(author)
+                            .withAttribute(AVATAR_URL, author.getAvatarUrl()))
                             .flatMap(AuditActionBuilder::save)
                             .and(entityRetriever.delete(info));
                 }))
