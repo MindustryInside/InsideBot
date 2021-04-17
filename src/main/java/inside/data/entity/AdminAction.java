@@ -92,13 +92,13 @@ public class AdminAction extends GuildEntity{
     @Override
     public String toString(){
         return "AdminAction{" +
-               "type=" + type +
-               ", admin=" + admin +
-               ", target=" + target +
-               ", reason='" + reason + '\'' +
-               ", timestamp=" + timestamp +
-               ", endTimestamp=" + endTimestamp +
-               "} " + super.toString();
+                "type=" + type +
+                ", admin=" + admin +
+                ", target=" + target +
+                ", reason='" + reason + '\'' +
+                ", timestamp=" + timestamp +
+                ", endTimestamp=" + endTimestamp +
+                "} " + super.toString();
     }
 
     public static class Builder{

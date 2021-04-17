@@ -61,10 +61,10 @@ public class MessageInfo extends GuildEntity{
     @Override
     public String toString(){
         return "MessageInfo{" +
-               "messageId='" + messageId + '\'' +
-               ", userId='" + userId + '\'' +
-               ", content='" + content + '\'' +
-               ", timestamp=" + timestamp +
-               "} " + super.toString();
+                "messageId=" + messageId +
+                ", userId=" + userId +
+                ", content='" + content + '\'' +
+                ", timestamp=" + timestamp +
+                "} " + super.toString();
     }
 }
