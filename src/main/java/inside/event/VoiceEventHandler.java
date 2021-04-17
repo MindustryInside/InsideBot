@@ -30,10 +30,12 @@ public class VoiceEventHandler extends ReactiveEventAdapter{
         if(!event.isJoinEvent() && !event.isLeaveEvent()){
             return Mono.empty();
         }
-        Context context = Context.of(KEY_LOCALE, entityRetriever.getLocale(guildId),
-                KEY_TIMEZONE, entityRetriever.getTimeZone(guildId));
+        Mono<Context> initContext = entityRetriever.getGuildConfigById(guildId)
+                .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
+                .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
+                        KEY_TIMEZONE, guildConfig.timeZone()));
 
-        return Mono.justOrEmpty(event.getOld())
+        return initContext.flatMap(context -> Mono.justOrEmpty(event.getOld())
                 .defaultIfEmpty(event.getCurrent())
                 .flatMap(state -> Mono.zip(state.getChannel(), state.getUser()))
                 .filter(TupleUtils.predicate((channel, user) -> DiscordUtil.isNotBot(user)))
@@ -41,6 +43,6 @@ public class VoiceEventHandler extends ReactiveEventAdapter{
                         .withChannel(channel)
                         .withUser(user)
                         .save()))
-                .contextWrite(context);
+                .contextWrite(context));
     }
 }

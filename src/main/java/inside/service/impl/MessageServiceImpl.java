@@ -160,7 +160,7 @@ public class MessageServiceImpl implements MessageService{
     @Override
     @Transactional(readOnly = true)
     public MessageInfo getById(Snowflake messageId){
-        return repository.findByMessageId(messageId.asString());
+        return repository.findByMessageId(messageId.asLong());
     }
 
     @Override
@@ -172,7 +172,7 @@ public class MessageServiceImpl implements MessageService{
     @Override
     @Transactional
     public void deleteById(Snowflake messageId){
-        repository.deleteByMessageId(messageId.asString());
+        repository.deleteByMessageId(messageId.asLong());
     }
 
     @Override

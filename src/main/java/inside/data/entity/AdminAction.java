@@ -51,7 +51,7 @@ public class AdminAction extends GuildEntity{
                         LocalMember admin, LocalMember target,
                         @Nullable String reason, DateTime timestamp,
                         @Nullable DateTime endTimestamp){
-        this.guildId = guildId.asString();
+        this.guildId = guildId.asLong();
         this.type = type;
         this.admin = admin;
         this.target = target;

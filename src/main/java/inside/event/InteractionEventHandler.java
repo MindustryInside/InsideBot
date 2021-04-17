@@ -1,6 +1,5 @@
 package inside.event;
 
-import discord4j.common.util.Snowflake;
 import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.InteractionCreateEvent;
 import inside.Settings;
@@ -11,9 +10,8 @@ import inside.util.*;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
-
-import java.util.Optional;
 
 @Component
 public class InteractionEventHandler extends ReactiveEventAdapter{
@@ -29,16 +27,18 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
 
     @Override
     public Publisher<?> onInteractionCreate(InteractionCreateEvent event){
-        Optional<Snowflake> guildId = event.getInteraction().getGuildId();
-        Context context = Context.of(ContextUtil.KEY_LOCALE, guildId.map(entityRetriever::getLocale)
-                        .orElse(LocaleUtil.getDefaultLocale()),
-                ContextUtil.KEY_TIMEZONE, guildId.map(entityRetriever::getTimeZone)
-                        .orElse(settings.getDefaults().getTimeZone()));
+        Mono<Context> initContext = Mono.justOrEmpty(event.getInteraction().getGuildId())
+                .flatMap(guildId -> entityRetriever.getGuildConfigById(guildId)
+                        .switchIfEmpty(entityRetriever.createGuildConfig(guildId)))
+                .map(guildConfig -> Context.of(ContextUtil.KEY_LOCALE, guildConfig.locale(),
+                        ContextUtil.KEY_TIMEZONE, guildConfig.timeZone()))
+                .defaultIfEmpty(Context.of(ContextUtil.KEY_LOCALE, LocaleUtil.getDefaultLocale(),
+                        ContextUtil.KEY_TIMEZONE, settings.getDefaults().getTimeZone()));
 
-        InteractionCommandEnvironment environment = InteractionCommandEnvironment.builder()
+        return initContext.flatMap(context -> discordService.handle(InteractionCommandEnvironment.builder()
                 .event(event)
                 .context(context)
-                .build();
-        return discordService.handle(environment).contextWrite(context);
+                .build())
+                .contextWrite(context));
     }
 }

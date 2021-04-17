@@ -66,6 +66,7 @@ public class AdminConfig extends GuildEntity{
         this.muteRoleId = Objects.requireNonNull(muteRoleId, "muteRoleId").asString();
     }
 
+    // TODO: replace <String> to <Snowflake>
     public List<String> adminRoleIDs(){
         if(adminRoleIds == null){
             adminRoleIds = new ArrayList<>();

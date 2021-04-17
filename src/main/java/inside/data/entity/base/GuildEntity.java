@@ -12,7 +12,7 @@ public abstract class GuildEntity extends BaseEntity{
     private static final long serialVersionUID = 7731061101796511964L;
 
     @Column(name = "guild_id")
-    protected String guildId;
+    protected long guildId;
 
     @Transient
     public Snowflake guildId(){
@@ -20,7 +20,7 @@ public abstract class GuildEntity extends BaseEntity{
     }
 
     public void guildId(Snowflake guildId){
-        this.guildId = Objects.requireNonNull(guildId, "guildId").asString();
+        this.guildId = Objects.requireNonNull(guildId, "guildId").asLong();
     }
 
     @Override
@@ -28,7 +28,7 @@ public abstract class GuildEntity extends BaseEntity{
         if(this == o) return true;
         if(o == null || getClass() != o.getClass()) return false;
         GuildEntity that = (GuildEntity)o;
-        return Objects.equals(guildId, that.guildId);
+        return guildId == that.guildId;
     }
 
     @Override
@@ -38,6 +38,6 @@ public abstract class GuildEntity extends BaseEntity{
 
     @Override
     public String toString(){
-        return "GuildEntity{guildId='" + guildId + "'}";
+        return "GuildEntity{guildId=" + guildId + "}";
     }
 }

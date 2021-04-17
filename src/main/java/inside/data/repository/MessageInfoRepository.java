@@ -8,9 +8,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface MessageInfoRepository extends GuildRepository<MessageInfo>{
 
-    MessageInfo findByMessageId(String messageId);
+    MessageInfo findByMessageId(long messageId);
 
-    void deleteByMessageId(String messageId);
+    void deleteByMessageId(long messageId);
 
     void deleteByTimestampBefore(DateTime timestamp);
 }
