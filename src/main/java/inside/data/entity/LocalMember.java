@@ -52,9 +52,9 @@ public class LocalMember extends GuildEntity{
     @Override
     public String toString(){
         return "LocalMember{" +
-               "userId='" + userId + '\'' +
-               ", effectiveName='" + effectiveName + '\'' +
-               ", lastSentMessage=" + lastSentMessage +
-               "} " + super.toString();
+                "userId=" + userId +
+                ", effectiveName='" + effectiveName + '\'' +
+                ", lastSentMessage=" + lastSentMessage +
+                "} " + super.toString();
     }
 }
