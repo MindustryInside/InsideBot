@@ -68,16 +68,10 @@ public class MessageEventHandler extends ReactiveEventAdapter{
         });
 
         Mono<Void> safeMessageInfo = entityRetriever.getAuditConfigById(guildId).flatMap(auditConfig -> {
-            if(!auditConfig.isEnabled(MESSAGE_CREATE)){
-                return Mono.empty();
+            if(auditConfig.isEnabled(MESSAGE_CREATE)){
+                return entityRetriever.createMessageInfo(message).then();
             }
-            MessageInfo info = new MessageInfo();
-            info.userId(member.getId());
-            info.messageId(message.getId());
-            info.guildId(guildId);
-            info.timestamp(time);
-            info.content(messageService.encrypt(MessageUtil.effectiveContent(message), message.getId(), message.getChannelId()));
-            return Mono.fromRunnable(() -> messageService.save(info));
+            return Mono.empty();
         });
 
         Mono<Context> initContext = entityRetriever.getGuildConfigById(guildId)
@@ -118,25 +112,18 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                 .filter(predicate((message, channel, member) -> DiscordUtil.isNotBot(member)))
                 .flatMap(function((message, channel, member) -> {
                     String newContent = MessageUtil.effectiveContent(message);
-                    MessageInfo info = messageService.getById(event.getMessageId());
-                    if(info == null){
-                        info = new MessageInfo();
-                        info.messageId(event.getMessageId());
-                        info.userId(member.getId());
-                        info.guildId(guildId);
-                        info.content(messageService.encrypt(event.getOld()
-                                .map(MessageUtil::effectiveContent)
-                                .orElse(""), message.getId(), message.getChannelId()));
-                        info.timestamp(new DateTime(event.getMessageId().getTimestamp().toEpochMilli()));
-                    }
-
-                    String oldContent = messageService.decrypt(info.content(), message.getId(), message.getChannelId());
-                    info.content(messageService.encrypt(newContent, message.getId(), message.getChannelId()));
-                    messageService.save(info);
-
-                    if(newContent.equals(oldContent)){ // message was pinned
-                        return Mono.empty();
-                    }
+                    Mono<MessageInfo> messageInfo = entityRetriever.getMessageInfoById(event.getMessageId())
+                            .switchIfEmpty(Mono.fromSupplier(() -> {
+                                MessageInfo info = new MessageInfo();
+                                info.messageId(event.getMessageId());
+                                info.userId(member.getId());
+                                info.guildId(guildId);
+                                info.content(messageService.encrypt(event.getOld()
+                                        .map(MessageUtil::effectiveContent)
+                                        .orElse(""), message.getId(), message.getChannelId()));
+                                info.timestamp(new DateTime(event.getMessageId().getTimestamp().toEpochMilli()));
+                                return info;
+                            }));
 
                     Mono<?> command = Mono.defer(() -> {
                         if(messageService.isAwaitEdit(message.getId())){
@@ -152,24 +139,33 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                         return Mono.empty();
                     });
 
-                    AuditActionBuilder builder = auditService.log(guildId, MESSAGE_EDIT)
-                            .withChannel(channel)
-                            .withUser(member)
-                            .withAttribute(OLD_CONTENT, oldContent)
-                            .withAttribute(NEW_CONTENT, newContent)
-                            .withAttribute(AVATAR_URL, member.getAvatarUrl())
-                            .withAttribute(MESSAGE_ID, message.getId());
+                    return messageInfo.flatMap(info -> {
+                        String oldContent = messageService.decrypt(info.content(), message.getId(), message.getChannelId());
+                        info.content(messageService.encrypt(newContent, message.getId(), message.getChannelId()));
 
-                    if(newContent.length() >= Field.MAX_VALUE_LENGTH || oldContent.length() >= Field.MAX_VALUE_LENGTH){
-                        ReusableByteInputStream input = new ReusableByteInputStream();
-                        input.withString(String.format("%s%n%s%n%n%s%n%s",
-                                messageService.get(context, "audit.message.old-content.title"), oldContent,
-                                messageService.get(context, "audit.message.new-content.title"), newContent
-                        ));
-                        builder.withAttachment(MESSAGE_TXT, input);
-                    }
+                        if(newContent.equals(oldContent)){ // message was pinned
+                            return Mono.empty();
+                        }
 
-                    return builder.save().and(command);
+                        AuditActionBuilder builder = auditService.log(guildId, MESSAGE_EDIT)
+                                .withChannel(channel)
+                                .withUser(member)
+                                .withAttribute(OLD_CONTENT, oldContent)
+                                .withAttribute(NEW_CONTENT, newContent)
+                                .withAttribute(AVATAR_URL, member.getAvatarUrl())
+                                .withAttribute(MESSAGE_ID, message.getId());
+
+                        if(newContent.length() >= Field.MAX_VALUE_LENGTH || oldContent.length() >= Field.MAX_VALUE_LENGTH){
+                            ReusableByteInputStream input = new ReusableByteInputStream();
+                            input.withString(String.format("%s%n%s%n%n%s%n%s",
+                                    messageService.get(context, "audit.message.old-content.title"), oldContent,
+                                    messageService.get(context, "audit.message.new-content.title"), newContent
+                            ));
+                            builder.withAttachment(MESSAGE_TXT, input);
+                        }
+
+                        return builder.save().and(entityRetriever.save(info));
+                    }).and(command);
                 }))
                 .contextWrite(context));
     }
@@ -187,19 +183,15 @@ public class MessageEventHandler extends ReactiveEventAdapter{
             return Mono.empty();
         }
 
-        MessageInfo info = messageService.getById(message.getId());
-        if(info == null){
-            return Mono.empty();
-        }
+        Mono<MessageInfo> messageInfo = entityRetriever.getMessageInfoById(message.getId());
 
         Mono<Context> initContext = entityRetriever.getGuildConfigById(guildId)
                 .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
                 .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
                         KEY_TIMEZONE, guildConfig.timeZone()));
 
-        return initContext.flatMap(context -> event.getChannel()
-                .ofType(TextChannel.class)
-                .flatMap(channel -> {
+        return initContext.flatMap(context -> Mono.zip(event.getChannel().ofType(TextChannel.class), messageInfo)
+                .flatMap(function((channel, info) -> {
                     String decrypted = messageService.decrypt(info.content(), message.getId(), message.getChannelId());
                     AuditActionBuilder builder = auditService.log(guildId, MESSAGE_DELETE)
                             .withChannel(channel)
@@ -213,7 +205,6 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                         builder.withAttachment(MESSAGE_TXT, input);
                     }
 
-                    messageService.delete(info);
                     Mono<User> responsibleUser = event.getGuild()
                             .flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MESSAGE_DELETE)))
                             .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)) &&
@@ -229,8 +220,9 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
                     return responsibleUser.defaultIfEmpty(author).map(user -> builder.withUser(user)
                             .withAttribute(AVATAR_URL, user.getAvatarUrl()))
-                            .flatMap(AuditActionBuilder::save);
-                })
+                            .flatMap(AuditActionBuilder::save)
+                            .and(entityRetriever.delete(info));
+                }))
                 .contextWrite(context));
     }
 }

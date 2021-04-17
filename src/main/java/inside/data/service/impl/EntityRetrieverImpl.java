@@ -1,13 +1,15 @@
 package inside.data.service.impl;
 
 import discord4j.common.util.Snowflake;
+import discord4j.core.object.entity.*;
 import inside.Settings;
 import inside.data.entity.*;
 import inside.data.service.EntityRetriever;
 import inside.data.service.actions.*;
 import inside.data.service.api.Store;
-import inside.util.LocaleUtil;
-import org.joda.time.Duration;
+import inside.service.MessageService;
+import inside.util.*;
+import org.joda.time.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -19,9 +21,14 @@ public class EntityRetrieverImpl implements EntityRetriever{
 
     private final Settings settings;
 
-    public EntityRetrieverImpl(@Autowired Store store, @Autowired Settings settings){
+    private final MessageService messageService;
+
+    public EntityRetrieverImpl(@Autowired Store store,
+                               @Autowired Settings settings,
+                               @Autowired MessageService messageService){
         this.store = store;
         this.settings = settings;
+        this.messageService = messageService;
     }
 
     @Override
@@ -65,6 +72,21 @@ public class EntityRetrieverImpl implements EntityRetriever{
     }
 
     @Override
+    public Mono<MessageInfo> getMessageInfoById(Snowflake messageId){
+        return Mono.from(store.execute(ReadStoreActions.getMessageInfoById(messageId.asLong())));
+    }
+
+    @Override
+    public Mono<Void> delete(MessageInfo messageInfo){
+        return Mono.from(store.execute(UpdateStoreActions.messageInfoDelete(messageInfo)));
+    }
+
+    @Override
+    public Mono<Void> save(MessageInfo messageInfo){
+        return Mono.from(store.execute(UpdateStoreActions.messageInfoSave(messageInfo)));
+    }
+
+    @Override
     public Mono<GuildConfig> createGuildConfig(Snowflake guildId){
         return Mono.defer(() -> {
             GuildConfig guildConfig = new GuildConfig();
@@ -105,6 +127,19 @@ public class EntityRetrieverImpl implements EntityRetriever{
             localMember.guildId(guildId);
             localMember.effectiveName(effectiveNickname);
             return save(localMember).thenReturn(localMember);
+        });
+    }
+
+    @Override
+    public Mono<MessageInfo> createMessageInfo(Message message){
+        return Mono.defer(() -> {
+            MessageInfo messageInfo = new MessageInfo();
+            messageInfo.messageId(message.getId());
+            messageInfo.userId(message.getAuthor().map(User::getId).orElseThrow(IllegalStateException::new)); // only users, not webhooks
+            messageInfo.guildId(message.getGuildId().orElseThrow(IllegalStateException::new)); // only guilds
+            messageInfo.timestamp(new DateTime(message.getTimestamp().toEpochMilli()));
+            messageInfo.content(messageService.encrypt(MessageUtil.effectiveContent(message), message.getId(), message.getChannelId()));
+            return save(messageInfo).thenReturn(messageInfo);
         });
     }
 }

@@ -23,6 +23,14 @@ public class UpdateStoreActions{
         return new LocalMemberSaveAction(localMember);
     }
 
+    public static MessageInfoSaveAction messageInfoSave(MessageInfo messageInfo){
+        return new MessageInfoSaveAction(messageInfo);
+    }
+
+    public static MessageInfoDeleteAction messageInfoDelete(MessageInfo messageInfo){
+        return new MessageInfoDeleteAction(messageInfo);
+    }
+
     public static class GuildConfigSaveAction implements EntityStoreAction<Void>{
         public final GuildConfig guildConfig;
 
@@ -52,6 +60,22 @@ public class UpdateStoreActions{
 
         public LocalMemberSaveAction(LocalMember localMember){
             this.localMember = localMember;
+        }
+    }
+
+    public static class MessageInfoSaveAction implements EntityStoreAction<Void>{
+        public final MessageInfo messageInfo;
+
+        public MessageInfoSaveAction(MessageInfo messageInfo){
+            this.messageInfo = messageInfo;
+        }
+    }
+
+    public static class MessageInfoDeleteAction implements EntityStoreAction<Void>{
+        public final MessageInfo messageInfo;
+
+        public MessageInfoDeleteAction(MessageInfo messageInfo){
+            this.messageInfo = messageInfo;
         }
     }
 }

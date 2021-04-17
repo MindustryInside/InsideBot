@@ -12,4 +12,6 @@ public interface EntityAccessor{
     Mono<AuditConfig> getAuditConfigById(long guildId);
 
     Mono<LocalMember> getLocalMemberById(long userId, long guildId);
+
+    Mono<MessageInfo> getMessageInfoById(long messageId);
 }

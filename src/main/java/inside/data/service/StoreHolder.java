@@ -14,14 +14,18 @@ public class StoreHolder{
 
     private final AuditConfigService auditConfigService;
 
+    private final MessageInfoService messageInfoService;
+
     public StoreHolder(@Autowired GuildConfigService guildConfigService,
                        @Autowired AdminConfigService adminConfigService,
                        @Autowired LocalMemberService localMemberService,
-                       @Autowired AuditConfigService auditConfigService){
+                       @Autowired AuditConfigService auditConfigService,
+                       @Autowired MessageInfoService messageInfoService){
         this.guildConfigService = guildConfigService;
         this.adminConfigService = adminConfigService;
         this.localMemberService = localMemberService;
         this.auditConfigService = auditConfigService;
+        this.messageInfoService = messageInfoService;
     }
 
     public GuildConfigService getGuildConfigService(){
@@ -38,5 +42,9 @@ public class StoreHolder{
 
     public AuditConfigService getAuditConfigService(){
         return auditConfigService;
+    }
+
+    public MessageInfoService getMessageInfoService(){
+        return messageInfoService;
     }
 }
