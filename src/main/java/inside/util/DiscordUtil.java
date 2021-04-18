@@ -34,4 +34,9 @@ public abstract class DiscordUtil{
         Objects.requireNonNull(id, "id");
         return "<#" + id.asString() + ">";
     }
+
+    public static String getRoleMention(Snowflake id){
+        Objects.requireNonNull(id, "id");
+        return "<@&" + id.asString() + ">";
+    }
 }

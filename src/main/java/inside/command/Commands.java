@@ -20,7 +20,6 @@ import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import reactor.bool.BooleanUtils;
-import reactor.core.Exceptions;
 import reactor.core.publisher.*;
 import reactor.util.annotation.Nullable;
 import reactor.util.function.Tuple2;
@@ -496,12 +495,7 @@ public class Commands{
 
         @Nullable
         public static DateTimeZone findTimeZone(String id){
-            try{
-                return DateTimeZone.forID(id);
-            }catch(Throwable t){
-                Exceptions.throwIfJvmFatal(t);
-                return null;
-            }
+            return Try.ofCallable(() -> DateTimeZone.forID(id)).orElse(null);
         }
     }
 

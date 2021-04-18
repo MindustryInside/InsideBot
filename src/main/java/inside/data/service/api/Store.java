@@ -22,8 +22,8 @@ public class Store{
 
     @Bean("actionMapper")
     public static ActionMapper layoutToMapper(EntityStoreLayout layout){
-        ActionMapper entityAccessorMapper = entityAccessorToMapper(layout);
-        ActionMapper entityUpdaterMapper = entityUpdaterToMapper(layout);
+        ActionMapper entityAccessorMapper = entityAccessorToMapper(layout.getEntityAccessor());
+        ActionMapper entityUpdaterMapper = entityUpdaterToMapper(layout.getEntityUpdater());
         return ActionMapper.aggregate(entityAccessorMapper, entityUpdaterMapper);
     }
 

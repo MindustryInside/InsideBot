@@ -32,7 +32,7 @@ public class AdminConfig extends GuildEntity{
     /* lazy initializing */
     @Type(type = "json")
     @Column(name = "admin_role_ids", columnDefinition = "json")
-    private List<Long> adminRoleIds;
+    private Set<String> adminRoleIds;
 
     public Duration warnExpireDelay(){
         return warnExpireDelay;
@@ -67,19 +67,19 @@ public class AdminConfig extends GuildEntity{
         this.muteRoleId = Objects.requireNonNull(muteRoleId, "muteRoleId").asString();
     }
 
-    public List<Snowflake> adminRoleIDs(){
+    public Set<Snowflake> adminRoleIds(){
         if(adminRoleIds == null){
-            adminRoleIds = new ArrayList<>();
+            adminRoleIds = new HashSet<>();
         }
         return adminRoleIds.stream()
                 .map(Snowflake::of)
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
     }
 
-    public void adminRoleIDs(List<Snowflake> adminRoleIDs){
-        this.adminRoleIds = Objects.requireNonNull(adminRoleIDs, "adminRoleIDs").stream()
-                .map(Snowflake::asLong)
-                .collect(Collectors.toList());
+    public void adminRoleIds(Set<Snowflake> adminRoleIDs){
+        this.adminRoleIds = Objects.requireNonNull(adminRoleIDs, "adminRoleIds").stream()
+                .map(Snowflake::asString)
+                .collect(Collectors.toSet());
     }
 
     @Override

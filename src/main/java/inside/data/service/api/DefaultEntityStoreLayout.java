@@ -8,10 +8,20 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 @Service
-public class DefaultEntityStoreLayout implements EntityStoreLayout{
+public class DefaultEntityStoreLayout implements EntityStoreLayout, EntityAccessor, EntityUpdater{
 
     @Autowired
     private StoreHolder storeHolder;
+
+    @Override
+    public EntityAccessor getEntityAccessor(){
+        return this;
+    }
+
+    @Override
+    public EntityUpdater getEntityUpdater(){
+        return this;
+    }
 
     @Override
     public Mono<GuildConfig> getGuildConfigById(long guildId){

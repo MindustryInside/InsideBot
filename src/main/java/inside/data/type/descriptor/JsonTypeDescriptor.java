@@ -1,15 +1,18 @@
 package inside.data.type.descriptor;
 
-import inside.util.JacksonUtil;
+import inside.util.*;
 import org.hibernate.annotations.common.reflection.java.JavaXMember;
 import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.*;
 import org.hibernate.usertype.DynamicParameterizedType;
 import reactor.util.annotation.Nullable;
+import reactor.util.function.*;
 
 import java.io.Serial;
 import java.lang.reflect.*;
 import java.util.*;
+
+import static reactor.function.TupleUtils.*;
 
 @SuppressWarnings({"unchecked", "deprecation", "rawtypes"})
 public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implements DynamicParameterizedType{
@@ -18,8 +21,7 @@ public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implement
 
     public static final JsonTypeDescriptor instance = new JsonTypeDescriptor();
 
-    private Class<?> clazz;
-    private Type type;
+    private final List<Tuple2<Class<?>, Type>> types = new ArrayList<>();
 
     public JsonTypeDescriptor(){
         super(Object.class, new MutableMutabilityPlan<>(){
@@ -35,13 +37,14 @@ public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implement
 
     @Override
     public void setParameterValues(Properties parameters){
-        clazz = ((ParameterType)parameters.get(PARAMETER_TYPE)).getReturnedClass();
         try{
+            Class<?> clazz = ((ParameterType)parameters.get(PARAMETER_TYPE)).getReturnedClass();
             Field typeField = JavaXMember.class.getDeclaredField("type");
             if(!typeField.isAccessible()){
                 typeField.setAccessible(true);
             }
-            type = (Type)typeField.get(parameters.get(XPROPERTY));
+            Type type = (Type)typeField.get(parameters.get(XPROPERTY));
+            types.add(Tuples.of(clazz, type));
         }catch(IllegalAccessException | NoSuchFieldException e){
             throw new RuntimeException(e);
         }
@@ -61,6 +64,14 @@ public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implement
 
     @Override
     public Object fromString(String string){
+        return types.stream()
+                .filter(predicate((clazz, type) -> Try.ofCallable(() -> fromString0(string, clazz, type)).isSuccess()))
+                .findFirst()
+                .map(function((clazz, type) -> fromString0(string, clazz, type)))
+                .orElse(null);
+    }
+
+    private Object fromString0(String string, Class<?> clazz, Type type){
         if(type instanceof ParameterizedType pType){
             if(List.class.isAssignableFrom((Class)pType.getRawType())){
                 return JacksonUtil.list(string, clazz, (Class)pType.getActualTypeArguments()[0]);
@@ -76,10 +87,19 @@ public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implement
 
     @Override
     public <X> X unwrap(@Nullable Object value, Class<X> type, WrapperOptions options){
-        if(value == null) return null;
-        else if(String.class.isAssignableFrom(type)) return (X)toString(value);
-        else if(Object.class.isAssignableFrom(type)) return (X)JacksonUtil.toJsonNode(value);
-        else throw unknownUnwrap(type);
+        if(value == null){
+            return null;
+        }
+
+        if(String.class.isAssignableFrom(type)){
+            return (X)toString(value);
+        }
+
+        if(Object.class.isAssignableFrom(type)){
+            return (X)JacksonUtil.toJsonNode(value);
+        }
+
+        throw unknownUnwrap(type);
     }
 
     @Override
