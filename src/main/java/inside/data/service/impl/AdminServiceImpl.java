@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.*;
 import reactor.util.annotation.Nullable;
 
-import java.util.List;
+import java.util.Set;
 
 import static inside.event.audit.Attribute.*;
 import static inside.util.ContextUtil.*;
@@ -146,8 +146,8 @@ public class AdminServiceImpl implements AdminService{
 
     @Override
     public Mono<Boolean> isAdmin(Member member){
-        Mono<List<Snowflake>> roles = entityRetriever.getAdminConfigById(member.getGuildId())
-                .map(AdminConfig::adminRoleIDs);
+        Mono<Set<Snowflake>> roles = entityRetriever.getAdminConfigById(member.getGuildId())
+                .map(AdminConfig::adminRoleIds);
 
         Mono<Boolean> isPermissed = member.getRoles().map(Role::getId)
                 .filterWhen(id -> roles.map(list -> list.contains(id)))

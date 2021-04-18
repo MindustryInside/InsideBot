@@ -3,7 +3,6 @@ package inside.util;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
 import org.joda.time.DateTime;
-import reactor.core.Exceptions;
 import reactor.util.annotation.Nullable;
 
 import java.time.*;
@@ -66,22 +65,24 @@ public abstract class MessageUtil{
 
     @Nullable
     public static Snowflake parseUserId(String message){
-        try{
-            return Snowflake.of(message.replaceAll("[<>@!]", ""));
-        }catch(Throwable t){
-            Exceptions.throwIfJvmFatal(t);
-            return null;
-        }
+        return parseId(message.replaceAll("[<>@!]", ""));
+    }
+
+    @Nullable
+    public static Snowflake parseRoleId(String message){
+        return parseId(message.replaceAll("[<>@&]", ""));
+    }
+
+    @Nullable
+    public static Snowflake parseId(String message){
+        return Try.ofCallable(() -> Snowflake.of(message)).orElse(null);
     }
 
     @Nullable
     public static Duration parseDuration(String message){
         Matcher matcher = durationTimeUnitPattern.matcher(message);
         if(!matcher.matches()){
-            try{
-                return Duration.parse(message);
-            }catch(Throwable ignored){}
-            return null;
+            return Try.ofCallable(() -> Duration.parse(message)).orElse(null);
         }
 
         return Duration.ZERO

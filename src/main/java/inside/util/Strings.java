@@ -1,6 +1,5 @@
 package inside.util;
 
-import reactor.core.Exceptions;
 import reactor.util.annotation.Nullable;
 
 import java.util.function.Function;
@@ -25,12 +24,7 @@ public abstract class Strings{
     }
 
     public static int parseInt(String s, int defaultValue){
-        try{
-            return Integer.parseInt(s);
-        }catch(Throwable t){
-            Exceptions.throwIfJvmFatal(t);
-            return defaultValue;
-        }
+        return Try.ofCallable(() -> Integer.parseInt(s)).orElse(defaultValue);
     }
 
     public static long parseLong(String s){
@@ -38,12 +32,7 @@ public abstract class Strings{
     }
 
     public static long parseLong(String s, long defaultValue){
-        try{
-            return Long.parseLong(s);
-        }catch(Throwable t){
-            Exceptions.throwIfJvmFatal(t);
-            return defaultValue;
-        }
+        return Try.ofCallable(() -> Long.parseLong(s)).orElse(defaultValue);
     }
 
     public static int levenshtein(CharSequence x, CharSequence y){

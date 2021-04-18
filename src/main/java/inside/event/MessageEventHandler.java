@@ -69,7 +69,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
         Mono<Void> safeMessageInfo = entityRetriever.getAuditConfigById(guildId).flatMap(auditConfig -> {
             if(auditConfig.isEnabled(MESSAGE_CREATE)){
-                return entityRetriever.createMessageInfo(message).then();
+                return entityRetriever.createMessageInfo(message).then().and(entityRetriever.save(auditConfig));
             }
             return Mono.empty();
         });
