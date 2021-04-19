@@ -7,17 +7,12 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.AllowedMentions;
 import inside.Settings;
-import inside.data.entity.MessageInfo;
-import inside.data.repository.MessageInfoRepository;
 import inside.service.MessageService;
 import inside.util.*;
-import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.*;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.encrypt.*;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.context.ContextView;
@@ -30,8 +25,6 @@ import static inside.util.ContextUtil.KEY_LOCALE;
 @Service
 public class MessageServiceImpl implements MessageService{
 
-    private final MessageInfoRepository repository;
-
     private final ApplicationContext context;
 
     private final Settings settings;
@@ -40,10 +33,8 @@ public class MessageServiceImpl implements MessageService{
             .expireAfterWrite(15, TimeUnit.SECONDS)
             .build();
 
-    public MessageServiceImpl(@Autowired MessageInfoRepository repository,
-                              @Autowired ApplicationContext context,
+    public MessageServiceImpl(@Autowired ApplicationContext context,
                               @Autowired Settings settings){
-        this.repository = repository;
         this.context = context;
         this.settings = settings;
     }
@@ -158,30 +149,6 @@ public class MessageServiceImpl implements MessageService{
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public MessageInfo getById(Snowflake messageId){
-        return repository.findByMessageId(messageId.asString());
-    }
-
-    @Override
-    @Transactional
-    public void save(MessageInfo message){
-        repository.save(message);
-    }
-
-    @Override
-    @Transactional
-    public void deleteById(Snowflake messageId){
-        repository.deleteByMessageId(messageId.asString());
-    }
-
-    @Override
-    @Transactional
-    public void delete(MessageInfo message){
-        repository.delete(message);
-    }
-
-    @Override
     public String encrypt(String text, Snowflake messageId, Snowflake channelId){
         if(settings.getDiscord().isEncryptMessages()){
             TextEncryptor encryptor = Encryptors.text(messageId.asString(), channelId.asString());
@@ -197,12 +164,5 @@ public class MessageServiceImpl implements MessageService{
             return encryptor.decrypt(text);
         }
         return text;
-    }
-
-    @Override
-    @Transactional
-    @Scheduled(cron = "0 0 */4 * * *")
-    public void cleanUp(){
-        repository.deleteByTimestampBefore(DateTime.now().minus(settings.getAudit().getHistoryKeep().toMillis()));
     }
 }

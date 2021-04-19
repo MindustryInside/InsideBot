@@ -6,19 +6,17 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import discord4j.discordjson.possible.PossibleModule;
 
+import java.lang.reflect.Type;
 import java.util.*;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class JacksonUtil{
-    private static final ObjectMapper mapper = new ObjectMapper();
-
-    static{
-        mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE);
-        mapper.setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.PUBLIC_ONLY);
-        mapper.setVisibility(PropertyAccessor.CREATOR, JsonAutoDetect.Visibility.ANY);
-        mapper.registerModule(new Jdk8Module());
-        mapper.registerModule(new PossibleModule());
-    }
+    private static final ObjectMapper mapper = new ObjectMapper()
+            .setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
+            .setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.PUBLIC_ONLY)
+            .setVisibility(PropertyAccessor.CREATOR, JsonAutoDetect.Visibility.ANY)
+            .registerModule(new Jdk8Module())
+            .registerModule(new PossibleModule());
 
     public static ObjectMapper mapper(){
         return mapper;
@@ -27,6 +25,14 @@ public abstract class JacksonUtil{
     public static <T> T fromJson(String string, Class<T> clazz){
         try{
             return mapper.readValue(string, clazz);
+        }catch(Throwable t){
+            throw new RuntimeException(t);
+        }
+    }
+
+    public static <T> T fromJson(String string, Type type){
+        try{
+            return mapper.readValue(string, mapper.constructType(type));
         }catch(Throwable t){
             throw new RuntimeException(t);
         }

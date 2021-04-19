@@ -2,13 +2,12 @@ package inside.data.entity;
 
 import discord4j.common.util.Snowflake;
 import inside.data.entity.base.GuildEntity;
-import org.hibernate.annotations.Type;
 import org.joda.time.DateTime;
 import reactor.util.annotation.Nullable;
 
 import javax.persistence.*;
 import java.io.Serial;
-import java.util.*;
+import java.util.Objects;
 
 @Entity
 @Table(name = "local_member")
@@ -17,7 +16,7 @@ public class LocalMember extends GuildEntity{
     private static final long serialVersionUID = -9169934990408633927L;
 
     @Column(name = "user_id")
-    private String userId;
+    private long userId;
 
     @Column(name = "effective_name", length = 32)
     private String effectiveName;
@@ -30,7 +29,7 @@ public class LocalMember extends GuildEntity{
     }
 
     public void userId(Snowflake userId){
-        this.userId = Objects.requireNonNull(userId, "userId").asString();
+        this.userId = Objects.requireNonNull(userId, "userId").asLong();
     }
 
     public String effectiveName(){
@@ -53,9 +52,9 @@ public class LocalMember extends GuildEntity{
     @Override
     public String toString(){
         return "LocalMember{" +
-               "userId='" + userId + '\'' +
-               ", effectiveName='" + effectiveName + '\'' +
-               ", lastSentMessage=" + lastSentMessage +
-               "} " + super.toString();
+                "userId=" + userId +
+                ", effectiveName='" + effectiveName + '\'' +
+                ", lastSentMessage=" + lastSentMessage +
+                "} " + super.toString();
     }
 }

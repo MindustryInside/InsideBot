@@ -1,9 +1,9 @@
 package inside.data.entity;
 
-import discord4j.common.util.Snowflake;
 import inside.data.entity.base.GuildEntity;
 import inside.data.service.AdminService.AdminActionType;
 import org.hibernate.annotations.*;
+import org.immutables.builder.Builder;
 import org.joda.time.DateTime;
 import reactor.util.annotation.Nullable;
 
@@ -11,7 +11,7 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.*;
 import java.io.Serial;
-import java.util.*;
+import java.util.Optional;
 
 @Entity
 @Table(name = "admin_action")
@@ -41,23 +41,22 @@ public class AdminAction extends GuildEntity{
     @Column(name = "end_timestamp")
     private DateTime endTimestamp;
 
-    public static Builder builder(){
-        return new Builder();
-    }
-
     protected AdminAction(){}
 
-    private AdminAction(Snowflake guildId, AdminActionType type,
-                        LocalMember admin, LocalMember target,
-                        @Nullable String reason, DateTime timestamp,
-                        @Nullable DateTime endTimestamp){
-        this.guildId = guildId.asString();
+    @Builder.Constructor
+    protected AdminAction(long guildId, AdminActionType type, LocalMember admin, LocalMember target,
+                          @Nullable String reason, DateTime timestamp, @Nullable DateTime endTimestamp){
+        this.guildId = guildId;
         this.type = type;
         this.admin = admin;
         this.target = target;
         this.reason = reason;
         this.timestamp = timestamp;
         this.endTimestamp = endTimestamp;
+    }
+
+    public static AdminActionBuilder builder(){
+        return new AdminActionBuilder();
     }
 
     public AdminActionType type(){
@@ -92,63 +91,12 @@ public class AdminAction extends GuildEntity{
     @Override
     public String toString(){
         return "AdminAction{" +
-               "type=" + type +
-               ", admin=" + admin +
-               ", target=" + target +
-               ", reason='" + reason + '\'' +
-               ", timestamp=" + timestamp +
-               ", endTimestamp=" + endTimestamp +
-               "} " + super.toString();
-    }
-
-    public static class Builder{
-        private Snowflake guildId;
-        private AdminActionType type;
-        private LocalMember admin;
-        private LocalMember target;
-        @Nullable
-        private String reason;
-        private DateTime timestamp;
-        @Nullable
-        private DateTime endTimestamp;
-
-        public Builder guildId(Snowflake guildId){
-            this.guildId = Objects.requireNonNull(guildId, "guildId");
-            return this;
-        }
-
-        public Builder type(AdminActionType type){
-            this.type = Objects.requireNonNull(type, "type");
-            return this;
-        }
-
-        public Builder admin(LocalMember admin){
-            this.admin = Objects.requireNonNull(admin, "admin");
-            return this;
-        }
-
-        public Builder target(LocalMember target){
-            this.target = Objects.requireNonNull(target, "target");
-            return this;
-        }
-
-        public Builder reason(@Nullable String reason){
-            this.reason = reason;
-            return this;
-        }
-
-        public Builder timestamp(DateTime timestamp){
-            this.timestamp = Objects.requireNonNull(timestamp, "timestamp");
-            return this;
-        }
-
-        public Builder endTimestamp(@Nullable DateTime endTimestamp){
-            this.endTimestamp = endTimestamp;
-            return this;
-        }
-
-        public AdminAction build(){
-            return new AdminAction(guildId, type, admin, target, reason, timestamp, endTimestamp);
-        }
+                "type=" + type +
+                ", admin=" + admin +
+                ", target=" + target +
+                ", reason='" + reason + '\'' +
+                ", timestamp=" + timestamp +
+                ", endTimestamp=" + endTimestamp +
+                "} " + super.toString();
     }
 }

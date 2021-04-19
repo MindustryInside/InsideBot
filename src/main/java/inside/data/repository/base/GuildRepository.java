@@ -1,15 +1,12 @@
 package inside.data.repository.base;
 
 import inside.data.entity.base.GuildEntity;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.NoRepositoryBean;
 
 @NoRepositoryBean
-public interface GuildRepository<T extends GuildEntity> extends JpaRepository<T, String>{
+public interface GuildRepository<T extends GuildEntity> extends BaseRepository<T>{
 
-    T findByGuildId(String id);
+    T findByGuildId(long id);
 
-    boolean existsByGuildId(String id);
-
-    void deleteByGuildId(String id);
+    void deleteByGuildId(long id);
 }

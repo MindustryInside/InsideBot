@@ -1,25 +1,25 @@
 package inside.data.type.descriptor;
 
-import inside.util.JacksonUtil;
+import inside.util.*;
 import org.hibernate.annotations.common.reflection.java.JavaXMember;
 import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.*;
 import org.hibernate.usertype.DynamicParameterizedType;
+import reactor.util.*;
 import reactor.util.annotation.Nullable;
 
 import java.io.Serial;
 import java.lang.reflect.*;
 import java.util.*;
 
-@SuppressWarnings({"unchecked", "deprecation", "rawtypes"})
 public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implements DynamicParameterizedType{
-    @Serial
-    private static final long serialVersionUID = -4842954367890483417L;
+    private static final Logger log = Loggers.getLogger(JsonTypeDescriptor.class);
 
     public static final JsonTypeDescriptor instance = new JsonTypeDescriptor();
 
-    private Class<?> clazz;
-    private Type type;
+    private final List<Type> types = new ArrayList<>();
+
+    private Object xprop;
 
     public JsonTypeDescriptor(){
         super(Object.class, new MutableMutabilityPlan<>(){
@@ -35,16 +35,9 @@ public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implement
 
     @Override
     public void setParameterValues(Properties parameters){
-        clazz = ((ParameterType)parameters.get(PARAMETER_TYPE)).getReturnedClass();
-        try{
-            Field typeField = JavaXMember.class.getDeclaredField("type");
-            if(!typeField.isAccessible()){
-                typeField.setAccessible(true);
-            }
-            type = (Type)typeField.get(parameters.get(XPROPERTY));
-        }catch(IllegalAccessException | NoSuchFieldException e){
-            throw new RuntimeException(e);
-        }
+        xprop = parameters.get(XPROPERTY);
+        Type type = get(JavaXMember.class, xprop, "type");
+        types.add(type);
     }
 
     @Override
@@ -61,25 +54,44 @@ public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implement
 
     @Override
     public Object fromString(String string){
-        if(type instanceof ParameterizedType pType){
-            if(List.class.isAssignableFrom((Class)pType.getRawType())){
-                return JacksonUtil.list(string, clazz, (Class)pType.getActualTypeArguments()[0]);
-            }else if(Map.class.isAssignableFrom((Class)pType.getRawType())){
-                return JacksonUtil.map(string, clazz, (Class)pType.getActualTypeArguments()[0],
-                        (Class)pType.getActualTypeArguments()[1]);
-            }else if(Set.class.isAssignableFrom((Class)pType.getRawType())){
-                return JacksonUtil.set(string, clazz, (Class)pType.getActualTypeArguments()[0]);
-            }
+        Type ftype = get(JavaXMember.class, xprop, "type");
+
+        return types.stream()
+                .filter(type -> type.equals(ftype))
+                .findFirst()
+                .flatMap(type -> Try.ofCallable(() -> JacksonUtil.fromJson(string, type))
+                        .onFailure(t -> log.trace("Serialization error.", t))
+                        .toOptional())
+                .orElse(null);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T get(Class<?> type, Object object, String name){
+        try{
+            Field field = type.getDeclaredField(name);
+            field.setAccessible(true);
+            return (T)field.get(object);
+        }catch(Exception e){
+            throw new RuntimeException(e);
         }
-        return JacksonUtil.fromJson(string, clazz);
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <X> X unwrap(@Nullable Object value, Class<X> type, WrapperOptions options){
-        if(value == null) return null;
-        else if(String.class.isAssignableFrom(type)) return (X)toString(value);
-        else if(Object.class.isAssignableFrom(type)) return (X)JacksonUtil.toJsonNode(value);
-        else throw unknownUnwrap(type);
+        if(value == null){
+            return null;
+        }
+
+        if(String.class.isAssignableFrom(type)){
+            return (X)toString(value);
+        }
+
+        if(Object.class.isAssignableFrom(type)){
+            return (X)JacksonUtil.toJsonNode(value);
+        }
+
+        throw unknownUnwrap(type);
     }
 
     @Override

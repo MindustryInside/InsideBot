@@ -20,7 +20,6 @@ import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import reactor.bool.BooleanUtils;
-import reactor.core.Exceptions;
 import reactor.core.publisher.*;
 import reactor.util.annotation.Nullable;
 import reactor.util.function.Tuple2;
@@ -71,11 +70,10 @@ public class Commands{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Snowflake guildId = env.getAuthorAsMember().getGuildId();
-            String prefix = entityRetriever.getPrefix(guildId);
+            Mono<String> prefix = entityRetriever.getGuildConfigById(guildId).map(GuildConfig::prefix);
 
             Collector<CommandInfo, StringBuilder, StringBuilder> collector = Collector.of(StringBuilder::new,
                     (builder, commandInfo) -> {
-                        builder.append(prefix);
                         builder.append("**");
                         builder.append(commandInfo.text());
                         builder.append("**");
@@ -92,9 +90,9 @@ public class Commands{
             return Flux.fromIterable(handler.commandList())
                     .filterWhen(commandInfo -> handler.commands().get(commandInfo.text()).apply(env))
                     .collect(collector)
-                    .map(builder -> builder.append(messageService.get(env.context(), "command.help.disclaimer.user"))
-                            .append("\n")
-                            .append(messageService.format(env.context(), "command.help.disclaimer.help", prefix)))
+                    .flatMap(builder -> prefix.map(str -> builder.append(messageService.get(env.context(), "command.help.disclaimer.user")).append("\n")
+                            .append(messageService.get(env.context(), "command.help.disclaimer.help"))
+                            .insert(0, messageService.format(env.context(), "command.help.disclaimer.prefix", str) + "\n\n")))
                     .flatMap(builder -> messageService.info(env.getReplyChannel(),"command.help", builder.toString()));
         }
     }
@@ -140,8 +138,9 @@ public class Commands{
 
         @Override
         public Mono<Void> help(CommandEnvironment env){
-            String prefix = entityRetriever.getPrefix(env.getAuthorAsMember().getGuildId());
-            return messageService.info(env.getReplyChannel(), "command.help.title", "command.base64.help", prefix);
+            return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
+                    .map(GuildConfig::prefix)
+                    .flatMap(prefix -> messageService.info(env.getReplyChannel(), "command.help.title", "command.base64.help", prefix));
         }
     }
 
@@ -186,8 +185,9 @@ public class Commands{
 
         @Override
         public Mono<Void> help(CommandEnvironment env){
-            String prefix = entityRetriever.getPrefix(env.getAuthorAsMember().getGuildId());
-            return messageService.info(env.getReplyChannel(), "command.help.title", "command.math.help", prefix);
+            return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
+                    .map(GuildConfig::prefix)
+                    .flatMap(prefix -> messageService.info(env.getReplyChannel(), "command.help.title", "command.math.help", prefix));
         }
 
         public static final LazyOperator shiftRightOperator = new AbstractOperator(">>", 30, true){
@@ -434,13 +434,14 @@ public class Commands{
                     .map(OptionValue::asString)
                     .orElseThrow(AssertionError::new);
 
-            return Mono.just(entityRetriever.getGuildById(member.getGuildId()))
+            return entityRetriever.getGuildConfigById(member.getGuildId())
+                    .switchIfEmpty(entityRetriever.createGuildConfig(member.getGuildId()))
                     .filterWhen(guildConfig -> adminService.isAdmin(member))
                     .switchIfEmpty(messageService.err(channel, "command.owner-only").then(Mono.empty()))
                     .flatMap(guildConfig -> Mono.defer(() -> {
                         guildConfig.prefix(prefix);
-                        entityRetriever.save(guildConfig);
-                        return messageService.text(channel, "command.config.prefix-updated", guildConfig.prefix());
+                        return messageService.text(channel, "command.config.prefix-updated", guildConfig.prefix())
+                                .and(entityRetriever.save(guildConfig));
                     }));
         }
     }
@@ -468,7 +469,8 @@ public class Commands{
                     .map(OptionValue::asString)
                     .orElse("");
 
-            return Mono.just(entityRetriever.getGuildById(member.getGuildId()))
+            return entityRetriever.getGuildConfigById(member.getGuildId())
+                    .switchIfEmpty(entityRetriever.createGuildConfig(member.getGuildId()))
                     .filterWhen(guildConfig -> adminService.isAdmin(member).map(bool -> bool && present))
                     .flatMap(guildConfig -> Mono.defer(() -> {
                         if(timeZone == null){
@@ -481,9 +483,9 @@ public class Commands{
                         }
 
                         guildConfig.timeZone(timeZone);
-                        entityRetriever.save(guildConfig);
                         return Mono.deferContextual(ctx -> messageService.text(channel, "command.config.timezone-updated", ctx.<Locale>get(KEY_TIMEZONE)))
-                                .contextWrite(ctx -> ctx.put(KEY_TIMEZONE, timeZone));
+                                .contextWrite(ctx -> ctx.put(KEY_TIMEZONE, timeZone))
+                                .and(entityRetriever.save(guildConfig));
                     }).thenReturn(guildConfig))
                     .switchIfEmpty(present ?
                             messageService.err(channel, "command.owner-only").then(Mono.empty()) :
@@ -493,12 +495,7 @@ public class Commands{
 
         @Nullable
         public static DateTimeZone findTimeZone(String id){
-            try{
-                return DateTimeZone.forID(id);
-            }catch(Throwable t){
-                Exceptions.throwIfJvmFatal(t);
-                return null;
-            }
+            return Try.ofCallable(() -> DateTimeZone.forID(id)).orElse(null);
         }
     }
 
@@ -520,7 +517,8 @@ public class Commands{
                     .map(LocaleUtil::get)
                     .orElse(null);
 
-            return Mono.just(entityRetriever.getGuildById(member.getGuildId()))
+            return entityRetriever.getGuildConfigById(member.getGuildId())
+                    .switchIfEmpty(entityRetriever.createGuildConfig(member.getGuildId()))
                     .filterWhen(guildConfig -> adminService.isOwner(member).map(bool -> bool && present))
                     .flatMap(guildConfig -> Mono.defer(() -> {
                         if(locale == null){
@@ -532,9 +530,9 @@ public class Commands{
                         }
 
                         guildConfig.locale(locale);
-                        entityRetriever.save(guildConfig);
                         return Mono.deferContextual(ctx -> messageService.text(channel, "command.config.locale-updated", ctx.<Locale>get(KEY_LOCALE)))
-                                .contextWrite(ctx -> ctx.put(KEY_LOCALE, locale));
+                                .contextWrite(ctx -> ctx.put(KEY_LOCALE, locale))
+                                .and(entityRetriever.save(guildConfig));
                     }).thenReturn(guildConfig))
                     .switchIfEmpty(present ?
                             messageService.err(channel, "command.owner-only").then(Mono.empty()) :
@@ -558,10 +556,6 @@ public class Commands{
 
             Snowflake guildId = author.getGuildId();
 
-            if(entityRetriever.getMuteRoleId(guildId).isEmpty()){
-                return messageService.err(channel, "command.disabled.mute");
-            }
-
             DateTime delay = interaction.getOption("delay")
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asDateTime)
@@ -577,7 +571,11 @@ public class Commands{
                     .map(String::trim)
                     .orElse(null);
 
-            return Mono.justOrEmpty(targetId).flatMap(id -> env.getClient().getMemberById(guildId, id))
+            return entityRetriever.createAdminConfig(guildId)
+                    .switchIfEmpty(entityRetriever.createAdminConfig(guildId))
+                    .filter(adminConfig -> adminConfig.muteRoleID().isPresent())
+                    .switchIfEmpty(messageService.err(channel, "command.disabled.mute").then(Mono.empty()))
+                    .flatMap(ignored -> Mono.justOrEmpty(targetId)).flatMap(id -> env.getClient().getMemberById(guildId, id))
                     .switchIfEmpty(messageService.err(channel, "command.incorrect-name").then(Mono.empty()))
                     .filterWhen(member -> BooleanUtils.not(adminService.isMuted(member)))
                     .switchIfEmpty(messageService.err(channel, "command.admin.mute.already-muted").then(Mono.never()))
@@ -657,10 +655,8 @@ public class Commands{
                     .sort(Comparator.comparing(Message::getId))
                     .filter(message -> message.getTimestamp().isAfter(limit))
                     .flatMap(message -> message.getAuthorAsMember()
-                            .doOnNext(member -> {
-                                appendInfo.accept(message, member);
-                                messageService.deleteById(message.getId());
-                            })
+                            .doOnNext(member -> appendInfo.accept(message, member))
+                            .flatMap(ignored -> entityRetriever.getMessageInfoById(message.getId()).flatMap(entityRetriever::delete)) // TODO: create deleteById method
                             .thenReturn(message))
                     .transform(messages -> number > 1 ? channel.bulkDeleteMessages(messages).then() : messages.next().flatMap(Message::delete).then()))
                     .then();
@@ -713,12 +709,12 @@ public class Commands{
                         Mono<Void> warnings = Mono.defer(() -> adminService.warnings(member).count()).flatMap(count -> {
                             Mono<Void> message = messageService.text(channel, "command.admin.warn", member.getUsername(), count);
 
-                            AdminConfig config = entityRetriever.getAdminConfigById(guildId);
-                            if(count >= config.maxWarnCount()){
-                                return message.then(author.getGuild().flatMap(guild ->
-                                        guild.ban(member.getId(), spec -> spec.setDeleteMessageDays(0))));
-                            }
-                            return message;
+                            // TODO: test
+                            Mono<AdminConfig> config = entityRetriever.getAdminConfigById(guildId)
+                                    .switchIfEmpty(entityRetriever.createAdminConfig(guildId));
+                            return message.then(config.filter(adminConfig -> count >= adminConfig.maxWarnCount())
+                                    .flatMap(ignored -> author.getGuild().flatMap(guild ->
+                                            guild.ban(member.getId(), spec -> spec.setDeleteMessageDays(0)))));
                         });
 
                         return adminService.warn(author, member, reason).then(warnings);
@@ -882,8 +878,9 @@ public class Commands{
 
         @Override
         public Mono<Void> help(CommandEnvironment env){
-            String prefix = entityRetriever.getPrefix(env.getAuthorAsMember().getGuildId());
-            return messageService.info(env.getReplyChannel(), "command.help.title", "command.poll.help", prefix);
+            return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
+                    .map(GuildConfig::prefix)
+                    .flatMap(prefix -> messageService.info(env.getReplyChannel(), "command.help.title", "command.poll.help", prefix));
         }
     }
 
@@ -900,11 +897,11 @@ public class Commands{
 
             Snowflake guildId = env.getAuthorAsMember().getGuildId();
 
-            if(entityRetriever.getMuteRoleId(guildId).isEmpty()){
-                return messageService.err(channel, "command.disabled.mute");
-            }
-
-            return Mono.justOrEmpty(targetId).flatMap(id -> env.getClient().getMemberById(guildId, id))
+            return entityRetriever.createAdminConfig(guildId)
+                    .switchIfEmpty(entityRetriever.createAdminConfig(guildId))
+                    .filter(adminConfig -> adminConfig.muteRoleID().isPresent())
+                    .switchIfEmpty(messageService.err(channel, "command.disabled.mute").then(Mono.empty()))
+                    .flatMap(ignored -> Mono.justOrEmpty(targetId)).flatMap(id -> env.getClient().getMemberById(guildId, id))
                     .switchIfEmpty(messageService.err(channel, "command.incorrect-name").then(Mono.empty()))
                     .filterWhen(adminService::isMuted)
                     .flatMap(target -> adminService.unmute(target).and(env.getMessage().addReaction(ok)).thenReturn(target))

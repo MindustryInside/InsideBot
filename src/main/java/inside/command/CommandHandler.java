@@ -4,6 +4,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
 import inside.command.model.*;
+import inside.data.entity.GuildConfig;
 import inside.data.service.EntityRetriever;
 import inside.service.MessageService;
 import inside.util.*;
@@ -106,31 +107,33 @@ public class CommandHandler{
 
     public Mono<Void> handleMessage(final CommandEnvironment env){
         String message = env.getMessage().getContent();
+        Snowflake guildId = env.getAuthorAsMember().getGuildId();
         Mono<Guild> guild = env.getMessage().getGuild();
         Mono<TextChannel> channel = env.getReplyChannel().ofType(TextChannel.class);
         Snowflake selfId = env.getClient().getSelfId();
 
-        String prefix = entityRetriever.getPrefix(env.getAuthorAsMember().getGuildId());
+        Mono<String> prefix = entityRetriever.getGuildConfigById(guildId)
+                .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
+                .map(GuildConfig::prefix);
 
         Mono<String> mention = Mono.just(message)
                 .filter(s -> env.getMessage().getUserMentionIds().contains(selfId))
                 .map(s -> s.startsWith(DiscordUtil.getMemberMention(selfId)) ? DiscordUtil.getMemberMention(selfId) : DiscordUtil.getUserMention(selfId));
 
-        Mono<Tuple2<String, String>> text = Mono.just(prefix)
-                .filter(message::startsWith)
+        Mono<Tuple2<String, String>> text = prefix.filter(message::startsWith)
                 .switchIfEmpty(mention)
                 .map(s -> message.substring(s.length()).trim())
                 .zipWhen(s -> Mono.just(s.contains(" ") ? s.substring(0, s.indexOf(" ")) : s).map(String::toLowerCase))
                 .cache();
 
-        Mono<Void> suggestion = text.flatMap(t -> {
-            CommandInfo closest = Strings.findClosest(commandList(), CommandInfo::text, t.getT1());
+        Mono<Void> suggestion = text.map(Tuple2::getT1).flatMap(commandName -> {
+            CommandInfo closest = Strings.findClosest(commandList(), CommandInfo::text, commandName);
 
             messageService.awaitEdit(env.getMessage().getId());
             if(closest != null){
                 return messageService.err(channel, "command.response.found-closest", closest.text());
             }
-            return messageService.err(channel, "command.response.unknown", prefix);
+            return prefix.flatMap(str -> messageService.err(channel, "command.response.unknown", str));
         });
 
         return text.flatMap(TupleUtils.function((commandstr, cmd) -> Mono.justOrEmpty(commands.get(cmd))
@@ -151,8 +154,8 @@ public class CommandHandler{
                     while(true){
                         if(index >= info.params().length && !argstr.isEmpty()){
                             messageService.awaitEdit(env.getMessage().getId());
-                            return messageService.error(channel, "command.response.many-arguments.title",
-                                    argsres, prefix, info.text(), messageService.get(env.context(), info.paramText()));
+                            return prefix.flatMap(str -> messageService.error(channel, "command.response.many-arguments.title",
+                                    argsres, str, info.text(), messageService.get(env.context(), info.paramText())));
                         }else if(argstr.isEmpty()){
                             break;
                         }
@@ -170,8 +173,8 @@ public class CommandHandler{
                         if(next == -1){
                             if(!satisfied){
                                 messageService.awaitEdit(env.getMessage().getId());
-                                return messageService.error(channel, "command.response.few-arguments.title",
-                                        argsres, prefix, info.text(), messageService.get(env.context(), info.paramText()));
+                                return prefix.flatMap(str -> messageService.error(channel, "command.response.few-arguments.title",
+                                        argsres, str, info.text(), messageService.get(env.context(), info.paramText())));
                             }
                             result.add(new CommandOption(info.params()[index], argstr));
                             break;
@@ -186,8 +189,8 @@ public class CommandHandler{
 
                     if(!satisfied && info.params().length > 0 && !info.params()[0].optional()){
                         messageService.awaitEdit(env.getMessage().getId());
-                        return messageService.error(channel, "command.response.few-arguments.title",
-                                argsres, prefix, info.text(), messageService.get(env.context(), info.paramText()));
+                        return prefix.flatMap(str -> messageService.error(channel, "command.response.few-arguments.title",
+                                argsres, str, info.text(), messageService.get(env.context(), info.paramText())));
                     }
 
                     Mono<Void> execute = Mono.just(command)

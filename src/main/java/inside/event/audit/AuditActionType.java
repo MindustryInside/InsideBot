@@ -3,6 +3,7 @@ package inside.event.audit;
 import discord4j.rest.util.Color;
 
 public enum AuditActionType{
+    MESSAGE_CREATE(0x1337),
     MESSAGE_EDIT(0x32cd32),
     MESSAGE_DELETE(0xff341c),
     MESSAGE_CLEAR(0xdc143c),

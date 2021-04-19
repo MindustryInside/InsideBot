@@ -9,6 +9,7 @@ import reactor.util.annotation.Nullable;
 import javax.persistence.*;
 import java.io.Serial;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "admin_config")
@@ -31,7 +32,7 @@ public class AdminConfig extends GuildEntity{
     /* lazy initializing */
     @Type(type = "json")
     @Column(name = "admin_role_ids", columnDefinition = "json")
-    private List<String> adminRoleIds;
+    private Set<String> adminRoleIds;
 
     public Duration warnExpireDelay(){
         return warnExpireDelay;
@@ -66,15 +67,19 @@ public class AdminConfig extends GuildEntity{
         this.muteRoleId = Objects.requireNonNull(muteRoleId, "muteRoleId").asString();
     }
 
-    public List<String> adminRoleIDs(){
+    public Set<Snowflake> adminRoleIds(){
         if(adminRoleIds == null){
-            adminRoleIds = new ArrayList<>();
+            adminRoleIds = new HashSet<>();
         }
-        return adminRoleIds;
+        return adminRoleIds.stream()
+                .map(Snowflake::of)
+                .collect(Collectors.toSet());
     }
 
-    public void adminRoleIDs(List<String> adminRoleIDs){
-        this.adminRoleIds = Objects.requireNonNull(adminRoleIDs, "adminRoleIDs");
+    public void adminRoleIds(Set<Snowflake> adminRoleIDs){
+        this.adminRoleIds = Objects.requireNonNull(adminRoleIDs, "adminRoleIds").stream()
+                .map(Snowflake::asString)
+                .collect(Collectors.toSet());
     }
 
     @Override

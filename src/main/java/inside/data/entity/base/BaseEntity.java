@@ -24,14 +24,14 @@ public abstract class BaseEntity implements Serializable{
     @Id
     @GenericGenerator(name = "snowflake", strategy = "inside.data.type.SnowflakeGenerator")
     @GeneratedValue(generator = "snowflake")
-    protected String id;
+    protected long id;
 
     @Override
     public boolean equals(Object o){
         if(this == o) return true;
         if(o == null || getClass() != o.getClass()) return false;
         BaseEntity that = (BaseEntity)o;
-        return Objects.equals(id, that.id);
+        return id == that.id;
     }
 
     @Override

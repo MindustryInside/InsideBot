@@ -2,13 +2,7 @@ plugins{
     id 'org.springframework.boot' version '2.4.4'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'com.github.ben-manes.versions' version '0.38.0'
-    id 'java'
-}
-
-repositories{
-    mavenCentral()
-    maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
-    maven { url 'https://www.jitpack.io' }
+    id 'java-library'
 }
 
 ext{
@@ -25,13 +19,36 @@ ext{
     junit_version = '5.7.1'
 }
 
-tasks.withType(JavaCompile){
-    options.encoding = "UTF-8"
-    options.compilerArgs += ["--enable-preview"]
+allprojects{
+    apply plugin: 'java-library'
+    apply plugin: 'com.github.ben-manes.versions'
+
+    repositories{
+        mavenCentral()
+        maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+        maven { url 'https://www.jitpack.io' }
+    }
+
+    dependencies{
+        implementation "com.discord4j.discord4j:discord4j-core:master-SNAPSHOT"
+        compileOnly "org.immutables:value:$immutables_version"
+        annotationProcessor "org.immutables:value:$immutables_version"
+    }
+
+    tasks.withType(JavaCompile){
+        options.encoding = "UTF-8"
+        options.compilerArgs += ["--enable-preview"]
+    }
+
+    tasks.withType(Test){
+        useJUnitPlatform()
+        jvmArgs += ["--enable-preview"]
+    }
 }
 
 dependencies{
-    implementation "com.discord4j.discord4j:discord4j-core:master-SNAPSHOT"
+    compileOnly project(":encoding")
+
     implementation "com.github.JodaOrg:joda-time:$joda_version"
     implementation "com.github.ben-manes.caffeine:caffeine:$caffeine_version"
     implementation "com.udojava:EvalEx:$evalex_version"
@@ -46,13 +63,7 @@ dependencies{
     implementation "org.springframework.boot:spring-boot-starter-security"
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
-    compileOnly "org.immutables:value:$immutables_version"
-    annotationProcessor "org.immutables:value:$immutables_version"
+    compileOnly "org.immutables:builder:$immutables_version"
 
     testImplementation "org.junit.jupiter:junit-jupiter-engine:$junit_version"
-}
-
-test{
-    useJUnitPlatform()
-    jvmArgs += ["--enable-preview"]
 }

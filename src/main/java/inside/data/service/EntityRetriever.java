@@ -1,47 +1,61 @@
 package inside.data.service;
 
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.entity.Member;
+import discord4j.core.object.entity.*;
 import inside.data.entity.*;
-import org.joda.time.DateTimeZone;
-
-import java.util.*;
+import reactor.core.publisher.Mono;
 
 public interface EntityRetriever{
 
     // guild config
 
-    GuildConfig getGuildById(Snowflake guildId);
+    Mono<GuildConfig> getGuildConfigById(Snowflake guildId);
 
-    void save(GuildConfig entity);
-
-    String getPrefix(Snowflake guildId);
-
-    Locale getLocale(Snowflake guildId);
-
-    DateTimeZone getTimeZone(Snowflake guildId);
-
-    // audit config
-
-    AuditConfig getAuditConfigById(Snowflake guildId);
-
-    Optional<Snowflake> getLogChannelId(Snowflake guildId);
-
-    void save(AuditConfig auditConfig);
+    Mono<Void> save(GuildConfig guildConfig);
 
     // admin config
 
-    AdminConfig getAdminConfigById(Snowflake guildId);
+    Mono<AdminConfig> getAdminConfigById(Snowflake guildId);
 
-    Optional<Snowflake> getMuteRoleId(Snowflake guildId);
+    Mono<Void> save(AdminConfig adminConfig);
 
-    List<Snowflake> getAdminRoleIds(Snowflake guildId);
+    // audit config
 
-    void save(AdminConfig config);
+    Mono<AuditConfig> getAuditConfigById(Snowflake guildId);
+
+    Mono<Void> save(AuditConfig auditConfig);
 
     // member
 
-    LocalMember getMember(Member member);
+    Mono<LocalMember> getLocalMemberById(Snowflake userId, Snowflake guildId);
 
-    void save(LocalMember member);
+    default Mono<LocalMember> getLocalMemberById(Member member){
+        return getLocalMemberById(member.getId(), member.getGuildId());
+    }
+
+    Mono<Void> save(LocalMember localMember);
+
+    // message info
+
+    Mono<MessageInfo> getMessageInfoById(Snowflake messageId);
+
+    Mono<Void> delete(MessageInfo messageInfo);
+
+    Mono<Void> save(MessageInfo messageInfo);
+
+    // factory methods
+
+    Mono<GuildConfig> createGuildConfig(Snowflake guildId);
+
+    Mono<AdminConfig> createAdminConfig(Snowflake guildId);
+
+    Mono<AuditConfig> createAuditConfig(Snowflake guildId);
+
+    Mono<LocalMember> createLocalMember(Snowflake userId, Snowflake guildId, String effectiveNickname);
+
+    Mono<MessageInfo> createMessageInfo(Message message);
+
+    default Mono<LocalMember> createLocalMember(Member member){
+        return createLocalMember(member.getId(), member.getGuildId(), member.getDisplayName());
+    }
 }
