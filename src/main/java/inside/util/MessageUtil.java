@@ -26,10 +26,10 @@ public abstract class MessageUtil{
 
     private static final Pattern durationTimeUnitPattern = Pattern.compile(
             "^" +
-            "((\\d+)(d|day|days|д|день|дня|дней))?" +
-            "((\\d+)(h|hour|hours|ч|час|часа|часов))?" +
-            "((\\d+)(m|min|mins|minute|minutes|мин|минута|минуту|минуты|минут))?" +
-            "((\\d+)(s|sec|secs|second|seconds|с|c|сек|секунда|секунду|секунды|секунд))?$",
+            "((\\d+)(\\s+)?(d|day|days|д|день|дня|дней)(\\s+)?)?" +
+            "((\\d+)(\\s+)?(h|hour|hours|ч|час|часа|часов)(\\s+)?)?" +
+            "((\\d+)(\\s+)?(m|min|mins|minute|minutes|мин|минута|минуту|минуты|минут)(\\s+)?)?" +
+            "((\\d+)(\\s+)?(s|sec|secs|second|seconds|с|c|сек|секунда|секунду|секунды|секунд))?$",
             Pattern.CASE_INSENSITIVE
     );
 
@@ -85,10 +85,9 @@ public abstract class MessageUtil{
             return Try.ofCallable(() -> Duration.parse(message)).orElse(null);
         }
 
-        return Duration.ZERO
-                .plus(Strings.parseLong(matcher.group(11), 0), ChronoUnit.SECONDS)
-                .plus(Strings.parseLong(matcher.group(8), 0), ChronoUnit.MINUTES)
-                .plus(Strings.parseLong(matcher.group(5), 0), ChronoUnit.HOURS)
+        return Duration.ZERO.plus(Strings.parseLong(matcher.group(17), 0), ChronoUnit.SECONDS)
+                .plus(Strings.parseLong(matcher.group(12), 0), ChronoUnit.MINUTES)
+                .plus(Strings.parseLong(matcher.group(7), 0), ChronoUnit.HOURS)
                 .plus(Strings.parseLong(matcher.group(2), 0), ChronoUnit.DAYS);
     }
 
