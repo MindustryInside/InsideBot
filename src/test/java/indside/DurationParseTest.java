@@ -16,6 +16,14 @@ public class DurationParseTest{
     }
 
     @Test
+    public void parseSimpleWithSpaces(){
+        Assertions.assertEquals(Duration.ofSeconds(13).plusMinutes(100), MessageUtil.parseDuration("100   min13s"));
+        Assertions.assertEquals(Duration.ofMinutes(76).plusDays(15), MessageUtil.parseDuration("15 d76 m"));
+        Assertions.assertEquals(Duration.ofMinutes(76).plusDays(15).plusSeconds(11), MessageUtil.parseDuration("15d 76 m 11s"));
+        Assertions.assertEquals(Duration.ofHours(Integer.MAX_VALUE).plusDays(Integer.MAX_VALUE), MessageUtil.parseDuration("2147483647d2147483647  h"));
+    }
+
+    @Test
     public void parseSingle(){
         Assertions.assertEquals(Duration.ofSeconds(1), MessageUtil.parseDuration("1s"));
         Assertions.assertEquals(Duration.ofMinutes(1), MessageUtil.parseDuration("1m"));
