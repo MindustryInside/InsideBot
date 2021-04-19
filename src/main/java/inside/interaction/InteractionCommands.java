@@ -165,10 +165,8 @@ public class InteractionCommands{
                                     }));
                                 }))).and(entityRetriever.save(adminConfig));
 
-                        Function<Duration, String> formatDuration = duration -> duration.toString()
-                                .substring(2)
-                                .replaceAll("(\\d[HMS])(?!$)", "$1 ")
-                                .toLowerCase();
+                        Function<Duration, String> formatDuration = duration -> PeriodFormat.wordBased(env.context().get(KEY_LOCALE))
+                                .print(duration.toPeriod());
 
                         Mono<Void> warnDelayCommand = Mono.justOrEmpty(group.getOption("warn-delay"))
                                 .switchIfEmpty(adminRolesCommand.then(Mono.empty()))
