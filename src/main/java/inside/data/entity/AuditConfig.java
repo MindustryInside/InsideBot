@@ -54,7 +54,7 @@ public class AuditConfig extends GuildEntity{
 
     @Transient
     public boolean isEnabled(AuditActionType type){
-        return enabled != null && enable && !enabled.isEmpty() && enabled.contains(type);
+        return logChannelId != null && enabled != null && enable && !enabled.isEmpty() && enabled.contains(type);
     }
 
     @Override

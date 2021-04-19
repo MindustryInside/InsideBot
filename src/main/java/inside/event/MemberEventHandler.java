@@ -14,7 +14,7 @@ import org.joda.time.DateTime;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.*;
 import reactor.util.context.Context;
 
 import java.time.Instant;
@@ -93,11 +93,11 @@ public class MemberEventHandler extends ReactiveEventAdapter{
 
         Mono<Void> kick = initContext.flatMap(context -> event.getGuild()
                 .flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MEMBER_KICK)))
+                .flatMap(part -> Flux.fromIterable(part.getEntries()))
                 .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)) &&
                         entry.getTargetId().map(target -> target.equals(user.getId())).orElse(false))
                 .next()
-                .flatMap(entry -> Mono.justOrEmpty(entry.getUserId())
-                        .flatMap(userId -> event.getClient().getMemberById(guildId, userId))
+                .flatMap(entry -> Mono.justOrEmpty(entry.getResponsibleUser())
                         .flatMap(admin -> auditService.log(guildId, USER_KICK)
                                 .withUser(admin)
                                 .withTargetUser(user)
@@ -110,11 +110,11 @@ public class MemberEventHandler extends ReactiveEventAdapter{
 
         return initContext.flatMap(context -> event.getGuild()
                 .flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MEMBER_BAN_ADD)))
+                .flatMap(part -> Flux.fromIterable(part.getEntries()))
                 .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)) &&
                         entry.getTargetId().map(target -> target.equals(user.getId())).orElse(false))
                 .next()
-                .flatMap(entry -> Mono.justOrEmpty(entry.getUserId())
-                        .flatMap(userId -> event.getClient().getMemberById(guildId, userId))
+                .flatMap(entry -> Mono.justOrEmpty(entry.getResponsibleUser())
                         .flatMap(admin -> auditService.log(guildId, USER_BAN)
                                 .withUser(admin)
                                 .withTargetUser(user)

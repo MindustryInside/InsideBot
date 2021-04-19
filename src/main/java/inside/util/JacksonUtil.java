@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import discord4j.discordjson.possible.PossibleModule;
 
+import java.lang.reflect.Type;
 import java.util.*;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -24,6 +25,14 @@ public abstract class JacksonUtil{
     public static <T> T fromJson(String string, Class<T> clazz){
         try{
             return mapper.readValue(string, clazz);
+        }catch(Throwable t){
+            throw new RuntimeException(t);
+        }
+    }
+
+    public static <T> T fromJson(String string, Type type){
+        try{
+            return mapper.readValue(string, mapper.constructType(type));
         }catch(Throwable t){
             throw new RuntimeException(t);
         }

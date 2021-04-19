@@ -4,11 +4,9 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.message.*;
 import discord4j.core.object.Embed.Field;
-import discord4j.core.object.audit.ActionType;
+import discord4j.core.object.audit.*;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
-import discord4j.discordjson.json.AuditEntryInfoData;
-import discord4j.discordjson.possible.Possible;
 import inside.command.CommandHandler;
 import inside.command.model.CommandEnvironment;
 import inside.data.entity.*;
@@ -20,7 +18,7 @@ import org.joda.time.DateTime;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.*;
 import reactor.util.context.Context;
 import reactor.util.function.Tuples;
 
@@ -55,7 +53,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
             return Mono.empty();
         }
 
-        Snowflake guildId = event.getGuildId().orElseThrow(IllegalStateException::new); // Guaranteed above, see DiscordUtil#isBot
+        Snowflake guildId = member.getGuildId();
 
         Mono<LocalMember> localMember = entityRetriever.getLocalMemberById(member)
                 .switchIfEmpty(entityRetriever.createLocalMember(member));
@@ -69,7 +67,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
         Mono<Void> safeMessageInfo = entityRetriever.getAuditConfigById(guildId).flatMap(auditConfig -> {
             if(auditConfig.isEnabled(MESSAGE_CREATE)){
-                return entityRetriever.createMessageInfo(message).then().and(entityRetriever.save(auditConfig));
+                return entityRetriever.createMessageInfo(message).then();
             }
             return Mono.empty();
         });
@@ -105,7 +103,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                 .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
                         KEY_TIMEZONE, guildConfig.timeZone()));
 
-        return initContext.flatMap(context ->Mono.zip(event.getMessage(), event.getChannel().ofType(TextChannel.class))
+        return initContext.flatMap(context -> Mono.zip(event.getMessage(), event.getChannel().ofType(TextChannel.class))
                 .filter(predicate((message, channel) -> !message.isTts()))
                 .zipWhen(tuple -> tuple.getT1().getAuthorAsMember(),
                         (tuple, user) -> Tuples.of(tuple.getT1(), tuple.getT2(), user))
@@ -207,16 +205,12 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
                     Mono<User> responsibleUser = event.getGuild()
                             .flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MESSAGE_DELETE)))
-                            .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)) &&
-                                    entry.getTargetId().map(id -> id.equals(info.userId())).orElse(false) &&
-                                    entry.getData().options().toOptional()
-                                            .map(AuditEntryInfoData::channelId)
-                                            .flatMap(Possible::toOptional)
-                                            .map(Snowflake::of)
-                                            .map(id -> id.equals(message.getChannelId())).orElse(false))
+                            .flatMap(part -> Flux.fromIterable(part.getEntries()))
+                            .filter(part -> part.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)) &&
+                                    part.getTargetId().map(id -> id.equals(info.userId())).orElse(false) &&
+                                    part.getOption(OptionKey.CHANNEL_ID).map(id -> id.equals(message.getChannelId())).orElse(false))
                             .next()
-                            .flatMap(entry -> Mono.justOrEmpty(entry.getUserId())
-                                    .flatMap(event.getClient()::getUserById));
+                            .flatMap(entry -> Mono.justOrEmpty(entry.getResponsibleUser()));
 
                     return responsibleUser.defaultIfEmpty(author).map(user -> builder.withUser(user)
                             .withTargetUser(author)
