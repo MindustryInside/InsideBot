@@ -50,8 +50,7 @@ public class DiscordServiceImpl implements DiscordService{
                         Intent.GUILD_MESSAGES,
                         Intent.GUILD_VOICE_STATES,
                         Intent.GUILD_MESSAGE_REACTIONS,
-                        Intent.DIRECT_MESSAGES,
-                        Intent.DIRECT_MESSAGE_REACTIONS
+                        Intent.DIRECT_MESSAGES
                 ))
                 .login()
                 .block();

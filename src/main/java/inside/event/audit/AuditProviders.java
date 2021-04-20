@@ -2,10 +2,11 @@ package inside.event.audit;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.Embed;
+import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.*;
 import inside.data.entity.AuditAction;
 import inside.data.entity.base.NamedReference;
-import inside.util.MessageUtil;
+import inside.util.*;
 import org.joda.time.format.*;
 import reactor.util.context.ContextView;
 
@@ -195,6 +196,40 @@ public class AuditProviders{
             embed.addField(messageService.get(context, "audit.member.reason"), reason, true);
             embed.addField(messageService.get(context, "audit.member.mute.delay"), formatter.print(delay), true);
             addTimestamp(context, action, embed);
+        }
+    }
+
+    @ForwardAuditProvider(AuditActionType.REACTION_ADD)
+    public static class ReactionAddAuditProvider extends BaseAuditProvider{
+        @Override
+        protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
+            Snowflake messageId = action.getAttribute(MESSAGE_ID);
+            ReactionEmoji emoji = action.getAttribute(REACTION_EMOJI);
+            if(messageId == null || emoji == null){
+                return;
+            }
+
+            embed.setDescription(messageService.format(context, "audit.reaction.add.description",
+                    getUserReference(context, action.user()), DiscordUtil.getEmoji(emoji),
+                    action.guildId().asString(), action.channel().id(), messageId.asString()));
+
+            addTimestamp(context, action, embed);
+        }
+    }
+
+    @ForwardAuditProvider(AuditActionType.REACTION_REMOVE)
+    public static class ReactionRemoveAuditProvider extends BaseAuditProvider{
+        @Override
+        protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
+
+        }
+    }
+
+    @ForwardAuditProvider(AuditActionType.REACTION_REMOVE_ALL)
+    public static class ReactionRemoveAllAuditProvider extends BaseAuditProvider{
+        @Override
+        protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
+
         }
     }
 

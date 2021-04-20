@@ -2,6 +2,7 @@ package inside.util;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.User;
+import discord4j.core.object.reaction.ReactionEmoji;
 import reactor.util.annotation.Nullable;
 
 import java.util.Objects;
@@ -18,6 +19,15 @@ public abstract class DiscordUtil{
 
     public static boolean isNotBot(@Nullable User user){
         return !isBot(user);
+    }
+
+    public static String getEmoji(ReactionEmoji emoji){
+        Objects.requireNonNull(emoji, "emoji");
+        if(emoji instanceof ReactionEmoji.Custom custom){
+            return "<:" + custom.getName() + ":" + custom.getId().asString() + ">";
+        }
+        return emoji.asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
+                .orElseThrow(IllegalStateException::new);
     }
 
     public static String getUserMention(Snowflake id){

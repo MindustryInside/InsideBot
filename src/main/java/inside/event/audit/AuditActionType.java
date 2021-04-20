@@ -8,6 +8,10 @@ public enum AuditActionType{
     MESSAGE_DELETE(0xff341c),
     MESSAGE_CLEAR(0xdc143c),
 
+    REACTION_ADD(0xd2b48c),
+    REACTION_REMOVE(0x8b4513),
+    REACTION_REMOVE_ALL(0xb22222),
+
     VOICE_JOIN(0xff33cc),
     VOICE_LEAVE(0x9900cc),
 
