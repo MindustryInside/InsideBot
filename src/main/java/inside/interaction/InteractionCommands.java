@@ -105,10 +105,6 @@ public class InteractionCommands{
                                             .and(entityRetriever.save(adminConfig));
                                 }));
 
-                        Function<Collection<Snowflake>, String> formatRolesList = list -> list.stream()
-                                .map(DiscordUtil::getRoleMention)
-                                .collect(Collectors.joining(", "));
-
                         Mono<Void> adminRolesCommand = Mono.justOrEmpty(group.getOption("admin-roles"))
                                 .switchIfEmpty(muteRoleCommand.then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getOption("type")
@@ -116,7 +112,8 @@ public class InteractionCommands{
                                         .map(ApplicationCommandInteractionOptionValue::asString)
                                         .filter(str -> !str.equalsIgnoreCase("help"))
                                         .switchIfEmpty(messageService.text(env.event(), "command.config.current-admin-roles",
-                                                formatRolesList.apply(adminConfig.adminRoleIds())).then(Mono.empty()))
+                                                formatCollection(adminConfig.adminRoleIds(), DiscordUtil::getRoleMention))
+                                                .then(Mono.empty()))
                                         .zipWith(Mono.justOrEmpty(opt.getOption("value"))
                                                 .flatMap(subopt -> Mono.justOrEmpty(subopt.getValue()))
                                                 .map(ApplicationCommandInteractionOptionValue::asString)))
@@ -155,9 +152,11 @@ public class InteractionCommands{
                                         if(toHelp.isEmpty()){
                                             adminConfig.adminRoleIds(roleIds);
                                             if(add){
-                                                return messageService.text(env.event(), "command.config.types.added", formatRolesList.apply(roleIds));
+                                                return messageService.text(env.event(), "command.config.types.added",
+                                                        formatCollection(roleIds, DiscordUtil::getRoleMention));
                                             }
-                                            return messageService.text(env.event(), "command.config.types.removed", formatRolesList.apply(removed));
+                                            return messageService.text(env.event(), "command.config.types.removed",
+                                                    formatCollection(removed, DiscordUtil::getRoleMention));
                                         }else{
                                             String response = toHelp.stream().map(s -> " • " + s + "\n").collect(Collectors.joining());
                                             return messageService.error(env.event(), "command.config.admin-roles.conflicted.title", response);
@@ -219,13 +218,15 @@ public class InteractionCommands{
                                 .flatMap(command -> command.getOption("value")))
                                 .switchIfEmpty(messageService.text(env.event(), "command.config.current-channel",
                                         auditConfig.logChannelId().map(DiscordUtil::getChannelMention)
-                                                .orElse(messageService.get(env.context(), "command.config.channel-absent"))).then(Mono.empty()))
+                                                .orElse(messageService.get(env.context(), "command.config.channel-absent")))
+                                        .then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
                                         .flatMap(ApplicationCommandInteractionOptionValue::asChannel))
                                 .map(Channel::getId)
                                 .flatMap(channelId -> Mono.defer(() -> {
                                     auditConfig.logChannelId(channelId);
-                                    return messageService.text(env.event(), "command.config.channel-updated", DiscordUtil.getChannelMention(channelId))
+                                    return messageService.text(env.event(), "command.config.channel-updated",
+                                            DiscordUtil.getChannelMention(channelId))
                                             .and(entityRetriever.save(auditConfig));
                                 }));
 
@@ -235,14 +236,14 @@ public class InteractionCommands{
                                         .flatMap(ApplicationCommandInteractionOption::getValue))
                                         .map(ApplicationCommandInteractionOptionValue::asString)
                                         .filter(str -> !str.equalsIgnoreCase("help"))
-                                        .switchIfEmpty(messageService.text(env.event(), "command.config.all", Arrays.stream(AuditActionType.values())
-                                                .map(type -> messageService.getEnum(env.context(), type))
-                                                .collect(Collectors.toList())).then(Mono.empty()))
+                                        .switchIfEmpty(messageService.text(env.event(), "command.config.all", formatCollection(
+                                                EnumSet.allOf(AuditActionType.class),
+                                                type -> messageService.getEnum(env.context(), type)))
+                                                .then(Mono.empty()))
                                         .zipWith(Mono.justOrEmpty(opt.getOption("value"))
                                                 .switchIfEmpty(messageService.text(env.event(), "command.config.current-types",
-                                                        auditConfig.enabled().stream()
-                                                                .map(type -> messageService.getEnum(env.context(), type))
-                                                                .collect(Collectors.joining(", "))).then(Mono.empty()))
+                                                        formatCollection(auditConfig.enabled(), type -> messageService.getEnum(env.context(), type)))
+                                                        .then(Mono.empty()))
                                                 .flatMap(subopt -> Mono.justOrEmpty(subopt.getValue()))
                                                 .map(ApplicationCommandInteractionOptionValue::asString)))
                                 .flatMap(function((choice, enums) -> Mono.defer(() -> {
@@ -365,10 +366,7 @@ public class InteractionCommands{
                                 .flatMap(str -> Mono.defer(() -> {
                                     Locale locale = LocaleUtil.get(str);
                                     if(locale == null){
-                                        String all = LocaleUtil.locales.values().stream()
-                                                .map(Locale::toString)
-                                                .collect(Collectors.joining(", "));
-
+                                        String all = formatCollection(LocaleUtil.locales.values(), Locale::toString);
                                         return messageService.text(env.event(), "command.config.unknown-locale", all);
                                     }
 
@@ -393,6 +391,12 @@ public class InteractionCommands{
                                 }));
 
                     }));
+        }
+
+        private <T> String formatCollection(Collection<? extends T> collection, Function<T, String> formatter){
+            return collection.stream()
+                    .map(formatter)
+                    .collect(Collectors.joining(", "));
         }
 
         @Override
@@ -623,7 +627,7 @@ public class InteractionCommands{
                     .getOption("type")
                     .flatMap(ApplicationCommandInteractionOption::getValue)
                     .map(ApplicationCommandInteractionOptionValue::asString)
-                    .map(str -> str.equalsIgnoreCase("ru"))
+                    .map("ru"::equalsIgnoreCase)
                     .orElse(false);
 
             String text = env.event().getInteraction().getCommandInteraction()
