@@ -49,7 +49,7 @@ public class CommandHandler{
 
     private CommandInfo compile(Command command){
         DiscordCommand meta = command.getAnnotation();
-        // get 'en' parameter text for validation
+        // get 'en' parameter text for validation and option search
         String paramText = messageService.get(Context.of(KEY_LOCALE, LocaleUtil.getDefaultLocale()), meta.params());
         String[] psplit = paramText.split("(?<=(\\]|>))\\s+(?=(\\[|<))");
         CommandParam[] params = new CommandParam[0];
@@ -59,33 +59,23 @@ public class CommandHandler{
 
             for(int i = 0; i < params.length; i++){
                 String param = psplit[i].trim();
-                if(param.length() <= 2){
-                    throw new IllegalArgumentException("Malformed param '" + param + "'");
-                }
+                Preconditions.requireState(Strings.isNotEmpty(param), "Malformed param '" + param + "'");
 
                 char l = param.charAt(0), r = param.charAt(param.length() - 1);
                 boolean optional, variadic = false;
 
                 if(l == '<' && r == '>'){
-                    if(hadOptional){
-                        throw new IllegalArgumentException("Can't have non-optional param after optional param!");
-                    }
+                    Preconditions.requireState(!hadOptional, "Can't have non-optional param after optional param!");
                     optional = false;
                 }else if(l == '[' && r == ']'){
-                    optional = true;
+                    optional = hadOptional = true;
                 }else{
                     throw new IllegalArgumentException("Malformed param '" + param + "'");
                 }
 
-                if(optional){
-                    hadOptional = true;
-                }
-
                 String fname = param.substring(1, param.length() - 1);
                 if(fname.endsWith("...")){
-                    if(i != params.length - 1){
-                        throw new IllegalArgumentException("A variadic parameter should be the last parameter!");
-                    }
+                    Preconditions.requireState(i != param.length() - 1, "A variadic parameter should be the last parameter!");
                     fname = fname.substring(0, fname.length() - 3);
                     variadic = true;
                 }
