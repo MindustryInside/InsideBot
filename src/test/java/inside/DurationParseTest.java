@@ -1,4 +1,4 @@
-package indside;
+package inside;
 
 import inside.util.MessageUtil;
 import org.junit.jupiter.api.*;

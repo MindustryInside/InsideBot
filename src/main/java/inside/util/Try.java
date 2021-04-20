@@ -225,7 +225,8 @@ public abstract class Try<T>{
     }
 
 
-    public final T orElse(T other){
+    @Nullable
+    public final T orElse(@Nullable T other){
         return isSuccess() ? get() : other;
     }
 
@@ -241,11 +242,13 @@ public abstract class Try<T>{
         return isSuccess() ? this : (Try<T>)supplier.get();
     }
 
+    @Nullable
     public final T orElseGet(Supplier<? extends T> supplier){
         Objects.requireNonNull(supplier, "supplier");
         return isFailure() ? supplier.get() : get();
     }
 
+    @Nullable
     public final T orElseGet(Function<? super Throwable, ? extends T> other){
         Objects.requireNonNull(other, "other");
         return isFailure() ? other.apply(getCause()) : get();
@@ -258,6 +261,7 @@ public abstract class Try<T>{
         }
     }
 
+    @Nullable
     public final <X extends Throwable> T getOrElseThrow(Function<? super Throwable, X> mapper) throws X{
         Objects.requireNonNull(mapper, "mapper");
         if(isFailure()){
@@ -441,7 +445,6 @@ public abstract class Try<T>{
             this.cause = cause;
         }
 
-        @Nullable
         @Override
         public T get(){
             return sneakyThrow(cause);
