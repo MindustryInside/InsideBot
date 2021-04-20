@@ -1,6 +1,7 @@
 package inside.event.audit;
 
 import discord4j.common.util.Snowflake;
+import discord4j.core.object.reaction.ReactionEmoji;
 
 public final class Attribute<T>{
 
@@ -17,6 +18,8 @@ public final class Attribute<T>{
     public static final Attribute<Snowflake> MESSAGE_ID = new Attribute<>("message_id");
 
     public static final Attribute<Long> COUNT = new Attribute<>("count");
+
+    public static final Attribute<ReactionEmoji> REACTION_EMOJI = new Attribute<>("reaction_emoji");
 
     public final String name;
 
