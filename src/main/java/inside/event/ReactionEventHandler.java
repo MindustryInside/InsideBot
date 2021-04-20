@@ -49,11 +49,44 @@ public class ReactionEventHandler extends ReactiveEventAdapter{
 
     @Override
     public Publisher<?> onReactionRemove(ReactionRemoveEvent event){
-        return super.onReactionRemove(event);
+        Snowflake guildId = event.getGuildId().orElse(null);
+        if(guildId == null){
+            return Mono.empty();
+        }
+
+        Mono<Context> initContext = entityRetriever.getGuildConfigById(guildId)
+                .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
+                .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
+                        KEY_TIMEZONE, guildConfig.timeZone()));
+
+        return initContext.flatMap(context -> Mono.zip(event.getUser().flatMap(user -> user.asMember(guildId)),
+                event.getChannel().ofType(GuildChannel.class))
+                .flatMap(function((member, channel) -> auditService.log(guildId, AuditActionType.REACTION_REMOVE)
+                        .withUser(member)
+                        .withChannel(channel)
+                        .withAttribute(Attribute.MESSAGE_ID, event.getMessageId())
+                        .withAttribute(Attribute.REACTION_EMOJI, event.getEmoji())
+                        .save()))
+                .contextWrite(context));
     }
 
     @Override
     public Publisher<?> onReactionRemoveAll(ReactionRemoveAllEvent event){
-        return super.onReactionRemoveAll(event);
+        Snowflake guildId = event.getGuildId().orElse(null);
+        if(guildId == null){
+            return Mono.empty();
+        }
+
+        Mono<Context> initContext = entityRetriever.getGuildConfigById(guildId)
+                .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
+                .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
+                        KEY_TIMEZONE, guildConfig.timeZone()));
+
+        return initContext.flatMap(context -> event.getChannel().ofType(GuildChannel.class)
+                .flatMap(channel -> auditService.log(guildId, AuditActionType.REACTION_REMOVE_ALL)
+                        .withChannel(channel)
+                        .withAttribute(Attribute.MESSAGE_ID, event.getMessageId())
+                        .save())
+                .contextWrite(context));
     }
 }
