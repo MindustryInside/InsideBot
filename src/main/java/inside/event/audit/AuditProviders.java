@@ -221,7 +221,17 @@ public class AuditProviders{
     public static class ReactionRemoveAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
+            Snowflake messageId = action.getAttribute(MESSAGE_ID);
+            ReactionEmoji emoji = action.getAttribute(REACTION_EMOJI);
+            if(messageId == null || emoji == null){
+                return;
+            }
 
+            embed.setDescription(messageService.format(context, "audit.reaction.remove.description",
+                    DiscordUtil.getEmoji(emoji), getUserReference(context, action.user()),
+                    action.guildId().asString(), action.channel().id(), messageId.asString()));
+
+            addTimestamp(context, action, embed);
         }
     }
 
@@ -229,7 +239,15 @@ public class AuditProviders{
     public static class ReactionRemoveAllAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
+            Snowflake messageId = action.getAttribute(MESSAGE_ID);
+            if(messageId == null){
+                return;
+            }
 
+            embed.setDescription(messageService.format(context, "audit.reaction.remove-all.description",
+                    action.guildId().asString(), action.channel().id(), messageId.asString()));
+
+            addTimestamp(context, action, embed);
         }
     }
 
