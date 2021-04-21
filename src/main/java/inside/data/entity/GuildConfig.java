@@ -22,6 +22,14 @@ public class GuildConfig extends GuildEntity{
     @Column(name = "time_zone")
     private DateTimeZone timeZone;
 
+    public static String formatPrefix(String prefix){
+        Objects.requireNonNull(prefix, "prefix");
+        if(prefix.chars().filter(Character::isLetter).count() >= 3 || prefix.length() > 4){
+            return prefix + " ";
+        }
+        return prefix;
+    }
+
     public String prefix(){
         return prefix;
     }
