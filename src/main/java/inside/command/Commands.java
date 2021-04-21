@@ -89,6 +89,7 @@ public class Commands{
 
             return Flux.fromIterable(handler.commandList())
                     .filterWhen(commandInfo -> handler.commands().get(commandInfo.text()).apply(env))
+                    .sort(Comparator.comparing(c -> messageService.get(env.context(), c.text())))
                     .collect(collector)
                     .flatMap(builder -> prefix.map(str -> builder.append(messageService.get(env.context(), "command.help.disclaimer.user")).append("\n")
                             .append(messageService.get(env.context(), "command.help.disclaimer.help"))
@@ -140,7 +141,8 @@ public class Commands{
         public Mono<Void> help(CommandEnvironment env){
             return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
                     .map(GuildConfig::prefix)
-                    .flatMap(prefix -> messageService.info(env.getReplyChannel(), "command.help.title", "command.base64.help", prefix));
+                    .flatMap(prefix -> messageService.info(env.getReplyChannel(), "command.help.title", "command.base64.help",
+                            GuildConfig.formatPrefix(prefix)));
         }
     }
 
@@ -187,7 +189,8 @@ public class Commands{
         public Mono<Void> help(CommandEnvironment env){
             return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
                     .map(GuildConfig::prefix)
-                    .flatMap(prefix -> messageService.info(env.getReplyChannel(), "command.help.title", "command.math.help", prefix));
+                    .flatMap(prefix -> messageService.info(env.getReplyChannel(), "command.help.title", "command.math.help",
+                            GuildConfig.formatPrefix(prefix)));
         }
 
         public static final LazyOperator shiftRightOperator = new AbstractOperator(">>", 30, true){
@@ -366,10 +369,10 @@ public class Commands{
         }
 
         @SuppressWarnings("unchecked")
-        public static <K, V> Map<K, V> of(Object... values) {
+        public static <K, V> Map<K, V> of(Object... values){
             Map<K, V> map = new HashMap<>();
 
-            for(int i = 0; i < values.length / 2; ++i) {
+            for(int i = 0; i < values.length / 2; ++i){
                 map.put((K)values[i * 2], (V)values[i * 2 + 1]);
             }
 
@@ -880,7 +883,8 @@ public class Commands{
         public Mono<Void> help(CommandEnvironment env){
             return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
                     .map(GuildConfig::prefix)
-                    .flatMap(prefix -> messageService.info(env.getReplyChannel(), "command.help.title", "command.poll.help", prefix));
+                    .flatMap(prefix -> messageService.info(env.getReplyChannel(), "command.help.title", "command.poll.help",
+                            GuildConfig.formatPrefix(prefix)));
         }
     }
 
