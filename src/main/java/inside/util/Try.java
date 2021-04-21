@@ -28,6 +28,11 @@ public abstract class Try<T>{
         }
     }
 
+    public static Try<Void> runRunnable(Runnable runnable){
+        Objects.requireNonNull(runnable, "runnable");
+        return run(runnable::run);
+    }
+
     public static Try<Void> run(UnsafeRunnable runnable){
         Objects.requireNonNull(runnable, "runnable");
         try{
@@ -36,11 +41,6 @@ public abstract class Try<T>{
         }catch(Throwable t){
             return new Failure<>(t);
         }
-    }
-
-    public static Try<Void> runRunnable(Runnable runnable){
-        Objects.requireNonNull(runnable, "runnable");
-        return run(runnable::run);
     }
 
     public static <T> Try<T> success(@Nullable T value){
@@ -123,6 +123,11 @@ public abstract class Try<T>{
         return filterTry(predicate::test);
     }
 
+    public final Try<T> filterTry(UnsafePredicate<? super T> predicate){
+        Objects.requireNonNull(predicate, "predicate");
+        return filterTry(predicate, () -> new NoSuchElementException("Predicate does not hold for " + get()));
+    }
+
     public final Try<T> filterTry(UnsafePredicate<? super T> predicate, Supplier<? extends Throwable> supplier){
         Objects.requireNonNull(predicate, "predicate");
         Objects.requireNonNull(supplier, "supplier");
@@ -145,11 +150,6 @@ public abstract class Try<T>{
         Objects.requireNonNull(predicate, "predicate");
         Objects.requireNonNull(supplier, "supplier");
         return flatMapTry(t -> predicate.test(t) ? this : failure(supplier.apply(t)));
-    }
-
-    public final Try<T> filterTry(UnsafePredicate<? super T> predicate){
-        Objects.requireNonNull(predicate, "predicate");
-        return filterTry(predicate, () -> new NoSuchElementException("Predicate does not hold for " + get()));
     }
 
     public final <U> Try<U> flatMap(Function<? super T, ? extends Try<? extends U>> mapper){
@@ -201,6 +201,15 @@ public abstract class Try<T>{
     public final Try<T> onFailure(Consumer<? super Throwable> consumer){
         Objects.requireNonNull(consumer, "consumer");
         if(isFailure()){
+            consumer.accept(getCause());
+        }
+        return this;
+    }
+
+    public final Try<T> onFailure(Predicate<? super Throwable> predicate, Consumer<? super Throwable> consumer){
+        Objects.requireNonNull(predicate, "predicate");
+        Objects.requireNonNull(consumer, "consumer");
+        if(isFailure() && predicate.test(getCause())){
             consumer.accept(getCause());
         }
         return this;
@@ -287,7 +296,6 @@ public abstract class Try<T>{
         }else{
             successAction.accept(get());
         }
-
         return this;
     }
 
@@ -470,12 +478,12 @@ public abstract class Try<T>{
             if(this == o) return true;
             if(o == null || getClass() != o.getClass()) return false;
             Failure<?> failure = (Failure<?>)o;
-            return Objects.deepEquals(cause.getStackTrace(), failure.cause.getStackTrace());
+            return cause.equals(failure.cause);
         }
 
         @Override
         public int hashCode(){
-            return Objects.hashCode(cause.getStackTrace());
+            return Objects.hashCode(cause);
         }
 
         @Override
