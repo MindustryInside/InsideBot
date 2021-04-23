@@ -84,7 +84,7 @@ public class InteractionCommands{
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
                                         .map(ApplicationCommandInteractionOptionValue::asLong))
                                 .flatMap(number -> Mono.defer(() -> {
-                                    adminConfig.maxWarnCount(Math.toIntExact(number)); // TODO: long support
+                                    adminConfig.maxWarnCount(number);
                                     return messageService.text(env.event(), "command.config.warnings-updated", number)
                                             .and(entityRetriever.save(adminConfig));
                                 }));
@@ -183,7 +183,8 @@ public class InteractionCommands{
                                     }
 
                                     adminConfig.warnExpireDelay(duration);
-                                    return messageService.text(env.event(), "command.config.warn-delay-updated", formatDuration.apply(duration))
+                                    return messageService.text(env.event(), "command.config.warn-delay-updated",
+                                            formatDuration.apply(duration))
                                             .and(entityRetriever.save(adminConfig));
                                 }));
 
@@ -203,7 +204,8 @@ public class InteractionCommands{
                                     }
 
                                     adminConfig.muteBaseDelay(duration);
-                                    return messageService.text(env.event(), "command.config.delay-updated", formatDuration.apply(duration))
+                                    return messageService.text(env.event(), "command.config.delay-updated",
+                                            formatDuration.apply(duration))
                                             .and(entityRetriever.save(adminConfig));
                                 }));
                     }));
@@ -242,7 +244,8 @@ public class InteractionCommands{
                                                 .then(Mono.empty()))
                                         .zipWith(Mono.justOrEmpty(opt.getOption("value"))
                                                 .switchIfEmpty(messageService.text(env.event(), "command.config.current-types",
-                                                        formatCollection(auditConfig.enabled(), type -> messageService.getEnum(env.context(), type)))
+                                                        formatCollection(auditConfig.enabled(), type ->
+                                                                messageService.getEnum(env.context(), type)))
                                                         .then(Mono.empty()))
                                                 .flatMap(subopt -> Mono.justOrEmpty(subopt.getValue()))
                                                 .map(ApplicationCommandInteractionOptionValue::asString)))
@@ -302,7 +305,8 @@ public class InteractionCommands{
                                             return messageService.text(env.event(), "command.config.types.added", formatted);
                                         }
 
-                                        return messageService.text(env.event(), "command.config.types.removed", String.join(", ", removed));
+                                        return messageService.text(env.event(), "command.config.types.removed",
+                                                String.join(", ", removed));
                                     }else{
                                         String response = toHelp.stream().map(s -> " • " + s + "\n").collect(Collectors.joining());
                                         return messageService.error(env.event(), "command.config.types.conflicted.title", response);

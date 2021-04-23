@@ -15,12 +15,12 @@ public enum AuditActionType{
     VOICE_JOIN(0xff33cc),
     VOICE_LEAVE(0x9900cc),
 
-    USER_JOIN(0x6666cc),
-    USER_LEAVE(0x6633cc),
-    USER_KICK(0xffd37f),
-    USER_BAN(0xffcc00),
-    USER_MUTE(0xffca59),
-    USER_UNMUTE(0x85ea88);
+    MEMBER_JOIN(0x6666cc),
+    MEMBER_LEAVE(0x6633cc),
+    MEMBER_KICK(0xffd37f),
+    MEMBER_BAN(0xffcc00),
+    MEMBER_MUTE(0xffca59),
+    MEMBER_UNMUTE(0x85ea88);
 
     public final Color color;
 
