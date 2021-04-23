@@ -69,7 +69,7 @@ public class AdminServiceImpl implements AdminService{
                         .endTimestamp(end)
                         .build()))));
 
-        Mono<Void> log = auditService.log(admin.getGuildId(), AuditActionType.USER_MUTE)
+        Mono<Void> log = auditService.log(admin.getGuildId(), AuditActionType.MEMBER_MUTE)
                 .withUser(admin)
                 .withTargetUser(target)
                 .withAttribute(REASON, reason)
@@ -98,7 +98,7 @@ public class AdminServiceImpl implements AdminService{
         Mono<Void> remove = get(AdminActionType.mute, target.getGuildId(), target.getId()).next()
                 .flatMap(adminAction -> Mono.fromRunnable(() -> repository.delete(adminAction)))
                 .then();
-        Mono<Void> log = auditService.log(target.getGuildId(), AuditActionType.USER_UNMUTE)
+        Mono<Void> log = auditService.log(target.getGuildId(), AuditActionType.MEMBER_UNMUTE)
                 .withTargetUser(target)
                 .save();
         Mono<Void> removeRole = entityRetriever.getAdminConfigById(target.getGuildId())

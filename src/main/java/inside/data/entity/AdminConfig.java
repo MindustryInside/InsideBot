@@ -24,7 +24,7 @@ public class AdminConfig extends GuildEntity{
     private Duration muteBaseDelay;
 
     @Column(name = "max_warn_count")
-    private int maxWarnCount;
+    private long maxWarnCount;
 
     @Column(name = "mute_role_id")
     private String muteRoleId;
@@ -51,11 +51,11 @@ public class AdminConfig extends GuildEntity{
         this.muteBaseDelay = muteBaseDelay;
     }
 
-    public int maxWarnCount(){
+    public long maxWarnCount(){
         return maxWarnCount;
     }
 
-    public void maxWarnCount(int maxWarnCount){
+    public void maxWarnCount(long maxWarnCount){
         this.maxWarnCount = maxWarnCount;
     }
 

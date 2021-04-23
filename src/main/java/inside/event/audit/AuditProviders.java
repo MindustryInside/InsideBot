@@ -101,7 +101,7 @@ public class AuditProviders{
         }
     }
 
-    @ForwardAuditProvider(AuditActionType.USER_JOIN)
+    @ForwardAuditProvider(AuditActionType.MEMBER_JOIN)
     public static class MemberJoinAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
@@ -111,7 +111,7 @@ public class AuditProviders{
         }
     }
 
-    @ForwardAuditProvider(AuditActionType.USER_LEAVE)
+    @ForwardAuditProvider(AuditActionType.MEMBER_LEAVE)
     public static class MemberLeaveAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
@@ -121,7 +121,7 @@ public class AuditProviders{
         }
     }
 
-    @ForwardAuditProvider(AuditActionType.USER_KICK)
+    @ForwardAuditProvider(AuditActionType.MEMBER_KICK)
     public static class MemberKickAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
@@ -139,7 +139,7 @@ public class AuditProviders{
         }
     }
 
-    @ForwardAuditProvider(AuditActionType.USER_BAN)
+    @ForwardAuditProvider(AuditActionType.MEMBER_BAN)
     public static class MemberBanAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
@@ -157,7 +157,7 @@ public class AuditProviders{
         }
     }
 
-    @ForwardAuditProvider(AuditActionType.USER_UNMUTE)
+    @ForwardAuditProvider(AuditActionType.MEMBER_UNMUTE)
     public static class MemberUnmuteAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
@@ -171,7 +171,7 @@ public class AuditProviders{
         }
     }
 
-    @ForwardAuditProvider(AuditActionType.USER_MUTE)
+    @ForwardAuditProvider(AuditActionType.MEMBER_MUTE)
     public static class MemberMuteAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){

@@ -66,7 +66,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                         .thenReturn(owner)))
                 .switchIfEmpty(warn.then(Mono.empty())));
 
-        return initContext.flatMap(context -> auditService.log(event.getGuildId(), USER_JOIN)
+        return initContext.flatMap(context -> auditService.log(event.getGuildId(), MEMBER_JOIN)
                 .withUser(member)
                 .save()
                 .and(muteEvade)
@@ -87,7 +87,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                 .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
                         KEY_TIMEZONE, guildConfig.timeZone()));
 
-        Mono<Void> log = auditService.log(event.getGuildId(), USER_LEAVE)
+        Mono<Void> log = auditService.log(event.getGuildId(), MEMBER_LEAVE)
                 .withUser(user)
                 .save();
 
@@ -98,7 +98,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                         entry.getTargetId().map(target -> target.equals(user.getId())).orElse(false))
                 .next()
                 .flatMap(entry -> Mono.justOrEmpty(entry.getResponsibleUser())
-                        .flatMap(admin -> auditService.log(guildId, USER_KICK)
+                        .flatMap(admin -> auditService.log(guildId, MEMBER_KICK)
                                 .withUser(admin)
                                 .withTargetUser(user)
                                 .withAttribute(REASON, entry.getReason()
@@ -115,7 +115,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                         entry.getTargetId().map(target -> target.equals(user.getId())).orElse(false))
                 .next()
                 .flatMap(entry -> Mono.justOrEmpty(entry.getResponsibleUser())
-                        .flatMap(admin -> auditService.log(guildId, USER_BAN)
+                        .flatMap(admin -> auditService.log(guildId, MEMBER_BAN)
                                 .withUser(admin)
                                 .withTargetUser(user)
                                 .withAttribute(REASON, entry.getReason()
