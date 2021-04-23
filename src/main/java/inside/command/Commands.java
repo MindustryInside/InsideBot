@@ -622,7 +622,7 @@ public class Commands{
                 return messageService.err(reply, "command.incorrect-number");
             }
 
-            long number = arg.map(Strings::parseInt).orElse(0); // TODO: replace to #parseLong
+            long number = arg.map(Strings::parseLong).orElse(0L);
             if(number > settings.getDiscord().getMaxClearedCount()){
                 return messageService.err(reply, "common.limit-number", settings.getDiscord().getMaxClearedCount());
             }

@@ -104,7 +104,8 @@ public class CommandHandler{
 
         Mono<String> prefix = entityRetriever.getGuildConfigById(guildId)
                 .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
-                .map(GuildConfig::prefix);
+                .map(GuildConfig::prefix)
+                .map(GuildConfig::formatPrefix);
 
         Mono<String> mention = Mono.just(message)
                 .filter(s -> env.getMessage().getUserMentionIds().contains(selfId))
