@@ -1,5 +1,5 @@
 plugins{
-    id 'org.springframework.boot' version '2.4.4'
+    id 'org.springframework.boot' version '2.4.5'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'com.github.ben-manes.versions' version '0.38.0'
     id 'java-library'
@@ -7,7 +7,7 @@ plugins{
 
 ext{
     junit_version = '5.7.1'
-    joda_version = 'v2.10.10'
+    joda_version = '2.10.10'
     caffeine_version = '3.0.1'
     evalex_version = '2.5'
 
