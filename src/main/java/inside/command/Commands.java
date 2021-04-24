@@ -422,7 +422,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "prefix", params = "command.config.prefix.params", description = "command.config.prefix.description")
+    @DiscordCommand(key = "prefix", params = "command.settings.prefix.params", description = "command.settings.prefix.description")
     public static class PrefixCommand extends Command{
         @Autowired
         private AdminService adminService;
@@ -443,13 +443,13 @@ public class Commands{
                     .switchIfEmpty(messageService.err(channel, "command.owner-only").then(Mono.empty()))
                     .flatMap(guildConfig -> Mono.defer(() -> {
                         guildConfig.prefix(prefix);
-                        return messageService.text(channel, "command.config.prefix-updated", guildConfig.prefix())
+                        return messageService.text(channel, "command.settings.prefix.update", guildConfig.prefix())
                                 .and(entityRetriever.save(guildConfig));
                     }));
         }
     }
 
-    @DiscordCommand(key = "timezone", params = "command.config.timezone.params", description = "command.config.timezone.description")
+    @DiscordCommand(key = "timezone", params = "command.settings.timezone.params", description = "command.settings.timezone.description")
     public static class TimezoneCommand extends Command{
         @Autowired
         private AdminService adminService;
@@ -486,13 +486,13 @@ public class Commands{
                         }
 
                         guildConfig.timeZone(timeZone);
-                        return Mono.deferContextual(ctx -> messageService.text(channel, "command.config.timezone-updated", ctx.<Locale>get(KEY_TIMEZONE)))
+                        return Mono.deferContextual(ctx -> messageService.text(channel, "command.settings.timezone.update", ctx.<Locale>get(KEY_TIMEZONE)))
                                 .contextWrite(ctx -> ctx.put(KEY_TIMEZONE, timeZone))
                                 .and(entityRetriever.save(guildConfig));
                     }).thenReturn(guildConfig))
                     .switchIfEmpty(present ?
                             messageService.err(channel, "command.owner-only").then(Mono.empty()) :
-                            messageService.text(channel, "command.config.current-timezone", env.context().<Locale>get(KEY_TIMEZONE)).then(Mono.empty()))
+                            messageService.text(channel, "command.settings.timezone.current", env.context().<Locale>get(KEY_TIMEZONE)).then(Mono.empty()))
                     .then(Mono.empty());
         }
 
@@ -502,7 +502,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "locale", params = "command.config.locale.params", description = "command.config.locale.description")
+    @DiscordCommand(key = "locale", params = "command.settings.locale.params", description = "command.settings.locale.description")
     public static class LocaleCommand extends Command{
         @Autowired
         private AdminService adminService;
@@ -533,13 +533,13 @@ public class Commands{
                         }
 
                         guildConfig.locale(locale);
-                        return Mono.deferContextual(ctx -> messageService.text(channel, "command.config.locale-updated", ctx.<Locale>get(KEY_LOCALE)))
+                        return Mono.deferContextual(ctx -> messageService.text(channel, "command.settings.locale.update", ctx.<Locale>get(KEY_LOCALE)))
                                 .contextWrite(ctx -> ctx.put(KEY_LOCALE, locale))
                                 .and(entityRetriever.save(guildConfig));
                     }).thenReturn(guildConfig))
                     .switchIfEmpty(present ?
                             messageService.err(channel, "command.owner-only").then(Mono.empty()) :
-                            messageService.text(channel, "command.config.current-locale", env.context().<Locale>get(KEY_LOCALE)).then(Mono.empty()))
+                            messageService.text(channel, "command.settings.locale.current", env.context().<Locale>get(KEY_LOCALE)).then(Mono.empty()))
                     .then(Mono.empty());
         }
     }
