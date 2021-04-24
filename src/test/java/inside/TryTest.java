@@ -8,6 +8,14 @@ import java.util.function.*;
 public class TryTest{
 
     @Test
+    public void jvmErrors(){
+        Assertions.assertThrows(VirtualMachineError.class, () -> Try.run(() -> {throw new InternalError();}));
+        Assertions.assertThrows(ThreadDeath.class, () -> Try.run(() -> {throw new ThreadDeath();}));
+        Assertions.assertThrows(LinkageError.class, () -> Try.run(() -> {throw new LinkageError();}));
+        Assertions.assertDoesNotThrow(() -> Try.run(() -> {throw new RuntimeException();}));
+    }
+
+    @Test
     public void andThen(){
         Assertions.assertTrue(Try.success("ok").andThen(() -> {throw new RuntimeException();}).isFailure());
         Assertions.assertTrue(Try.failure(new RuntimeException())

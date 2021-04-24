@@ -31,6 +31,10 @@
         <appender-ref ref="ASYNC"/>
     </logger>
 
+    <logger name="inside.data.type.descriptor.JsonTypeDescriptor" level="TRACE" additivity="false">
+        <appender-ref ref="ASYNC"/>
+    </logger>
+
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="ASYNC"/>
