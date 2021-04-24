@@ -178,6 +178,14 @@ public class Commands{
                     .flatMap(user -> messageService.info(channel, embed -> embed.setImage(user.getAvatarUrl() + "?size=512")
                             .setDescription(messageService.format(env.context(), "command.avatar.text", user.getUsername()))));
         }
+
+        @Override
+        public Mono<Void> help(CommandEnvironment env){
+            return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
+                    .map(GuildConfig::prefix)
+                    .flatMap(prefix -> messageService.info(env.getReplyChannel(), "command.help.title", "command.avatar.help",
+                            GuildConfig.formatPrefix(prefix)));
+        }
     }
 
     @DiscordCommand(key = "math", params = "command.math.params", description = "command.math.description")
@@ -689,6 +697,14 @@ public class Commands{
                     .save());
 
             return history.then(log).and(env.getMessage().addReaction(ok));
+        }
+
+        @Override
+        public Mono<Void> help(CommandEnvironment env){
+            return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
+                    .map(GuildConfig::prefix)
+                    .flatMap(prefix -> messageService.info(env.getReplyChannel(), "command.help.title", "command.delete.help",
+                            GuildConfig.formatPrefix(prefix)));
         }
     }
 
