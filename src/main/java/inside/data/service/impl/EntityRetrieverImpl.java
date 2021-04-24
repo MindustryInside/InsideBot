@@ -77,6 +77,11 @@ public class EntityRetrieverImpl implements EntityRetriever{
     }
 
     @Override
+    public Mono<Void> deleteMessageInfoById(Snowflake messageId){
+        return getMessageInfoById(messageId).flatMap(this::delete);
+    }
+
+    @Override
     public Mono<Void> delete(MessageInfo messageInfo){
         return Mono.from(store.execute(UpdateStoreActions.messageInfoDelete(messageInfo)));
     }
