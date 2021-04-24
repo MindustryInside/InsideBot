@@ -109,6 +109,7 @@ public class CommandHandler{
 
         Mono<String> mention = Mono.just(message)
                 .filter(s -> env.getMessage().getUserMentionIds().contains(selfId))
+                .filter(s -> message.startsWith(DiscordUtil.getMemberMention(selfId)) || message.startsWith(DiscordUtil.getUserMention(selfId)))
                 .map(s -> s.startsWith(DiscordUtil.getMemberMention(selfId)) ? DiscordUtil.getMemberMention(selfId) : DiscordUtil.getUserMention(selfId));
 
         Mono<Tuple2<String, String>> text = prefix.filter(message::startsWith)
