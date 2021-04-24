@@ -1,11 +1,12 @@
 package inside.data.type.descriptor;
 
 import org.hibernate.type.descriptor.WrapperOptions;
-import org.hibernate.type.descriptor.java.*;
+import org.hibernate.type.descriptor.java.AbstractTypeDescriptor;
 import org.joda.time.Duration;
 import reactor.util.annotation.Nullable;
 
 public class JodaDurationTypeDescriptor extends AbstractTypeDescriptor<Duration>{
+
     public static final JodaDurationTypeDescriptor instance = new JodaDurationTypeDescriptor();
 
     public JodaDurationTypeDescriptor(){
