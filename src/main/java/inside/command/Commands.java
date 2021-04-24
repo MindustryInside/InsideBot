@@ -70,31 +70,47 @@ public class Commands{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Snowflake guildId = env.getAuthorAsMember().getGuildId();
-            Mono<String> prefix = entityRetriever.getGuildConfigById(guildId).map(GuildConfig::prefix);
+            Mono<String> prefix = entityRetriever.getGuildConfigById(guildId)
+                    .map(GuildConfig::prefix);
 
-            Collector<CommandInfo, StringBuilder, StringBuilder> collector = Collector.of(StringBuilder::new,
-                    (builder, commandInfo) -> {
-                        builder.append("**");
-                        builder.append(commandInfo.text());
-                        builder.append("**");
-                        if(commandInfo.params().length > 0){
-                            builder.append(" ");
-                            builder.append(messageService.get(env.context(), commandInfo.paramText()));
+            Collector<Map.Entry<String, List<CommandInfo>>, ImmutableEmbedData.Builder, EmbedData> collector = Collector.of(
+                    EmbedData::builder,
+                    (builder, entry) -> {
+                        StringBuilder builder1 = new StringBuilder();
+                        for(CommandInfo commandInfo : entry.getValue()){
+                            builder1.append("**");
+                            builder1.append(commandInfo.text());
+                            builder1.append("**");
+                            if(commandInfo.params().length > 0){
+                                builder1.append(" ");
+                                builder1.append(messageService.get(env.context(), commandInfo.paramText()));
+                            }
+                            builder1.append(" - ");
+                            builder1.append(messageService.get(env.context(), commandInfo.description()));
+                            builder1.append("\n");
                         }
-                        builder.append(" - ");
-                        builder.append(messageService.get(env.context(), commandInfo.description()));
-                        builder.append("\n");
+
+                        builder.addField(EmbedFieldData.builder()
+                                .name(entry.getKey())
+                                .value(builder1.toString())
+                                .inline(false)
+                                .build());
                     },
-                    StringBuilder::append);
+                    (builder, builder2) -> builder,
+                    ImmutableEmbedData.Builder::build);
 
             return Flux.fromIterable(handler.commandList())
                     .filterWhen(commandInfo -> handler.commands().get(commandInfo.text()).apply(env))
-                    .sort(Comparator.comparing(c -> messageService.get(env.context(), c.text())))
+                    .collect(Collectors.groupingBy(c -> messageService.get(env.context(), handler.commands().get(c.text())
+                            .getClass().getSuperclass().getCanonicalName())))
+                    .flatMapMany(map -> Flux.fromIterable(map.entrySet())
+                            .sort(Map.Entry.comparingByKey()))
                     .collect(collector)
-                    .flatMap(builder -> prefix.map(str -> builder.append(messageService.get(env.context(), "command.help.disclaimer.user")).append("\n")
-                            .append(messageService.get(env.context(), "command.help.disclaimer.help"))
-                            .insert(0, messageService.format(env.context(), "command.help.disclaimer.prefix", str) + "\n\n")))
-                    .flatMap(builder -> messageService.info(env.getReplyChannel(),"command.help", builder.toString()));
+                    .flatMap(builder -> prefix.flatMap(str -> messageService.info(env.getReplyChannel(), spec -> spec.from(builder)
+                            .setTitle(messageService.get(env.context(), "command.help"))
+                            .setDescription(messageService.format(env.context(), "command.help.disclaimer.prefix", str)
+                                    .concat("\n" + messageService.get(env.context(), "command.help.disclaimer.user"))
+                                    .concat("\n" + messageService.get(env.context(), "command.help.disclaimer.help"))))));
         }
     }
 
