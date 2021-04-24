@@ -45,15 +45,12 @@ public abstract class LocaleUtil{
 
     public static String getCount(long value, Locale locale){
         String str = String.valueOf(value);
-
         Map<String, Pattern> rules = pluralRules.getOrDefault(locale.getLanguage(), pluralRules.get(defaultLocale));
-        for(Map.Entry<String, Pattern> plural : rules.entrySet()){
-            if(plural.getValue().matcher(str).find()){
-                return plural.getKey();
-            }
-        }
-
-        return "other";
+        return rules.entrySet().stream()
+                .filter(plural -> plural.getValue().matcher(str).find())
+                .findFirst()
+                .map(Map.Entry::getKey)
+                .orElse("other");
     }
 
     public static Locale getDefaultLocale(){

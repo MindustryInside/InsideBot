@@ -9,7 +9,7 @@ import java.util.Properties;
 public class JsonType extends AbstractSingleColumnStandardBasicType<Object> implements DynamicParameterizedType{
 
     public JsonType(){
-        super(JsonSqlTypeDescriptor.instance, JsonTypeDescriptor.instance);
+        super(JsonSqlTypeDescriptor.instance, new JsonTypeDescriptor());
     }
 
     @Override

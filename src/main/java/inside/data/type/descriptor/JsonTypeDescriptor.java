@@ -9,17 +9,13 @@ import reactor.util.*;
 import reactor.util.annotation.Nullable;
 
 import java.io.Serial;
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.Type;
+import java.util.Properties;
 
 public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implements DynamicParameterizedType{
     private static final Logger log = Loggers.getLogger(JsonTypeDescriptor.class);
 
-    public static final JsonTypeDescriptor instance = new JsonTypeDescriptor();
-
-    private final List<Type> types = new ArrayList<>();
-
-    private Object xprop;
+    private Type type;
 
     public JsonTypeDescriptor(){
         super(Object.class, new MutableMutabilityPlan<>(){
@@ -35,9 +31,8 @@ public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implement
 
     @Override
     public void setParameterValues(Properties parameters){
-        xprop = parameters.get(XPROPERTY);
-        Type type = get(JavaXMember.class, xprop, "type");
-        types.add(type);
+        JavaXMember xprop = (JavaXMember)parameters.get(XPROPERTY);
+        type = xprop.getJavaType();
     }
 
     @Override
@@ -54,26 +49,9 @@ public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implement
 
     @Override
     public Object fromString(String string){
-        Type ftype = get(JavaXMember.class, xprop, "type");
-
-        return types.stream()
-                .filter(type -> type.equals(ftype))
-                .findFirst()
-                .flatMap(type -> Try.ofCallable(() -> JacksonUtil.fromJson(string, type))
-                        .onFailure(t -> log.trace("Serialization error.", t))
-                        .toOptional())
+        return Try.ofCallable(() -> JacksonUtil.fromJson(string, type))
+                .onFailure(t -> log.trace("Serialization error.", t))
                 .orElse(null);
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T> T get(Class<?> type, Object object, String name){
-        try{
-            Field field = type.getDeclaredField(name);
-            field.setAccessible(true);
-            return (T)field.get(object);
-        }catch(Exception e){
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
