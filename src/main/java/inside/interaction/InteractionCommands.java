@@ -79,29 +79,29 @@ public class InteractionCommands{
                     .flatMap(function((group, adminConfig) -> {
                         Mono<Void> warningsCommand = Mono.justOrEmpty(group.getOption("warnings")
                                 .flatMap(command -> command.getOption("value")))
-                                .switchIfEmpty(messageService.text(env.event(), "command.config.current-warnings",
+                                .switchIfEmpty(messageService.text(env.event(), "command.settings.warnings.current",
                                         adminConfig.maxWarnCount()).then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
                                         .map(ApplicationCommandInteractionOptionValue::asLong))
                                 .flatMap(number -> Mono.defer(() -> {
                                     adminConfig.maxWarnCount(number);
-                                    return messageService.text(env.event(), "command.config.warnings-updated", number)
+                                    return messageService.text(env.event(), "command.settings.warnings.update", number)
                                             .and(entityRetriever.save(adminConfig));
                                 }));
 
                         Mono<Void> muteRoleCommand = Mono.justOrEmpty(group.getOption("mute-role"))
                                 .switchIfEmpty(warningsCommand.then(Mono.empty()))
                                 .flatMap(command -> Mono.justOrEmpty(command.getOption("value")))
-                                .switchIfEmpty(messageService.text(env.event(), "command.config.current-mute-role",
+                                .switchIfEmpty(messageService.text(env.event(), "command.settings.mute-role.current",
                                         adminConfig.muteRoleID().map(DiscordUtil::getRoleMention)
-                                                .orElse(messageService.get(env.context(), "command.config.channel-absent")))
+                                                .orElse(messageService.get(env.context(), "command.settings.absent")))
                                         .then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
                                         .flatMap(ApplicationCommandInteractionOptionValue::asRole))
                                 .map(Role::getId)
                                 .flatMap(roleId -> Mono.defer(() -> {
                                     adminConfig.muteRoleId(roleId);
-                                    return messageService.text(env.event(), "command.config.mute-role-updated", DiscordUtil.getRoleMention(roleId))
+                                    return messageService.text(env.event(), "command.settings.mute-role.update", DiscordUtil.getRoleMention(roleId))
                                             .and(entityRetriever.save(adminConfig));
                                 }));
 
@@ -111,7 +111,7 @@ public class InteractionCommands{
                                         .flatMap(ApplicationCommandInteractionOption::getValue))
                                         .map(ApplicationCommandInteractionOptionValue::asString)
                                         .filter(str -> !str.equalsIgnoreCase("help"))
-                                        .switchIfEmpty(messageService.text(env.event(), "command.config.current-admin-roles",
+                                        .switchIfEmpty(messageService.text(env.event(), "command.settings.admin-roles.current",
                                                 formatCollection(adminConfig.adminRoleIds(), DiscordUtil::getRoleMention))
                                                 .then(Mono.empty()))
                                         .zipWith(Mono.justOrEmpty(opt.getOption("value"))
@@ -133,33 +133,33 @@ public class InteractionCommands{
                                                 if(add){
                                                     if(!roleIds.add(role.getId())){
                                                         toHelp.add(messageService.format(env.context(),
-                                                                "command.config.admin-roles.response.already-set", str));
+                                                                "command.settings.admin-roles.already-set", str));
                                                     }
                                                 }else{
                                                     if(!roleIds.remove(role.getId())){
                                                         toHelp.add(messageService.format(env.context(),
-                                                                "command.config.admin-roles.response.already-remove", str));
+                                                                "command.settings.admin-roles.already-remove", str));
                                                     }else{
                                                         removed.add(role.getId());
                                                     }
                                                 }
                                             })
                                             .switchIfEmpty(Mono.fromRunnable(() -> toHelp.add(messageService.format(env.context(),
-                                                    "command.config.admin-roles.response.unknown", str)))))
+                                                    "command.settings.admin-roles.unknown", str)))))
                                             .then();
 
                                     return fetch.then(Mono.defer(() -> {
                                         if(toHelp.isEmpty()){
                                             adminConfig.adminRoleIds(roleIds);
                                             if(add){
-                                                return messageService.text(env.event(), "command.config.types.added",
+                                                return messageService.text(env.event(), "command.settings.added",
                                                         formatCollection(roleIds, DiscordUtil::getRoleMention));
                                             }
-                                            return messageService.text(env.event(), "command.config.types.removed",
+                                            return messageService.text(env.event(), "command.settings.removed",
                                                     formatCollection(removed, DiscordUtil::getRoleMention));
                                         }else{
                                             String response = toHelp.stream().map(s -> " • " + s + "\n").collect(Collectors.joining());
-                                            return messageService.error(env.event(), "command.config.admin-roles.conflicted.title", response);
+                                            return messageService.error(env.event(), "command.settings.admin-roles.conflicted.title", response);
                                         }
                                     }));
                                 }))).and(entityRetriever.save(adminConfig));
@@ -172,18 +172,18 @@ public class InteractionCommands{
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")
                                         .flatMap(ApplicationCommandInteractionOption::getValue)))
                                 .map(ApplicationCommandInteractionOptionValue::asString)
-                                .switchIfEmpty(messageService.text(env.event(), "command.config.current-warn-delay",
+                                .switchIfEmpty(messageService.text(env.event(), "command.settings.warn-delay.current",
                                         formatDuration.apply(adminConfig.warnExpireDelay())).then(Mono.empty()))
                                 .flatMap(str -> Mono.defer(() -> {
                                     Duration duration = Optional.ofNullable(MessageUtil.parseDuration(str))
                                             .map(jduration -> Duration.millis(jduration.toMillis()))
                                             .orElse(null);
                                     if(duration == null){
-                                        return messageService.err(env.event(), "command.config.incorrect-duration");
+                                        return messageService.err(env.event(), "command.settings.incorrect-duration");
                                     }
 
                                     adminConfig.warnExpireDelay(duration);
-                                    return messageService.text(env.event(), "command.config.warn-delay-updated",
+                                    return messageService.text(env.event(), "command.settings.warn-delay.update",
                                             formatDuration.apply(duration))
                                             .and(entityRetriever.save(adminConfig));
                                 }));
@@ -193,18 +193,18 @@ public class InteractionCommands{
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")
                                         .flatMap(ApplicationCommandInteractionOption::getValue)))
                                 .map(ApplicationCommandInteractionOptionValue::asString)
-                                .switchIfEmpty(messageService.text(env.event(), "command.config.current-delay",
+                                .switchIfEmpty(messageService.text(env.event(), "command.settings.base-delay.current",
                                         formatDuration.apply(adminConfig.muteBaseDelay())).then(Mono.empty()))
                                 .flatMap(str -> Mono.defer(() -> {
                                     Duration duration = Optional.ofNullable(MessageUtil.parseDuration(str))
                                             .map(jduration -> Duration.millis(jduration.toMillis()))
                                             .orElse(null);
                                     if(duration == null){
-                                        return messageService.err(env.event(), "command.config.incorrect-duration");
+                                        return messageService.err(env.event(), "command.settings.incorrect-duration");
                                     }
 
                                     adminConfig.muteBaseDelay(duration);
-                                    return messageService.text(env.event(), "command.config.delay-updated",
+                                    return messageService.text(env.event(), "command.settings.base-delay.update",
                                             formatDuration.apply(duration))
                                             .and(entityRetriever.save(adminConfig));
                                 }));
@@ -218,32 +218,32 @@ public class InteractionCommands{
                     .flatMap(function((group, auditConfig) -> {
                         Mono<Void> channelCommand = Mono.justOrEmpty(group.getOption("channel")
                                 .flatMap(command -> command.getOption("value")))
-                                .switchIfEmpty(messageService.text(env.event(), "command.config.current-channel",
+                                .switchIfEmpty(messageService.text(env.event(), "command.settings.channel.current",
                                         auditConfig.logChannelId().map(DiscordUtil::getChannelMention)
-                                                .orElse(messageService.get(env.context(), "command.config.channel-absent")))
+                                                .orElse(messageService.get(env.context(), "command.settings.absent")))
                                         .then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
                                         .flatMap(ApplicationCommandInteractionOptionValue::asChannel))
                                 .map(Channel::getId)
                                 .flatMap(channelId -> Mono.defer(() -> {
                                     auditConfig.logChannelId(channelId);
-                                    return messageService.text(env.event(), "command.config.channel-updated",
+                                    return messageService.text(env.event(), "command.settings.channel.update",
                                             DiscordUtil.getChannelMention(channelId))
                                             .and(entityRetriever.save(auditConfig));
                                 }));
 
-                        Mono<Void> typesCommand = Mono.justOrEmpty(group.getOption("types"))
+                        Mono<Void> actionsCommand = Mono.justOrEmpty(group.getOption("actions"))
                                 .switchIfEmpty(channelCommand.then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getOption("type")
                                         .flatMap(ApplicationCommandInteractionOption::getValue))
                                         .map(ApplicationCommandInteractionOptionValue::asString)
                                         .filter(str -> !str.equalsIgnoreCase("help"))
-                                        .switchIfEmpty(messageService.text(env.event(), "command.config.all", formatCollection(
+                                        .switchIfEmpty(messageService.text(env.event(), "command.settings.actions.all", formatCollection(
                                                 EnumSet.allOf(AuditActionType.class),
                                                 type -> messageService.getEnum(env.context(), type)))
                                                 .then(Mono.empty()))
                                         .zipWith(Mono.justOrEmpty(opt.getOption("value"))
-                                                .switchIfEmpty(messageService.text(env.event(), "command.config.current-types",
+                                                .switchIfEmpty(messageService.text(env.event(), "command.settings.actions.current",
                                                         formatCollection(auditConfig.enabled(), type ->
                                                                 messageService.getEnum(env.context(), type)))
                                                         .then(Mono.empty()))
@@ -259,8 +259,8 @@ public class InteractionCommands{
 
                                     boolean add = choice.equalsIgnoreCase("add");
 
-                                    List<String> toHelp = new ArrayList<>();
-                                    List<String> removed = new ArrayList<>();
+                                    Set<String> toHelp = new HashSet<>();
+                                    Set<String> removed = new HashSet<>();
                                     Set<AuditActionType> flags = auditConfig.enabled();
                                     if(enums.equalsIgnoreCase("all")){
                                         if(add){
@@ -276,11 +276,13 @@ public class InteractionCommands{
                                                     .ifPresentOrElse(consumer((type, str) -> {
                                                         if(add){
                                                             if(!flags.add(type)){
-                                                                toHelp.add(messageService.format(env.context(), "command.config.types.response.already-set", s));
+                                                                toHelp.add(messageService.format(env.context(),
+                                                                        "command.settings.actions.already-set", s));
                                                             }
                                                         }else{
                                                             if(!flags.remove(type)){
-                                                                toHelp.add(messageService.format(env.context(), "command.config.types.response.already-remove", s));
+                                                                toHelp.add(messageService.format(env.context(),
+                                                                        "command.settings.actions.already-remove", s));
                                                             }else{
                                                                 removed.add(str);
                                                             }
@@ -288,8 +290,8 @@ public class InteractionCommands{
                                                     }), () -> {
                                                         String suggest = Strings.findClosest(onlyNames, s);
                                                         String response = suggest != null ? messageService.format(env.context(),
-                                                            "command.config.types.response.unknown.suggest", s, suggest) :
-                                                                messageService.format(env.context(), "command.config.types.response.unknown", s);
+                                                            "command.settings.actions.unknown.suggest", s, suggest) :
+                                                                messageService.format(env.context(), "command.settings.actions.unknown", s);
                                                         toHelp.add(response);
                                                     });
                                         }
@@ -302,30 +304,30 @@ public class InteractionCommands{
                                                     .map(type -> messageService.getEnum(env.context(), type))
                                                     .collect(Collectors.joining(", "));
 
-                                            return messageService.text(env.event(), "command.config.types.added", formatted);
+                                            return messageService.text(env.event(), "command.settings.added", formatted);
                                         }
 
-                                        return messageService.text(env.event(), "command.config.types.removed",
+                                        return messageService.text(env.event(), "command.settings.removed",
                                                 String.join(", ", removed));
                                     }else{
                                         String response = toHelp.stream().map(s -> " • " + s + "\n").collect(Collectors.joining());
-                                        return messageService.error(env.event(), "command.config.types.conflicted.title", response);
+                                        return messageService.error(env.event(), "command.settings.actions.conflicted.title", response);
                                     }
                                 }))).and(entityRetriever.save(auditConfig));
 
                         Function<Boolean, String> formatBool = bool ->
-                                messageService.get(env.context(), bool ? "command.config.enabled" : "command.config.disabled");
+                                messageService.get(env.context(), bool ? "command.settings.enabled" : "command.settings.disabled");
 
                         return Mono.justOrEmpty(group.getOption("enable"))
-                                .switchIfEmpty(typesCommand.then(Mono.empty()))
+                                .switchIfEmpty(actionsCommand.then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")
                                         .flatMap(ApplicationCommandInteractionOption::getValue)))
                                 .map(ApplicationCommandInteractionOptionValue::asBoolean)
-                                .switchIfEmpty(messageService.text(env.event(), "command.config.enable-updated",
+                                .switchIfEmpty(messageService.text(env.event(), "command.settings.enable.update",
                                         formatBool.apply(auditConfig.isEnable())).then(Mono.empty()))
                                 .flatMap(bool -> Mono.defer(() -> {
                                     auditConfig.setEnable(bool);
-                                    return messageService.text(env.event(), "command.config.enable-updated", formatBool.apply(bool))
+                                    return messageService.text(env.event(), "command.settings.enable.update", formatBool.apply(bool))
                                             .and(entityRetriever.save(auditConfig));
                                 }));
                     }));
@@ -338,7 +340,7 @@ public class InteractionCommands{
                     .flatMap(function((group, guildConfig) -> {
                         Mono<Void> timezoneCommand = Mono.justOrEmpty(group.getOption("timezone")
                                 .flatMap(command -> command.getOption("value")))
-                                .switchIfEmpty(messageService.text(env.event(), "command.config.current-timezone",
+                                .switchIfEmpty(messageService.text(env.event(), "command.settings.timezone.current",
                                         guildConfig.timeZone()).then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
                                         .map(ApplicationCommandInteractionOptionValue::asString))
@@ -348,14 +350,14 @@ public class InteractionCommands{
                                         String suggest = Strings.findClosest(DateTimeZone.getAvailableIDs(), str);
 
                                         if(suggest != null){
-                                            return messageService.err(env.event(), "command.config.unknown-timezone.suggest", suggest);
+                                            return messageService.err(env.event(), "command.settings.timezone.unknown.suggest", suggest);
                                         }
-                                        return messageService.err(env.event(), "command.config.unknown-timezone");
+                                        return messageService.err(env.event(), "command.settings.timezone.unknown");
                                     }
 
                                     guildConfig.timeZone(timeZone);
                                     return Mono.deferContextual(ctx -> messageService.text(env.event(),
-                                            "command.config.timezone-updated", ctx.<Locale>get(KEY_TIMEZONE)))
+                                            "command.settings.timezone.update", ctx.<Locale>get(KEY_TIMEZONE)))
                                             .contextWrite(ctx -> ctx.put(KEY_TIMEZONE, timeZone))
                                             .and(entityRetriever.save(guildConfig));
                                 }));
@@ -363,7 +365,7 @@ public class InteractionCommands{
                         Mono<Void> localeCommand = Mono.justOrEmpty(group.getOption("locale"))
                                 .switchIfEmpty(timezoneCommand.then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")))
-                                .switchIfEmpty(messageService.text(env.event(), "command.config.current-locale",
+                                .switchIfEmpty(messageService.text(env.event(), "command.settings.locale.current",
                                         guildConfig.locale()).then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
                                         .map(ApplicationCommandInteractionOptionValue::asString))
@@ -371,11 +373,11 @@ public class InteractionCommands{
                                     Locale locale = LocaleUtil.get(str);
                                     if(locale == null){
                                         String all = formatCollection(LocaleUtil.locales.values(), Locale::toString);
-                                        return messageService.text(env.event(), "command.config.unknown-locale", all);
+                                        return messageService.text(env.event(), "command.settings.locale.all", all);
                                     }
 
                                     guildConfig.locale(locale);
-                                    return Mono.deferContextual(ctx -> messageService.text(env.event(), "command.config.locale-updated",
+                                    return Mono.deferContextual(ctx -> messageService.text(env.event(), "command.settings.locale.update",
                                             ctx.<Locale>get(KEY_LOCALE)))
                                             .contextWrite(ctx -> ctx.put(KEY_LOCALE, locale))
                                             .and(entityRetriever.save(guildConfig));
@@ -384,13 +386,13 @@ public class InteractionCommands{
                         return Mono.justOrEmpty(group.getOption("prefix"))
                                 .switchIfEmpty(localeCommand.then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")))
-                                .switchIfEmpty(messageService.text(env.event(), "command.config.current-prefix",
+                                .switchIfEmpty(messageService.text(env.event(), "command.settings.prefix.current",
                                         guildConfig.prefix()).then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
                                         .map(ApplicationCommandInteractionOptionValue::asString))
                                 .flatMap(str -> Mono.defer(() -> {
                                     guildConfig.prefix(str);
-                                    return messageService.text(env.event(), "command.config.prefix-updated", guildConfig.prefix())
+                                    return messageService.text(env.event(), "command.settings.prefix.update", guildConfig.prefix())
                                             .and(entityRetriever.save(guildConfig));
                                 }));
 
@@ -468,7 +470,7 @@ public class InteractionCommands{
                                             .build())
                                     .build())
                             .addOption(ApplicationCommandOptionData.builder()
-                                    .name("types")
+                                    .name("actions")
                                     .description("Configure bot locale")
                                     .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
                                     .addOption(ApplicationCommandOptionData.builder()
