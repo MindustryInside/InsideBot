@@ -20,6 +20,11 @@ public class DateTimeType extends AbstractSingleColumnStandardBasicType<DateTime
     }
 
     @Override
+    protected boolean registerUnderJavaType(){
+        return true;
+    }
+
+    @Override
     public String objectToSQLString(DateTime value, Dialect dialect) throws Exception{
         return TimestampType.INSTANCE.objectToSQLString(value.toDate(), dialect);
     }

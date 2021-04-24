@@ -82,15 +82,9 @@ public class JsonTypeDescriptor extends AbstractTypeDescriptor<Object> implement
         if(value == null){
             return null;
         }
-
         if(String.class.isAssignableFrom(type)){
             return (X)toString(value);
         }
-
-        if(Object.class.isAssignableFrom(type)){
-            return (X)JacksonUtil.toJsonNode(value);
-        }
-
         throw unknownUnwrap(type);
     }
 
