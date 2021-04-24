@@ -574,7 +574,7 @@ public class Commands{
                     .map(String::trim)
                     .orElse(null);
 
-            return entityRetriever.createAdminConfig(guildId)
+            return entityRetriever.getAdminConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createAdminConfig(guildId))
                     .filter(adminConfig -> adminConfig.muteRoleID().isPresent())
                     .switchIfEmpty(messageService.err(channel, "command.disabled.mute").then(Mono.empty()))
@@ -901,7 +901,7 @@ public class Commands{
 
             Snowflake guildId = env.getAuthorAsMember().getGuildId();
 
-            return entityRetriever.createAdminConfig(guildId)
+            return entityRetriever.getAdminConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createAdminConfig(guildId))
                     .filter(adminConfig -> adminConfig.muteRoleID().isPresent())
                     .switchIfEmpty(messageService.err(channel, "command.disabled.mute").then(Mono.empty()))
