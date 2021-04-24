@@ -39,6 +39,8 @@ public interface EntityRetriever{
 
     Mono<MessageInfo> getMessageInfoById(Snowflake messageId);
 
+    Mono<Void> deleteMessageInfoById(Snowflake messageId);
+
     Mono<Void> delete(MessageInfo messageInfo);
 
     Mono<Void> save(MessageInfo messageInfo);

@@ -77,6 +77,7 @@ public class Commands{
                     EmbedData::builder,
                     (builder, entry) -> {
                         StringBuilder builder1 = new StringBuilder();
+                        entry.getValue().sort(Comparator.comparing(CommandInfo::text));
                         for(CommandInfo commandInfo : entry.getValue()){
                             builder1.append("**");
                             builder1.append(commandInfo.text());
@@ -106,7 +107,7 @@ public class Commands{
                     .flatMapMany(map -> Flux.fromIterable(map.entrySet())
                             .sort(Map.Entry.comparingByKey()))
                     .collect(collector)
-                    .flatMap(builder -> prefix.flatMap(str -> messageService.info(env.getReplyChannel(), spec -> spec.from(builder)
+                    .flatMap(data -> prefix.flatMap(str -> messageService.info(env.getReplyChannel(), spec -> spec.from(data)
                             .setTitle(messageService.get(env.context(), "command.help"))
                             .setDescription(messageService.format(env.context(), "command.help.disclaimer.prefix", str)
                                     .concat("\n" + messageService.get(env.context(), "command.help.disclaimer.user"))
@@ -675,7 +676,7 @@ public class Commands{
                     .filter(message -> message.getTimestamp().isAfter(limit))
                     .flatMap(message -> message.getAuthorAsMember()
                             .doOnNext(member -> appendInfo.accept(message, member))
-                            .flatMap(ignored -> entityRetriever.getMessageInfoById(message.getId()).flatMap(entityRetriever::delete)) // TODO: create deleteById method
+                            .flatMap(ignored -> entityRetriever.deleteMessageInfoById(message.getId()))
                             .thenReturn(message))
                     .transform(messages -> number > 1 ? channel.bulkDeleteMessages(messages).then() : messages.next().flatMap(Message::delete).then()))
                     .then();
