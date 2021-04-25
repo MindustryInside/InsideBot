@@ -703,7 +703,7 @@ public class Commands{
         public Mono<Void> help(CommandEnvironment env){
             return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
                     .map(GuildConfig::prefix)
-                    .flatMap(prefix -> messageService.info(env.getReplyChannel(), "command.help.title", "command.delete.help",
+                    .flatMap(prefix -> messageService.info(env.getReplyChannel(), "command.help.title", "command.admin.delete.help",
                             GuildConfig.formatPrefix(prefix)));
         }
     }

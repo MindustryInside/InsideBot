@@ -24,7 +24,7 @@ public abstract class DiscordUtil{
     public static String getEmoji(ReactionEmoji emoji){
         Objects.requireNonNull(emoji, "emoji");
         if(emoji instanceof ReactionEmoji.Custom custom){
-            return "<:" + custom.getName() + ":" + custom.getId().asString() + ">";
+            return String.format("<%s:%s:%s>", custom.isAnimated() ? "a" : "", custom.getName(), custom.getId().asString());
         }
         return emoji.asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
                 .orElseThrow(IllegalStateException::new);
