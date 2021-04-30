@@ -50,12 +50,12 @@ public class Base64Coder{
      * @return A String containing the Base64 encoded data, broken into lines.
      */
     public static String encodeLines(byte[] in, int iOff, int iLen, int lineLen, String lineSeparator, char[] charMap){
-        int blockLen = (lineLen * 3) / 4;
+        int blockLen = lineLen * 3 / 4;
         if(blockLen <= 0){
             throw new IllegalArgumentException();
         }
         int lines = (iLen + blockLen - 1) / blockLen;
-        int bufLen = ((iLen + 2) / 3) * 4 + lines * lineSeparator.length();
+        int bufLen = (iLen + 2) / 3 * 4 + lines * lineSeparator.length();
         StringBuilder buf = new StringBuilder(bufLen);
         int ip = 0;
         while(ip < iLen){
@@ -111,7 +111,7 @@ public class Base64Coder{
      */
     public static char[] encode(byte[] in, int iOff, int iLen, char[] charMap){
         int oDataLen = (iLen * 4 + 2) / 3; // output length without padding
-        int oLen = ((iLen + 2) / 3) * 4; // output length including padding
+        int oLen = (iLen + 2) / 3 * 4; // output length including padding
         char[] out = new char[oLen];
         int ip = iOff;
         int iEnd = iOff + iLen;
@@ -121,8 +121,8 @@ public class Base64Coder{
             int i1 = ip < iEnd ? in[ip++] & 0xff : 0;
             int i2 = ip < iEnd ? in[ip++] & 0xff : 0;
             int o0 = i0 >>> 2;
-            int o1 = ((i0 & 3) << 4) | (i1 >>> 4);
-            int o2 = ((i1 & 0xf) << 2) | (i2 >>> 6);
+            int o1 = (i0 & 3) << 4 | i1 >>> 4;
+            int o2 = (i1 & 0xf) << 2 | i2 >>> 6;
             int o3 = i2 & 0x3F;
             out[op++] = charMap[o0];
             out[op++] = charMap[o1];
@@ -241,7 +241,7 @@ public class Base64Coder{
         while(iLen > 0 && in[iOff + iLen - 1] == '='){
             iLen--;
         }
-        int oLen = (iLen * 3) / 4;
+        int oLen = iLen * 3 / 4;
         byte[] out = new byte[oLen];
         int ip = iOff;
         int iEnd = iOff + iLen;
@@ -263,9 +263,9 @@ public class Base64Coder{
                 throw new IllegalArgumentException("Illegal character in Base64 encoded data. " +
                         "One of the 4 characters are first characters in the ASCII table!");
             }
-            int o0 = (b0 << 2) | (b1 >>> 4);
-            int o1 = ((b1 & 0xf) << 4) | (b2 >>> 2);
-            int o2 = ((b2 & 3) << 6) | b3;
+            int o0 = b0 << 2 | b1 >>> 4;
+            int o1 = (b1 & 0xf) << 4 | b2 >>> 2;
+            int o2 = (b2 & 3) << 6 | b3;
             out[op++] = (byte)o0;
             if(op < oLen){
                 out[op++] = (byte)o1;

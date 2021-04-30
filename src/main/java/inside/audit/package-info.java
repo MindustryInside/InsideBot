@@ -1,4 +1,4 @@
 @NonNullApi
-package inside.event.audit;
+package inside.audit;
 
 import reactor.util.annotation.NonNullApi;

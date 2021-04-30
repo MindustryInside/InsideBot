@@ -3,8 +3,8 @@ package inside.event;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.VoiceStateUpdateEvent;
+import inside.audit.AuditService;
 import inside.data.service.EntityRetriever;
-import inside.event.audit.AuditService;
 import inside.util.DiscordUtil;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
 import reactor.function.TupleUtils;
 import reactor.util.context.Context;
 
-import static inside.event.audit.AuditActionType.*;
+import static inside.audit.AuditActionType.*;
 import static inside.util.ContextUtil.*;
 
 @Component

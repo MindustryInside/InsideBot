@@ -7,11 +7,11 @@ import discord4j.core.object.Embed.Field;
 import discord4j.core.object.audit.*;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
+import inside.audit.*;
 import inside.command.CommandHandler;
 import inside.command.model.CommandEnvironment;
 import inside.data.entity.*;
 import inside.data.service.EntityRetriever;
-import inside.event.audit.*;
 import inside.service.MessageService;
 import inside.util.*;
 import org.joda.time.DateTime;
@@ -24,10 +24,10 @@ import reactor.util.function.Tuples;
 
 import java.time.Instant;
 
+import static inside.audit.Attribute.*;
+import static inside.audit.AuditActionType.*;
+import static inside.audit.BaseAuditProvider.MESSAGE_TXT;
 import static inside.event.MemberEventHandler.TIMEOUT_MILLIS;
-import static inside.event.audit.Attribute.*;
-import static inside.event.audit.AuditActionType.*;
-import static inside.event.audit.BaseAuditProvider.MESSAGE_TXT;
 import static inside.util.ContextUtil.*;
 import static reactor.function.TupleUtils.*;
 

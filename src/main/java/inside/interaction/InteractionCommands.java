@@ -8,9 +8,9 @@ import discord4j.core.object.entity.channel.*;
 import discord4j.discordjson.json.*;
 import discord4j.rest.util.ApplicationCommandOptionType;
 import inside.Settings;
+import inside.audit.*;
 import inside.command.Commands;
 import inside.data.service.AdminService;
-import inside.event.audit.*;
 import inside.service.MessageService;
 import inside.util.*;
 import org.joda.time.*;
@@ -28,8 +28,8 @@ import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collectors;
 
-import static inside.event.audit.Attribute.COUNT;
-import static inside.event.audit.BaseAuditProvider.MESSAGE_TXT;
+import static inside.audit.Attribute.COUNT;
+import static inside.audit.BaseAuditProvider.MESSAGE_TXT;
 import static inside.util.ContextUtil.*;
 import static reactor.function.TupleUtils.*;
 
