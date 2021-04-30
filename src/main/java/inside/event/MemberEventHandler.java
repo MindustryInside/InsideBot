@@ -5,9 +5,9 @@ import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.guild.*;
 import discord4j.core.object.audit.ActionType;
 import discord4j.core.object.entity.*;
+import inside.audit.AuditService;
 import inside.data.entity.AdminConfig;
 import inside.data.service.*;
-import inside.event.audit.AuditService;
 import inside.service.MessageService;
 import inside.util.DiscordUtil;
 import org.joda.time.DateTime;
@@ -19,8 +19,8 @@ import reactor.util.context.Context;
 
 import java.time.Instant;
 
-import static inside.event.audit.Attribute.REASON;
-import static inside.event.audit.AuditActionType.*;
+import static inside.audit.Attribute.REASON;
+import static inside.audit.AuditActionType.*;
 import static inside.util.ContextUtil.*;
 
 @Component
@@ -42,9 +42,6 @@ public class MemberEventHandler extends ReactiveEventAdapter{
     @Override
     public Publisher<?> onMemberJoin(MemberJoinEvent event){
         Member member = event.getMember();
-        if(DiscordUtil.isBot(member)){ // TODO: remove bot check
-            return Mono.empty();
-        }
 
         Snowflake guildId = member.getGuildId();
 
@@ -56,12 +53,14 @@ public class MemberEventHandler extends ReactiveEventAdapter{
         Mono<AdminConfig> adminConfig = entityRetriever.getAdminConfigById(member.getGuildId());
 
         Mono<Void> warn = initContext.flatMap(context -> member.getGuild().flatMap(Guild::getOwner)
-                .filterWhen(ignored -> adminConfig.flatMap(config -> adminService.warnings(member).count().map(c -> c >= config.maxWarnCount())))
+                .filterWhen(ignored -> adminConfig.flatMap(config -> adminService.warnings(member).count()
+                        .map(c -> c >= config.maxWarnCount())))
                 .flatMap(owner -> adminService.warn(owner, member, messageService.get(context, "audit.member.warn.evade"))));
 
         Mono<?> muteEvade = initContext.flatMap(context -> member.getGuild().flatMap(Guild::getOwner)
                 .filterWhen(ignored -> adminService.isMuted(member))
-                .flatMap(owner -> adminConfig.flatMap(config -> adminService.mute(owner, member, DateTime.now().plus(config.muteBaseDelay()),
+                .flatMap(owner -> adminConfig.flatMap(config -> adminService.mute(owner, member,
+                        DateTime.now().plus(config.muteBaseDelay()),
                         messageService.get(context, "audit.member.mute.evade"))
                         .thenReturn(owner)))
                 .switchIfEmpty(warn.then(Mono.empty())));
@@ -76,9 +75,6 @@ public class MemberEventHandler extends ReactiveEventAdapter{
     @Override
     public Publisher<?> onMemberLeave(MemberLeaveEvent event){
         User user = event.getUser();
-        if(DiscordUtil.isBot(user)){
-            return Mono.empty();
-        }
 
         Snowflake guildId = event.getGuildId();
 

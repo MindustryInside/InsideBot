@@ -1,4 +1,4 @@
-package inside.event.audit;
+package inside.audit;
 
 import inside.data.entity.*;
 import reactor.core.publisher.Mono;

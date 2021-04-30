@@ -1,4 +1,4 @@
-package inside.event.audit;
+package inside.audit;
 
 import discord4j.core.spec.*;
 import inside.data.entity.*;

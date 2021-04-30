@@ -1,8 +1,8 @@
 package inside.data.entity;
 
 import discord4j.common.util.Snowflake;
+import inside.audit.AuditActionType;
 import inside.data.entity.base.GuildEntity;
-import inside.event.audit.AuditActionType;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;

@@ -1,8 +1,8 @@
 package inside.data.entity;
 
 import discord4j.common.util.Snowflake;
+import inside.audit.*;
 import inside.data.entity.base.*;
-import inside.event.audit.*;
 import org.hibernate.annotations.Type;
 import org.joda.time.DateTime;
 import reactor.util.annotation.Nullable;

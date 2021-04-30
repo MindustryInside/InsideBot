@@ -3,10 +3,10 @@ package inside.data.service.impl;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import discord4j.rest.util.Permission;
+import inside.audit.*;
 import inside.data.entity.*;
 import inside.data.repository.AdminActionRepository;
 import inside.data.service.*;
-import inside.event.audit.*;
 import inside.service.DiscordService;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +18,7 @@ import reactor.util.annotation.Nullable;
 
 import java.util.Set;
 
-import static inside.event.audit.Attribute.*;
+import static inside.audit.Attribute.*;
 import static inside.util.ContextUtil.*;
 import static reactor.function.TupleUtils.function;
 

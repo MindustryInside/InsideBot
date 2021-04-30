@@ -1,4 +1,4 @@
-package inside.event.audit;
+package inside.audit;
 
 import discord4j.common.util.Snowflake;
 import inside.Settings;

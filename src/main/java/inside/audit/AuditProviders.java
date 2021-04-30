@@ -1,4 +1,4 @@
-package inside.event.audit;
+package inside.audit;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.Embed;
@@ -10,7 +10,7 @@ import inside.util.*;
 import org.joda.time.format.*;
 import reactor.util.context.ContextView;
 
-import static inside.event.audit.Attribute.*;
+import static inside.audit.Attribute.*;
 import static inside.util.ContextUtil.*;
 
 public class AuditProviders{
