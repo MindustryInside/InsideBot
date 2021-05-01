@@ -3,7 +3,8 @@ package inside.util;
 import java.nio.charset.StandardCharsets;
 
 public class Base64Coder{
-    public static final CharMap regularMap = new CharMap('+', '/'), urlsafeMap = new CharMap('-', '_');
+    public static final CharMap regularMap = new CharMap('+', '/');
+    public static final CharMap urlsafeMap = new CharMap('-', '_');
 
     private Base64Coder(){
 
@@ -51,9 +52,8 @@ public class Base64Coder{
      */
     public static String encodeLines(byte[] in, int iOff, int iLen, int lineLen, String lineSeparator, char[] charMap){
         int blockLen = lineLen * 3 / 4;
-        if(blockLen <= 0){
-            throw new IllegalArgumentException();
-        }
+        Preconditions.requireArgument(blockLen > 0);
+
         int lines = (iLen + blockLen - 1) / blockLen;
         int bufLen = (iLen + 2) / 3 * 4 + lines * lineSeparator.length();
         StringBuilder buf = new StringBuilder(bufLen);
@@ -235,9 +235,8 @@ public class Base64Coder{
      * @throws IllegalArgumentException If the input is not valid Base64 encoded data.
      */
     public static byte[] decode(char[] in, int iOff, int iLen, byte[] inverseCharMap){
-        if(iLen % 4 != 0){
-            throw new IllegalArgumentException("Length of Base64 encoded input string is not a multiple of 4.");
-        }
+        Preconditions.requireArgument(iLen % 4 == 0, "Length of Base64 encoded input string is not a multiple of 4.");
+
         while(iLen > 0 && in[iOff + iLen - 1] == '='){
             iLen--;
         }
