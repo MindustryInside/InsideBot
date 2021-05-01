@@ -154,12 +154,10 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                                 .withAttribute(MESSAGE_ID, message.getId());
 
                         if(newContent.length() >= Field.MAX_VALUE_LENGTH || oldContent.length() >= Field.MAX_VALUE_LENGTH){
-                            ReusableByteInputStream input = new ReusableByteInputStream();
-                            input.withString(String.format("%s%n%s%n%n%s%n%s",
+                            builder.withAttachment(MESSAGE_TXT, ReusableByteInputStream.ofString(String.format("%s%n%s%n%n%s%n%s",
                                     messageService.get(context, "audit.message.old-content.title"), oldContent,
                                     messageService.get(context, "audit.message.new-content.title"), newContent
-                            ));
-                            builder.withAttachment(MESSAGE_TXT, input);
+                            )));
                         }
 
                         return builder.save().and(entityRetriever.save(info));
@@ -196,19 +194,17 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                             .withAttribute(OLD_CONTENT, decrypted);
 
                     if(decrypted.length() >= Field.MAX_VALUE_LENGTH){
-                        ReusableByteInputStream input = new ReusableByteInputStream();
-                        input.withString(String.format("%s%n%s",
+                        builder.withAttachment(MESSAGE_TXT, ReusableByteInputStream.ofString(String.format("%s%n%s",
                                 messageService.get(context, "audit.message.deleted-content.title"), decrypted
-                        ));
-                        builder.withAttachment(MESSAGE_TXT, input);
+                        )));
                     }
 
                     Mono<User> responsibleUser = event.getGuild()
                             .flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MESSAGE_DELETE)))
                             .flatMap(part -> Flux.fromIterable(part.getEntries()))
-                            .filter(part -> part.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)) &&
-                                    part.getTargetId().map(id -> id.equals(info.userId())).orElse(false) &&
-                                    part.getOption(OptionKey.CHANNEL_ID).map(id -> id.equals(message.getChannelId())).orElse(false))
+                            .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)) &&
+                                    entry.getTargetId().map(id -> id.equals(info.userId())).orElse(false) &&
+                                    entry.getOption(OptionKey.CHANNEL_ID).map(id -> id.equals(message.getChannelId())).orElse(false))
                             .next()
                             .flatMap(entry -> Mono.justOrEmpty(entry.getResponsibleUser()));
 

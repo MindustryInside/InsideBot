@@ -6,14 +6,13 @@ import java.util.Objects;
 
 public class ReusableByteInputStream extends ByteArrayInputStream{
 
-    public ReusableByteInputStream(){
-        super(new byte[0]);
+    public ReusableByteInputStream(byte[] buf){
+        super(buf);
     }
 
-    public ReusableByteInputStream withString(String data){
+    public static ReusableByteInputStream ofString(String data){
         Objects.requireNonNull(data, "data");
-        setBytes(data.getBytes(StandardCharsets.UTF_8));
-        return this;
+        return new ReusableByteInputStream(data.getBytes(StandardCharsets.UTF_8));
     }
 
     public int position(){
@@ -21,12 +20,7 @@ public class ReusableByteInputStream extends ByteArrayInputStream{
     }
 
     public void setBytes(byte[] bytes){
-        Objects.requireNonNull(bytes, "bytes");
-
-        pos = 0;
-        count = bytes.length;
-        mark = 0;
-        buf = bytes;
+        setBytes(bytes, 0, bytes.length);
     }
 
     public void setBytes(byte[] bytes, int offset, int length){

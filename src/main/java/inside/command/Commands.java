@@ -658,7 +658,6 @@ public class Commands{
                     .withLocale(env.context().get(KEY_LOCALE))
                     .withZone(env.context().get(KEY_TIMEZONE));
 
-            ReusableByteInputStream input = new ReusableByteInputStream();
             BiConsumer<Message, Member> appendInfo = (message, member) -> {
                 result.append("[").append(formatter.print(message.getTimestamp().toEpochMilli())).append("] ");
                 if(DiscordUtil.isBot(member)){
@@ -693,7 +692,7 @@ public class Commands{
                     .withUser(author)
                     .withChannel(channel)
                     .withAttribute(COUNT, number)
-                    .withAttachment(MESSAGE_TXT, input.withString(result.toString()))
+                    .withAttachment(MESSAGE_TXT, ReusableByteInputStream.ofString(result.toString()))
                     .save());
 
             return history.then(log).and(env.getMessage().addReaction(ok));

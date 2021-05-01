@@ -62,7 +62,7 @@ public abstract class AuditActionBuilder{
     }
 
     public <T> AuditActionBuilder withAttribute(Attribute<T> key, @Nullable T value){
-        action.attributes().put(key.name, getReferenceForObject(value));
+        action.attributes().put(key.name, value);
         return this;
     }
 
@@ -72,20 +72,6 @@ public abstract class AuditActionBuilder{
         }
         attachments.add(Tuples.of(key, data));
         return this;
-    }
-
-    private Object getReferenceForObject(@Nullable Object object){
-        if(object instanceof Member member){
-            return getReference(member);
-        }else if(object instanceof User user){
-            return getReference(user);
-        }else if(object instanceof LocalMember localMember){
-            return getReference(localMember);
-        }else if(object instanceof GuildChannel guildChannel){
-            return getReference(guildChannel);
-        }else{
-            return object;
-        }
     }
 
     private NamedReference getReference(Member member){
