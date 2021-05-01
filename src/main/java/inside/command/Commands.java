@@ -26,6 +26,7 @@ import reactor.util.annotation.Nullable;
 import reactor.util.function.Tuple2;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -173,10 +174,13 @@ public class Commands{
             return blacklist.stream().noneMatch(s -> type.toLowerCase(Locale.ROOT).contains(s));
         }
 
+        private final ReusableOutputStream out = new ReusableOutputStream();
+
         private final Context context = Context.newBuilder("js")
                 .allowHostAccess(HostAccess.ALL)
                 .allowHostClassLookup(JsCommand::allowClass)
                 .allowAllAccess(false)
+                .out(out)
                 .build();
 
         @Override
@@ -186,7 +190,15 @@ public class Commands{
                     .map(OptionValue::asString)
                     .orElseThrow(AssertionError::new);
 
-            Mono<String> exec = Mono.fromCallable(() -> context.eval("js", code).toString());
+            Mono<String> exec = Mono.fromCallable(() -> {
+                String s = context.eval("js", code).toString();
+                String s0 = out.toString(StandardCharsets.UTF_8);
+                if(s.equals("undefined") && !s0.isEmpty()){
+                    s = s0;
+                    out.reset();
+                }
+                return s;
+            });
 
             return exec.onErrorResume(t -> true,
                     t -> messageService.error(env.getReplyChannel(), "command.javascript.script-error",
