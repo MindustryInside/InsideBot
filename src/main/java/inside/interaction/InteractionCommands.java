@@ -854,7 +854,7 @@ public class InteractionCommands{
                     .orElseThrow(AssertionError::new);
 
             Mono<BigDecimal> result = Mono.fromCallable(() -> {
-                Expression exp = new Expression(expression).setPrecision(10);
+                Expression exp = new Expression(expression);
                 exp.addOperator(Commands.MathCommand.shiftRightOperator);
                 exp.addOperator(Commands.MathCommand.shiftLeftOperator);
                 return exp.eval();

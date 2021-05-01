@@ -29,6 +29,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.*;
+import java.util.regex.*;
 import java.util.stream.*;
 
 import static inside.audit.Attribute.COUNT;
@@ -130,6 +131,88 @@ public class Commands{
         }
     }
 
+    @DiscordCommand(key = "diff", params = "command.diff.params", description = "command.diff.description")
+    public static class DiffCommand extends Command{
+        private final Differ differ = new Differ();
+
+        @Override
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            Optional<Snowflake> message0 = interaction.getOption(0)
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asSnowflake);
+
+            Optional<Snowflake> message1 = interaction.getOption(1)
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asSnowflake);
+
+            return Mono.justOrEmpty(message0)
+                    .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.diff.incorrect-id").then(Mono.empty()))
+                    .flatMap(messageId -> env.getReplyChannel().flatMap(channel -> channel.getMessageById(messageId)))
+                    .map(Message::getContent)
+                    .zipWith(Mono.justOrEmpty(message1)
+                            .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.diff.incorrect-id").then(Mono.empty()))
+                            .flatMap(messageId -> env.getReplyChannel().flatMap(channel -> channel.getMessageById(messageId)))
+                            .map(Message::getContent))
+                    .flatMap(function((m0, m1) -> messageService.text(env.getReplyChannel(), String.format("```diff%n%s%n```",
+                            differ.getPatch(m0, m1).stream()
+                                    .map(Differ.Patch::toString)
+                                    .collect(Collectors.joining())))));
+        }
+    }
+
+    @DiscordCommand(key = "regexp", params = "command.regexp.params", description = "command.regexp.description")
+    public static class RegexpCommand extends Command{
+        private final Map<Character, Integer> flags = Map.of(
+                'd', Pattern.UNIX_LINES,
+                'x', Pattern.COMMENTS,
+                'm', Pattern.MULTILINE,
+                's', Pattern.DOTALL,
+                'u', Pattern.UNICODE_CASE,
+                'U', Pattern.UNICODE_CHARACTER_CLASS,
+                'i', Pattern.CASE_INSENSITIVE
+        );
+
+        private int indexNotQuotedOf(String text, String target){
+            for(int i = text.length() - 1; i >= 0; i--){
+                char c = text.charAt(i);
+                if(target.equals(String.valueOf(c)) && text.charAt(i - 1) != '\\'){
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        @Override
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            String text = interaction.getOption(0)
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .orElseThrow(AssertionError::new);
+
+            int lastSlash = indexNotQuotedOf(text, "/");
+            if(!text.startsWith("/") || lastSlash == -1){
+                return messageService.err(env.getReplyChannel(), "command.regexp.incorrect-pattern-format");
+            }
+
+            int flags = text.substring(lastSlash + 1).chars()
+                    .filter(i -> this.flags.containsKey((char)i))
+                    .map(i -> this.flags.get((char)i))
+                    .reduce(0, (left, right) -> left | right);
+
+            Mono<Pattern> pattern = Mono.fromCallable(() ->
+                    Pattern.compile(text.substring(1, lastSlash), flags));
+
+            String content = text.substring(text.indexOf(' ', lastSlash) + 1);
+
+            return pattern.onErrorResume(t -> t instanceof PatternSyntaxException,
+                    t -> messageService.error(env.getReplyChannel(), "command.regexp.incorrect-pattern",
+                            String.format("```\n%s\n```", t.getMessage()))  .then(Mono.empty()))
+                    .flatMap(it -> messageService.text(env.getReplyChannel(), it.matcher(content).results()
+                    .map(MatchResult::group)
+                    .collect(Collectors.joining())));
+        }
+    }
+
     @DiscordCommand(key = "base64", params = "command.base64.params", description = "command.base64.description")
     public static class Base64Command extends Command{
         @Override
@@ -198,7 +281,7 @@ public class Commands{
                     .orElseThrow(AssertionError::new);
 
             Mono<BigDecimal> result = Mono.fromCallable(() -> {
-                Expression exp = new Expression(text).setPrecision(10);
+                Expression exp = new Expression(text);
                 exp.addOperator(shiftRightOperator);
                 exp.addOperator(shiftLeftOperator);
                 return exp.eval();
