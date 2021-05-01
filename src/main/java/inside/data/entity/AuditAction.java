@@ -108,7 +108,7 @@ public class AuditAction extends GuildEntity{
     @Nullable
     @SuppressWarnings("unchecked")
     public <T> T getAttribute(Attribute<T> key){
-        if(attributes == null || attributes.isEmpty() || key == null){
+        if(attributes == null || attributes.isEmpty()){
             return null;
         }
         Object value = attributes.get(key.name);
