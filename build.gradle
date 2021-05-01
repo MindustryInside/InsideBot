@@ -10,6 +10,7 @@ ext{
     joda_version = '2.10.10'
     caffeine_version = '3.0.1'
     evalex_version = '2.5'
+    graalvm_version = '21.1.0'
 
     jaxb_version = '2.3.1'
     hibernate_version = '5.4.28.Final'
@@ -52,6 +53,8 @@ dependencies{
     implementation "com.github.JodaOrg:joda-time:$joda_version"
     implementation "com.github.ben-manes.caffeine:caffeine:$caffeine_version"
     implementation "com.udojava:EvalEx:$evalex_version"
+    implementation "org.graalvm.js:js:$graalvm_version"
+
 
     // data dependencies
     implementation "javax.xml.bind:jaxb-api:$jaxb_version"

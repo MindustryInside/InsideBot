@@ -15,6 +15,7 @@ import inside.command.model.*;
 import inside.data.entity.*;
 import inside.data.service.AdminService;
 import inside.util.*;
+import org.graalvm.polyglot.*;
 import org.joda.time.*;
 import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +30,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.*;
-import java.util.regex.*;
 import java.util.stream.*;
 
 import static inside.audit.Attribute.COUNT;
@@ -160,56 +160,38 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "regexp", params = "command.regexp.params", description = "command.regexp.description")
-    public static class RegexpCommand extends Command{
-        private final Map<Character, Integer> flags = Map.of(
-                'd', Pattern.UNIX_LINES,
-                'x', Pattern.COMMENTS,
-                'm', Pattern.MULTILINE,
-                's', Pattern.DOTALL,
-                'u', Pattern.UNICODE_CASE,
-                'U', Pattern.UNICODE_CHARACTER_CLASS,
-                'i', Pattern.CASE_INSENSITIVE
+    @DiscordCommand(key = "js", params = "command.javascript.params", description = "command.javascript.description")
+    public static class JsCommand extends Command{
+        private static final List<String> blacklist = List.of(
+                ".awt", ".net.", "beans", "channels", "classloader", "compiler", "exec", "file",
+                "files", "http", "inside.insidebot", "invoke", "java.net", "javax", "jdk", "oracle", "org.", "org.", "process", "reflect",
+                "rmi", "runtime", "security", "socket", "sql", "sun.", "system",
+                "thread"
         );
 
-        private int indexNotQuotedOf(String text, String target){
-            for(int i = text.length() - 1; i >= 0; i--){
-                char c = text.charAt(i);
-                if(target.equals(String.valueOf(c)) && text.charAt(i - 1) != '\\'){
-                    return i;
-                }
-            }
-            return -1;
+        public static boolean allowClass(String type){
+            return blacklist.stream().noneMatch(s -> type.toLowerCase(Locale.ROOT).contains(s));
         }
+
+        private final Context context = Context.newBuilder("js")
+                .allowHostAccess(HostAccess.ALL)
+                .allowHostClassLookup(JsCommand::allowClass)
+                .allowAllAccess(false)
+                .build();
 
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            String text = interaction.getOption(0)
+            String code = interaction.getOption("code")
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
                     .orElseThrow(AssertionError::new);
 
-            int lastSlash = indexNotQuotedOf(text, "/");
-            if(!text.startsWith("/") || lastSlash == -1){
-                return messageService.err(env.getReplyChannel(), "command.regexp.incorrect-pattern-format");
-            }
+            Mono<String> exec = Mono.fromCallable(() -> context.eval("js", code).toString());
 
-            int flags = text.substring(lastSlash + 1).chars()
-                    .filter(i -> this.flags.containsKey((char)i))
-                    .map(i -> this.flags.get((char)i))
-                    .reduce(0, (left, right) -> left | right);
-
-            Mono<Pattern> pattern = Mono.fromCallable(() ->
-                    Pattern.compile(text.substring(1, lastSlash), flags));
-
-            String content = text.substring(text.indexOf(' ', lastSlash) + 1);
-
-            return pattern.onErrorResume(t -> t instanceof PatternSyntaxException,
-                    t -> messageService.error(env.getReplyChannel(), "command.regexp.incorrect-pattern",
-                            String.format("```\n%s\n```", t.getMessage()))  .then(Mono.empty()))
-                    .flatMap(it -> messageService.text(env.getReplyChannel(), it.matcher(content).results()
-                    .map(MatchResult::group)
-                    .collect(Collectors.joining())));
+            return exec.onErrorResume(t -> true,
+                    t -> messageService.error(env.getReplyChannel(), "command.javascript.script-error",
+                            String.format("```%n%s%n```", t.getMessage())).then(Mono.empty()))
+                    .flatMap(it -> messageService.text(env.getReplyChannel(), String.format("```js%n%s%n```", it)));
         }
     }
 
