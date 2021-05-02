@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import reactor.bool.BooleanUtils;
 import reactor.core.publisher.*;
+import reactor.core.scheduler.Schedulers;
 import reactor.util.annotation.Nullable;
 import reactor.util.function.Tuple2;
 
@@ -200,10 +201,11 @@ public class Commands{
                 return s;
             });
 
-            return exec.onErrorResume(t -> true,
+            return exec.publishOn(Schedulers.boundedElastic()).onErrorResume(t -> true,
                     t -> messageService.error(env.getReplyChannel(), "command.javascript.script-error",
                             String.format("```%n%s%n```", t.getMessage())).then(Mono.empty()))
-                    .flatMap(it -> messageService.text(env.getReplyChannel(), String.format("```js%n%s%n```", it)));
+                    .flatMap(it -> messageService.text(env.getReplyChannel(), String.format("```js%n%s%n```",
+                            MessageUtil.substringTo(it, 1000))));
         }
     }
 
@@ -281,7 +283,8 @@ public class Commands{
                 return exp.eval();
             });
 
-            return result.onErrorResume(t -> t instanceof ArithmeticException || t instanceof Expression.ExpressionException,
+            return result.publishOn(Schedulers.boundedElastic())
+                    .onErrorResume(t -> t instanceof ArithmeticException || t instanceof Expression.ExpressionException,
                     t -> messageService.error(env.getReplyChannel(), "command.math.error.title", t.getMessage()).then(Mono.empty()))
                     .flatMap(decimal -> messageService.text(env.getReplyChannel(),
                             MessageUtil.substringTo(decimal.toString(), Message.MAX_CONTENT_LENGTH)));
