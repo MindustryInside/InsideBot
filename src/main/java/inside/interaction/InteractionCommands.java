@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import reactor.bool.BooleanUtils;
 import reactor.core.publisher.*;
+import reactor.core.scheduler.Schedulers;
 import reactor.util.function.*;
 
 import java.math.BigDecimal;
@@ -860,7 +861,8 @@ public class InteractionCommands{
                 return exp.eval();
             });
 
-            return result.onErrorResume(t -> t instanceof ArithmeticException || t instanceof Expression.ExpressionException,
+            return result.publishOn(Schedulers.boundedElastic())
+                    .onErrorResume(t -> t instanceof ArithmeticException || t instanceof Expression.ExpressionException,
                     t -> messageService.error(env.event(), "command.math.error.title", t.getMessage()).then(Mono.empty()))
                     .flatMap(decimal -> messageService.text(env.event(), MessageUtil.substringTo(decimal.toString(), Message.MAX_CONTENT_LENGTH)));
         }
