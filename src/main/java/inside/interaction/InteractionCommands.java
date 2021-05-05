@@ -102,7 +102,8 @@ public class InteractionCommands{
                                 .map(Role::getId)
                                 .flatMap(roleId -> Mono.defer(() -> {
                                     adminConfig.muteRoleId(roleId);
-                                    return messageService.text(env.event(), "command.settings.mute-role.update", DiscordUtil.getRoleMention(roleId))
+                                    return messageService.text(env.event(), "command.settings.mute-role.update",
+                                            DiscordUtil.getRoleMention(roleId))
                                             .and(entityRetriever.save(adminConfig));
                                 }));
 

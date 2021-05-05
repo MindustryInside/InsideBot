@@ -177,12 +177,12 @@ public class Commands{
 
         private final ReusableOutputStream out = new ReusableOutputStream();
 
-        private final Context context = Context.newBuilder("js")
+        private final inside.util.Lazy<Context> context = inside.util.Lazy.of(() -> Context.newBuilder("js")
                 .allowHostAccess(HostAccess.ALL)
                 .allowHostClassLookup(JsCommand::allowClass)
                 .allowAllAccess(false)
                 .out(out)
-                .build();
+                .build());
 
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -192,7 +192,7 @@ public class Commands{
                     .orElseThrow(AssertionError::new);
 
             Mono<String> exec = Mono.fromCallable(() -> {
-                String s = context.eval("js", code).toString();
+                String s = context.get().eval("js", code).toString();
                 String s0 = out.toString(StandardCharsets.UTF_8);
                 if(s.equals("undefined") && !s0.isEmpty()){
                     s = s0;
@@ -330,6 +330,28 @@ public class Commands{
                 case "invisible" -> env.getClient().updatePresence(ClientPresence.invisible());
                 default -> messageService.err(env.getReplyChannel(), "command.status.unknown-presence");
             };
+        }
+    }
+
+    @DiscordCommand(key = "rm-cmd", params = "command.rm-cmd.params", description = "command.rm-cmd.description")
+    public static class RemoveCommand extends TestCommand{
+        @Override
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            String commandName = interaction.getOption(0)
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .orElseThrow(AssertionError::new);
+
+            Mono<Long> applicationId = env.getClient().rest()
+                    .getApplicationId();
+
+            return applicationId.flatMap(id -> env.getClient().rest().getApplicationService()
+                    .getGlobalApplicationCommands(id)
+                    .filter(command -> command.name().equalsIgnoreCase(commandName)).next()
+                    .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.rm-cmd.unknown-command").then(Mono.empty()))
+                    .flatMap(command -> env.getClient().rest().getApplicationService()
+                            .deleteGlobalApplicationCommand(id, Snowflake.asLong(command.id()))))
+                    .then(env.getMessage().addReaction(ok));
         }
     }
 
@@ -765,7 +787,8 @@ public class Commands{
                             .doOnNext(member -> appendInfo.accept(message, member))
                             .flatMap(ignored -> entityRetriever.deleteMessageInfoById(message.getId()))
                             .thenReturn(message))
-                    .transform(messages -> number > 1 ? channel.bulkDeleteMessages(messages).then() : messages.next().flatMap(Message::delete).then()))
+                    .transform(messages -> number > 1 ? channel.bulkDeleteMessages(messages).then() :
+                            messages.next().flatMap(Message::delete).then()))
                     .then();
 
             Mono<Void> log =  reply.flatMap(channel -> auditService.log(author.getGuildId(), AuditActionType.MESSAGE_CLEAR)
