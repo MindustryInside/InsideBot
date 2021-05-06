@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.*;
 import reactor.util.context.Context;
 
-import java.time.Instant;
+import java.time.*;
 
 import static inside.audit.Attribute.REASON;
 import static inside.audit.AuditActionType.*;
@@ -25,7 +25,7 @@ import static inside.util.ContextUtil.*;
 
 @Component
 public class MemberEventHandler extends ReactiveEventAdapter{
-    protected static final long TIMEOUT_MILLIS = 2500L;
+    protected static final long TIMEOUT_MILLIS = 3500L;
 
     @Autowired
     private EntityRetriever entityRetriever;
@@ -90,7 +90,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
         Mono<Void> kick = initContext.flatMap(context -> event.getGuild()
                 .flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MEMBER_KICK)))
                 .flatMap(part -> Flux.fromIterable(part.getEntries()))
-                .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)) &&
+                .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now(Clock.systemUTC()).minusMillis(TIMEOUT_MILLIS)) &&
                         entry.getTargetId().map(target -> target.equals(user.getId())).orElse(false))
                 .next()
                 .flatMap(entry -> Mono.justOrEmpty(entry.getResponsibleUser())
@@ -107,7 +107,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
         return initContext.flatMap(context -> event.getGuild()
                 .flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MEMBER_BAN_ADD)))
                 .flatMap(part -> Flux.fromIterable(part.getEntries()))
-                .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)) &&
+                .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now(Clock.systemUTC()).minusMillis(TIMEOUT_MILLIS)) &&
                         entry.getTargetId().map(target -> target.equals(user.getId())).orElse(false))
                 .next()
                 .flatMap(entry -> Mono.justOrEmpty(entry.getResponsibleUser())
