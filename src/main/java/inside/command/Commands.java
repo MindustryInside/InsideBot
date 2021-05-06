@@ -860,6 +860,47 @@ public class Commands{
         }
     }
 
+    @DiscordCommand(key = "softban", params = "command.admin.warn.params", description = "command.admin.softban.description",
+                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.BAN_MEMBERS})
+    public static class SoftbanCommand extends AdminCommand{
+        @Override
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            Member author = env.getAuthorAsMember();
+            Mono<MessageChannel> channel = env.getReplyChannel();
+
+            Optional<Snowflake> targetId = interaction.getOption("@user")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asSnowflake);
+
+            Optional<String> days = interaction.getOption("delete days")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString);
+
+            if(days.isPresent() && days.filter(MessageUtil::canParseInt).isEmpty()){
+                return messageService.err(env.getReplyChannel(), "command.admin.softban.incorrect-delay");
+            }
+
+            int deleteDays = days.map(Strings::parseInt).orElse(0);
+
+            String reason = interaction.getOption("reason")
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .map(String::trim)
+                    .orElse(null);
+
+            Snowflake guildId = author.getGuildId();
+
+            return Mono.justOrEmpty(targetId).flatMap(id -> env.getClient().getMemberById(guildId, id))
+                    .switchIfEmpty(messageService.err(channel, "command.incorrect-name").then(Mono.never()))
+                    .filterWhen(target -> Mono.zip(adminService.isAdmin(target), adminService.isOwner(author))
+                            .map(function((admin, owner) -> !(admin && !owner))))
+                    .switchIfEmpty(messageService.err(channel, "command.admin.user-is-admin").then(Mono.empty()))
+                    .flatMap(member -> member.getGuild().flatMap(guild -> guild.ban(member.getId(), spec -> spec.setReason(reason)
+                            .setDeleteMessageDays(deleteDays)))
+                            .then(member.getGuild().flatMap(guild -> guild.unban(member.getId()))));
+        }
+    }
+
     @DiscordCommand(key = "warnings", params = "command.admin.warnings.params", description = "command.admin.warnings.description")
     public static class WarningsCommand extends AdminCommand{
         @Override

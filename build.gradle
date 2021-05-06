@@ -32,6 +32,7 @@ allprojects{
 
     dependencies{
         implementation "com.discord4j.discord4j:discord4j-core:master-SNAPSHOT"
+
         compileOnly "org.immutables:value:$immutables_version"
         annotationProcessor "org.immutables:value:$immutables_version"
     }
@@ -54,7 +55,6 @@ dependencies{
     implementation "com.github.ben-manes.caffeine:caffeine:$caffeine_version"
     implementation "com.udojava:EvalEx:$evalex_version"
     implementation "org.graalvm.js:js:$graalvm_version"
-
 
     // data dependencies
     implementation "javax.xml.bind:jaxb-api:$jaxb_version"
