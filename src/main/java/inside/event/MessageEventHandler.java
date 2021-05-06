@@ -22,7 +22,9 @@ import reactor.core.publisher.*;
 import reactor.util.context.Context;
 import reactor.util.function.Tuples;
 
-import java.time.Instant;
+import java.time.*;
+import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 
 import static inside.audit.Attribute.*;
 import static inside.audit.AuditActionType.*;
@@ -202,8 +204,11 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                     Mono<User> responsibleUser = event.getGuild()
                             .flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MESSAGE_DELETE)))
                             .flatMap(part -> Flux.fromIterable(part.getEntries()))
-                            .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now().minusMillis(TIMEOUT_MILLIS)) &&
-                                    entry.getTargetId().map(id -> id.equals(info.userId())).orElse(false) &&
+                            .sort(Comparator.comparing(AuditLogEntry::getId).reversed())
+                            .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now(Clock.systemUTC()).minusMillis(TIMEOUT_MILLIS)) ||
+                                    (entry.getOption(OptionKey.COUNT).map(i -> i > 1).orElse(false) &&
+                                    entry.getId().getTimestamp().isAfter(Instant.now(Clock.systemUTC()).minus(5, ChronoUnit.MINUTES))))
+                            .filter(entry -> entry.getTargetId().map(id -> id.equals(info.userId())).orElse(false) &&
                                     entry.getOption(OptionKey.CHANNEL_ID).map(id -> id.equals(message.getChannelId())).orElse(false))
                             .next()
                             .flatMap(entry -> Mono.justOrEmpty(entry.getResponsibleUser()));
