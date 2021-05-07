@@ -87,7 +87,7 @@ public class TryTest{
 
         Try<String> try2 = Try.failure(new Throwable());
         Try<String> try3 = Try.failure(new Throwable());
-        Assertions.assertNotEquals(try2.hashCode(), try3.hashCode());
+        Assertions.assertNotEquals(try2.hashCode(), try3.hashCode()); // Throwable doesn't have a #hashCode implementation
     }
 
     @Test

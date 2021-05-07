@@ -114,7 +114,9 @@ public class InteractionCommands{
                                         .map(ApplicationCommandInteractionOptionValue::asString)
                                         .filter(str -> !str.equalsIgnoreCase("help"))
                                         .switchIfEmpty(messageService.text(env.event(), "command.settings.admin-roles.current",
-                                                formatCollection(adminConfig.adminRoleIds(), DiscordUtil::getRoleMention))
+                                                Optional.of(formatCollection(adminConfig.adminRoleIds(), DiscordUtil::getRoleMention))
+                                                        .filter(s -> !s.isBlank())
+                                                        .orElse(messageService.get(env.context(), "command.settings.absents")))
                                                 .then(Mono.empty()))
                                         .zipWith(Mono.justOrEmpty(opt.getOption("value"))
                                                 .flatMap(subopt -> Mono.justOrEmpty(subopt.getValue()))
