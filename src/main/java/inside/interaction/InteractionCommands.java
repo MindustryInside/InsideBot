@@ -13,6 +13,7 @@ import inside.command.Commands;
 import inside.data.service.AdminService;
 import inside.service.MessageService;
 import inside.util.*;
+import inside.util.io.ReusableByteInputStream;
 import org.joda.time.*;
 import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;

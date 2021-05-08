@@ -15,6 +15,7 @@ import inside.command.model.*;
 import inside.data.entity.*;
 import inside.data.service.AdminService;
 import inside.util.*;
+import inside.util.io.*;
 import org.graalvm.polyglot.*;
 import org.joda.time.*;
 import org.joda.time.format.*;
@@ -175,7 +176,7 @@ public class Commands{
             return blacklist.stream().noneMatch(s -> type.toLowerCase(Locale.ROOT).contains(s));
         }
 
-        private final ReusableOutputStream out = new ReusableOutputStream();
+        private final ReusableByteOutputStream out = new ReusableByteOutputStream();
 
         private final inside.util.Lazy<Context> context = inside.util.Lazy.of(() -> Context.newBuilder("js")
                 .allowHostAccess(HostAccess.ALL)
@@ -860,7 +861,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "softban", params = "command.admin.warn.params", description = "command.admin.softban.description",
+    @DiscordCommand(key = "softban", params = "command.admin.softban.params", description = "command.admin.softban.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.BAN_MEMBERS})
     public static class SoftbanCommand extends AdminCommand{
         @Override
@@ -881,6 +882,11 @@ public class Commands{
             }
 
             int deleteDays = days.map(Strings::parseInt).orElse(0);
+            if(deleteDays > 7){
+                PeriodFormatter formatter = PeriodFormat.wordBased(env.context().get(KEY_LOCALE));
+                return messageService.err(env.getReplyChannel(), "command.admin.softban.delay-limit",
+                        formatter.print(Days.SEVEN));
+            }
 
             String reason = interaction.getOption("reason")
                     .flatMap(CommandOption::getValue)
@@ -897,7 +903,8 @@ public class Commands{
                     .switchIfEmpty(messageService.err(channel, "command.admin.user-is-admin").then(Mono.empty()))
                     .flatMap(member -> member.getGuild().flatMap(guild -> guild.ban(member.getId(), spec -> spec.setReason(reason)
                             .setDeleteMessageDays(deleteDays)))
-                            .then(member.getGuild().flatMap(guild -> guild.unban(member.getId()))));
+                            .then(member.getGuild().flatMap(guild -> guild.unban(member.getId()))))
+                    .and(env.getMessage().addReaction(ok));
         }
     }
 
