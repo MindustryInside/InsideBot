@@ -1,4 +1,4 @@
-package inside.util;
+package inside.util.io;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;

@@ -14,6 +14,7 @@ import inside.data.entity.*;
 import inside.data.service.EntityRetriever;
 import inside.service.MessageService;
 import inside.util.*;
+import inside.util.io.ReusableByteInputStream;
 import org.joda.time.DateTime;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;

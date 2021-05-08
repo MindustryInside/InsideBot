@@ -1,14 +1,14 @@
-package inside.util;
+package inside.util.io;
 
 import java.io.ByteArrayOutputStream;
 
-public class ReusableOutputStream extends ByteArrayOutputStream{
+public class ReusableByteOutputStream extends ByteArrayOutputStream{
 
-    public ReusableOutputStream(int capacity){
+    public ReusableByteOutputStream(int capacity){
         super(capacity);
     }
 
-    public ReusableOutputStream(){}
+    public ReusableByteOutputStream(){}
 
     @Override
     public synchronized void reset(){
