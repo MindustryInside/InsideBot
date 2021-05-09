@@ -1113,6 +1113,9 @@ public class Commands{
 
     @DiscordCommand(key = "leave", description = "command.leave.description")
     public static class VoiceLeaveCommand extends Command{
+        @Autowired
+        private VoiceService voiceService;
+
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Snowflake guildId = env.getLocalMember().guildId();
@@ -1122,7 +1125,8 @@ public class Commands{
 
             return env.getClient().getSelfMember(guildId)
                     .flatMap(member -> channel.flatMap(VoiceChannel::getVoiceConnection)
-                            .flatMap(VoiceConnection::disconnect));
+                            .flatMap(VoiceConnection::disconnect))
+                    .doFirst(() -> voiceService.getOrCreate(guildId).getPlayer().stopTrack());
         }
     }
 
