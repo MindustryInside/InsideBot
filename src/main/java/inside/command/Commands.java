@@ -1205,6 +1205,7 @@ public class Commands{
             Mono<Void> joinIfNot = Mono.justOrEmpty(env.getAuthorAsMember())
                     .flatMap(Member::getVoiceState)
                     .flatMap(VoiceState::getChannel)
+                    .filterWhen(voiceChannel -> BooleanUtils.not(voiceChannel.getVoiceConnection().hasElement()))
                     .flatMap(channel -> channel.join(spec -> spec.setProvider(voiceRegistry.getAudioProvider()))
                             .flatMap(connection -> {
                                 Publisher<Boolean> voiceStateCounter = channel.getVoiceStates()
