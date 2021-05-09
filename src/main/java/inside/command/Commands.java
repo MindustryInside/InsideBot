@@ -1102,7 +1102,8 @@ public class Commands{
                     .switchIfEmpty(entityRetriever.createAdminConfig(guildId))
                     .filter(adminConfig -> adminConfig.muteRoleID().isPresent())
                     .switchIfEmpty(messageService.err(channel, "command.disabled.mute").then(Mono.empty()))
-                    .flatMap(ignored -> Mono.justOrEmpty(targetId)).flatMap(id -> env.getClient().getMemberById(guildId, id))
+                    .flatMap(ignored -> Mono.justOrEmpty(targetId))
+                    .flatMap(id -> env.getClient().getMemberById(guildId, id))
                     .switchIfEmpty(messageService.err(channel, "command.incorrect-name").then(Mono.empty()))
                     .filterWhen(adminService::isMuted)
                     .flatMap(target -> adminService.unmute(target).and(env.getMessage().addReaction(ok)).thenReturn(target))
@@ -1111,11 +1112,32 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "leave", description = "command.leave.description")
-    public static class VoiceLeaveCommand extends Command{
+    public static class VoiceCommand extends Command{
         @Autowired
-        private VoiceService voiceService;
+        protected VoiceService voiceService;
 
+        @Override
+        public Mono<Boolean> apply(CommandEnvironment env){
+            return env.getAuthorAsMember().getVoiceState()
+                    .flatMap(VoiceState::getChannel)
+                    .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.voice.not-in-channel").then(Mono.empty()))
+                    .hasElement();
+        }
+    }
+
+    @DiscordCommand(key = "pause", description = "command.voice.pause.description")
+    public static class VoicePauseCommand extends VoiceCommand{
+        @Override
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            Snowflake guildId = env.getLocalMember().guildId();
+
+            return Mono.fromRunnable(() -> voiceService.getOrCreate(guildId).getPlayer().setPaused(true))
+                    .and(env.getMessage().addReaction(ok));
+        }
+    }
+
+    @DiscordCommand(key = "leave", description = "command.voice.leave.description")
+    public static class VoiceLeaveCommand extends VoiceCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Snowflake guildId = env.getLocalMember().guildId();
@@ -1126,12 +1148,13 @@ public class Commands{
             return env.getClient().getSelfMember(guildId)
                     .flatMap(member -> channel.flatMap(VoiceChannel::getVoiceConnection)
                             .flatMap(VoiceConnection::disconnect))
-                    .doFirst(() -> voiceService.getOrCreate(guildId).getPlayer().stopTrack());
+                    .doFirst(() -> voiceService.getOrCreate(guildId).getPlayer().stopTrack())
+                    .and(env.getMessage().addReaction(ok));
         }
     }
 
-    @DiscordCommand(key = "play", params = "command.play.params", description = "command.play.description")
-    public static class VoicePlayCommand extends Command{
+    @DiscordCommand(key = "play", params = "command.voice.play.params", description = "command.voice.play.description")
+    public static class VoicePlayCommand extends VoiceCommand{
         private static final String api = "https://youtube.googleapis.com/youtube/v3/";
 
         private static final Logger log = Loggers.getLogger(VoicePlayCommand.class);
@@ -1140,9 +1163,6 @@ public class Commands{
 
         @Autowired
         private Settings settings;
-
-        @Autowired
-        private VoiceService voiceService;
 
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1168,7 +1188,8 @@ public class Commands{
                                         .then();
 
                                 Mono<Void> onEvent = channel.getClient().getEventDispatcher().on(VoiceStateUpdateEvent.class)
-                                        .filter(event -> event.getOld().flatMap(VoiceState::getChannelId).map(channel.getId()::equals).orElse(false))
+                                        .filter(event -> event.getOld().flatMap(VoiceState::getChannelId)
+                                                .map(channel.getId()::equals).orElse(false))
                                         .filterWhen(ignored -> voiceStateCounter)
                                         .next()
                                         .then();
@@ -1181,8 +1202,8 @@ public class Commands{
 
             return search(query, 10, youtubeSourceManager)
                     .filter(playlist -> playlist.getTracks().size() > 0)
-                    .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.play.not-found").then(Mono.empty()))
-                    .flatMapMany(playerlist -> Flux.fromIterable(playerlist.getTracks()))
+                    .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.voice.play.not-found").then(Mono.empty()))
+                    .flatMapMany(playlist -> Flux.fromIterable(playlist.getTracks()))
                     .last()
                     .flatMap(track -> joinIfNot.and(messageService.text(env.getReplyChannel(), "Found Track: " + track.getInfo().title))
                             .then(Mono.fromRunnable(() -> voiceRegistry.getPlayer().playTrack(track))));
