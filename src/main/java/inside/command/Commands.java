@@ -1,6 +1,7 @@
 package inside.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.sedmelluq.discord.lavaplayer.player.*;
 import com.sedmelluq.discord.lavaplayer.source.youtube.*;
 import com.sedmelluq.discord.lavaplayer.track.*;
 import com.udojava.evalex.*;
@@ -1153,6 +1154,34 @@ public class Commands{
         }
     }
 
+    @DiscordCommand(key = "skip", description = "command.voice.skip.description")
+    public static class VoiceSkipCommand extends VoiceCommand{
+        @Override
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            Snowflake guildId = env.getLocalMember().guildId();
+
+            VoiceRegistry voiceRegistry = voiceService.getOrCreate(guildId);
+            return Mono.fromRunnable(() -> voiceRegistry.getTrackLoader().nextTrack())
+                    .and(env.getMessage().addReaction(ok));
+        }
+    }
+
+    @DiscordCommand(key = "reconnect", description = "command.voice.reconnect.description")
+    public static class VoiceReconnectCommand extends VoiceCommand{
+        @Override
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            Snowflake guildId = env.getLocalMember().guildId();
+
+            Mono<VoiceChannel> channel = env.getAuthorAsMember().getVoiceState()
+                    .flatMap(VoiceState::getChannel);
+
+            return env.getClient().getSelfMember(guildId)
+                    .flatMap(member -> channel.flatMap(VoiceChannel::getVoiceConnection)
+                            .flatMap(VoiceConnection::reconnect))
+                    .and(env.getMessage().addReaction(ok));
+        }
+    }
+
     @DiscordCommand(key = "play", params = "command.voice.play.params", description = "command.voice.play.description")
     public static class VoicePlayCommand extends VoiceCommand{
         private static final String api = "https://youtube.googleapis.com/youtube/v3/";
@@ -1198,15 +1227,13 @@ public class Commands{
                             }))
                     .then();
 
-            YoutubeAudioSourceManager youtubeSourceManager = voiceService.getAudioPlayerManager().source(YoutubeAudioSourceManager.class);
+            AudioLoadResultHandler loadResultHandler = new FunctionalResultHandler(
+                    voiceRegistry.getTrackLoader()::queue, playlist -> voiceRegistry.getTrackLoader()
+                    .queue(Optional.ofNullable(playlist.getSelectedTrack())
+                            .orElse(playlist.getTracks().get(0))),
+                    () -> log.error("Not Found"), t -> log.error("Failed", t));
 
-            return search(query, 10, youtubeSourceManager)
-                    .filter(playlist -> playlist.getTracks().size() > 0)
-                    .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.voice.play.not-found").then(Mono.empty()))
-                    .flatMapMany(playlist -> Flux.fromIterable(playlist.getTracks()))
-                    .last()
-                    .flatMap(track -> joinIfNot.and(messageService.text(env.getReplyChannel(), "Found Track: " + track.getInfo().title))
-                            .then(Mono.fromRunnable(() -> voiceRegistry.getPlayer().playTrack(track))));
+            return joinIfNot.then(Mono.fromRunnable(() -> voiceService.getAudioPlayerManager().loadItemOrdered(voiceRegistry, query, loadResultHandler)));
         }
 
         private Mono<AudioPlaylist> search(String query, int maxResults, YoutubeAudioSourceManager sourceManager){
