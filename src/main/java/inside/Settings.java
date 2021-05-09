@@ -47,6 +47,8 @@ public class Settings{
 
         private Duration errorEmbedTtl = Duration.ofSeconds(7);
 
+        private String youtubeApiKey;
+
         public int getMaxClearedCount(){
             return maxClearedCount;
         }
@@ -77,6 +79,14 @@ public class Settings{
 
         public void setErrorEmbedTtl(Duration errorEmbedTtl){
             this.errorEmbedTtl = errorEmbedTtl;
+        }
+
+        public String getYoutubeApiKey(){
+            return youtubeApiKey;
+        }
+
+        public void setYoutubeApiKey(String youtubeApiKey){
+            this.youtubeApiKey = youtubeApiKey;
         }
     }
 
