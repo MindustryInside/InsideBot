@@ -18,6 +18,7 @@ public class VoiceRegistry{
         this.audioProvider = Objects.requireNonNull(audioProvider, "audioProvider");
 
         trackLoader = new TrackLoader(player);
+        player.addListener(trackLoader);
     }
 
     public static VoiceRegistry create(Snowflake guildId, AudioPlayer player, AudioProvider audioProvider){
