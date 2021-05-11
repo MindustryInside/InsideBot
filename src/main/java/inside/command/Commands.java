@@ -1166,6 +1166,19 @@ public class Commands{
         }
     }
 
+    @DiscordCommand(key = "stop", description = "command.voice.stop.description")
+    public static class VoiceStopCommand extends VoiceCommand{
+        @Override
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            Snowflake guildId = env.getLocalMember().guildId();
+
+            VoiceRegistry voiceRegistry = voiceService.getOrCreate(guildId);
+
+            return Mono.fromRunnable(voiceRegistry.getPlayer()::stopTrack)
+                    .and(env.getMessage().addReaction(ok));
+        }
+    }
+
     @DiscordCommand(key = "reconnect", description = "command.voice.reconnect.description")
     public static class VoiceReconnectCommand extends VoiceCommand{
         @Override
