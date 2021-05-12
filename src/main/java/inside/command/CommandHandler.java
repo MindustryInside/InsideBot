@@ -27,7 +27,7 @@ public class CommandHandler{
 
     private final MessageService messageService;
 
-    private final Map<String, Command> commands = new LinkedHashMap<>();
+    private final Map<String[], Command> commands = new LinkedHashMap<>();
 
     private final Map<Command, CommandInfo> commandInfo = new LinkedHashMap<>();
 
@@ -49,6 +49,18 @@ public class CommandHandler{
 
     private CommandInfo compile(Command command){
         DiscordCommand meta = command.getAnnotation();
+        Preconditions.requireState(meta.key().length > 0);
+        commandInfo.forEach((command1, commandInfo1) -> {
+            for(String s : meta.key()){
+                Preconditions.requireState(s.matches("^[\\S-]{1,32}$"), "Incorrect command alias '" + s + "' pattern!");
+
+                for(String s1 : commandInfo1.text()){
+                    Preconditions.requireState(!s1.equals(s), "Duplicate command alias '" + s + "' in '" +
+                            command.getClass().getCanonicalName() + "' and '" + command1.getClass().getCanonicalName() + "'!");
+                }
+            }
+        });
+
         // get 'en' parameter text for validation and option search
         String paramText = messageService.get(Context.of(KEY_LOCALE, LocaleUtil.getDefaultLocale()), meta.params());
         String[] psplit = paramText.split("(?<=(\\]|>))\\s+(?=(\\[|<))");
@@ -87,7 +99,7 @@ public class CommandHandler{
         return new CommandInfo(meta.key(), meta.params(), meta.description(), params, meta.permissions());
     }
 
-    public Map<String, Command> commands(){
+    public Map<String[], Command> commands(){
         return commands;
     }
 
@@ -122,16 +134,29 @@ public class CommandHandler{
                 .cache();
 
         Mono<Void> suggestion = text.map(Tuple2::getT1).flatMap(commandName -> {
-            CommandInfo closest = Strings.findClosest(commandList(), CommandInfo::text, commandName);
+            String closest = null;
+            int min = 0;
+            for(CommandInfo info : commandList()){
+                for(String str : info.text()){
+                    int dst = Strings.levenshtein(str, commandName);
+                    if(dst < Strings.DEFAULT_LEVENSHTEIN_DST && (closest == null || dst < min)){
+                        min = dst;
+                        closest = str;
+                    }
+                }
+            }
 
             messageService.awaitEdit(env.getMessage().getId());
             if(closest != null){
-                return messageService.err(channel, "command.response.found-closest", closest.text());
+                return messageService.err(channel, "command.response.found-closest", closest);
             }
             return prefix.flatMap(str -> messageService.err(channel, "command.response.unknown", str));
         });
 
-        return text.flatMap(TupleUtils.function((commandstr, cmd) -> Mono.justOrEmpty(commands.get(cmd))
+        return text.flatMap(TupleUtils.function((commandstr, cmd) -> Mono.justOrEmpty(commands.entrySet().stream()
+                .filter(entry -> Arrays.asList(entry.getKey()).contains(cmd))
+                .map(Map.Entry::getValue)
+                .findFirst())
                 .switchIfEmpty(suggestion.then(Mono.empty()))
                 .flatMap(command -> {
                     CommandInfo info = commandInfo.get(command);

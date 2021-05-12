@@ -10,7 +10,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DiscordCommand{
 
-    String key();
+    String[] key();
 
     String params() default "";
 

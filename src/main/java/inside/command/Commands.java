@@ -81,7 +81,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "help", description = "command.help.description")
+    @DiscordCommand(key = {"help", "?"}, description = "command.help.description")
     public static class HelpCommand extends Command{
         @Autowired
         private CommandHandler handler;
@@ -96,10 +96,10 @@ public class Commands{
                     EmbedData::builder,
                     (builder, entry) -> {
                         StringBuilder builder1 = new StringBuilder();
-                        entry.getValue().sort(Comparator.comparing(CommandInfo::text));
+                        entry.getValue().sort((o1, o2) -> Arrays.compare(o1.text(), o2.text()));
                         for(CommandInfo commandInfo : entry.getValue()){
                             builder1.append("**");
-                            builder1.append(commandInfo.text());
+                            builder1.append(commandInfo.text()[0]);
                             builder1.append("**");
                             if(commandInfo.params().length > 0){
                                 builder1.append(" ");
@@ -225,7 +225,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "base64", params = "command.base64.params", description = "command.base64.description")
+    @DiscordCommand(key = {"base64", "b64"}, params = "command.base64.params", description = "command.base64.description")
     public static class Base64Command extends Command{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1121,8 +1121,8 @@ public class Commands{
         public Mono<Boolean> apply(CommandEnvironment env){
             return env.getAuthorAsMember().getVoiceState()
                     .flatMap(VoiceState::getChannel)
-                    .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.voice.not-in-channel").then(Mono.empty()))
-                    .hasElement();
+                    .hasElement()
+                    .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.voice.not-in-channel").thenReturn(false));
         }
     }
 
@@ -1137,24 +1137,22 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "leave", description = "command.voice.leave.description")
+    @DiscordCommand(key = {"leave", "l"}, description = "command.voice.leave.description")
     public static class VoiceLeaveCommand extends VoiceCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Snowflake guildId = env.getLocalMember().guildId();
 
-            Mono<VoiceChannel> channel = env.getAuthorAsMember().getVoiceState()
-                    .flatMap(VoiceState::getChannel);
-
-            return env.getClient().getSelfMember(guildId)
-                    .flatMap(member -> channel.flatMap(VoiceChannel::getVoiceConnection)
-                            .flatMap(VoiceConnection::disconnect))
+            return env.getAuthorAsMember().getVoiceState()
+                    .flatMap(VoiceState::getChannel)
+                    .flatMap(VoiceChannel::getVoiceConnection)
+                    .flatMap(VoiceConnection::disconnect)
                     .doFirst(() -> voiceService.getOrCreate(guildId).getPlayer().stopTrack())
                     .and(env.getMessage().addReaction(ok));
         }
     }
 
-    @DiscordCommand(key = "skip", description = "command.voice.skip.description")
+    @DiscordCommand(key = {"skip", "s"}, description = "command.voice.skip.description")
     public static class VoiceSkipCommand extends VoiceCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1166,7 +1164,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "stop", description = "command.voice.stop.description")
+    @DiscordCommand(key = {"stop", "st"}, description = "command.voice.stop.description")
     public static class VoiceStopCommand extends VoiceCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1183,19 +1181,15 @@ public class Commands{
     public static class VoiceReconnectCommand extends VoiceCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            Snowflake guildId = env.getLocalMember().guildId();
-
-            Mono<VoiceChannel> channel = env.getAuthorAsMember().getVoiceState()
-                    .flatMap(VoiceState::getChannel);
-
-            return env.getClient().getSelfMember(guildId)
-                    .flatMap(member -> channel.flatMap(VoiceChannel::getVoiceConnection)
-                            .flatMap(VoiceConnection::reconnect))
+            return env.getAuthorAsMember().getVoiceState()
+                    .flatMap(VoiceState::getChannel)
+                    .flatMap(VoiceChannel::getVoiceConnection)
+                    .flatMap(VoiceConnection::reconnect)
                     .and(env.getMessage().addReaction(ok));
         }
     }
 
-    @DiscordCommand(key = "play", params = "command.voice.play.params", description = "command.voice.play.description")
+    @DiscordCommand(key = {"play", "p"}, params = "command.voice.play.params", description = "command.voice.play.description")
     public static class VoicePlayCommand extends VoiceCommand{
         private static final String api = "https://youtube.googleapis.com/youtube/v3/";
 
@@ -1247,7 +1241,8 @@ public class Commands{
                             .orElse(playlist.getTracks().get(0))),
                     () -> log.error("Not Found"), t -> log.error("Failed", t));
 
-            return joinIfNot.then(Mono.fromRunnable(() -> voiceService.getAudioPlayerManager().loadItemOrdered(voiceRegistry, query, loadResultHandler)));
+            return joinIfNot.then(Mono.fromRunnable(() -> voiceService.getAudioPlayerManager()
+                    .loadItemOrdered(voiceRegistry, query, loadResultHandler)));
         }
 
         private Mono<AudioPlaylist> search(String query, int maxResults, YoutubeAudioSourceManager sourceManager){
