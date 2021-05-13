@@ -835,11 +835,13 @@ public class InteractionCommands{
             long start = System.currentTimeMillis();
             return env.event().acknowledge().then(env.event().getInteractionResponse()
                     .createFollowupMessage(messageService.get(env.context(), "command.ping.testing"))
-                    .flatMap(data -> reply.flatMap(channel -> channel.getMessageById(Snowflake.of(data.id())))
+                    .map(data -> new Message(env.getClient(), data))
+                    .flatMap(message1 -> reply.flatMap(channel -> channel.getMessageById(message1.getId()))
                             .flatMap(message -> message.edit(spec -> spec.setContent(messageService.format(env.context(), "command.ping.completed",
                                     System.currentTimeMillis() - start))))))
                     .then();
         }
+
         @Override
         public ApplicationCommandRequest getRequest(){
             return ApplicationCommandRequest.builder()

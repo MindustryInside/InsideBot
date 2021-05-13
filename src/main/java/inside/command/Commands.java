@@ -1088,6 +1088,36 @@ public class Commands{
         }
     }
 
+    @DiscordCommand(key = "qpoll", params = "command.qpoll.params", description = "command.qpoll.description")
+    public static class QuickPollCommand extends Command{
+        public static final ReactionEmoji up = ReactionEmoji.unicode("\uD83D\uDC4D");
+        public static final ReactionEmoji down = ReactionEmoji.unicode("\uD83D\uDC4E");
+
+        @Override
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            Mono<MessageChannel> channel = env.getReplyChannel();
+
+            String text = interaction.getOption(0)
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .orElseThrow(AssertionError::new);
+
+            return channel.flatMap(reply -> reply.createMessage(messageService.format(env.context(),
+                    "command.qpoll.text", env.getAuthorAsMember().getUsername(), text)))
+                    .flatMap(message1 -> message1.addReaction(up).thenReturn(message1))
+                    .flatMap(message1 -> message1.addReaction(down))
+                    .then();
+        }
+
+        @Override
+        public Mono<Void> help(CommandEnvironment env){
+            return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
+                    .map(GuildConfig::prefix)
+                    .flatMap(prefix -> messageService.info(env.getReplyChannel(), "command.help.title", "command.qpoll.help",
+                            GuildConfig.formatPrefix(prefix)));
+        }
+    }
+
     @DiscordCommand(key = "unmute", params = "command.admin.unmute.params", description = "command.admin.unmute.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_ROLES})
     public static class UnmuteCommand extends AdminCommand{
