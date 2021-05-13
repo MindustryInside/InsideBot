@@ -258,6 +258,27 @@ public class Commands{
         }
     }
 
+    @DiscordCommand(key = "emoji", params = "command.emoji.params", description = "command.emoji.description")
+    public static class EmojiCommand extends Command{
+        @Override
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            Mono<MessageChannel> channel = env.getReplyChannel();
+            String text = interaction.getOption(0)
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .orElseThrow(AssertionError::new);
+
+            return env.getAuthorAsMember()
+                    .getGuild()
+                    .flatMapMany(Guild::getEmojis)
+                    .filter(emoji -> emoji.asFormat().equals(text)).next()
+                    .switchIfEmpty(messageService.err(channel, "command.emoji.not-found").then(Mono.empty()))
+                    .flatMap(emoji -> messageService.info(channel, embed -> embed.setImage(emoji.getImageUrl() + "?size=512")
+                            .setFooter(messageService.format(env.context(), "common.id", emoji.getId().asString()), null)
+                            .setDescription(messageService.format(env.context(), "command.emoji.text", emoji.getName(), emoji.asFormat()))));
+        }
+    }
+
     @DiscordCommand(key = "avatar", params = "command.avatar.params", description = "command.avatar.description")
     public static class AvatarCommand extends Command{
         @Override
