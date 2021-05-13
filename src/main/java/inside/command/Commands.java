@@ -263,7 +263,8 @@ public class Commands{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Mono<MessageChannel> channel = env.getReplyChannel();
-            Snowflake targetId = interaction.getOption("@user").flatMap(CommandOption::getValue)
+            Snowflake targetId = interaction.getOption(0)
+                    .flatMap(CommandOption::getValue)
                     .map(OptionValue::asSnowflake)
                     .orElse(env.getAuthorAsMember().getId());
 
@@ -271,7 +272,8 @@ public class Commands{
                     .withRetrievalStrategy(EntityRetrievalStrategy.REST).getUserById(id))
                     .switchIfEmpty(messageService.err(channel, "command.incorrect-name").then(Mono.empty()))
                     .flatMap(user -> messageService.info(channel, embed -> embed.setImage(user.getAvatarUrl() + "?size=512")
-                            .setDescription(messageService.format(env.context(), "command.avatar.text", user.getUsername()))));
+                            .setDescription(messageService.format(env.context(), "command.avatar.text", user.getUsername(),
+                                    DiscordUtil.getUserMention(user.getId())))));
         }
 
         @Override
