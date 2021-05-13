@@ -1,5 +1,7 @@
 package inside.command.model;
 
+import inside.util.Try;
+
 import java.util.*;
 
 public class CommandInteraction{
@@ -20,7 +22,7 @@ public class CommandInteraction{
     }
 
     public Optional<CommandOption> getOption(int index){
-        return Optional.ofNullable(options.get(index));
+        return Try.ofCallable(() -> options.get(index)).toOptional();
     }
 
     public Optional<CommandOption> getOption(String name){

@@ -807,7 +807,8 @@ public class InteractionCommands{
                     .map(ApplicationCommandInteractionOptionValue::asUser)
                     .orElse(Mono.just(env.event().getInteraction().getUser()))
                     .flatMap(user -> messageService.info(env.event(), embed -> embed.setImage(user.getAvatarUrl() + "?size=512")
-                            .setDescription(messageService.format(env.context(), "command.avatar.text", user.getUsername()))));
+                            .setDescription(messageService.format(env.context(), "command.avatar.text", user.getUsername(),
+                                    DiscordUtil.getUserMention(user.getId())))));
         }
 
         @Override
