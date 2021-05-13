@@ -1113,7 +1113,7 @@ public class Commands{
         }
     }
 
-    public static class VoiceCommand extends Command{
+    public static abstract class VoiceCommand extends Command{
         @Autowired
         protected VoiceService voiceService;
 
@@ -1121,8 +1121,7 @@ public class Commands{
         public Mono<Boolean> apply(CommandEnvironment env){
             return env.getAuthorAsMember().getVoiceState()
                     .flatMap(VoiceState::getChannel)
-                    .hasElement()
-                    .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.voice.not-in-channel").thenReturn(false));
+                    .hasElement();
         }
     }
 
@@ -1209,7 +1208,7 @@ public class Commands{
 
             VoiceRegistry voiceRegistry = voiceService.getOrCreate(env.getLocalMember().guildId());
 
-            Mono<Void> joinIfNot = Mono.justOrEmpty(env.getAuthorAsMember())
+            Mono<Void> joinIfNot = Mono.just(env.getAuthorAsMember())
                     .flatMap(Member::getVoiceState)
                     .flatMap(VoiceState::getChannel)
                     .filterWhen(voiceChannel -> BooleanUtils.not(voiceChannel.getVoiceConnection().hasElement()))
@@ -1239,9 +1238,11 @@ public class Commands{
                     voiceRegistry.getTrackLoader()::queue, playlist -> voiceRegistry.getTrackLoader()
                     .queue(Optional.ofNullable(playlist.getSelectedTrack())
                             .orElse(playlist.getTracks().get(0))),
-                    () -> log.error("Not Found"), t -> log.error("Failed", t));
+                    () -> messageService.err(env.getReplyChannel(), "command.voice.play.not-found")
+                            .contextWrite(env.context()).subscribe(), // ...
+                    t -> log.error("Failed to load sound track", t));
 
-            return joinIfNot.then(Mono.fromRunnable(() -> voiceService.getAudioPlayerManager()
+            return joinIfNot.and(Mono.fromRunnable(() -> voiceService.getAudioPlayerManager()
                     .loadItemOrdered(voiceRegistry, query, loadResultHandler)));
         }
 
