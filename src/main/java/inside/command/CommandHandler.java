@@ -175,7 +175,7 @@ public class CommandHandler{
                         if(index >= info.params().length && !argstr.isEmpty()){
                             messageService.awaitEdit(env.getMessage().getId());
                             return prefix.flatMap(str -> messageService.error(channel, "command.response.many-arguments.title",
-                                    argsres, str, info.text(), messageService.get(env.context(), info.paramText())));
+                                    argsres, str, cmd, messageService.get(env.context(), info.paramText())));
                         }else if(argstr.isEmpty()){
                             break;
                         }
@@ -194,7 +194,7 @@ public class CommandHandler{
                             if(!satisfied){
                                 messageService.awaitEdit(env.getMessage().getId());
                                 return prefix.flatMap(str -> messageService.error(channel, "command.response.few-arguments.title",
-                                        argsres, str, info.text(), messageService.get(env.context(), info.paramText())));
+                                        argsres, str, cmd, messageService.get(env.context(), info.paramText())));
                             }
                             result.add(new CommandOption(info.params()[index], argstr));
                             break;
@@ -210,7 +210,7 @@ public class CommandHandler{
                     if(!satisfied && info.params().length > 0 && !info.params()[0].optional()){
                         messageService.awaitEdit(env.getMessage().getId());
                         return prefix.flatMap(str -> messageService.error(channel, "command.response.few-arguments.title",
-                                argsres, str, info.text(), messageService.get(env.context(), info.paramText())));
+                                argsres, str, cmd, messageService.get(env.context(), info.paramText())));
                     }
 
                     Mono<Void> execute = Mono.just(command)
