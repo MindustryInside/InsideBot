@@ -58,7 +58,8 @@ public class AdminServiceImpl implements AdminService{
     @Override
     @Transactional
     public Mono<Void> mute(Member admin, Member target, DateTime end, @Nullable String reason){
-        Mono<Void> saveAction = entityRetriever.getLocalMemberById(admin).zipWith(entityRetriever.getLocalMemberById(target))
+        Mono<Void> saveAction = entityRetriever.getLocalMemberById(admin)
+                .zipWith(entityRetriever.getLocalMemberById(target))
                 .flatMap(function((adminLocalMember, targetLocalMember) -> Mono.fromRunnable(() -> repository.save(AdminAction.builder()
                         .guildId(admin.getGuildId())
                         .type(AdminActionType.mute)
@@ -95,16 +96,20 @@ public class AdminServiceImpl implements AdminService{
         Mono<Void> createIfAbsent = entityRetriever.getLocalMemberById(target)
                 .switchIfEmpty(entityRetriever.createLocalMember(target))
                 .then();
+
         Mono<Void> remove = get(AdminActionType.mute, target.getGuildId(), target.getId()).next()
                 .flatMap(adminAction -> Mono.fromRunnable(() -> repository.delete(adminAction)))
                 .then();
+
         Mono<Void> log = auditService.log(target.getGuildId(), AuditActionType.MEMBER_UNMUTE)
                 .withTargetUser(target)
                 .save();
+
         Mono<Void> removeRole = entityRetriever.getAdminConfigById(target.getGuildId())
                 .switchIfEmpty(entityRetriever.createAdminConfig(target.getGuildId()))
                 .flatMap(adminConfig -> Mono.justOrEmpty(adminConfig.muteRoleID()))
                 .flatMap(target::removeRole);
+
         return Mono.when(createIfAbsent, removeRole, log, remove);
     }
 
@@ -170,7 +175,7 @@ public class AdminServiceImpl implements AdminService{
     @Override
     @Scheduled(cron = "0 * * * * *")
     public void mutesMonitor(){
-        getAll(AdminService.AdminActionType.mute)
+        getAll(AdminActionType.mute)
                 .filter(AdminAction::isEnd)
                 .flatMap(adminAction -> discordService.gateway()
                         .getMemberById(adminAction.guildId(), adminAction.target().userId()))

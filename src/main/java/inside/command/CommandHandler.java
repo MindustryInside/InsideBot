@@ -122,8 +122,8 @@ public class CommandHandler{
 
         Mono<String> mention = Mono.just(message)
                 .filter(s -> env.getMessage().getUserMentionIds().contains(selfId))
-                .filter(s -> message.startsWith(DiscordUtil.getMemberMention(selfId)) ||
-                        message.startsWith(DiscordUtil.getUserMention(selfId)))
+                .filter(s -> s.startsWith(DiscordUtil.getMemberMention(selfId)) ||
+                        s.startsWith(DiscordUtil.getUserMention(selfId)))
                 .map(s -> s.startsWith(DiscordUtil.getMemberMention(selfId)) ? DiscordUtil.getMemberMention(selfId) :
                         DiscordUtil.getUserMention(selfId));
 
@@ -168,7 +168,7 @@ public class CommandHandler{
                                      "command.response.incorrect-arguments";
 
                     if(argstr.matches("(?i)(help|\\?)")){
-                        return command.apply(env).flatMap(bool -> bool ? command.help(env) : Mono.empty());
+                        return command.filter(env).flatMap(bool -> bool ? command.help(env) : Mono.empty());
                     }
 
                     while(true){
@@ -214,7 +214,7 @@ public class CommandHandler{
                     }
 
                     Mono<Void> execute = Mono.just(command)
-                            .filterWhen(c -> c.apply(env))
+                            .filterWhen(c -> c.filter(env))
                             .flatMap(c -> c.execute(env, new CommandInteraction(cmd, result)))
                             .doFirst(() -> messageService.removeEdit(env.getMessage().getId()));
 
@@ -222,7 +222,8 @@ public class CommandHandler{
                             messageService.get(env.context(), "message.error.permission-denied.title"),
                             messageService.format(env.context(), "message.error.permission-denied.description", s)))
                             .onErrorResume(t -> t.getMessage().contains("Missing Permissions"), t ->
-                                    guild.flatMap(g -> g.getOwner().flatMap(User::getPrivateChannel))
+                                    guild.flatMap(Guild::getOwner)
+                                            .flatMap(User::getPrivateChannel)
                                             .flatMap(c -> c.createMessage(String.format("%s%n%n%s",
                                                     messageService.get(env.context(), "message.error.permission-denied.title"),
                                                     messageService.format(env.context(), "message.error.permission-denied.description", s))))
