@@ -2,7 +2,7 @@ package inside.data.service;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
-import inside.data.entity.AdminAction;
+import inside.data.entity.*;
 import org.joda.time.DateTime;
 import reactor.core.publisher.*;
 import reactor.util.annotation.Nullable;
@@ -45,11 +45,4 @@ public interface AdminService{
     void warningsMonitor();
 
     void mutesMonitor();
-
-    enum AdminActionType{
-        warn,
-        mute,
-        kick,
-        ban
-    }
 }

@@ -57,7 +57,7 @@ public class DiscordServiceImpl implements DiscordService{
 
         Objects.requireNonNull(gateway, "impossible"); // for ide
 
-        long applicationId = gateway.rest().getApplicationId().block();
+        long applicationId = Objects.requireNonNull(gateway.rest().getApplicationId().block(), "impossible");
         for(InteractionCommand command : commands){
             gateway.rest().getApplicationService()
                     .createGlobalApplicationCommand(applicationId, command.getRequest())

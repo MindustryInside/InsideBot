@@ -1,8 +1,7 @@
 package inside.data.repository;
 
-import inside.data.entity.AdminAction;
+import inside.data.entity.*;
 import inside.data.repository.base.GuildRepository;
-import inside.data.service.AdminService.AdminActionType;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 

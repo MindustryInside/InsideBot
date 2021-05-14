@@ -1,7 +1,6 @@
 package inside.data.entity;
 
 import inside.data.entity.base.GuildEntity;
-import inside.data.service.AdminService.AdminActionType;
 import org.hibernate.annotations.*;
 import org.immutables.builder.Builder;
 import org.joda.time.DateTime;

@@ -67,14 +67,14 @@ public class Commands{
         protected AdminService adminService;
 
         @Override
-        public Mono<Boolean> apply(CommandEnvironment env){
+        public Mono<Boolean> filter(CommandEnvironment env){
             return adminService.isAdmin(env.getAuthorAsMember());
         }
     }
 
     public static abstract class TestCommand extends Command{
         @Override
-        public Mono<Boolean> apply(CommandEnvironment env){
+        public Mono<Boolean> filter(CommandEnvironment env){
             return env.getClient().getApplicationInfo()
                     .map(ApplicationInfo::getOwnerId)
                     .map(owner -> owner.equals(env.getAuthorAsMember().getId()));
@@ -120,7 +120,7 @@ public class Commands{
                     ImmutableEmbedData.Builder::build);
 
             return Flux.fromIterable(handler.commandList())
-                    .filterWhen(commandInfo -> handler.commands().get(commandInfo.text()).apply(env))
+                    .filterWhen(commandInfo -> handler.commands().get(commandInfo.text()).filter(env))
                     .collect(Collectors.groupingBy(c -> messageService.get(env.context(), handler.commands().get(c.text())
                             .getClass().getSuperclass().getCanonicalName())))
                     .flatMapMany(map -> Flux.fromIterable(map.entrySet())
@@ -268,8 +268,7 @@ public class Commands{
                     .map(OptionValue::asString)
                     .orElseThrow(AssertionError::new);
 
-            return env.getAuthorAsMember()
-                    .getGuild()
+            return env.getAuthorAsMember().getGuild()
                     .flatMapMany(Guild::getEmojis)
                     .filter(emoji -> emoji.asFormat().equals(text)).next()
                     .switchIfEmpty(messageService.err(channel, "command.emoji.not-found").then(Mono.empty()))
@@ -1171,7 +1170,7 @@ public class Commands{
         protected VoiceService voiceService;
 
         @Override
-        public Mono<Boolean> apply(CommandEnvironment env){
+        public Mono<Boolean> filter(CommandEnvironment env){
             return env.getAuthorAsMember().getVoiceState()
                     .flatMap(VoiceState::getChannel)
                     .hasElement();
