@@ -38,6 +38,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
             ReactionEmoji.unicode("\uD83D\uDCAB")
     };
 
+    // TODO: save entities to the database
     private final Cache<Snowflake, Snowflake> staredMessages = Caffeine.newBuilder()
             .expireAfterAccess(Duration.ofDays(7))
             .build();
@@ -81,7 +82,8 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                         .zipWith(event.getMessage())
                         .zipWith(author, (tuple, user) -> Tuples.of(tuple.getT1(), tuple.getT2(), user))
                         .flatMap(function((channel, message, user) -> channel.createMessage(spec -> spec.setContent(messageService.format(
-                                context, "starboard.format", stars[0].asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
+                                context, "starboard.format", stars[(int)Mathf.clamp(l - 1, 0, stars.length - 1)]
+                                        .asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
                                         .orElseThrow(AssertionError::new),
                                 l, DiscordUtil.getChannelMention(message.getChannelId())))
                                 .setEmbed(embed -> embed.setFooter(DateTimeFormat.longDateTime()
