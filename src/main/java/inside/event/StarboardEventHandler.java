@@ -1,6 +1,5 @@
 package inside.event;
 
-import com.github.benmanes.caffeine.cache.*;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.message.*;
@@ -8,7 +7,7 @@ import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.GuildMessageChannel;
 import discord4j.core.object.reaction.*;
 import discord4j.rest.util.*;
-import inside.data.entity.StarboardConfig;
+import inside.data.entity.*;
 import inside.data.service.EntityRetriever;
 import inside.service.MessageService;
 import inside.util.*;
@@ -20,12 +19,11 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.*;
 import reactor.math.MathFlux;
 import reactor.util.context.Context;
-import reactor.util.function.Tuples;
 
-import java.time.Duration;
 import java.util.Arrays;
 
 import static inside.util.ContextUtil.*;
+import static reactor.bool.BooleanUtils.*;
 import static reactor.function.TupleUtils.function;
 
 @Component
@@ -38,11 +36,6 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
             ReactionEmoji.unicode("\uD83C\uDF1F"),
             ReactionEmoji.unicode("\uD83D\uDCAB")
     };
-
-    // TODO: save entities to the database
-    private final Cache<Snowflake, Snowflake> staredMessages = Caffeine.newBuilder()
-            .expireAfterAccess(Duration.ofDays(7))
-            .build();
 
     @Autowired
     private EntityRetriever entityRetriever;
@@ -71,50 +64,53 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                 .map(Reaction::getCount)
                 .as(counts -> MathFlux.max(counts, Integer::compare));
 
+        Mono<Starboard> starboard = entityRetriever.getStarboardById(guildId, event.getMessageId());
+
         return initContext.zipWith(starboardConfig).flatMap(function((context, config) -> emojisCount.flatMap(l -> {
-            Snowflake targetId = staredMessages.getIfPresent(event.getMessageId());
             Snowflake channelId = config.starboardChannelId().orElse(null);
             if(!config.isEnable() || channelId == null){
                 return Mono.empty();
             }
 
-            if(l > config.lowerStarBarrier() && targetId == null){
-                return event.getGuild().flatMap(guild -> guild.getChannelById(channelId))
-                        .cast(GuildMessageChannel.class)
-                        .zipWith(event.getMessage())
-                        .zipWith(author, (tuple, user) -> Tuples.of(tuple.getT1(), tuple.getT2(), user))
-                        .flatMap(function((channel, message, user) -> channel.createMessage(spec -> spec.setContent(messageService.format(
-                                context, "starboard.format", stars[Mathf.clamp(l - 1, 0, stars.length - 1)]
-                                        .asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
-                                        .orElseThrow(AssertionError::new),
-                                l, DiscordUtil.getChannelMention(message.getChannelId())))
-                                .setAllowedMentions(AllowedMentions.suppressEveryone())
-                                .setEmbed(embed -> embed.setFooter(DateTimeFormat.longDateTime()
-                                        .withLocale(context.get(KEY_LOCALE))
-                                        .withZone(context.get(KEY_TIMEZONE))
-                                        .print(DateTime.now()), null)
-                                        .setAuthor(user.getUsername(), null, user.getAvatarUrl())
-                                        .setDescription(message.getContent())
-                                        .setColor(lerp(offsetColor, targetColor, Mathf.round(l, lerpStep)))
-                                        .addField(messageService.get(context, "starboard.source"), messageService.format(context, "starboard.jump",
-                                                guildId.asString(), message.getChannelId().asString(), message.getId().asString()), false)
-                                        .setImage(message.getAttachments().stream().map(Attachment::getUrl).findFirst().orElse(""))))
-                                .doOnNext(target -> staredMessages.put(message.getId(), target.getId()))));
-            }else if(targetId != null){
-                return event.getGuild().flatMap(guild -> guild.getChannelById(channelId))
-                        .cast(GuildMessageChannel.class)
-                        .flatMap(channel -> channel.getMessageById(targetId))
-                        .zipWith(event.getMessage())
-                        .flatMap(function((target, source) -> target.edit(spec -> spec.setEmbed(embed -> embed.from(target.getEmbeds().get(0).getData())
-                                .setColor(lerp(offsetColor, targetColor, Mathf.round(l, lerpStep))))
-                                .setContent(messageService.format(context, "starboard.format",
-                                        stars[Mathf.clamp(l - 1, 0, stars.length - 1)]
-                                                .asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
-                                                .orElseThrow(AssertionError::new),
-                                        l, DiscordUtil.getChannelMention(source.getChannelId()))))
-                                .doOnNext(ignored -> staredMessages.put(source.getId(), targetId)))); // update cache
-            }
-            return Mono.empty();
+            Mono<GuildMessageChannel> starboardChannel = event.getGuild()
+                    .flatMap(guild -> guild.getChannelById(channelId))
+                    .cast(GuildMessageChannel.class);
+
+            Mono<Message> targetMessage = starboard.zipWith(starboardChannel)
+                    .flatMap(function((board, channel) -> channel.getMessageById(board.targetMessageId())));
+
+            Mono<Void> updateOld = event.getMessage().zipWith(targetMessage)
+                    .flatMap(function((source, target) -> target.edit(spec -> spec.setEmbed(embed -> embed.from(target.getEmbeds().get(0).getData())
+                            .setColor(lerp(offsetColor, targetColor, Mathf.round(l, lerpStep))))
+                            .setContent(messageService.format(context, "starboard.format",
+                                    stars[Mathf.clamp(l - 1, 0, stars.length - 1)]
+                                            .asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
+                                            .orElseThrow(AssertionError::new),
+                                    l, DiscordUtil.getChannelMention(source.getChannelId()))))))
+                    .then();
+
+            Mono<Void> createNew = Mono.zip(starboardChannel, event.getMessage(), author).flatMap(function((channel, source, user) ->
+                    channel.createMessage(spec -> spec.setContent(messageService.format(
+                            context, "starboard.format", stars[Mathf.clamp(l - 1, 0, stars.length - 1)]
+                                    .asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
+                                    .orElseThrow(AssertionError::new),
+                            l, DiscordUtil.getChannelMention(source.getChannelId())))
+                            .setAllowedMentions(AllowedMentions.suppressEveryone())
+                            .setEmbed(embed -> embed.setFooter(DateTimeFormat.longDateTime()
+                                    .withLocale(context.get(KEY_LOCALE))
+                                    .withZone(context.get(KEY_TIMEZONE))
+                                    .print(DateTime.now()), null)
+                                    .setAuthor(user.getUsername(), null, user.getAvatarUrl())
+                                    .setDescription(source.getContent())
+                                    .setColor(lerp(offsetColor, targetColor, Mathf.round(l, lerpStep)))
+                                    .addField(messageService.get(context, "starboard.source"), messageService.format(context, "starboard.jump",
+                                            guildId.asString(), source.getChannelId().asString(), source.getId().asString()), false)
+                                    .setImage(source.getAttachments().stream().map(Attachment::getUrl).findFirst().orElse(""))))
+                            .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId()))))
+                    .then();
+
+            return and(Mono.just(l > config.lowerStarBarrier()), not(starboard.hasElement()))
+                    .flatMap(bool -> bool ? createNew : updateOld);
         }).contextWrite(context)));
     }
 
@@ -136,43 +132,75 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
         Mono<Integer> emojisCount = event.getMessage().flatMapMany(message -> Flux.fromIterable(message.getReactions()))
                 .filter(reaction -> Arrays.asList(stars).contains(reaction.getEmoji()))
                 .map(Reaction::getCount)
-                .as(counts -> MathFlux.max(counts, Integer::compare));
+                .as(counts -> MathFlux.max(counts, Integer::compare))
+                .defaultIfEmpty(0);
 
-        Mono<Message> targetMessage = starboardConfig.flatMap(config -> Mono.justOrEmpty(staredMessages.getIfPresent(event.getMessageId()))
-                .filter(ignored -> config.isEnable())
-                .flatMap(targetId -> event.getGuild().flatMap(guild -> Mono.justOrEmpty(config.starboardChannelId())
-                        .flatMap(guild::getChannelById))
-                        .cast(GuildMessageChannel.class)
-                        .flatMap(channel -> channel.getMessageById(targetId))));
+        Mono<Starboard> starboard = entityRetriever.getStarboardById(guildId, event.getMessageId());
 
-        return initContext.flatMap(context -> emojisCount.flatMap(l -> targetMessage.filter(ignored -> l < 3)
-                .flatMap(Message::delete)
-                .switchIfEmpty(targetMessage.zipWith(event.getMessage())
-                        .flatMap(function((target, source) -> target.edit(spec -> spec.setEmbed(embed -> embed.from(target.getEmbeds().get(0).getData())
-                                .setColor(lerp(offsetColor, targetColor, Mathf.round(l, lerpStep))))
+        return initContext.zipWith(starboardConfig).flatMap(function((context, config) -> emojisCount.flatMap(i -> {
+            Snowflake channelId = config.starboardChannelId().orElse(null);
+            if(!config.isEnable() || channelId == null){
+                return Mono.empty();
+            }
+
+            Mono<Message> targetMessage = event.getGuild().flatMap(guild -> guild.getChannelById(channelId))
+                    .cast(GuildMessageChannel.class)
+                    .flatMap(channel -> starboard.flatMap(board -> channel.getMessageById(board.targetMessageId())));
+
+            return starboard.zipWhen(board -> event.getGuild().flatMap(guild -> guild.getChannelById(channelId))
+                    .cast(GuildMessageChannel.class)
+                    .flatMap(channel -> channel.getMessageById(board.targetMessageId())))
+                    .flatMap(function((board, target) -> {
+                        if(i <= config.lowerStarBarrier()){
+                            return targetMessage.flatMap(Message::delete).then(entityRetriever.delete(board));
+                        }
+
+                        Snowflake sourceChannelId = event.getChannelId();
+                        return target.edit(spec -> spec.setEmbed(embed -> embed.from(target.getEmbeds().get(0).getData())
+                                .setColor(lerp(offsetColor, targetColor, Mathf.round(i, lerpStep))))
                                 .setContent(messageService.format(context, "starboard.format",
-                                        stars[Mathf.clamp(l - 1, 0, stars.length - 1)]
+                                        stars[Mathf.clamp(i - 1, 0, stars.length - 1)]
                                                 .asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
                                                 .orElseThrow(AssertionError::new),
-                                        l, DiscordUtil.getChannelMention(source.getChannelId()))))
-                                .doOnNext(ignored -> staredMessages.put(source.getId(), target.getId())))) // update cache
-                        .then(Mono.empty())))
-                .contextWrite(context));
+                                        i, DiscordUtil.getChannelMention(sourceChannelId))));
+                    }));
+        }).contextWrite(context)));
     }
 
     @Override
     public Publisher<?> onReactionRemoveAll(ReactionRemoveAllEvent event){
-        Mono<StarboardConfig> starboardConfig = Mono.justOrEmpty(event.getGuildId())
-                .flatMap(guildId -> entityRetriever.getStarboardConfigById(guildId));
+        Snowflake guildId = event.getGuildId().orElse(null);
+        if(guildId == null){
+            return Mono.empty();
+        }
 
-        return starboardConfig.flatMap(config -> Mono.justOrEmpty(staredMessages.getIfPresent(event.getMessageId()))
-                .filter(ignored -> config.isEnable())
-                .flatMap(targetId -> event.getGuild().flatMap(guild -> Mono.justOrEmpty(config.starboardChannelId())
-                        .flatMap(guild::getChannelById))
-                        .cast(GuildMessageChannel.class)
-                        .flatMap(channel -> channel.getMessageById(targetId)))
-                .flatMap(Message::delete)
-                .doFirst(() -> staredMessages.invalidate(event.getMessageId())));
+        Mono<StarboardConfig> starboardConfig = entityRetriever.getStarboardConfigById(guildId);
+
+        Mono<Starboard> starboard = entityRetriever.getStarboardById(guildId, event.getMessageId());
+
+        return starboardConfig.flatMap(config -> {
+            Snowflake channelId = config.starboardChannelId().orElse(null);
+            if(!config.isEnable() || channelId == null){
+                return Mono.empty();
+            }
+
+            return starboard.flatMap(board -> event.getGuild().flatMap(guild -> guild.getChannelById(channelId))
+                    .cast(GuildMessageChannel.class)
+                    .flatMap(channel -> channel.getMessageById(board.targetMessageId()))
+                    .flatMap(Message::delete)
+                    .then(entityRetriever.delete(board)));
+        });
+    }
+
+    @Override
+    public Publisher<?> onMessageDelete(MessageDeleteEvent event){
+        Snowflake guildId = event.getGuildId().orElse(null);
+        if(guildId == null){
+            return Mono.empty();
+        }
+
+        return entityRetriever.getStarboardById(guildId, event.getMessageId())
+                .flatMap(entityRetriever::delete);
     }
 
     public Color lerp(Color source, Color target, float t){

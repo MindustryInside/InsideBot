@@ -169,6 +169,8 @@ public class Settings{
 
         private Duration memberKeep = Duration.ofDays(160);
 
+        private Duration starboardKeep = Duration.ofDays(14);
+
         public Duration getHistoryKeep(){
             return historyKeep;
         }
@@ -183,6 +185,14 @@ public class Settings{
 
         public void setMemberKeep(Duration memberKeep){
             this.memberKeep = memberKeep;
+        }
+
+        public Duration getStarboardKeep(){
+            return starboardKeep;
+        }
+
+        public void setStarboardKeep(Duration starboardKeep){
+            this.starboardKeep = starboardKeep;
         }
     }
 }

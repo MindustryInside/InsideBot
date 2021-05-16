@@ -102,6 +102,21 @@ public class EntityRetrieverImpl implements EntityRetriever{
     }
 
     @Override
+    public Mono<Starboard> getStarboardById(Snowflake guildId, Snowflake sourceMessageId){
+        return Mono.from(store.execute(ReadStoreActions.getStarboardById(guildId.asLong(), sourceMessageId.asLong())));
+    }
+
+    @Override
+    public Mono<Void> delete(Starboard starboard){
+        return Mono.from(store.execute(UpdateStoreActions.starboardDelete(starboard)));
+    }
+
+    @Override
+    public Mono<Void> save(Starboard starboard){
+        return Mono.from(store.execute(UpdateStoreActions.starboardSave(starboard)));
+    }
+
+    @Override
     public Mono<GuildConfig> createGuildConfig(Snowflake guildId){
         return Mono.defer(() -> {
             GuildConfig guildConfig = new GuildConfig();
@@ -165,6 +180,17 @@ public class EntityRetrieverImpl implements EntityRetriever{
             starboardConfig.guildId(guildId);
             starboardConfig.lowerStarBarrier(3);
             return save(starboardConfig).thenReturn(starboardConfig);
+        });
+    }
+
+    @Override
+    public Mono<Starboard> createStarboard(Snowflake guildId, Snowflake sourceMessageId, Snowflake targetMessageId){
+        return Mono.defer(() -> {
+            Starboard starboard = new Starboard();
+            starboard.guildId(guildId);
+            starboard.sourceMessageId(sourceMessageId);
+            starboard.targetMessageId(targetMessageId);
+            return save(starboard).thenReturn(starboard);
         });
     }
 }
