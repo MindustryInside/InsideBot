@@ -23,10 +23,9 @@ import inside.command.model.*;
 import inside.data.entity.*;
 import inside.data.service.AdminService;
 import inside.util.*;
-import inside.util.io.*;
+import inside.util.io.ReusableByteInputStream;
 import inside.voice.*;
 import io.netty.handler.codec.http.HttpMethod;
-import org.graalvm.polyglot.*;
 import org.joda.time.*;
 import org.joda.time.format.*;
 import org.reactivestreams.Publisher;
@@ -178,52 +177,52 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "js", params = "command.javascript.params", description = "command.javascript.description")
-    public static class JsCommand extends Command{
-        private static final List<String> blacklist = List.of(
-                ".awt", ".net.", "beans", "channels", "classloader", "compiler", "exec", "file",
-                "files", "http", "inside.insidebot", "invoke", "java.net", "javax", "jdk", "oracle", "org.", "org.", "process", "reflect",
-                "rmi", "runtime", "security", "socket", "sql", "sun.", "system",
-                "thread"
-        );
-
-        public static boolean allowClass(String type){
-            return blacklist.stream().noneMatch(s -> type.toLowerCase(Locale.ROOT).contains(s));
-        }
-
-        private final ReusableByteOutputStream out = new ReusableByteOutputStream();
-
-        private final inside.util.Lazy<Context> context = inside.util.Lazy.of(() -> Context.newBuilder("js")
-                .allowHostAccess(HostAccess.ALL)
-                .allowHostClassLookup(JsCommand::allowClass)
-                .allowAllAccess(false)
-                .out(out)
-                .build());
-
-        @Override
-        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            String code = interaction.getOption("code")
-                    .flatMap(CommandOption::getValue)
-                    .map(OptionValue::asString)
-                    .orElseThrow(AssertionError::new);
-
-            Mono<String> exec = Mono.fromCallable(() -> {
-                String s = context.get().eval("js", code).toString();
-                String s0 = out.toString(StandardCharsets.UTF_8);
-                if(s.equals("undefined") && !s0.isEmpty()){
-                    s = s0;
-                    out.reset();
-                }
-                return s;
-            });
-
-            return exec.publishOn(Schedulers.boundedElastic()).onErrorResume(t -> true,
-                    t -> messageService.error(env.getReplyChannel(), "command.javascript.script-error",
-                            String.format("```%n%s%n```", t.getMessage())).then(Mono.empty()))
-                    .flatMap(it -> messageService.text(env.getReplyChannel(), String.format("```js%n%s%n```",
-                            MessageUtil.substringTo(it, 1000))));
-        }
-    }
+    // @DiscordCommand(key = "js", params = "command.javascript.params", description = "command.javascript.description")
+    // public static class JsCommand extends Command{
+    //     private static final List<String> blacklist = List.of(
+    //             ".awt", ".net.", "beans", "channels", "classloader", "compiler", "exec", "file",
+    //             "files", "http", "inside.insidebot", "invoke", "java.net", "javax", "jdk", "oracle", "org.", "org.", "process", "reflect",
+    //             "rmi", "runtime", "security", "socket", "sql", "sun.", "system",
+    //             "thread"
+    //     );
+    //
+    //     public static boolean allowClass(String type){
+    //         return blacklist.stream().noneMatch(s -> type.toLowerCase(Locale.ROOT).contains(s));
+    //     }
+    //
+    //     private final ReusableByteOutputStream out = new ReusableByteOutputStream();
+    //
+    //     private final inside.util.Lazy<Context> context = inside.util.Lazy.of(() -> Context.newBuilder("js")
+    //             .allowHostAccess(HostAccess.ALL)
+    //             .allowHostClassLookup(JsCommand::allowClass)
+    //             .allowAllAccess(false)
+    //             .out(out)
+    //             .build());
+    //
+    //     @Override
+    //     public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    //         String code = interaction.getOption("code")
+    //                 .flatMap(CommandOption::getValue)
+    //                 .map(OptionValue::asString)
+    //                 .orElseThrow(AssertionError::new);
+    //
+    //         Mono<String> exec = Mono.fromCallable(() -> {
+    //             String s = context.get().eval("js", code).toString();
+    //             String s0 = out.toString(StandardCharsets.UTF_8);
+    //             if(s.equals("undefined") && !s0.isEmpty()){
+    //                 s = s0;
+    //                 out.reset();
+    //             }
+    //             return s;
+    //         });
+    //
+    //         return exec.publishOn(Schedulers.boundedElastic()).onErrorResume(t -> true,
+    //                 t -> messageService.error(env.getReplyChannel(), "command.javascript.script-error",
+    //                         String.format("```%n%s%n```", t.getMessage())).then(Mono.empty()))
+    //                 .flatMap(it -> messageService.text(env.getReplyChannel(), String.format("```js%n%s%n```",
+    //                         MessageUtil.substringTo(it, 1000))));
+    //     }
+    // }
 
     @DiscordCommand(key = {"base64", "b64"}, params = "command.base64.params", description = "command.base64.description")
     public static class Base64Command extends Command{
