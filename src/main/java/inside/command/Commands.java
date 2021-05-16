@@ -23,6 +23,7 @@ import inside.command.model.*;
 import inside.data.entity.*;
 import inside.data.service.AdminService;
 import inside.util.*;
+import inside.util.codec.Base64Coder;
 import inside.util.io.ReusableByteInputStream;
 import inside.voice.*;
 import io.netty.handler.codec.http.HttpMethod;

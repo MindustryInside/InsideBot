@@ -11,7 +11,6 @@ import inside.service.MessageService;
 import inside.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.*;
-import org.springframework.security.crypto.encrypt.*;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -151,18 +150,26 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public String encrypt(String text, Snowflake messageId, Snowflake channelId){
         if(settings.getDiscord().isEncryptMessages()){
-            TextEncryptor encryptor = Encryptors.text(messageId.asString(), channelId.asString());
-            return encryptor.encrypt(text);
+            return encrypt0(text, messageId.asString(), channelId.asString());
         }
         return text;
+    }
+
+    private String encrypt0(String text, String password, String salt){
+        AesEncryptor coder = new AesEncryptor(password, salt);
+        return coder.encrypt(text);
     }
 
     @Override
     public String decrypt(String text, Snowflake messageId, Snowflake channelId){
         if(settings.getDiscord().isEncryptMessages()){
-            TextEncryptor encryptor = Encryptors.text(messageId.asString(), channelId.asString());
-            return encryptor.decrypt(text);
+            return decrypt0(text, messageId.asString(), channelId.asString());
         }
         return text;
+    }
+
+    private String decrypt0(String text, String password, String salt){
+        AesEncryptor coder = new AesEncryptor(password, salt);
+        return coder.decrypt(text);
     }
 }
