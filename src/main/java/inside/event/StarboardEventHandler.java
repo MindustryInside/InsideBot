@@ -75,7 +75,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                 return Mono.empty();
             }
 
-            if(l >= config.lowerStarBarrier() && targetId == null){
+            if(l > config.lowerStarBarrier() && targetId == null){
                 return event.getGuild().flatMap(guild -> guild.getChannelById(channelId))
                         .cast(GuildMessageChannel.class)
                         .zipWith(event.getMessage())
