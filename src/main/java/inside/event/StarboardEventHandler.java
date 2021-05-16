@@ -6,8 +6,8 @@ import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.message.*;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.GuildMessageChannel;
-import discord4j.core.object.reaction.ReactionEmoji;
-import discord4j.rest.util.Color;
+import discord4j.core.object.reaction.*;
+import discord4j.rest.util.*;
 import inside.data.entity.StarboardConfig;
 import inside.data.service.EntityRetriever;
 import inside.service.MessageService;
@@ -18,6 +18,7 @@ import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.*;
+import reactor.math.MathFlux;
 import reactor.util.context.Context;
 import reactor.util.function.Tuples;
 
@@ -65,9 +66,10 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
         Mono<StarboardConfig> starboardConfig = entityRetriever.getStarboardConfigById(guildId);
 
-        Mono<Long> emojisCount = event.getMessage().flatMapMany(message -> Flux.fromIterable(message.getReactions()))
+        Mono<Integer> emojisCount = event.getMessage().flatMapMany(message -> Flux.fromIterable(message.getReactions()))
                 .filter(reaction -> Arrays.asList(stars).contains(reaction.getEmoji()))
-                .reduce(0L, (i, reaction) -> i + reaction.getCount());
+                .map(Reaction::getCount)
+                .as(counts -> MathFlux.max(counts, Integer::compare));
 
         return initContext.zipWith(starboardConfig).flatMap(function((context, config) -> emojisCount.flatMap(l -> {
             Snowflake targetId = staredMessages.getIfPresent(event.getMessageId());
@@ -82,10 +84,11 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                         .zipWith(event.getMessage())
                         .zipWith(author, (tuple, user) -> Tuples.of(tuple.getT1(), tuple.getT2(), user))
                         .flatMap(function((channel, message, user) -> channel.createMessage(spec -> spec.setContent(messageService.format(
-                                context, "starboard.format", stars[(int)Mathf.clamp(l - 1, 0, stars.length - 1)]
+                                context, "starboard.format", stars[Mathf.clamp(l - 1, 0, stars.length - 1)]
                                         .asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
                                         .orElseThrow(AssertionError::new),
                                 l, DiscordUtil.getChannelMention(message.getChannelId())))
+                                .setAllowedMentions(AllowedMentions.suppressEveryone())
                                 .setEmbed(embed -> embed.setFooter(DateTimeFormat.longDateTime()
                                         .withLocale(context.get(KEY_LOCALE))
                                         .withZone(context.get(KEY_TIMEZONE))
@@ -105,7 +108,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                         .flatMap(function((target, source) -> target.edit(spec -> spec.setEmbed(embed -> embed.from(target.getEmbeds().get(0).getData())
                                 .setColor(lerp(offsetColor, targetColor, Mathf.round(l, lerpStep))))
                                 .setContent(messageService.format(context, "starboard.format",
-                                        stars[(int)Mathf.clamp(l - 1, 0, stars.length - 1)]
+                                        stars[Mathf.clamp(l - 1, 0, stars.length - 1)]
                                                 .asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
                                                 .orElseThrow(AssertionError::new),
                                         l, DiscordUtil.getChannelMention(source.getChannelId()))))
@@ -130,9 +133,10 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
         Mono<StarboardConfig> starboardConfig = entityRetriever.getStarboardConfigById(guildId);
 
-        Mono<Long> emojisCount = event.getMessage().flatMapMany(message -> Flux.fromIterable(message.getReactions()))
+        Mono<Integer> emojisCount = event.getMessage().flatMapMany(message -> Flux.fromIterable(message.getReactions()))
                 .filter(reaction -> Arrays.asList(stars).contains(reaction.getEmoji()))
-                .reduce(0L, (i, reaction) -> i + reaction.getCount());
+                .map(Reaction::getCount)
+                .as(counts -> MathFlux.max(counts, Integer::compare));
 
         Mono<Message> targetMessage = starboardConfig.flatMap(config -> Mono.justOrEmpty(staredMessages.getIfPresent(event.getMessageId()))
                 .filter(ignored -> config.isEnable())
@@ -147,7 +151,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                         .flatMap(function((target, source) -> target.edit(spec -> spec.setEmbed(embed -> embed.from(target.getEmbeds().get(0).getData())
                                 .setColor(lerp(offsetColor, targetColor, Mathf.round(l, lerpStep))))
                                 .setContent(messageService.format(context, "starboard.format",
-                                        stars[(int)Mathf.clamp(l - 1, 0, stars.length - 1)]
+                                        stars[Mathf.clamp(l - 1, 0, stars.length - 1)]
                                                 .asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
                                                 .orElseThrow(AssertionError::new),
                                         l, DiscordUtil.getChannelMention(source.getChannelId()))))

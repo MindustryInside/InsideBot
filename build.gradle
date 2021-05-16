@@ -58,7 +58,7 @@ dependencies{
     implementation "com.github.JodaOrg:joda-time:$joda_version"
     implementation "com.github.ben-manes.caffeine:caffeine:$caffeine_version"
     implementation "com.udojava:EvalEx:$evalex_version"
-    implementation "org.graalvm.js:js:$graalvm_version"
+    // implementation "org.graalvm.js:js:$graalvm_version"
     implementation "com.sedmelluq:lavaplayer:$lavaplayer_version"
 
     // data dependencies
