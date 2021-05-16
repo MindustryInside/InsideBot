@@ -14,4 +14,6 @@ public interface EntityAccessor{
     Mono<LocalMember> getLocalMemberById(long userId, long guildId);
 
     Mono<MessageInfo> getMessageInfoById(long messageId);
+
+    Mono<StarboardConfig> getStarboardConfigById(long guildId);
 }

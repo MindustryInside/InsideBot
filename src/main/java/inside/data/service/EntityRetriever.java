@@ -45,6 +45,12 @@ public interface EntityRetriever{
 
     Mono<Void> save(MessageInfo messageInfo);
 
+    // starboard config
+
+    Mono<StarboardConfig> getStarboardConfigById(Snowflake guildId);
+
+    Mono<Void> save(StarboardConfig starboardConfig);
+
     // factory methods
 
     Mono<GuildConfig> createGuildConfig(Snowflake guildId);
@@ -60,4 +66,6 @@ public interface EntityRetriever{
     default Mono<LocalMember> createLocalMember(Member member){
         return createLocalMember(member.getId(), member.getGuildId(), member.getDisplayName());
     }
+
+    Mono<StarboardConfig> createStarboardConfig(Snowflake guildId);
 }

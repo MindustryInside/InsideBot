@@ -35,6 +35,7 @@ public class Store{
                 .map(GetAuditConfigAction.class, action -> entityAccessor.getAuditConfigById(action.guildId))
                 .map(GetLocalMemberAction.class, action -> entityAccessor.getLocalMemberById(action.userId, action.guildId))
                 .map(GetMessageInfoAction.class, action -> entityAccessor.getMessageInfoById(action.messageId))
+                .map(GetStarboardConfigAction.class, action -> entityAccessor.getStarboardConfigById(action.guildId))
                 .build();
     }
 
@@ -48,6 +49,7 @@ public class Store{
                 .map(LocalMemberSaveAction.class, action -> entityUpdater.onLocalMemberSave(action.localMember))
                 .map(MessageInfoSaveAction.class, action -> entityUpdater.onMessageInfoSave(action.messageInfo))
                 .map(MessageInfoDeleteAction.class, action -> entityUpdater.onMessageInfoDelete(action.messageInfo))
+                .map(StarboardConfigSaveAction.class, action -> entityUpdater.onStarboardConfigSave(action.starboardConfig))
                 .build();
     }
 
