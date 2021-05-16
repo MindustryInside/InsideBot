@@ -60,6 +60,12 @@ public class DefaultEntityStoreLayout implements EntityStoreLayout, EntityAccess
     }
 
     @Override
+    public Mono<Starboard> getStarboardById(long guildId, long sourceMessageId){
+        return storeHolder.getStarboardService()
+                .find(LongLongTuple2.of(guildId, sourceMessageId));
+    }
+
+    @Override
     public Mono<Void> onGuildConfigSave(GuildConfig guildConfig){
         return storeHolder.getGuildConfigService()
                 .save(guildConfig);
@@ -99,5 +105,17 @@ public class DefaultEntityStoreLayout implements EntityStoreLayout, EntityAccess
     public Mono<Void> onStarboardConfigSave(StarboardConfig starboardConfig){
         return storeHolder.getStarboardConfigService()
                 .save(starboardConfig);
+    }
+
+    @Override
+    public Mono<Void> onStarboardSave(Starboard starboard){
+        return storeHolder.getStarboardService()
+                .save(starboard);
+    }
+
+    @Override
+    public Mono<Void> onStarboardDelete(Starboard starboard){
+        return storeHolder.getStarboardService()
+                .delete(starboard);
     }
 }

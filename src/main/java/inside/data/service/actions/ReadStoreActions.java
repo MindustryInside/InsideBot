@@ -31,6 +31,10 @@ public class ReadStoreActions{
         return new GetStarboardConfigAction(guildId);
     }
 
+    public static GetStarboardAction getStarboardById(long guildId, long sourceMessageId){
+        return new GetStarboardAction(guildId, sourceMessageId);
+    }
+
     public static class GetGuildConfigAction implements EntityStoreAction<GuildConfig>{
         public final long guildId;
 
@@ -78,6 +82,16 @@ public class ReadStoreActions{
 
         public GetStarboardConfigAction(long guildId){
             this.guildId = guildId;
+        }
+    }
+
+    public static class GetStarboardAction implements EntityStoreAction<Starboard>{
+        public final long guildId;
+        public final long sourceMessageId;
+
+        public GetStarboardAction(long guildId, long sourceMessageId){
+            this.guildId = guildId;
+            this.sourceMessageId = sourceMessageId;
         }
     }
 }

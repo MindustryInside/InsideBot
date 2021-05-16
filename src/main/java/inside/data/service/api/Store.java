@@ -36,6 +36,7 @@ public class Store{
                 .map(GetLocalMemberAction.class, action -> entityAccessor.getLocalMemberById(action.userId, action.guildId))
                 .map(GetMessageInfoAction.class, action -> entityAccessor.getMessageInfoById(action.messageId))
                 .map(GetStarboardConfigAction.class, action -> entityAccessor.getStarboardConfigById(action.guildId))
+                .map(GetStarboardAction.class, action -> entityAccessor.getStarboardById(action.guildId, action.sourceMessageId))
                 .build();
     }
 
@@ -50,6 +51,8 @@ public class Store{
                 .map(MessageInfoSaveAction.class, action -> entityUpdater.onMessageInfoSave(action.messageInfo))
                 .map(MessageInfoDeleteAction.class, action -> entityUpdater.onMessageInfoDelete(action.messageInfo))
                 .map(StarboardConfigSaveAction.class, action -> entityUpdater.onStarboardConfigSave(action.starboardConfig))
+                .map(StarboardSaveAction.class, action -> entityUpdater.onStarboardSave(action.starboard))
+                .map(StarboardDeleteAction.class, action -> entityUpdater.onStarboardDelete(action.starboard))
                 .build();
     }
 

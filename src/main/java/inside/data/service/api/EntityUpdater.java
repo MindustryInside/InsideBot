@@ -18,4 +18,8 @@ public interface EntityUpdater{
     Mono<Void> onMessageInfoDelete(MessageInfo messageInfo);
 
     Mono<Void> onStarboardConfigSave(StarboardConfig starboardConfig);
+
+    Mono<Void> onStarboardSave(Starboard starboard);
+
+    Mono<Void> onStarboardDelete(Starboard starboard);
 }

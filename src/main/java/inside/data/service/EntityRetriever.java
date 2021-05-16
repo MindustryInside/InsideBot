@@ -51,6 +51,14 @@ public interface EntityRetriever{
 
     Mono<Void> save(StarboardConfig starboardConfig);
 
+    // starboard
+
+    Mono<Starboard> getStarboardById(Snowflake guildId, Snowflake sourceMessageId);
+
+    Mono<Void> delete(Starboard starboard);
+
+    Mono<Void> save(Starboard starboard);
+
     // factory methods
 
     Mono<GuildConfig> createGuildConfig(Snowflake guildId);
@@ -68,4 +76,6 @@ public interface EntityRetriever{
     }
 
     Mono<StarboardConfig> createStarboardConfig(Snowflake guildId);
+
+    Mono<Starboard> createStarboard(Snowflake guildId, Snowflake sourceMessageId, Snowflake targetMessageId);
 }

@@ -45,4 +45,13 @@ public class StarboardConfig extends GuildEntity{
     public void setEnable(boolean enable){
         this.enable = enable;
     }
+
+    @Override
+    public String toString(){
+        return "StarboardConfig{" +
+                "lowerStarBarrier=" + lowerStarBarrier +
+                ", starboardChannelId='" + starboardChannelId + '\'' +
+                ", enable=" + enable +
+                "} " + super.toString();
+    }
 }

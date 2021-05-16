@@ -16,4 +16,6 @@ public interface EntityAccessor{
     Mono<MessageInfo> getMessageInfoById(long messageId);
 
     Mono<StarboardConfig> getStarboardConfigById(long guildId);
+
+    Mono<Starboard> getStarboardById(long guildId, long sourceMessageId);
 }

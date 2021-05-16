@@ -35,6 +35,14 @@ public class UpdateStoreActions{
         return new StarboardConfigSaveAction(starboardConfig);
     }
 
+    public static StarboardSaveAction starboardSave(Starboard starboard){
+        return new StarboardSaveAction(starboard);
+    }
+
+    public static StarboardDeleteAction starboardDelete(Starboard starboard){
+        return new StarboardDeleteAction(starboard);
+    }
+
     public static class GuildConfigSaveAction implements EntityStoreAction<Void>{
         public final GuildConfig guildConfig;
 
@@ -88,6 +96,22 @@ public class UpdateStoreActions{
 
         public StarboardConfigSaveAction(StarboardConfig starboardConfig){
             this.starboardConfig = starboardConfig;
+        }
+    }
+
+    public static class StarboardSaveAction implements EntityStoreAction<Void>{
+        public final Starboard starboard;
+
+        public StarboardSaveAction(Starboard starboard){
+            this.starboard = starboard;
+        }
+    }
+
+    public static class StarboardDeleteAction implements EntityStoreAction<Void>{
+        public final Starboard starboard;
+
+        public StarboardDeleteAction(Starboard starboard){
+            this.starboard = starboard;
         }
     }
 }
