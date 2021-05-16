@@ -21,6 +21,7 @@ import reactor.math.MathFlux;
 import reactor.util.context.Context;
 
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import static inside.util.ContextUtil.*;
 import static reactor.bool.BooleanUtils.*;
@@ -95,17 +96,29 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                     .asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
                                     .orElseThrow(AssertionError::new),
                             l, DiscordUtil.getChannelMention(source.getChannelId())))
-                            .setAllowedMentions(AllowedMentions.suppressEveryone())
-                            .setEmbed(embed -> embed.setFooter(DateTimeFormat.longDateTime()
-                                    .withLocale(context.get(KEY_LOCALE))
-                                    .withZone(context.get(KEY_TIMEZONE))
-                                    .print(DateTime.now()), null)
-                                    .setAuthor(user.getUsername(), null, user.getAvatarUrl())
-                                    .setDescription(source.getContent())
-                                    .setColor(lerp(offsetColor, targetColor, Mathf.round(l, lerpStep)))
-                                    .addField(messageService.get(context, "starboard.source"), messageService.format(context, "starboard.jump",
-                                            guildId.asString(), source.getChannelId().asString(), source.getId().asString()), false)
-                                    .setImage(source.getAttachments().stream().map(Attachment::getUrl).findFirst().orElse(""))))
+                            .setAllowedMentions(AllowedMentions.suppressAll())
+                            .setEmbed(embed -> {
+                                embed.setFooter(DateTimeFormat.longDateTime()
+                                        .withLocale(context.get(KEY_LOCALE))
+                                        .withZone(context.get(KEY_TIMEZONE))
+                                        .print(DateTime.now()), null);
+                                embed.setAuthor(user.getUsername(), null, user.getAvatarUrl());
+                                embed.setDescription(source.getContent());
+                                embed.setColor(lerp(offsetColor, targetColor, Mathf.round(l, lerpStep)));
+                                embed.addField(messageService.get(context, "starboard.source"), messageService.format(context, "starboard.jump",
+                                        guildId.asString(), source.getChannelId().asString(), source.getId().asString()), false);
+                                int size = source.getAttachments().size();
+                                if(size != 0){
+                                    String key = size == 1 ? "starboard.attachment" : "starboard.attachments";
+                                    embed.addField(messageService.get(context, key), source.getAttachments().stream()
+                                            .map(att -> String.format("[%s](%s)", att.getFilename(), att.getUrl()))
+                                            .collect(Collectors.joining("\n")), false);
+                                }
+
+                                source.getAttachments().stream()
+                                        .map(Attachment::getUrl)
+                                        .findFirst().ifPresent(embed::setImage);
+                            }))
                             .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId()))))
                     .then();
 
@@ -200,7 +213,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
         }
 
         return entityRetriever.getStarboardById(guildId, event.getMessageId())
-                .flatMap(entityRetriever::delete);
+                .flatMap(entityRetriever::delete); // TODO: delete by targetMessageId
     }
 
     public Color lerp(Color source, Color target, float t){
