@@ -31,6 +31,10 @@ public class UpdateStoreActions{
         return new MessageInfoDeleteAction(messageInfo);
     }
 
+    public static StarboardConfigSaveAction starboardConfigSave(StarboardConfig starboardConfig){
+        return new StarboardConfigSaveAction(starboardConfig);
+    }
+
     public static class GuildConfigSaveAction implements EntityStoreAction<Void>{
         public final GuildConfig guildConfig;
 
@@ -76,6 +80,14 @@ public class UpdateStoreActions{
 
         public MessageInfoDeleteAction(MessageInfo messageInfo){
             this.messageInfo = messageInfo;
+        }
+    }
+
+    public static class StarboardConfigSaveAction implements EntityStoreAction<Void>{
+        public final StarboardConfig starboardConfig;
+
+        public StarboardConfigSaveAction(StarboardConfig starboardConfig){
+            this.starboardConfig = starboardConfig;
         }
     }
 }

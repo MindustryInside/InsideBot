@@ -27,6 +27,10 @@ public class ReadStoreActions{
         return new GetMessageInfoAction(messageId);
     }
 
+    public static GetStarboardConfigAction getStarboardConfigById(long guildId){
+        return new GetStarboardConfigAction(guildId);
+    }
+
     public static class GetGuildConfigAction implements EntityStoreAction<GuildConfig>{
         public final long guildId;
 
@@ -66,6 +70,14 @@ public class ReadStoreActions{
 
         public GetMessageInfoAction(long messageId){
             this.messageId = messageId;
+        }
+    }
+
+    public static class GetStarboardConfigAction implements EntityStoreAction<StarboardConfig>{
+        public final long guildId;
+
+        public GetStarboardConfigAction(long guildId){
+            this.guildId = guildId;
         }
     }
 }
