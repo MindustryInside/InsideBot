@@ -1,3 +1,8 @@
 rootProject.name = 'InsideBot'
 
 include 'encoding'
+
+if(file('src/legacy').exists()){
+    include 'legacy'
+    project(':legacy').projectDir = file('src/legacy')
+}
