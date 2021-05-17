@@ -20,7 +20,7 @@ import reactor.core.publisher.*;
 import reactor.math.MathFlux;
 import reactor.util.context.Context;
 
-import java.util.Arrays;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static inside.util.ContextUtil.*;
@@ -107,10 +107,13 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                 embed.setColor(lerp(offsetColor, targetColor, Mathf.round(l, lerpStep)));
                                 embed.addField(messageService.get(context, "starboard.source"), messageService.format(context, "starboard.jump",
                                         guildId.asString(), source.getChannelId().asString(), source.getId().asString()), false);
-                                int size = source.getAttachments().size();
-                                if(size != 0){
-                                    String key = size == 1 ? "starboard.attachment" : "starboard.attachments";
-                                    embed.addField(messageService.get(context, key), source.getAttachments().stream()
+                                Set<Attachment> files = source.getAttachments().stream()
+                                        .filter(att -> !att.getContentType().map(str -> str.startsWith("image")).orElse(false))
+                                        .collect(Collectors.toSet());
+
+                                if(files.size() != 0){
+                                    String key = files.size() == 1 ? "starboard.attachment" : "starboard.attachments";
+                                    embed.addField(messageService.get(context, key), files.stream()
                                             .map(att -> String.format("[%s](%s)", att.getFilename(), att.getUrl()))
                                             .collect(Collectors.joining("\n")), false);
                                 }
