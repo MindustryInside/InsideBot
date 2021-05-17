@@ -30,7 +30,7 @@ import static reactor.function.TupleUtils.function;
 @Component
 public class StarboardEventHandler extends ReactiveEventAdapter{
     private static final Color offsetColor = Color.of(0xffefc0), targetColor = Color.of(0xffd37f);
-    private static final float lerpStep = 0.000001f;
+    private static final float lerpStep = 0.00000001f;
 
     private final ReactionEmoji[] stars = {
             ReactionEmoji.unicode("\u2B50"),
@@ -233,24 +233,9 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
     }
 
     private Color clamp(float r, float g, float b){
-        if(r < 0){
-            r = 0;
-        }else if(r > 1){
-            r = 1;
-        }
-
-        if(g < 0){
-            g = 0;
-        }else if(g > 1){
-            g = 1;
-        }
-
-        if(b < 0){
-            b = 0;
-        }else if(b > 1){
-            b = 1;
-        }
-
+        r = Mathf.clamp(r, 0f, 1f);
+        g = Mathf.clamp(g, 0f, 1f);
+        b = Mathf.clamp(b, 0f, 1f);
         return Color.of(r, g, b);
     }
 }
