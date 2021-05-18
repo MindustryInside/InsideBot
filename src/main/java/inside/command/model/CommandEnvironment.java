@@ -11,7 +11,7 @@ import reactor.util.context.ContextView;
 public class CommandEnvironment{
     private final Member member;
     private final Message message;
-    private final ContextView context; // TODO(Skat): use Mono#deferContextual
+    private final ContextView context;
     private final LocalMember localMember;
 
     @Builder.Constructor

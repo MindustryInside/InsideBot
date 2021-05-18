@@ -215,8 +215,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
             return Mono.empty();
         }
 
-        return entityRetriever.getStarboardById(guildId, event.getMessageId())
-                .flatMap(entityRetriever::delete); // TODO: delete by targetMessageId
+        return entityRetriever.deleteStarboardById(guildId, event.getMessageId());
     }
 
     public Color lerp(Color source, Color target, float t){

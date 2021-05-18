@@ -24,10 +24,9 @@ public class OptionValue{
         return Boolean.parseBoolean(value);
     }
 
-    // TODO replace
     @Nullable
     public Snowflake asSnowflake(){
-        return MessageUtil.parseUserId(value);
+        return MessageUtil.parseId(value.replaceAll("[<@!#&]", ""));
     }
 
     @Nullable

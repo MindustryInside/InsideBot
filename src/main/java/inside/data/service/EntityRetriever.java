@@ -55,6 +55,8 @@ public interface EntityRetriever{
 
     Mono<Starboard> getStarboardById(Snowflake guildId, Snowflake sourceMessageId);
 
+    Mono<Void> deleteStarboardById(Snowflake guildId, Snowflake sourceMessageId);
+
     Mono<Void> delete(Starboard starboard);
 
     Mono<Void> save(Starboard starboard);

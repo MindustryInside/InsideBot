@@ -13,6 +13,7 @@ import reactor.util.context.ContextView;
 import static inside.audit.Attribute.*;
 import static inside.util.ContextUtil.*;
 
+// TODO: check channel permissions and error handling
 public class AuditProviders{
 
     private AuditProviders(){}
@@ -195,6 +196,15 @@ public class AuditProviders{
                     getUserReference(context, action.user()), true);
             embed.addField(messageService.get(context, "audit.member.reason"), reason, true);
             embed.addField(messageService.get(context, "audit.member.mute.delay"), formatter.print(delay), true);
+            addTimestamp(context, action, embed);
+        }
+    }
+
+    @ForwardAuditProvider(AuditActionType.MEMBER_UPDATE)
+    public static class MemberUpdateAuditProvider extends BaseAuditProvider{
+        @Override
+        protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
+
             addTimestamp(context, action, embed);
         }
     }
