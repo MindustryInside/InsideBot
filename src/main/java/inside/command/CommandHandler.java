@@ -37,7 +37,6 @@ public class CommandHandler{
         this.messageService = messageService;
     }
 
-    // TODO: immutable collections
     @Autowired(required = false)
     public void init(List<Command> commands){
         for(Command command : commands){

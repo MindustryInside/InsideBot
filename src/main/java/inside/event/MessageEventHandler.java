@@ -89,8 +89,6 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                         .build()))
                 .flatMap(environment -> commandHandler.handleMessage(environment));
 
-        // TODO: cleanup
-
         return initContext.flatMap(context -> Mono.when(updateLastSendMessage, safeMessageInfo, handleMessage).contextWrite(context));
     }
 

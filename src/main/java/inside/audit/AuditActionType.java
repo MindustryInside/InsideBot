@@ -3,7 +3,7 @@ package inside.audit;
 import discord4j.rest.util.Color;
 
 public enum AuditActionType{
-    MESSAGE_CREATE(0x1337),
+    MESSAGE_CREATE(0x1337), // unused
     MESSAGE_EDIT(0x32cd32),
     MESSAGE_DELETE(0xff341c),
     MESSAGE_CLEAR(0xdc143c),
@@ -20,7 +20,8 @@ public enum AuditActionType{
     MEMBER_KICK(0xffd37f),
     MEMBER_BAN(0xffcc00),
     MEMBER_MUTE(0xffca59),
-    MEMBER_UNMUTE(0x85ea88);
+    MEMBER_UNMUTE(0x85ea88),
+    MEMBER_UPDATE(0x27b827);
 
     public final Color color;
 
