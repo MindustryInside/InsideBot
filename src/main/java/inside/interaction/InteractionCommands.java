@@ -113,7 +113,7 @@ public class InteractionCommands{
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getOption("type")
                                         .flatMap(ApplicationCommandInteractionOption::getValue))
                                         .map(ApplicationCommandInteractionOptionValue::asString)
-                                        .filter(str -> !str.equalsIgnoreCase("help"))
+                                        .filter(str -> !str.equals("help"))
                                         .switchIfEmpty(messageService.text(env.event(), "command.settings.admin-roles.current",
                                                 Optional.of(formatCollection(adminConfig.adminRoleIds(), DiscordUtil::getRoleMention))
                                                         .filter(s -> !s.isBlank())
@@ -123,7 +123,7 @@ public class InteractionCommands{
                                                 .flatMap(subopt -> Mono.justOrEmpty(subopt.getValue()))
                                                 .map(ApplicationCommandInteractionOptionValue::asString)))
                                 .flatMap(function((choice, enums) -> Mono.defer(() -> {
-                                    boolean add = choice.equalsIgnoreCase("add");
+                                    boolean add = choice.equals("add");
 
                                     List<String> toHelp = new ArrayList<>();
                                     List<Snowflake> removed = new ArrayList<>();
@@ -242,7 +242,7 @@ public class InteractionCommands{
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getOption("type")
                                         .flatMap(ApplicationCommandInteractionOption::getValue))
                                         .map(ApplicationCommandInteractionOptionValue::asString)
-                                        .filter(str -> !str.equalsIgnoreCase("help"))
+                                        .filter(str -> !str.equals("help"))
                                         .switchIfEmpty(messageService.text(env.event(), "command.settings.actions.all", formatCollection(
                                                 EnumSet.allOf(AuditActionType.class),
                                                 type -> messageService.getEnum(env.context(), type)))
@@ -262,7 +262,7 @@ public class InteractionCommands{
                                     List<String> onlyNames = all.stream().map(Tuple2::getT2)
                                             .collect(Collectors.toUnmodifiableList());
 
-                                    boolean add = choice.equalsIgnoreCase("add");
+                                    boolean add = choice.equals("add");
 
                                     Set<String> toHelp = new HashSet<>();
                                     Set<String> removed = new HashSet<>();
@@ -588,7 +588,7 @@ public class InteractionCommands{
                     .getOption("type")
                     .flatMap(ApplicationCommandInteractionOption::getValue)
                     .map(ApplicationCommandInteractionOptionValue::asString)
-                    .map("ru"::equalsIgnoreCase)
+                    .map("ru"::equals)
                     .orElse(false);
 
             String text = env.event().getInteraction().getCommandInteraction()
@@ -638,7 +638,7 @@ public class InteractionCommands{
                     .getOption("type")
                     .flatMap(ApplicationCommandInteractionOption::getValue)
                     .map(ApplicationCommandInteractionOptionValue::asString)
-                    .map("ru"::equalsIgnoreCase)
+                    .map("ru"::equals)
                     .orElse(false);
 
             String text = env.event().getInteraction().getCommandInteraction()

@@ -766,7 +766,8 @@ public class Commands{
     }
 
     @DiscordCommand(key = "delete", params = "command.admin.delete.params", description = "command.admin.delete.description",
-                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_MESSAGES, Permission.READ_MESSAGE_HISTORY})
+                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS,
+                                   Permission.MANAGE_MESSAGES, Permission.READ_MESSAGE_HISTORY})
     public static class DeleteCommand extends AdminCommand{
         @Autowired
         private Settings settings;
@@ -899,7 +900,7 @@ public class Commands{
     }
 
     @DiscordCommand(key = "softban", params = "command.admin.softban.params", description = "command.admin.softban.description",
-                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.BAN_MEMBERS})
+                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS, Permission.BAN_MEMBERS})
     public static class SoftbanCommand extends AdminCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1033,7 +1034,8 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "poll", params = "command.poll.params", description = "command.poll.description")
+    @DiscordCommand(key = "poll", params = "command.poll.params", description = "command.poll.description",
+                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS})
     public static class PollCommand extends Command{
 
         public static final ReactionEmoji[] emojis;
@@ -1108,7 +1110,8 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "qpoll", params = "command.qpoll.params", description = "command.qpoll.description")
+    @DiscordCommand(key = "qpoll", params = "command.qpoll.params", description = "command.qpoll.description",
+                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS})
     public static class QuickPollCommand extends Command{
         public static final ReactionEmoji up = ReactionEmoji.unicode("\uD83D\uDC4D");
         public static final ReactionEmoji down = ReactionEmoji.unicode("\uD83D\uDC4E");
@@ -1139,7 +1142,7 @@ public class Commands{
     }
 
     @DiscordCommand(key = "unmute", params = "command.admin.unmute.params", description = "command.admin.unmute.description",
-                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_ROLES})
+                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS, Permission.MANAGE_ROLES})
     public static class UnmuteCommand extends AdminCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1177,7 +1180,9 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "pause", description = "command.voice.pause.description")
+    @DiscordCommand(key = "pause", description = "command.voice.pause.description",
+                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS,
+                                   Permission.CONNECT, Permission.SPEAK})
     public static class VoicePauseCommand extends VoiceCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1188,7 +1193,9 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = {"leave", "l"}, description = "command.voice.leave.description")
+    @DiscordCommand(key = {"leave", "l"}, description = "command.voice.leave.description",
+                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS,
+                                   Permission.CONNECT, Permission.SPEAK})
     public static class VoiceLeaveCommand extends VoiceCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1203,7 +1210,9 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = {"skip", "s"}, description = "command.voice.skip.description")
+    @DiscordCommand(key = {"skip", "s"}, description = "command.voice.skip.description",
+                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS,
+                                   Permission.CONNECT, Permission.SPEAK})
     public static class VoiceSkipCommand extends VoiceCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1215,7 +1224,9 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = {"stop", "st"}, description = "command.voice.stop.description")
+    @DiscordCommand(key = {"stop", "st"}, description = "command.voice.stop.description",
+                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS,
+                                   Permission.CONNECT, Permission.SPEAK})
     public static class VoiceStopCommand extends VoiceCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1228,7 +1239,9 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "reconnect", description = "command.voice.reconnect.description")
+    @DiscordCommand(key = "reconnect", description = "command.voice.reconnect.description",
+                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS,
+                                   Permission.CONNECT, Permission.SPEAK})
     public static class VoiceReconnectCommand extends VoiceCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1240,7 +1253,8 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = {"play", "p"}, params = "command.voice.play.params", description = "command.voice.play.description")
+    @DiscordCommand(key = {"play", "p"}, params = "command.voice.play.params", description = "command.voice.play.description",
+                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.CONNECT, Permission.SPEAK})
     public static class VoicePlayCommand extends VoiceCommand{
         private static final String api = "https://youtube.googleapis.com/youtube/v3/";
 
