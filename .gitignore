@@ -11,5 +11,4 @@ build/
 
 # Misc
 logs/
-src/main/resources/application.yml
 src/legacy/
