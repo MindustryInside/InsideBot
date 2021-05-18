@@ -12,7 +12,7 @@ public final class Mathf{
     }
 
     public static int digits(long n){
-        return n == 0 ? 1 : (int)(Math.log10(n)+1);
+        return n == 0 ? 1 : (int)(Math.log10(n) + 1);
     }
 
     public static int sign(float f){

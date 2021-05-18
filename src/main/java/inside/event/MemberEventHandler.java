@@ -25,6 +25,7 @@ import static inside.util.ContextUtil.*;
 
 @Component
 public class MemberEventHandler extends ReactiveEventAdapter{
+    // the number from which the filtering of audit logs is based
     protected static final long TIMEOUT_MILLIS = 3500L;
 
     @Autowired

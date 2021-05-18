@@ -1295,7 +1295,7 @@ public class Commands{
                     t -> log.error("Failed to load sound track", t));
 
             return joinIfNot.and(Mono.fromRunnable(() -> voiceService.getAudioPlayerManager()
-                    .loadItemOrdered(voiceRegistry, query, loadResultHandler)));
+                    .loadItemOrdered(voiceRegistry, query, loadResultHandler))); // block task
         }
 
         private Mono<AudioPlaylist> search(String query, int maxResults, YoutubeAudioSourceManager sourceManager){

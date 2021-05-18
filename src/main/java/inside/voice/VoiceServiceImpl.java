@@ -17,10 +17,10 @@ public class VoiceServiceImpl implements VoiceService{
             .build();
 
     private final Lazy<AudioPlayerManager> playerManager = Lazy.of(() -> {
-        DefaultAudioPlayerManager pm = new DefaultAudioPlayerManager();
-        pm.getConfiguration().setFrameBufferFactory(NonAllocatingAudioFrameBuffer::new);
-        AudioSourceManagers.registerRemoteSources(pm);
-        return pm;
+        DefaultAudioPlayerManager manager = new DefaultAudioPlayerManager();
+        manager.getConfiguration().setFrameBufferFactory(NonAllocatingAudioFrameBuffer::new);
+        AudioSourceManagers.registerRemoteSources(manager);
+        return manager;
     });
 
     @Override
