@@ -85,11 +85,11 @@ public class InteractionCommands{
                                         adminConfig.maxWarnCount()).then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
                                         .map(ApplicationCommandInteractionOptionValue::asLong))
-                                .flatMap(number -> Mono.defer(() -> {
+                                .flatMap(number -> {
                                     adminConfig.maxWarnCount(number);
                                     return messageService.text(env.event(), "command.settings.warnings.update", number)
                                             .and(entityRetriever.save(adminConfig));
-                                }));
+                                });
 
                         Mono<Void> muteRoleCommand = Mono.justOrEmpty(group.getOption("mute-role"))
                                 .switchIfEmpty(warningsCommand.then(Mono.empty()))
@@ -101,12 +101,12 @@ public class InteractionCommands{
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
                                         .flatMap(ApplicationCommandInteractionOptionValue::asRole))
                                 .map(Role::getId)
-                                .flatMap(roleId -> Mono.defer(() -> {
+                                .flatMap(roleId -> {
                                     adminConfig.muteRoleId(roleId);
                                     return messageService.text(env.event(), "command.settings.mute-role.update",
                                             DiscordUtil.getRoleMention(roleId))
                                             .and(entityRetriever.save(adminConfig));
-                                }));
+                                });
 
                         Mono<Void> adminRolesCommand = Mono.justOrEmpty(group.getOption("admin-roles"))
                                 .switchIfEmpty(muteRoleCommand.then(Mono.empty()))
@@ -314,10 +314,10 @@ public class InteractionCommands{
 
                                         return messageService.text(env.event(), "command.settings.removed",
                                                 String.join(", ", removed));
-                                    }else{
-                                        String response = toHelp.stream().map(s -> " • " + s + "\n").collect(Collectors.joining());
-                                        return messageService.error(env.event(), "command.settings.actions.conflicted.title", response);
                                     }
+
+                                    String response = toHelp.stream().map(s -> " • " + s + "\n").collect(Collectors.joining());
+                                    return messageService.error(env.event(), "command.settings.actions.conflicted.title", response);
                                 }))).and(entityRetriever.save(auditConfig));
 
                         Function<Boolean, String> formatBool = bool ->
