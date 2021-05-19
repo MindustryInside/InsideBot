@@ -36,6 +36,8 @@ allprojects{
 
         compileOnly "org.immutables:value:$immutables_version"
         annotationProcessor "org.immutables:value:$immutables_version"
+
+        testImplementation "org.junit.jupiter:junit-jupiter-engine:$junit_version"
     }
 
     tasks.withType(JavaCompile){
@@ -51,6 +53,9 @@ allprojects{
 
 dependencies{
     compileOnly project(":encoding")
+    if(findProject(':legacy') != null){
+        api project(':legacy')
+    }
 
     implementation "com.discord4j.discord4j:discord4j-voice:master-SNAPSHOT"
 
@@ -69,6 +74,4 @@ dependencies{
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
     compileOnly "org.immutables:builder:$immutables_version"
-
-    testImplementation "org.junit.jupiter:junit-jupiter-engine:$junit_version"
 }

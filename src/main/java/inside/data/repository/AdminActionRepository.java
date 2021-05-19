@@ -2,6 +2,7 @@ package inside.data.repository;
 
 import inside.data.entity.*;
 import inside.data.repository.base.GuildRepository;
+import org.joda.time.DateTime;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -15,4 +16,6 @@ public interface AdminActionRepository extends GuildRepository<AdminAction>{
 
     @Query("select a from AdminAction a where a.type = :type and a.guildId = :guildId and a.target.userId = :targetId")
     List<AdminAction> find(AdminActionType type, long guildId, long targetId);
+
+    void deleteAllByTypeAndEndTimestampBefore(AdminActionType type, DateTime dateTime);
 }
