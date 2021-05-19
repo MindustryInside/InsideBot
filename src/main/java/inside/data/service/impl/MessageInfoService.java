@@ -28,6 +28,6 @@ public class MessageInfoService extends BaseLongObjEntityService<MessageInfo, Me
     @Transactional
     @Scheduled(cron = "0 0 */4 * * *")
     public void cleanUp(){
-        repository.deleteByTimestampBefore(DateTime.now().minus(settings.getAudit().getHistoryKeep().toMillis()));
+        repository.deleteAllByTimestampBefore(DateTime.now().minus(settings.getAudit().getHistoryKeep().toMillis()));
     }
 }
