@@ -10,5 +10,5 @@ import org.springframework.transaction.annotation.Transactional;
 public interface AuditActionRepository extends GuildRepository<AuditAction>{
 
     @Transactional // why spring?
-    void deleteByTimestampBefore(DateTime timestamp);
+    void deleteAllByTimestampBefore(DateTime timestamp);
 }

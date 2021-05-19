@@ -10,5 +10,5 @@ public interface LocalMemberRepository extends GuildRepository<LocalMember>{
 
     LocalMember findByUserIdAndGuildId(long userId, long guildId);
 
-    void deleteByLastSentMessageBefore(DateTime timestamp);
+    void deleteAllByLastSentMessageBefore(DateTime timestamp);
 }

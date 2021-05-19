@@ -12,5 +12,5 @@ public interface MessageInfoRepository extends GuildRepository<MessageInfo>{
 
     void deleteByMessageId(long messageId);
 
-    void deleteByTimestampBefore(DateTime timestamp);
+    void deleteAllByTimestampBefore(DateTime timestamp);
 }

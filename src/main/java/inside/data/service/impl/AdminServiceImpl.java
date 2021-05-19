@@ -166,7 +166,7 @@ public class AdminServiceImpl implements AdminService{
 
     @Override
     @Transactional
-    @Scheduled(cron = "* * * * * *")
+    @Scheduled(cron = "0 */3 * * * *")
     public void warningsMonitor(){
         repository.deleteAllByTypeAndEndTimestampBefore(AdminActionType.warn, DateTime.now());
     }
