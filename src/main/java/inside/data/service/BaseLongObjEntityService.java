@@ -1,9 +1,8 @@
-package inside.data.service.impl;
+package inside.data.service;
 
 import inside.Settings;
 import inside.data.entity.base.BaseEntity;
 import inside.data.repository.base.BaseRepository;
-import inside.data.service.*;
 import reactor.core.publisher.Mono;
 
 public abstract class BaseLongObjEntityService<V extends BaseEntity, R extends BaseRepository<V>>

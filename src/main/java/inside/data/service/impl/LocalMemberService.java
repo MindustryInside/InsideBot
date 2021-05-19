@@ -9,6 +9,7 @@ import org.joda.time.DateTime;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.util.annotation.Nullable;
 
 @Service
 public class LocalMemberService extends BaseEntityService<LongLongTuple2, LocalMember, LocalMemberRepository>{
@@ -17,6 +18,7 @@ public class LocalMemberService extends BaseEntityService<LongLongTuple2, LocalM
         super(repository, settings);
     }
 
+    @Nullable
     @Override
     protected LocalMember find0(LongLongTuple2 id){
         long userId = id.getT1();

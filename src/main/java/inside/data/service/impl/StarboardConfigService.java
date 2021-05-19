@@ -3,6 +3,7 @@ package inside.data.service.impl;
 import inside.Settings;
 import inside.data.entity.StarboardConfig;
 import inside.data.repository.StarboardConfigRepository;
+import inside.data.service.BaseLongObjEntityService;
 import org.springframework.stereotype.Service;
 import reactor.util.annotation.Nullable;
 

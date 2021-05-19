@@ -165,11 +165,10 @@ public class AdminServiceImpl implements AdminService{
     }
 
     @Override
-    @Scheduled(cron = "0 */3 * * * *")
+    @Transactional
+    @Scheduled(cron = "* * * * * *")
     public void warningsMonitor(){
-        getAll(AdminActionType.warn)
-                .filter(AdminAction::isEnd)
-                .subscribe(repository::delete);
+        repository.deleteAllByTypeAndEndTimestampBefore(AdminActionType.warn, DateTime.now());
     }
 
     @Override

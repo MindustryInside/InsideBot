@@ -3,7 +3,9 @@ package inside.data.service.impl;
 import inside.Settings;
 import inside.data.entity.AuditConfig;
 import inside.data.repository.AuditConfigRepository;
+import inside.data.service.BaseLongObjEntityService;
 import org.springframework.stereotype.Service;
+import reactor.util.annotation.Nullable;
 
 @Service
 public class AuditConfigService extends BaseLongObjEntityService<AuditConfig, AuditConfigRepository>{
@@ -12,6 +14,7 @@ public class AuditConfigService extends BaseLongObjEntityService<AuditConfig, Au
         super(repository, settings);
     }
 
+    @Nullable
     @Override
     protected AuditConfig find0(Long id){
         return repository.findByGuildId(id);

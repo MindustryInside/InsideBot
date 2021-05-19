@@ -3,7 +3,9 @@ package inside.data.service.impl;
 import inside.Settings;
 import inside.data.entity.AdminConfig;
 import inside.data.repository.AdminConfigRepository;
+import inside.data.service.BaseLongObjEntityService;
 import org.springframework.stereotype.Service;
+import reactor.util.annotation.Nullable;
 
 @Service
 public class AdminConfigService extends BaseLongObjEntityService<AdminConfig, AdminConfigRepository>{
@@ -12,6 +14,7 @@ public class AdminConfigService extends BaseLongObjEntityService<AdminConfig, Ad
         super(repository, settings);
     }
 
+    @Nullable
     @Override
     protected AdminConfig find0(Long id){
         return repository.findByGuildId(id);
