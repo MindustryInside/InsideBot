@@ -6,17 +6,14 @@ import inside.service.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 
-import java.util.function.Function;
-
-public abstract class InteractionCommand implements Function<InteractionCommandEnvironment, Mono<Boolean>>{
+public abstract class InteractionCommand{
     @Autowired
     protected MessageService messageService;
 
     @Autowired
     protected EntityRetriever entityRetriever;
 
-    @Override
-    public Mono<Boolean> apply(InteractionCommandEnvironment env){
+    public Mono<Boolean> filter(InteractionCommandEnvironment env){
         return Mono.just(true);
     }
 

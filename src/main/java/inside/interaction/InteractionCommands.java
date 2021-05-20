@@ -44,7 +44,7 @@ public class InteractionCommands{
         protected Settings settings;
 
         @Override
-        public Mono<Boolean> apply(InteractionCommandEnvironment env){
+        public Mono<Boolean> filter(InteractionCommandEnvironment env){
             if(env.event().getInteraction().getMember().isEmpty()){
                 return messageService.err(env.event(), "command.interaction.only-guild").then(Mono.empty());
             }
@@ -58,12 +58,12 @@ public class InteractionCommands{
         protected AdminService adminService;
 
         @Override
-        public Mono<Boolean> apply(InteractionCommandEnvironment env){
+        public Mono<Boolean> filter(InteractionCommandEnvironment env){
             Mono<Boolean> isAdmin = env.event().getInteraction().getMember()
                     .map(adminService::isAdmin)
                     .orElse(Mono.just(false));
 
-            return BooleanUtils.and(super.apply(env), isAdmin);
+            return BooleanUtils.and(super.filter(env), isAdmin);
         }
     }
 
