@@ -29,8 +29,8 @@ import static reactor.function.TupleUtils.function;
 
 @Component
 public class StarboardEventHandler extends ReactiveEventAdapter{
-    private static final Color offsetColor = Color.of(0xffefc0), targetColor = Color.of(0xffd37f);
-    private static final float lerpStep = 1.0E-15f;
+    private static final Color offsetColor = Color.of(0xffefc0), targetColor = Color.of(0xffff00);
+    private static final float lerpStep = 1.0E-13f;
 
     private final ReactionEmoji[] stars = {
             ReactionEmoji.unicode("\u2B50"),
@@ -119,6 +119,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                 }
 
                                 source.getAttachments().stream()
+                                        .filter(att -> att.getContentType().map(str -> str.startsWith("image")).orElse(false))
                                         .map(Attachment::getUrl)
                                         .findFirst().ifPresent(embed::setImage);
                             }))
