@@ -421,6 +421,7 @@ public class Commands{
                     "q", text, "tl", to, "sl", from
             ));
 
+            // TODO: use context locale if possible
             return httpClient.get().uri("https://translate.google.com/translate_a/t" + paramstr)
                     .responseSingle((res, buf) -> buf.asString()
                             .flatMap(byteBuf -> Mono.fromCallable(() ->

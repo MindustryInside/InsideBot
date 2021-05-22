@@ -28,7 +28,7 @@ public class Starboard extends GuildEntity{
     }
 
     public void sourceMessageId(Snowflake sourceMessageId){
-        this.sourceMessageId = Objects.requireNonNull(sourceMessageId, "sourceMessageIdm").asLong();
+        this.sourceMessageId = Objects.requireNonNull(sourceMessageId, "sourceMessageId").asLong();
     }
 
     public void targetMessageId(Snowflake targetMessageId){

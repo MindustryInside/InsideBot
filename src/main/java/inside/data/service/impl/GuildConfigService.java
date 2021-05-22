@@ -16,7 +16,7 @@ public class GuildConfigService extends BaseLongObjEntityService<GuildConfig, Gu
 
     @Nullable
     @Override
-    protected GuildConfig find0(Long id){
+    protected GuildConfig find0(long id){
         return repository.findByGuildId(id);
     }
 }

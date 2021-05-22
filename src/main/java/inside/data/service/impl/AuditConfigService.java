@@ -16,7 +16,7 @@ public class AuditConfigService extends BaseLongObjEntityService<AuditConfig, Au
 
     @Nullable
     @Override
-    protected AuditConfig find0(Long id){
+    protected AuditConfig find0(long id){
         return repository.findByGuildId(id);
     }
 }
