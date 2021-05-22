@@ -126,7 +126,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                             .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId()))))
                     .then();
 
-            return and(Mono.just(l > config.lowerStarBarrier()), not(starboard.hasElement()))
+            return and(Mono.just(l >= config.lowerStarBarrier()), not(starboard.hasElement()))
                     .flatMap(bool -> bool ? createNew : updateOld);
         }).contextWrite(context)));
     }
