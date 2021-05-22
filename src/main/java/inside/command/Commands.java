@@ -22,6 +22,7 @@ import inside.audit.*;
 import inside.command.model.*;
 import inside.data.entity.*;
 import inside.data.service.AdminService;
+import inside.service.MessageService;
 import inside.util.*;
 import inside.util.codec.Base64Coder;
 import inside.util.io.ReusableByteInputStream;
@@ -390,6 +391,53 @@ public class Commands{
                     .flatMap(command -> env.getClient().rest().getApplicationService()
                             .deleteGlobalApplicationCommand(id, Snowflake.asLong(command.id()))))
                     .then(env.getMessage().addReaction(ok));
+        }
+    }
+
+    @DiscordCommand(key = "translate", params = "command.translate.params", description = "command.translate.description")
+    public static class TranslateCommand extends Command{
+        private final HttpClient httpClient = ReactorResources.DEFAULT_HTTP_CLIENT.get();
+
+        @Override
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            String from = interaction.getOption(0)
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .orElseThrow(AssertionError::new);
+
+            String to = interaction.getOption(1)
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .orElseThrow(AssertionError::new);
+
+            String text = interaction.getOption(2)
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .orElseThrow(AssertionError::new);
+
+            String paramstr = params(Map.of(
+                    "client", "dict-chrome-ex",
+                    "dt", "t", "ie", "UTF-8", "oe", "UTF-8",
+                    "q", text, "tl", to, "sl", from
+            ));
+
+            return httpClient.get().uri("https://translate.google.com/translate_a/t" + paramstr)
+                    .responseSingle((res, buf) -> buf.asString()
+                            .flatMap(byteBuf -> Mono.fromCallable(() ->
+                                    JacksonUtil.mapper().readTree(byteBuf))))
+                    .map(node -> Optional.ofNullable(node.get("sentences"))
+                            .map(arr -> arr.get(0))
+                            .map(single -> single.get("trans").asText())
+                            .orElse(MessageService.placeholder))
+                    .flatMap(str -> messageService.text(env.getReplyChannel(), str));
+        }
+
+        // I hope this not for long
+        private static String params(Map<String, Object> map){
+            return map.entrySet().stream()
+                    .map(entry -> URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8) + "=" +
+                            URLEncoder.encode(Objects.toString(entry.getValue()), StandardCharsets.UTF_8))
+                    .collect(Collectors.joining("&", "?", ""));
         }
     }
 
