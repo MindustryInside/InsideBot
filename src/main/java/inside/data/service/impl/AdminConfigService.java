@@ -16,7 +16,7 @@ public class AdminConfigService extends BaseLongObjEntityService<AdminConfig, Ad
 
     @Nullable
     @Override
-    protected AdminConfig find0(Long id){
+    protected AdminConfig find0(long id){
         return repository.findByGuildId(id);
     }
 }

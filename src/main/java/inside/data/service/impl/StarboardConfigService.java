@@ -16,7 +16,7 @@ public class StarboardConfigService extends BaseLongObjEntityService<StarboardCo
 
     @Nullable
     @Override
-    protected StarboardConfig find0(Long id){
+    protected StarboardConfig find0(long id){
         return repository.findByGuildId(id);
     }
 }

@@ -20,7 +20,7 @@ public class MessageInfoService extends BaseLongObjEntityService<MessageInfo, Me
 
     @Nullable
     @Override
-    protected MessageInfo find0(Long id){
+    protected MessageInfo find0(long id){
         return repository.findByMessageId(id);
     }
 
