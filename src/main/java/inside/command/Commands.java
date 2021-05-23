@@ -1140,7 +1140,8 @@ public class Commands{
                     .flatMap(message::addReaction)
                     .then(Mono.just(message));
 
-            Mono<Void> message = channel.flatMap(reply -> reply.createMessage(spec -> spec.setEmbed(embed -> embed.setTitle(title)
+            Mono<Void> message = channel.flatMap(reply -> reply.createMessage(spec -> spec.setAllowedMentions(AllowedMentions.suppressAll())
+                    .setEmbed(embed -> embed.setTitle(title)
                     .setColor(settings.getDefaults().getNormalColor())
                     .setDescription(text.substring(title.length()))
                     .setAuthor(author.getUsername(), null, author.getAvatarUrl()))))
