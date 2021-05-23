@@ -1,14 +1,20 @@
 package inside.service.impl;
 
+import discord4j.common.store.Store;
+import discord4j.common.store.legacy.LegacyStoreLayout;
 import discord4j.common.util.Snowflake;
 import discord4j.core.*;
 import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.object.entity.channel.TextChannel;
-import discord4j.core.shard.MemberRequestFilter;
+import discord4j.discordjson.json.*;
 import discord4j.gateway.intent.*;
 import discord4j.rest.request.RouteMatcher;
 import discord4j.rest.response.ResponseFunction;
 import discord4j.rest.route.Routes;
+import discord4j.store.api.mapping.MappingStoreService;
+import discord4j.store.api.noop.NoOpStoreService;
+import discord4j.store.api.service.StoreServiceLoader;
+import discord4j.store.caffeine.CaffeineStoreService;
 import inside.Settings;
 import inside.interaction.*;
 import inside.service.DiscordService;
@@ -17,6 +23,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.*;
+import java.time.Duration;
 import java.util.*;
 
 @Service
@@ -37,13 +44,18 @@ public class DiscordServiceImpl implements DiscordService{
     public void init(){
         String token = settings.getToken();
         Objects.requireNonNull(token, "token");
+        StoreServiceLoader storeServiceLoader = new StoreServiceLoader();
 
         gateway = DiscordClientBuilder.create(token)
                 .onClientResponse(ResponseFunction.emptyIfNotFound())
                 .onClientResponse(ResponseFunction.emptyOnErrorStatus(RouteMatcher.route(Routes.REACTION_CREATE), 400))
                 .build()
                 .gateway()
-                .setMemberRequestFilter(MemberRequestFilter.all())
+                .setStore(Store.fromLayout(LegacyStoreLayout.of(MappingStoreService.create()
+                        .setMapping(new NoOpStoreService(), PresenceData.class)
+                        .setMapping(new CaffeineStoreService(caffeine -> caffeine.weakKeys()
+                                .expireAfterWrite(Duration.ofDays(3))), MessageData.class)
+                        .setFallback(storeServiceLoader.getStoreService()))))
                 .setEnabledIntents(IntentSet.of(
                         Intent.GUILDS,
                         Intent.GUILD_MEMBERS,
