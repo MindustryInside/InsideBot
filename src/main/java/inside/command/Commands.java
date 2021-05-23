@@ -15,7 +15,7 @@ import discord4j.core.object.presence.ClientPresence;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.discordjson.json.*;
-import discord4j.rest.util.Permission;
+import discord4j.rest.util.*;
 import discord4j.voice.VoiceConnection;
 import inside.Settings;
 import inside.audit.*;
@@ -1174,8 +1174,9 @@ public class Commands{
                     .map(OptionValue::asString)
                     .orElseThrow(AssertionError::new);
 
-            return channel.flatMap(reply -> reply.createMessage(messageService.format(env.context(),
-                    "command.qpoll.text", env.getAuthorAsMember().getUsername(), text)))
+            return channel.flatMap(reply -> reply.createMessage(spec -> spec.setContent(messageService.format(env.context(),
+                    "command.qpoll.text", env.getAuthorAsMember().getUsername(), text))
+                    .setAllowedMentions(AllowedMentions.suppressAll())))
                     .flatMap(message1 -> message1.addReaction(up).thenReturn(message1))
                     .flatMap(message1 -> message1.addReaction(down))
                     .then();
