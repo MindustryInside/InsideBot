@@ -102,6 +102,10 @@ public class CommandHandler{
         return commands;
     }
 
+    public Map<Command, CommandInfo> commandInfoMap(){
+        return commandInfo;
+    }
+
     public Collection<CommandInfo> commandList(){
         return commandInfo.values();
     }
@@ -212,8 +216,8 @@ public class CommandHandler{
                                 argsres, str, cmd, messageService.get(env.context(), info.paramText())));
                     }
 
-                    Predicate<Throwable> missingAccess = t -> t.getMessage().contains("Missing Access") ||
-                            t.getMessage().contains("Missing Permissions");
+                    Predicate<Throwable> missingAccess = t -> t.getMessage() != null && (t.getMessage().contains("Missing Access") ||
+                            t.getMessage().contains("Missing Permissions"));
 
                     Function<Throwable, Mono<Void>> fallback = t -> Flux.fromIterable(info.permissions())
                             .filterWhen(permission -> channel.flatMap(targetChannel ->
