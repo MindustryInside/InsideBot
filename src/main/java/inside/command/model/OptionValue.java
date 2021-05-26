@@ -26,7 +26,7 @@ public class OptionValue{
 
     @Nullable
     public Snowflake asSnowflake(){
-        return MessageUtil.parseId(value.replaceAll("[<>@!#&]", ""));
+        return MessageUtil.parseId(value.replaceAll("[<>@!#&]", "")); // parse all possible id types
     }
 
     @Nullable

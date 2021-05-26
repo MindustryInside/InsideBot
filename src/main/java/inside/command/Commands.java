@@ -319,6 +319,7 @@ public class Commands{
                 Expression exp = new Expression(text);
                 exp.addOperator(shiftRightOperator);
                 exp.addOperator(shiftLeftOperator);
+                exp.addLazyFunction(levenshteinDstFunction);
                 return exp.eval();
             });
 
@@ -348,6 +349,25 @@ public class Commands{
             @Override
             public BigDecimal eval(BigDecimal v1, BigDecimal v2){
                 return v1.movePointLeft(v2.toBigInteger().intValue());
+            }
+        };
+
+        public static final LazyFunction levenshteinDstFunction = new AbstractLazyFunction("LEVEN", 2){
+            @Override
+            public Expression.LazyNumber lazyEval(List<Expression.LazyNumber> lazyParams){
+                Expression.LazyNumber first = lazyParams.get(0);
+                Expression.LazyNumber second = lazyParams.get(1);
+                return new Expression.LazyNumber(){
+                    @Override
+                    public BigDecimal eval(){
+                        return BigDecimal.valueOf(Strings.levenshtein(first.getString(), second.getString()));
+                    }
+
+                    @Override
+                    public String getString(){
+                        return eval().toPlainString();
+                    }
+                };
             }
         };
     }

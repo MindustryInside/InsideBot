@@ -16,7 +16,7 @@ import reactor.util.context.Context;
 import reactor.util.function.Tuple2;
 
 import java.util.*;
-import java.util.function.Function;
+import java.util.function.*;
 import java.util.stream.Collectors;
 
 import static inside.util.ContextUtil.KEY_LOCALE;
@@ -212,33 +212,31 @@ public class CommandHandler{
                                 argsres, str, cmd, messageService.get(env.context(), info.paramText())));
                     }
 
-                    Mono<Void> execute = Mono.just(command)
-                            .filterWhen(c -> c.filter(env))
-                            .flatMap(c -> c.execute(env, new CommandInteraction(cmd, result)))
-                            .doFirst(() -> messageService.removeEdit(env.getMessage().getId()));
+                    Predicate<Throwable> missingAccess = t -> t.getMessage().contains("Missing Access") ||
+                            t.getMessage().contains("Missing Permissions");
 
-                    Function<String, Mono<String>> fallback = s -> messageService.text(channel, String.format("%s%n%n%s",
-                            messageService.get(env.context(), "message.error.permission-denied.title"),
-                            messageService.format(env.context(), "message.error.permission-denied.description", s)))
-                            .onErrorResume(t -> t.getMessage().contains("Missing Permissions"), t ->
-                                    guild.flatMap(Guild::getOwner)
-                                            .flatMap(User::getPrivateChannel)
-                                            .flatMap(c -> c.createMessage(String.format("%s%n%n%s",
-                                                    messageService.get(env.context(), "message.error.permission-denied.title"),
-                                                    messageService.format(env.context(), "message.error.permission-denied.description", s))))
-                                            .then())
-                            .thenReturn(s);
-
-                    return Flux.fromIterable(info.permissions())
+                    Function<Throwable, Mono<Void>> fallback = t -> Flux.fromIterable(info.permissions())
                             .filterWhen(permission -> channel.flatMap(targetChannel ->
                                     targetChannel.getEffectivePermissions(selfId))
                                     .map(set -> !set.contains(permission)))
                             .map(permission -> messageService.getEnum(env.context(), permission))
+                            .map("• "::concat)
                             .collect(Collectors.joining("\n"))
                             .filter(s -> !s.isBlank())
-                            .flatMap(fallback)
-                            .switchIfEmpty(execute.then(Mono.empty()))
-                            .then();
+                            .flatMap(s -> messageService.text(channel, String.format("%s%n%n%s",
+                            messageService.get(env.context(), "message.error.permission-denied.title"),
+                            messageService.format(env.context(), "message.error.permission-denied.description", s)))
+                            .onErrorResume(missingAccess, t0 -> guild.flatMap(Guild::getOwner)
+                                    .flatMap(User::getPrivateChannel)
+                                    .transform(c -> messageService.info(c,
+                                            messageService.get(env.context(), "message.error.permission-denied.title"),
+                                            messageService.format(env.context(), "message.error.permission-denied.description", s)))));
+
+                    return Mono.just(command)
+                            .filterWhen(c -> c.filter(env))
+                            .flatMap(c -> c.execute(env, new CommandInteraction(cmd, result)))
+                            .doFirst(() -> messageService.removeEdit(env.getMessage().getId()))
+                            .onErrorResume(missingAccess, fallback);
                 })));
     }
 }
