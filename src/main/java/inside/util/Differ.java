@@ -2208,7 +2208,7 @@ public class Differ{
                         text.append(' ');
                         break;
                 }
-                text.append(aDiff.text.replace('+', ' ')).append("\n");
+                text.append(aDiff.text).append("\n");
             }
             return text.toString();
         }

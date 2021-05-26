@@ -79,7 +79,6 @@ public class AdminServiceImpl implements AdminService{
 
         Mono<Void> addRole = entityRetriever.getAdminConfigById(admin.getGuildId())
                 .flatMap(adminConfig -> Mono.justOrEmpty(adminConfig.muteRoleID()))
-                .switchIfEmpty(Mono.error(new IllegalStateException("Mute role id is absent")))
                 .flatMap(target::addRole);
 
         return Mono.when(saveAction, addRole, log);
