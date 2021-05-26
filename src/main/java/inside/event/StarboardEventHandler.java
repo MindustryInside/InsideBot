@@ -29,8 +29,8 @@ import static reactor.function.TupleUtils.function;
 
 @Component
 public class StarboardEventHandler extends ReactiveEventAdapter{
-    private static final Color offsetColor = Color.of(0xffefc0), targetColor = Color.of(0xffff00);
-    private static final float lerpStep = 1.0E-13f;
+    private static final Color offsetColor = Color.of(0xffefc0), targetColor = Color.of(0xdaa520);
+    private static final float lerpStep = 1.0E-05f;
 
     private final ReactionEmoji[] stars = {
             ReactionEmoji.unicode("\u2B50"),
@@ -63,7 +63,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
         Mono<Integer> emojisCount = event.getMessage().flatMapMany(message -> Flux.fromIterable(message.getReactions()))
                 .filter(reaction -> Arrays.asList(stars).contains(reaction.getEmoji()))
                 .map(Reaction::getCount)
-                .as(counts -> MathFlux.max(counts, Integer::compare));
+                .as(MathFlux::max);
 
         Mono<Starboard> starboard = entityRetriever.getStarboardById(guildId, event.getMessageId());
 
@@ -82,7 +82,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
             Mono<Void> updateOld = event.getMessage().zipWith(targetMessage)
                     .flatMap(function((source, target) -> target.edit(spec -> spec.setEmbed(embed -> embed.from(target.getEmbeds().get(0).getData())
-                            .setColor(lerp(offsetColor, targetColor, Mathf.round(l, lerpStep))))
+                            .setColor(lerp(offsetColor, targetColor, Mathf.round(l / 6f, lerpStep))))
                             .setContent(messageService.format(context, "starboard.format",
                                     stars[Mathf.clamp(l - 1, 0, stars.length - 1)]
                                             .asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
@@ -104,7 +104,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                         .print(DateTime.now()), null);
                                 embed.setAuthor(user.getUsername(), null, user.getAvatarUrl());
                                 embed.setDescription(source.getContent());
-                                embed.setColor(lerp(offsetColor, targetColor, Mathf.round(l, lerpStep)));
+                                embed.setColor(lerp(offsetColor, targetColor, Mathf.round(l / 6f, lerpStep)));
                                 embed.addField(messageService.get(context, "starboard.source"), messageService.format(context, "starboard.jump",
                                         guildId.asString(), source.getChannelId().asString(), source.getId().asString()), false);
                                 Set<Attachment> files = source.getAttachments().stream()
@@ -149,7 +149,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
         Mono<Integer> emojisCount = event.getMessage().flatMapMany(message -> Flux.fromIterable(message.getReactions()))
                 .filter(reaction -> Arrays.asList(stars).contains(reaction.getEmoji()))
                 .map(Reaction::getCount)
-                .as(counts -> MathFlux.max(counts, Integer::compare))
+                .as(MathFlux::max)
                 .defaultIfEmpty(0);
 
         Mono<Starboard> starboard = entityRetriever.getStarboardById(guildId, event.getMessageId());
@@ -168,13 +168,13 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                     .cast(GuildMessageChannel.class)
                     .flatMap(channel -> channel.getMessageById(board.targetMessageId())))
                     .flatMap(function((board, target) -> {
-                        if(i <= config.lowerStarBarrier()){
+                        if(i < config.lowerStarBarrier()){
                             return targetMessage.flatMap(Message::delete).then(entityRetriever.delete(board));
                         }
 
                         Snowflake sourceChannelId = event.getChannelId();
                         return target.edit(spec -> spec.setEmbed(embed -> embed.from(target.getEmbeds().get(0).getData())
-                                .setColor(lerp(offsetColor, targetColor, Mathf.round(i, lerpStep))))
+                                .setColor(lerp(offsetColor, targetColor, Mathf.round(i / 6f, lerpStep))))
                                 .setContent(messageService.format(context, "starboard.format",
                                         stars[Mathf.clamp(i - 1, 0, stars.length - 1)]
                                                 .asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
@@ -219,7 +219,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
         return entityRetriever.deleteStarboardById(guildId, event.getMessageId());
     }
 
-    public Color lerp(Color source, Color target, float t){
+    private Color lerp(Color source, Color target, float t){
         float r = source.getRed()/255f;
         r += t * (target.getRed()/255f - r);
 
@@ -229,13 +229,15 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
         float b = source.getBlue()/255f;
         b += t * (target.getBlue()/255f - b);
 
-        return clamp(r, g, b);
+        Color c = clamp(r, g, b);
+        return toIntBits(c) < toIntBits(target) ? target : c;
+    }
+
+    private int toIntBits(Color c){
+        return ((int)(255f * c.getBlue()) << 16 | (int)(255f * c.getGreen()) << 8 | (int)(255f * c.getRed()));
     }
 
     private Color clamp(float r, float g, float b){
-        r = Mathf.clamp(r, 0f, 1f);
-        g = Mathf.clamp(g, 0f, 1f);
-        b = Mathf.clamp(b, 0f, 1f);
-        return Color.of(r, g, b);
+        return Color.of(Mathf.clamp(r), Mathf.clamp(g), Mathf.clamp(b));
     }
 }
