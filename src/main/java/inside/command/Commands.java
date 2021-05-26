@@ -82,56 +82,75 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = {"help", "?"}, description = "command.help.description")
+    @DiscordCommand(key = {"help", "?", "man"}, params = "command.help.params", description = "command.help.description")
     public static class HelpCommand extends Command{
         @Autowired
         private CommandHandler handler;
 
+        private final inside.util.Lazy<Map<String, List<Command>>> categoriesWithCommands = inside.util.Lazy.of(() ->
+                handler.commandInfoMap().keySet().stream().collect(Collectors.groupingBy(command -> {
+                    String canonicalName = command.getClass()
+                            .getSuperclass().getCanonicalName();
+                    String key = canonicalName.toLowerCase(Locale.ROOT).substring(canonicalName.lastIndexOf(".") + 1,
+                            canonicalName.lastIndexOf("C"));
+                    return key.isEmpty() ? "common" : key;
+                })));
+
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            Snowflake guildId = env.getAuthorAsMember().getGuildId();
-            Mono<String> prefix = entityRetriever.getGuildConfigById(guildId)
-                    .map(GuildConfig::prefix);
+            Optional<String> category = interaction.getOption(0)
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .map(String::toLowerCase);
 
-            Collector<Map.Entry<String, List<CommandInfo>>, ImmutableEmbedData.Builder, EmbedData> collector = Collector.of(
-                    EmbedData::builder,
-                    (builder, entry) -> {
-                        StringBuilder builder1 = new StringBuilder();
-                        entry.getValue().sort((o1, o2) -> Arrays.compare(o1.text(), o2.text()));
-                        for(CommandInfo commandInfo : entry.getValue()){
-                            builder1.append("**");
-                            builder1.append(commandInfo.text()[0]);
-                            builder1.append("**");
-                            if(commandInfo.params().length > 0){
-                                builder1.append(" ");
-                                builder1.append(messageService.get(env.context(), commandInfo.paramText()));
-                            }
-                            builder1.append(" - ");
-                            builder1.append(messageService.get(env.context(), commandInfo.description()));
-                            builder1.append("\n");
+            Collector<CommandInfo, StringBuilder, String> categoryCollector = Collector.of(StringBuilder::new,
+                    (builder, info) -> {
+                        builder.append("**");
+                        builder.append(info.text()[0]);
+                        builder.append("**");
+                        if(info.params().length > 0){
+                            builder.append(" ");
+                            builder.append(messageService.get(env.context(), info.paramText()));
                         }
-
-                        builder.addField(EmbedFieldData.builder()
-                                .name(entry.getKey())
-                                .value(builder1.toString())
-                                .inline(false)
-                                .build());
+                        builder.append(" - ");
+                        builder.append(messageService.get(env.context(), info.description()));
+                        builder.append("\n");
                     },
-                    (builder, builder2) -> builder,
-                    ImmutableEmbedData.Builder::build);
+                    StringBuilder::append,
+                    StringBuilder::toString);
 
-            return Flux.fromIterable(handler.commandList())
-                    .filterWhen(commandInfo -> handler.commands().get(commandInfo.text()).filter(env))
-                    .collect(Collectors.groupingBy(c -> messageService.get(env.context(), handler.commands().get(c.text())
-                            .getClass().getSuperclass().getCanonicalName())))
-                    .flatMapMany(map -> Flux.fromIterable(map.entrySet())
-                            .sort(Map.Entry.comparingByKey()))
-                    .collect(collector)
-                    .flatMap(data -> prefix.flatMap(str -> messageService.info(env.getReplyChannel(), spec -> spec.from(data)
-                            .setTitle(messageService.get(env.context(), "command.help"))
-                            .setDescription(messageService.format(env.context(), "command.help.disclaimer.prefix", str)
-                                    .concat("\n" + messageService.get(env.context(), "command.help.disclaimer.user"))
-                                    .concat("\n" + messageService.get(env.context(), "command.help.disclaimer.help"))))));
+            Mono<Void> categories = Flux.fromIterable(categoriesWithCommands.get().entrySet())
+                    .distinct(Map.Entry::getKey)
+                    .map(entry -> {
+                        String canonicalName = entry.getValue().get(0).getClass()
+                                .getSuperclass().getCanonicalName();
+                        return String.format("• %s (`%s`)", messageService.get(env.context(), canonicalName), entry.getKey());
+                    })
+                    .collect(Collectors.joining("\n"))
+                    .flatMap(categoriesStr -> messageService.info(env.getReplyChannel(), spec ->
+                            spec.setTitle(messageService.get(env.context(), "command.help"))
+                                    .setDescription(categoriesStr)));
+
+            Mono<Void> snowHelp = Mono.defer(() -> {
+                String key = Strings.findClosest(categoriesWithCommands.get().keySet(), category.orElse(""));
+                if(key != null){
+                    return messageService.err(env.getReplyChannel(), "command.help.found-closest", key);
+                }
+                return messageService.err(env.getReplyChannel(), "command.help.unknown");
+            });
+
+            return Mono.justOrEmpty(category)
+                    .switchIfEmpty(categories.then(Mono.never()))
+                    .mapNotNull(categoriesWithCommands.get()::get)
+                    .switchIfEmpty(snowHelp.then(Mono.never()))
+                    .flatMapMany(Flux::fromIterable)
+                    .map(handler.commandInfoMap()::get)
+                    .sort((o1, o2) -> Arrays.compare(o1.text(), o2.text()))
+                    .collect(categoryCollector)
+                    .flatMap(str -> messageService.info(env.getReplyChannel(), spec -> spec.setTitle(messageService.get(env.context(),
+                            categoriesWithCommands.get().get(category.orElseThrow(AssertionError::new)).get(0).getClass()
+                                    .getSuperclass().getCanonicalName()))
+                            .setDescription(str)));
         }
     }
 
