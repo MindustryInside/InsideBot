@@ -1,9 +1,6 @@
 package inside.command;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.sedmelluq.discord.lavaplayer.player.*;
-import com.sedmelluq.discord.lavaplayer.source.youtube.*;
-import com.sedmelluq.discord.lavaplayer.track.*;
 import com.udojava.evalex.*;
 import discord4j.common.ReactorResources;
 import discord4j.common.util.Snowflake;
@@ -27,7 +24,6 @@ import inside.util.*;
 import inside.util.codec.Base64Coder;
 import inside.util.io.ReusableByteInputStream;
 import inside.voice.*;
-import io.netty.handler.codec.http.HttpMethod;
 import org.joda.time.*;
 import org.joda.time.format.*;
 import org.reactivestreams.Publisher;
@@ -1307,7 +1303,23 @@ public class Commands{
             VoiceRegistry voiceRegistry = voiceService.getOrCreate(guildId);
             return env.getAuthorAsMember().getVoiceState()
                     .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.voice.not-in-channel").then(Mono.empty()))
-                    .flatMap(ignored -> Mono.fromRunnable(() -> voiceRegistry.getTrackLoader().nextTrack())
+                    .flatMap(ignored -> Mono.fromRunnable(voiceRegistry.getTrackLoader()::nextTrack)
+                            .and(env.getMessage().addReaction(ok)));
+        }
+    }
+
+    @DiscordCommand(key = {"clear", "c"}, description = "command.voice.clear.description",
+                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS,
+                                   Permission.CONNECT, Permission.SPEAK})
+    public static class VoiceClearCommand extends VoiceCommand{
+        @Override
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            Snowflake guildId = env.getLocalMember().guildId();
+
+            VoiceRegistry voiceRegistry = voiceService.getOrCreate(guildId);
+            return env.getAuthorAsMember().getVoiceState()
+                    .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.voice.not-in-channel").then(Mono.empty()))
+                    .flatMap(ignored -> Mono.fromRunnable(voiceRegistry.getTrackLoader()::clear)
                             .and(env.getMessage().addReaction(ok)));
         }
     }
@@ -1347,20 +1359,14 @@ public class Commands{
     @DiscordCommand(key = {"play", "p"}, params = "command.voice.play.params", description = "command.voice.play.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.CONNECT, Permission.SPEAK})
     public static class VoicePlayCommand extends VoiceCommand{
-        private static final String api = "https://youtube.googleapis.com/youtube/v3/";
-
         private static final Logger log = Loggers.getLogger(VoicePlayCommand.class);
-
-        private final HttpClient httpClient = ReactorResources.DEFAULT_HTTP_CLIENT.get();
-
-        @Autowired
-        private Settings settings;
 
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             String query = interaction.getOption(0)
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
+                    .map(str -> !str.startsWith("http:") && !str.startsWith("https:") ? "ytsearch: " + str : str) // for a more convenient search
                     .orElseThrow(AssertionError::new);
 
             VoiceRegistry voiceRegistry = voiceService.getOrCreate(env.getLocalMember().guildId());
@@ -1369,6 +1375,7 @@ public class Commands{
                     .flatMap(Member::getVoiceState)
                     .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.voice.not-in-channel").then(Mono.empty()))
                     .flatMap(VoiceState::getChannel)
+                    .filterWhen(channel -> channel.getVoiceConnection().hasElement().transform(BooleanUtils::not))
                     .flatMap(channel -> channel.join(spec -> spec.setProvider(voiceRegistry.getAudioProvider()))
                             .flatMap(connection -> {
                                 Publisher<Boolean> voiceStateCounter = channel.getVoiceStates()
@@ -1392,73 +1399,15 @@ public class Commands{
                     .then();
 
             AudioLoadResultHandler loadResultHandler = new FunctionalResultHandler(
-                    voiceRegistry.getTrackLoader()::queue, playlist -> voiceRegistry.getTrackLoader()
-                    .queue(Optional.ofNullable(playlist.getSelectedTrack())
-                            .orElse(playlist.getTracks().get(0))),
+                    track -> messageService.text(env.getReplyChannel(), "command.voice.play.queued")
+                            .doFirst(() -> voiceRegistry.getTrackLoader().queue(track)).subscribe(),
+                    voiceRegistry.getTrackLoader()::queue,
                     () -> messageService.err(env.getReplyChannel(), "command.voice.play.not-found")
                             .contextWrite(env.context()).subscribe(), // ...
                     t -> log.error("Failed to load sound track", t));
 
-            return joinIfNot.and(Mono.fromRunnable(() -> voiceService.getAudioPlayerManager()
+            return joinIfNot.then(Mono.fromRunnable(() -> voiceService.getAudioPlayerManager()
                     .loadItemOrdered(voiceRegistry, query, loadResultHandler))); // block task
-        }
-
-        private Mono<AudioPlaylist> search(String query, int maxResults, YoutubeAudioSourceManager sourceManager){
-            return httpClient.request(HttpMethod.GET)
-                    .uri(api + "search" + params(Map.of(
-                            "key", settings.getDiscord().getYoutubeApiKey(),
-                            "type", "video",
-                            "maxResults", maxResults,
-                            "q", query
-                    )))
-                    .responseSingle((res, buf) -> buf.asString().map(JacksonUtil::toJsonNode))
-                    .flatMap(node -> {
-                        JsonNode items = node.get("items");
-                        List<String> ids = new ArrayList<>(maxResults);
-                        for(int i = 0; i < maxResults; i++){
-                            JsonNode item = items.get(i);
-                            if(item == null) continue;
-
-                            ids.add(item.get("id").get("videoId").asText());
-                        }
-
-                        return Flux.fromIterable(ids).flatMap(id -> getVideoFromID(id, sourceManager))
-                                .collectList()
-                                .map(tracks -> new BasicAudioPlaylist(query, tracks, null, true));
-                    });
-        }
-
-        private Mono<AudioTrack> getVideoFromID(String id, YoutubeAudioSourceManager sourceManager){
-            return httpClient.request(HttpMethod.GET)
-                    .uri(api + "videos" + params(Map.of("part", "contentDetails,snippet",
-                            "id", id, "key", settings.getDiscord().getYoutubeApiKey())))
-                    .responseSingle((res, buf) -> buf.asString().map(JacksonUtil::toJsonNode))
-                    .flatMap(node -> Mono.justOrEmpty(Optional.ofNullable(node.get("items"))
-                            .map(arr -> arr.get(0))
-                            .map(single -> {
-                                JsonNode snippet = single.get("snippet");
-
-                                JsonNode contentDetails = single.get("contentDetails");
-
-                                YoutubeVideoInfo videoInfo = YoutubeVideoInfo.builder()
-                                        .identifier(id)
-                                        .title(snippet.get("channelTitle").asText())
-                                        .isStream(!"none".equals(snippet.get("liveBroadcastContent").asText()))
-                                        .author(snippet.get("title").asText())
-                                        .length(Duration.parse(contentDetails.get("duration").asText()).toMillis())
-                                        .uri("https://www.youtube.com/watch?v=" + id)
-                                        .build();
-
-                                return new YoutubeAudioTrack(videoInfo, sourceManager);
-                            })));
-        }
-
-        // I hope this not for long
-        private static String params(Map<String, Object> map){
-            return map.entrySet().stream()
-                    .map(entry -> URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8) + "=" +
-                            URLEncoder.encode(Objects.toString(entry.getValue()), StandardCharsets.UTF_8))
-                    .collect(Collectors.joining("&", "?", ""));
         }
     }
 }

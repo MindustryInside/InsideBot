@@ -21,6 +21,17 @@ public class TrackLoader extends AudioEventAdapter{
         }
     }
 
+    public void queue(AudioPlaylist playlist){
+        for(AudioTrack track : playlist.getTracks()){
+            queue(track);
+        }
+    }
+
+    public void clear(){
+        queue.clear();
+        player.stopTrack();
+    }
+
     public void nextTrack(){
         player.startTrack(queue.poll(), false);
     }
