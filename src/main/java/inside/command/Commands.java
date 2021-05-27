@@ -1261,13 +1261,6 @@ public class Commands{
     public static abstract class VoiceCommand extends Command{
         @Autowired
         protected VoiceService voiceService;
-
-        @Override
-        public Mono<Boolean> filter(CommandEnvironment env){
-            return env.getAuthorAsMember().getVoiceState()
-                    .flatMap(VoiceState::getChannel)
-                    .hasElement();
-        }
     }
 
     @DiscordCommand(key = "pause", description = "command.voice.pause.description",
@@ -1278,8 +1271,10 @@ public class Commands{
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Snowflake guildId = env.getLocalMember().guildId();
 
-            return Mono.fromRunnable(() -> voiceService.getOrCreate(guildId).getPlayer().setPaused(true))
-                    .and(env.getMessage().addReaction(ok));
+            return env.getAuthorAsMember().getVoiceState()
+                    .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.voice.not-in-channel").then(Mono.empty()))
+                    .flatMap(ignored -> Mono.fromRunnable(() -> voiceService.getOrCreate(guildId).getPlayer().setPaused(true))
+                            .and(env.getMessage().addReaction(ok)));
         }
     }
 
@@ -1292,6 +1287,7 @@ public class Commands{
             Snowflake guildId = env.getLocalMember().guildId();
 
             return env.getAuthorAsMember().getVoiceState()
+                    .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.voice.not-in-channel").then(Mono.empty()))
                     .flatMap(VoiceState::getChannel)
                     .flatMap(VoiceChannel::getVoiceConnection)
                     .flatMap(VoiceConnection::disconnect)
@@ -1309,8 +1305,10 @@ public class Commands{
             Snowflake guildId = env.getLocalMember().guildId();
 
             VoiceRegistry voiceRegistry = voiceService.getOrCreate(guildId);
-            return Mono.fromRunnable(() -> voiceRegistry.getTrackLoader().nextTrack())
-                    .and(env.getMessage().addReaction(ok));
+            return env.getAuthorAsMember().getVoiceState()
+                    .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.voice.not-in-channel").then(Mono.empty()))
+                    .flatMap(ignored -> Mono.fromRunnable(() -> voiceRegistry.getTrackLoader().nextTrack())
+                            .and(env.getMessage().addReaction(ok)));
         }
     }
 
@@ -1324,8 +1322,10 @@ public class Commands{
 
             VoiceRegistry voiceRegistry = voiceService.getOrCreate(guildId);
 
-            return Mono.fromRunnable(voiceRegistry.getPlayer()::stopTrack)
-                    .and(env.getMessage().addReaction(ok));
+            return env.getAuthorAsMember().getVoiceState()
+                    .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.voice.not-in-channel").then(Mono.empty()))
+                    .flatMap(ignored -> Mono.fromRunnable(voiceRegistry.getPlayer()::stopTrack)
+                    .and(env.getMessage().addReaction(ok)));
         }
     }
 
@@ -1336,6 +1336,7 @@ public class Commands{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             return env.getAuthorAsMember().getVoiceState()
+                    .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.voice.not-in-channel").then(Mono.empty()))
                     .flatMap(VoiceState::getChannel)
                     .flatMap(VoiceChannel::getVoiceConnection)
                     .flatMap(VoiceConnection::reconnect)
@@ -1366,8 +1367,8 @@ public class Commands{
 
             Mono<Void> joinIfNot = Mono.just(env.getAuthorAsMember())
                     .flatMap(Member::getVoiceState)
+                    .switchIfEmpty(messageService.err(env.getReplyChannel(), "command.voice.not-in-channel").then(Mono.empty()))
                     .flatMap(VoiceState::getChannel)
-                    .filterWhen(voiceChannel -> BooleanUtils.not(voiceChannel.getVoiceConnection().hasElement()))
                     .flatMap(channel -> channel.join(spec -> spec.setProvider(voiceRegistry.getAudioProvider()))
                             .flatMap(connection -> {
                                 Publisher<Boolean> voiceStateCounter = channel.getVoiceStates()
