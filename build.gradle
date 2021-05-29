@@ -52,11 +52,16 @@ allprojects{
         useJUnitPlatform()
         jvmArgs += ["--enable-preview"]
     }
+
+    tasks.withType(JavaExec){
+        jvmArgs += ["--enable-preview"]
+    }
 }
 
 dependencies{
-    compileOnly project(":encoding")
+    compileOnly project(':encoding')
     if(findProject(':legacy') != null){
+        // Module with outdated, test code
         api project(':legacy')
     }
 
