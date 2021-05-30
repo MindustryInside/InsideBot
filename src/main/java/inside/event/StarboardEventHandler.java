@@ -19,7 +19,9 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.*;
 import reactor.math.MathFlux;
 import reactor.util.context.Context;
+import reactor.util.function.Tuples;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -60,8 +62,10 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
         Mono<StarboardConfig> starboardConfig = entityRetriever.getStarboardConfigById(guildId);
 
+        List<ReactionEmoji> arr = Arrays.asList(stars);
+
         Mono<Integer> emojisCount = event.getMessage().flatMapMany(message -> Flux.fromIterable(message.getReactions()))
-                .filter(reaction -> Arrays.asList(stars).contains(reaction.getEmoji()))
+                .filter(reaction -> arr.contains(reaction.getEmoji()))
                 .map(Reaction::getCount)
                 .as(MathFlux::max);
 
@@ -90,9 +94,17 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                     l, DiscordUtil.getChannelMention(source.getChannelId()))))))
                     .then();
 
-            Mono<Void> createNew = Mono.zip(starboardChannel, event.getMessage(), author).flatMap(function((channel, source, user) ->
+            Mono<Starboard> findIfAbsent = Mono.zip(starboardChannel, event.getMessage(), author)
+                    .flatMap(function((channel, source, user) -> channel.getMessagesBefore(Snowflake.of(Instant.now()))
+                    .filter(m -> m.getEmbeds().size() == 1 && m.getEmbeds().get(0).getFields().size() >= 1)
+                    .filter(m -> m.getEmbeds().get(0).getFields().get(0)
+                            .getValue().endsWith(source.getId().asString() + ")")) // match md link
+                    .next()
+                    .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId()))));
+
+            Mono<Starboard> createNew = Mono.zip(starboardChannel, event.getMessage(), author).flatMap(function((channel, source, user) ->
                     channel.createMessage(spec -> spec.setContent(messageService.format(
-                            context, "starboard.format", stars[Mathf.clamp(l - 1, 0, stars.length - 1)]
+                            context, "starboard.format", stars[Mathf.clamp((l - 1) / 5, 0, stars.length - 1)]
                                     .asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
                                     .orElseThrow(AssertionError::new),
                             l, DiscordUtil.getChannelMention(source.getChannelId())))
@@ -123,11 +135,10 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                         .map(Attachment::getUrl)
                                         .findFirst().ifPresent(embed::setImage);
                             }))
-                            .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId()))))
-                    .then();
+                            .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId()))));
 
             return and(Mono.just(l >= config.lowerStarBarrier()), not(starboard.hasElement()))
-                    .flatMap(bool -> bool ? createNew : updateOld);
+                    .flatMap(bool -> bool ? findIfAbsent.switchIfEmpty(createNew) : updateOld);
         }).contextWrite(context)));
     }
 
@@ -152,34 +163,42 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                 .as(MathFlux::max)
                 .defaultIfEmpty(0);
 
-        Mono<Starboard> starboard = entityRetriever.getStarboardById(guildId, event.getMessageId());
-
-        return initContext.zipWith(starboardConfig).flatMap(function((context, config) -> emojisCount.flatMap(i -> {
+        return initContext.zipWith(starboardConfig).flatMap(function((context, config) -> emojisCount.flatMap(l -> {
             Snowflake channelId = config.starboardChannelId().orElse(null);
             if(!config.isEnable() || channelId == null){
                 return Mono.empty();
             }
 
-            Mono<Message> targetMessage = event.getGuild().flatMap(guild -> guild.getChannelById(channelId))
-                    .cast(GuildMessageChannel.class)
-                    .flatMap(channel -> starboard.flatMap(board -> channel.getMessageById(board.targetMessageId())));
+            Mono<GuildMessageChannel> starboardChannel = event.getGuild().flatMap(guild -> guild.getChannelById(channelId))
+                    .cast(GuildMessageChannel.class);
 
-            return starboard.zipWhen(board -> event.getGuild().flatMap(guild -> guild.getChannelById(channelId))
-                    .cast(GuildMessageChannel.class)
-                    .flatMap(channel -> channel.getMessageById(board.targetMessageId())))
-                    .flatMap(function((board, target) -> {
-                        if(i < config.lowerStarBarrier()){
-                            return targetMessage.flatMap(Message::delete).then(entityRetriever.delete(board));
+            Mono<Starboard> findIfAbsent = Mono.zip(starboardChannel, event.getMessage())
+                    .flatMap(function((channel, source) -> channel.getMessagesBefore(Snowflake.of(Instant.now()))
+                    .filter(m -> m.getEmbeds().size() == 1 && m.getEmbeds().get(0).getFields().size() >= 1)
+                    .filter(m -> m.getEmbeds().get(0).getFields().get(0)
+                            .getValue().endsWith(source.getId().asString() + ")")) // match md link
+                    .next()
+                    .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId()))));
+
+            Mono<Starboard> starboard = entityRetriever.getStarboardById(guildId, event.getMessageId())
+                    .switchIfEmpty(findIfAbsent);
+
+            return Mono.zip(starboard, starboardChannel)
+                    .zipWhen(tuple -> tuple.getT2().getMessageById(tuple.getT1().targetMessageId()),
+                            (tuple, message) -> Tuples.of(tuple.getT1(), tuple.getT2(), message))
+                    .flatMap(function((board, channel, target) -> {
+                        if(l < config.lowerStarBarrier()){
+                            return target.delete().and(entityRetriever.delete(board));
                         }
 
                         Snowflake sourceChannelId = event.getChannelId();
                         return target.edit(spec -> spec.setEmbed(embed -> embed.from(target.getEmbeds().get(0).getData())
-                                .setColor(lerp(offsetColor, targetColor, Mathf.round(i / 6f, lerpStep))))
+                                .setColor(lerp(offsetColor, targetColor, Mathf.round(l / 6f, lerpStep))))
                                 .setContent(messageService.format(context, "starboard.format",
-                                        stars[Mathf.clamp(i - 1, 0, stars.length - 1)]
+                                        stars[Mathf.clamp((l - 1) / 5, 0, stars.length - 1)]
                                                 .asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
                                                 .orElseThrow(AssertionError::new),
-                                        i, DiscordUtil.getChannelMention(sourceChannelId))));
+                                        l, DiscordUtil.getChannelMention(sourceChannelId))));
                     }));
         }).contextWrite(context)));
     }

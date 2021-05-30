@@ -13,7 +13,7 @@ import reactor.util.context.ContextView;
 import static inside.audit.Attribute.*;
 import static inside.util.ContextUtil.*;
 
-// TODO: check channel permissions and error handling
+// TODO: check channel permissions and error handling; non-ignore bots
 public class AuditProviders{
 
     private AuditProviders(){}
