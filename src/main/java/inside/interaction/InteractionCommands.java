@@ -404,7 +404,7 @@ public class InteractionCommands{
                     }));
         }
 
-        private <T> String formatCollection(Collection<? extends T> collection, Function<T, String> formatter){
+        private static <T> String formatCollection(Collection<? extends T> collection, Function<T, String> formatter){
             return collection.stream()
                     .map(formatter)
                     .collect(Collectors.joining(", "));
@@ -863,8 +863,8 @@ public class InteractionCommands{
 
             Mono<BigDecimal> result = Mono.fromCallable(() -> {
                 Expression exp = new Expression(expression);
-                exp.addOperator(Commands.MathCommand.shiftRightOperator);
-                exp.addOperator(Commands.MathCommand.shiftLeftOperator);
+                exp.addOperator(Commands.MathCommand.divideAlias);
+                exp.addLazyFunction(Commands.MathCommand.levenshteinDstFunction);
                 return exp.eval();
             });
 

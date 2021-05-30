@@ -37,7 +37,7 @@ import reactor.util.*;
 import reactor.util.annotation.Nullable;
 import reactor.util.function.Tuple2;
 
-import java.math.BigDecimal;
+import java.math.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -67,6 +67,11 @@ public class Commands{
         public Mono<Boolean> filter(CommandEnvironment env){
             return adminService.isAdmin(env.getAuthorAsMember());
         }
+    }
+
+    public static abstract class VoiceCommand extends Command{
+        @Autowired
+        protected VoiceService voiceService;
     }
 
     public static abstract class TestCommand extends Command{
@@ -332,8 +337,7 @@ public class Commands{
 
             Mono<BigDecimal> result = Mono.fromCallable(() -> {
                 Expression exp = new Expression(text);
-                exp.addOperator(shiftRightOperator);
-                exp.addOperator(shiftLeftOperator);
+                exp.addOperator(divideAlias);
                 exp.addLazyFunction(levenshteinDstFunction);
                 return exp.eval();
             });
@@ -353,17 +357,10 @@ public class Commands{
                             GuildConfig.formatPrefix(prefix)));
         }
 
-        public static final LazyOperator shiftRightOperator = new AbstractOperator(">>", 30, true){
+        public static final LazyOperator divideAlias = new AbstractOperator("/", Expression.OPERATOR_PRECEDENCE_MULTIPLICATIVE, true){
             @Override
             public BigDecimal eval(BigDecimal v1, BigDecimal v2){
-                return v1.movePointRight(v2.toBigInteger().intValue());
-            }
-        };
-
-        public static final LazyOperator shiftLeftOperator = new AbstractOperator("<<", 30, true){
-            @Override
-            public BigDecimal eval(BigDecimal v1, BigDecimal v2){
-                return v1.movePointLeft(v2.toBigInteger().intValue());
+                return v1.divide(v2, MathContext.DECIMAL32);
             }
         };
 
@@ -1252,11 +1249,6 @@ public class Commands{
                     .switchIfEmpty(messageService.err(channel, "audit.member.unmute.is-not-muted").then(Mono.empty()))
                     .then();
         }
-    }
-
-    public static abstract class VoiceCommand extends Command{
-        @Autowired
-        protected VoiceService voiceService;
     }
 
     @DiscordCommand(key = "pause", description = "command.voice.pause.description",
