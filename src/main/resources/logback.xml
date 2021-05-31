@@ -27,14 +27,6 @@
         <appender-ref ref="FILE"/>
     </appender>
 
-    <logger name="inside.command.Commands$ReadCommand" level="DEBUG" additivity="false">
-        <appender-ref ref="ASYNC"/>
-    </logger>
-
-    <logger name="discord4j.common.store.legacy.StateHolder" level="DEBUG" additivity="false">
-        <appender-ref ref="CONSOLE"/>
-    </logger>
-
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="ASYNC"/>
