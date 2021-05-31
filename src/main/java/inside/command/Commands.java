@@ -86,10 +86,10 @@ public class Commands{
     @DiscordCommand(key = {"help", "?", "man"}, params = "command.help.params", description = "command.help.description")
     public static class HelpCommand extends Command{
         @Autowired
-        private CommandHandler handler;
+        private CommandHolder commandHolder;
 
         private final inside.util.Lazy<Map<String, List<Command>>> categoriesWithCommands = inside.util.Lazy.of(() ->
-                handler.commandInfoMap().keySet().stream().collect(Collectors.groupingBy(command -> {
+                commandHolder.getCommandInfoMap().keySet().stream().collect(Collectors.groupingBy(command -> {
                     String canonicalName = command.getClass()
                             .getSuperclass().getCanonicalName();
                     String key = canonicalName.toLowerCase(Locale.ROOT).substring(canonicalName.lastIndexOf(".") + 1,
@@ -145,7 +145,7 @@ public class Commands{
                     .mapNotNull(categoriesWithCommands.get()::get)
                     .switchIfEmpty(snowHelp.then(Mono.never()))
                     .flatMapMany(Flux::fromIterable)
-                    .map(handler.commandInfoMap()::get)
+                    .map(commandHolder.getCommandInfoMap()::get)
                     .sort((o1, o2) -> Arrays.compare(o1.text(), o2.text()))
                     .collect(categoryCollector)
                     .flatMap(str -> messageService.info(env.getReplyChannel(), spec -> spec.setTitle(messageService.get(env.context(),
