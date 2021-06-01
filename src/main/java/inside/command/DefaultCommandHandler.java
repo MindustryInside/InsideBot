@@ -115,7 +115,7 @@ public class DefaultCommandHandler implements CommandHandler{
                             break;
                         }
 
-                        int next = argstr.indexOf(" ");
+                        int next = findSpace(argstr);
                         if(next == -1){
                             if(!satisfied){
                                 messageService.awaitEdit(environment.getMessage().getId());
@@ -127,6 +127,7 @@ public class DefaultCommandHandler implements CommandHandler{
                         }else{
                             String arg = argstr.substring(0, next);
                             argstr = argstr.substring(arg.length() + 1);
+                            if(arg.isBlank()) continue;
                             result.add(new CommandOption(info.params()[index], arg));
                         }
 
@@ -139,7 +140,8 @@ public class DefaultCommandHandler implements CommandHandler{
                                 argsres, str, cmd, messageService.get(environment.context(), info.paramText())));
                     }
 
-                    Predicate<Throwable> missingAccess = t -> t.getMessage() != null && (t.getMessage().contains("Missing Access") ||
+                    Predicate<Throwable> missingAccess = t -> t.getMessage() != null &&
+                            (t.getMessage().contains("Missing Access") ||
                             t.getMessage().contains("Missing Permissions"));
 
                     Function<Throwable, Mono<Void>> fallback = t -> Flux.fromIterable(info.permissions())
@@ -165,5 +167,16 @@ public class DefaultCommandHandler implements CommandHandler{
                             .doFirst(() -> messageService.removeEdit(environment.getMessage().getId()))
                             .onErrorResume(missingAccess, fallback);
                 })));
+    }
+
+    private int findSpace(String text){
+        for(int i = 0; i < text.length(); i++){
+            char c = text.charAt(i);
+            if(Character.isWhitespace(c) && (i + 1 < text.length() && !Character.isWhitespace(text.charAt(i + 1)) ||
+                    i - 1 != -1 && !Character.isWhitespace(text.charAt(i -1)))){
+                return i;
+            }
+        }
+        return -1;
     }
 }

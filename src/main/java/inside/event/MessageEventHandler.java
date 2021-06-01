@@ -8,7 +8,7 @@ import discord4j.core.object.audit.*;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TextChannel;
 import inside.audit.*;
-import inside.command.DefaultCommandHandler;
+import inside.command.CommandHandler;
 import inside.command.model.CommandEnvironment;
 import inside.data.entity.*;
 import inside.data.service.EntityRetriever;
@@ -37,7 +37,7 @@ import static reactor.function.TupleUtils.*;
 @Component
 public class MessageEventHandler extends ReactiveEventAdapter{
     @Autowired
-    private DefaultCommandHandler commandHandler;
+    private CommandHandler commandHandler;
 
     @Autowired
     private EntityRetriever entityRetriever;

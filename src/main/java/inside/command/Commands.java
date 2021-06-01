@@ -290,8 +290,9 @@ public class Commands{
                     .orElseThrow(AssertionError::new);
 
             return env.getAuthorAsMember().getGuild()
-                    .flatMapMany(Guild::getEmojis)
-                    .filter(emoji -> emoji.asFormat().equals(text)).next()
+                    .flatMapMany(guild -> guild.getEmojis(EntityRetrievalStrategy.REST))
+                    .filter(emoji -> emoji.asFormat().equals(text) || emoji.getName().equals(text) ||
+                            emoji.getId().asString().equals(text)).next()
                     .switchIfEmpty(messageService.err(channel, "command.emoji.not-found").then(Mono.empty()))
                     .flatMap(emoji -> messageService.info(channel, embed -> embed.setImage(emoji.getImageUrl() + "?size=512")
                             .setFooter(messageService.format(env.context(), "common.id", emoji.getId().asString()), null)
