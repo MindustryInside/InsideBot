@@ -279,7 +279,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "emoji", params = "command.emoji.params", description = "command.emoji.description")
+    @DiscordCommand(key = {"emoji", "emote"}, params = "command.emoji.params", description = "command.emoji.description")
     public static class EmojiCommand extends Command{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -727,9 +727,9 @@ public class Commands{
                             String suggest = Strings.findClosest(DateTimeZone.getAvailableIDs(), str);
 
                             if(suggest != null){
-                                return messageService.err(channel, "command.config.unknown-timezone.suggest", suggest);
+                                return messageService.err(channel, "command.settings.timezone.unknown.suggest", suggest);
                             }
-                            return messageService.err(channel, "command.config.unknown-timezone");
+                            return messageService.err(channel, "command.settings.timezone.unknown");
                         }
 
                         guildConfig.timeZone(timeZone);
@@ -776,7 +776,7 @@ public class Commands{
                                     .map(Locale::toString)
                                     .collect(Collectors.joining(", "));
 
-                            return messageService.text(channel, "command.config.unknown-locale", all);
+                            return messageService.text(channel, "command.settings.locale.all", all);
                         }
 
                         guildConfig.locale(locale);
@@ -1251,6 +1251,8 @@ public class Commands{
                     .then();
         }
     }
+
+    // TODO: fix voice channel check
 
     @DiscordCommand(key = "pause", description = "command.voice.pause.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS,
