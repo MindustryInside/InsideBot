@@ -133,7 +133,8 @@ public class DefaultCommandHandler implements CommandHandler{
                         index++;
                     }
 
-                    if(!satisfied && info.params().length > 0 && !info.params()[0].optional()){
+                    if(!satisfied && info.params().length > 0 && !info.params()[0].optional() &&
+                            environment.getMessage().getMessageReference().isEmpty()){ //
                         messageService.awaitEdit(environment.getMessage().getId());
                         return prefix.flatMap(str -> messageService.error(environment, "command.response.few-arguments.title",
                                 argsres, str, cmd, messageService.get(environment.context(), info.paramText())));

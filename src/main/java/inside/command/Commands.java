@@ -303,13 +303,19 @@ public class Commands{
     public static class AvatarCommand extends Command{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            Snowflake targetId = interaction.getOption(0)
-                    .flatMap(CommandOption::getValue)
-                    .map(OptionValue::asSnowflake)
-                    .orElse(env.getAuthorAsMember().getId());
+            Optional<OptionValue> firstOpt = interaction.getOption(0)
+                    .flatMap(CommandOption::getValue);
 
-            return Mono.justOrEmpty(targetId).flatMap(id -> env.getClient()
+            Mono<User> referencedUser = Mono.justOrEmpty(env.getMessage().getMessageReference())
+                    .flatMap(ref -> Mono.justOrEmpty(ref.getMessageId()).flatMap(messageId ->
+                            env.getClient().getMessageById(ref.getChannelId(), messageId)))
+                    .flatMap(message -> Mono.justOrEmpty(message.getAuthor()));
+
+            return Mono.justOrEmpty(firstOpt.map(OptionValue::asSnowflake)).flatMap(id -> env.getClient()
                     .withRetrievalStrategy(EntityRetrievalStrategy.REST).getUserById(id))
+                    .switchIfEmpty(referencedUser)
+                    .switchIfEmpty(env.getClient().getUserById(env.getAuthorAsMember().getId())
+                            .filter(ignored -> firstOpt.isEmpty()))
                     .switchIfEmpty(messageService.err(env, "command.incorrect-name").then(Mono.empty()))
                     .flatMap(user -> messageService.info(env, embed -> embed.setImage(user.getAvatarUrl() + "?size=512")
                             .setDescription(messageService.format(env.context(), "command.avatar.text", user.getUsername(),
@@ -1026,9 +1032,14 @@ public class Commands{
     public static class WarningsCommand extends AdminCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            Optional<Snowflake> targetId = interaction.getOption("@user")
+            Optional<Snowflake> targetId = interaction.getOption(0)
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asSnowflake);
+
+            Mono<Member> referencedUser = Mono.justOrEmpty(env.getMessage().getMessageReference())
+                    .flatMap(ref -> Mono.justOrEmpty(ref.getMessageId()).flatMap(messageId ->
+                            env.getClient().getMessageById(ref.getChannelId(), messageId)))
+                    .flatMap(Message::getAuthorAsMember);
 
             Snowflake guildId = env.getAuthorAsMember().getGuildId();
 
@@ -1056,13 +1067,14 @@ public class Commands{
                     (builder0, builder1) -> builder0, /* non-mergable */
                     ImmutableEmbedData.Builder::build);
 
-            return Mono.justOrEmpty(targetId).filterWhen(id -> env.getClient().getMemberById(guildId, id).hasElement())
+            return Mono.justOrEmpty(targetId)
+                    .flatMap(userId -> env.getClient().getMemberById(guildId, userId))
+                    .switchIfEmpty(referencedUser)
                     .switchIfEmpty(messageService.err(env, "command.incorrect-name").then(Mono.empty()))
-                    .flatMapMany(id -> adminService.warnings(guildId, id))
-                    .switchIfEmpty(messageService.text(env, "command.admin.warnings.empty").then(Mono.never()))
-                    .limitRequest(21).index().collect(collector)
-                    .zipWith(env.getClient().getMemberById(guildId, targetId.orElseThrow(AssertionError::new)))
-                    .flatMap(function((embed, target) -> messageService.info(env, spec -> spec.from(embed)
+                    .zipWhen(member -> adminService.warnings(member)
+                            .switchIfEmpty(messageService.text(env, "command.admin.warnings.empty").then(Mono.never()))
+                            .limitRequest(21).index().collect(collector))
+                    .flatMap(function((target, embed) -> messageService.info(env, spec -> spec.from(embed)
                             .setTitle(messageService.format(env.context(), "command.admin.warnings.title", target.getDisplayName())))));
         }
     }

@@ -52,7 +52,11 @@ public class MessageEventHandler extends ReactiveEventAdapter{
     public Publisher<?> onMessageCreate(MessageCreateEvent event){
         Message message = event.getMessage();
         Member member = event.getMember().orElse(null);
-        if(DiscordUtil.isBot(member) || MessageUtil.isEmpty(message) || message.getType() != Message.Type.DEFAULT || message.isTts() || !message.getEmbeds().isEmpty()){
+        if(DiscordUtil.isBot(member) || MessageUtil.isEmpty(message) || message.isTts() || !message.getEmbeds().isEmpty()){
+            return Mono.empty();
+        }
+
+        if(message.getType() != Message.Type.REPLY && message.getType() != Message.Type.DEFAULT){
             return Mono.empty();
         }
 
