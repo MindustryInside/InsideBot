@@ -6,15 +6,14 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.*;
 import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.object.entity.channel.TextChannel;
-import discord4j.discordjson.json.*;
+import discord4j.discordjson.json.PresenceData;
 import discord4j.gateway.intent.*;
 import discord4j.rest.request.RouteMatcher;
 import discord4j.rest.response.ResponseFunction;
 import discord4j.rest.route.Routes;
 import discord4j.store.api.mapping.MappingStoreService;
 import discord4j.store.api.noop.NoOpStoreService;
-import discord4j.store.api.service.StoreServiceLoader;
-import discord4j.store.caffeine.CaffeineStoreService;
+import discord4j.store.jdk.JdkStoreService;
 import inside.Settings;
 import inside.interaction.*;
 import inside.service.DiscordService;
@@ -23,7 +22,6 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.*;
-import java.time.Duration;
 import java.util.*;
 
 @Service
@@ -44,7 +42,7 @@ public class DiscordServiceImpl implements DiscordService{
     public void init(){
         String token = settings.getToken();
         Objects.requireNonNull(token, "token");
-        StoreServiceLoader storeServiceLoader = new StoreServiceLoader();
+        // StoreServiceLoader storeServiceLoader = new StoreServiceLoader();
 
         gateway = DiscordClientBuilder.create(token)
                 .onClientResponse(ResponseFunction.emptyIfNotFound())
@@ -53,9 +51,9 @@ public class DiscordServiceImpl implements DiscordService{
                 .gateway()
                 .setStore(Store.fromLayout(LegacyStoreLayout.of(MappingStoreService.create()
                         .setMapping(new NoOpStoreService(), PresenceData.class)
-                        .setMapping(new CaffeineStoreService(caffeine -> caffeine.weakKeys()
-                                .expireAfterWrite(Duration.ofDays(3))), MessageData.class)
-                        .setFallback(storeServiceLoader.getStoreService()))))
+                        // .setMapping(new CaffeineStoreService(caffeine -> caffeine.weakKeys()
+                        //         .expireAfterWrite(Duration.ofDays(3))), MessageData.class)
+                        .setFallback(new JdkStoreService()))))
                 .setEnabledIntents(IntentSet.of(
                         Intent.GUILDS,
                         Intent.GUILD_MEMBERS,
@@ -107,24 +105,4 @@ public class DiscordServiceImpl implements DiscordService{
     public Mono<TextChannel> getTextChannelById(Snowflake channelId){
         return gateway.getChannelById(channelId).ofType(TextChannel.class);
     }
-
-    /* Legacy feature */
-    // @Deprecated
-    // @Scheduled(cron = "0 */4 * * * *")
-    // public void activeUsersMonitor(){
-        // Flux.fromIterable(retriever.getAllMembers())
-        //         .filter(localMember -> !retriever.activeUserDisabled(localMember.guildId()) && existsMemberById(localMember.guildId(), localMember.userId()))
-        //         .flatMap(localMember -> Mono.zip(Mono.just(localMember), gateway.getMemberById(localMember.guildId(), localMember.userId())))
-        //         .flatMap(TupleUtils.function((localMember, member) -> {
-        //             Snowflake roleId = retriever.activeUserRoleId(member.getGuildId()).orElseThrow(IllegalStateException::new);
-        //             if(localMember.isActiveUser()){
-        //                 return member.addRole(roleId);
-        //             }else{
-        //                 localMember.messageSeq(0);
-        //                 retriever.save(localMember);
-        //                 return member.removeRole(roleId);
-        //             }
-        //         }))
-        //         .subscribe();
-    // }
 }

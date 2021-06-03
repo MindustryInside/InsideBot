@@ -7,6 +7,7 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.AllowedMentions;
 import inside.Settings;
+import inside.command.model.CommandEnvironment;
 import inside.service.MessageService;
 import inside.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,7 @@ import reactor.util.context.ContextView;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import static inside.util.ContextUtil.KEY_LOCALE;
+import static inside.util.ContextUtil.*;
 
 @Service
 public class MessageServiceImpl implements MessageService{
@@ -68,38 +69,67 @@ public class MessageServiceImpl implements MessageService{
     }
 
     @Override
-    public Mono<Void> text(Mono<? extends MessageChannel> channel, String text, Object... args){
-        return Mono.deferContextual(ctx -> channel.publishOn(Schedulers.boundedElastic())
-                .flatMap(c -> c.createMessage(spec -> spec.setContent(text.isBlank() ? placeholder : format(ctx, text, args))
-                        .setAllowedMentions(AllowedMentions.suppressAll())))
+    public Mono<Void> text(CommandEnvironment environment, String text, Object... args){
+        return Mono.deferContextual(ctx -> environment.getReplyChannel().publishOn(Schedulers.boundedElastic())
+                .flatMap(c -> c.createMessage(spec -> {
+                    if(ctx.<Boolean>getOrEmpty(KEY_REPLY).isPresent()){
+                        spec.setMessageReference(environment.getMessage().getId());
+                    }
+                    spec.setContent(text.isBlank() ? placeholder : format(ctx, text, args));
+                    spec.setAllowedMentions(AllowedMentions.suppressAll());
+                }))
                 .then());
     }
 
     @Override
     public Mono<Void> info(Mono<? extends MessageChannel> channel, String title, String text, Object... args){
-        return Mono.deferContextual(ctx -> info(channel, embed -> embed.setTitle(get(ctx, title))
+        return Mono.deferContextual(ctx -> channel.publishOn(Schedulers.boundedElastic())
+                .flatMap(c -> c.createMessage(spec -> spec.setAllowedMentions(AllowedMentions.suppressAll())
+                        .setEmbed(embed -> embed.setTitle(get(ctx, title))
+                                .setDescription(format(ctx, text, args))
+                                .setColor(settings.getDefaults().getNormalColor()))))
+                .then());
+    }
+
+    @Override
+    public Mono<Void> info(CommandEnvironment environment, String title, String text, Object... args){
+        return Mono.deferContextual(ctx -> info(environment, embed -> embed.setTitle(get(ctx, title))
                 .setDescription(format(ctx, text, args))));
     }
 
     @Override
-    public Mono<Void> info(Mono<? extends MessageChannel> channel, Consumer<EmbedCreateSpec> embed){
-        return channel.publishOn(Schedulers.boundedElastic())
-                .flatMap(c -> c.createEmbed(embed.andThen(spec -> spec.setColor(settings.getDefaults().getNormalColor()))))
-                .then();
+    public Mono<Void> info(CommandEnvironment environment, Consumer<EmbedCreateSpec> embed){
+        return Mono.deferContextual(ctx -> environment.getReplyChannel().publishOn(Schedulers.boundedElastic())
+                .flatMap(c -> c.createMessage(spec -> {
+                    if(ctx.<Boolean>getOrEmpty(KEY_REPLY).isPresent()){
+                        spec.setMessageReference(environment.getMessage().getId());
+                    }
+                    spec.setAllowedMentions(AllowedMentions.suppressAll());
+                    spec.setEmbed(embed.andThen(after -> after.setColor(settings.getDefaults().getNormalColor())));
+                }))
+                .then());
     }
 
     @Override
-    public Mono<Void> err(Mono<? extends MessageChannel> channel, String text, Object... args){
-        return error(channel, "message.error.general.title", text, args);
+    public Mono<Void> err(CommandEnvironment environment, String text, Object... args){
+        return error(environment, "message.error.general.title", text, args);
     }
 
     @Override
-    public Mono<Void> error(Mono<? extends MessageChannel> channel, String title, String text, Object... args){
-        return Mono.deferContextual(ctx -> channel.publishOn(Schedulers.boundedElastic())
-                .flatMap(c -> c.createEmbed(embed -> embed.setColor(settings.getDefaults().getErrorColor())
-                        .setDescription(format(ctx, text, args))
-                        .setTitle(get(ctx, title))))
-                .flatMap(message -> Mono.delay(settings.getDiscord().getErrorEmbedTtl()).then(message.delete())));
+    public Mono<Void> error(CommandEnvironment environment, String title, String text, Object... args){
+        return Mono.deferContextual(ctx -> environment.getReplyChannel().publishOn(Schedulers.boundedElastic())
+                .flatMap(c -> c.createMessage(spec -> {
+                    if(ctx.<Boolean>getOrEmpty(KEY_REPLY).isPresent()){
+                        spec.setMessageReference(environment.getMessage().getId());
+                    }
+
+                    spec.setAllowedMentions(AllowedMentions.suppressAll());
+                    spec.setEmbed(embed -> embed.setColor(settings.getDefaults().getErrorColor())
+                            .setDescription(format(ctx, text, args))
+                            .setTitle(get(ctx, title)));
+                }))
+                .flatMap(message -> Mono.delay(settings.getDiscord().getErrorEmbedTtl())
+                        .then(message.delete().and(environment.getMessage().addReaction(failed)))));
     }
 
     @Override
@@ -116,8 +146,8 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     public Mono<Void> info(InteractionCreateEvent event, Consumer<EmbedCreateSpec> embed){
-        return event.reply(spec -> spec.addEmbed(embed.andThen(embedSpec ->
-                embedSpec.setColor(settings.getDefaults().getNormalColor()))));
+        return event.reply(spec -> spec.addEmbed(embed.andThen(after ->
+                after.setColor(settings.getDefaults().getNormalColor()))));
     }
 
     @Override
@@ -127,7 +157,8 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     public Mono<Void> error(InteractionCreateEvent event, String title, String text, Object... args){
-        return Mono.deferContextual(ctx -> event.reply(spec -> spec.addEmbed(embed -> embed.setColor(settings.getDefaults().getErrorColor())
+        return Mono.deferContextual(ctx -> event.reply(spec -> spec.setAllowedMentions(AllowedMentions.suppressAll())
+                .addEmbed(embed -> embed.setColor(settings.getDefaults().getErrorColor())
                 .setDescription(format(ctx, text, args))
                 .setTitle(get(ctx, title)))));
     }

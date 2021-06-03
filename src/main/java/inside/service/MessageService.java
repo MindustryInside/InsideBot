@@ -1,17 +1,21 @@
 package inside.service;
 
 import discord4j.common.util.Snowflake;
+import discord4j.core.event.domain.InteractionCreateEvent;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.EmbedCreateSpec;
+import inside.command.model.CommandEnvironment;
 import reactor.core.publisher.Mono;
 import reactor.util.context.ContextView;
 
 import java.util.function.Consumer;
 
-public interface MessageService extends MessageHolderService, InteractionMessageService{
+public interface MessageService extends MessageHolderService{
 
     ReactionEmoji ok = ReactionEmoji.unicode("✅");
+
+    ReactionEmoji failed = ReactionEmoji.unicode("❌");
 
     String placeholder = ":eyes: (?)";
 
@@ -25,18 +29,31 @@ public interface MessageService extends MessageHolderService, InteractionMessage
 
     String format(ContextView ctx, String key, Object... args);
 
-    // send
+    // send (command)
 
-    Mono<Void> text(Mono<? extends MessageChannel> channel, String text, Object... args);
+    Mono<Void> text(CommandEnvironment environment, String text, Object... args);
 
-    Mono<Void> info(Mono<? extends MessageChannel> channel, String title, String text, Object... args);
+    Mono<Void> info(Mono<? extends MessageChannel> channel, String title, String text, Object... args); // for using in DM
 
-    Mono<Void> info(Mono<? extends MessageChannel> channel, Consumer<EmbedCreateSpec> embed);
+    Mono<Void> info(CommandEnvironment environment, String title, String text, Object... args);
 
-    Mono<Void> err(Mono<? extends MessageChannel> channel, String text, Object... args);
+    Mono<Void> info(CommandEnvironment environment, Consumer<EmbedCreateSpec> embed);
 
-    // TODO: rename
-    Mono<Void> error(Mono<? extends MessageChannel> channel, String title, String text, Object... args);
+    Mono<Void> err(CommandEnvironment environment, String text, Object... args);
+
+    Mono<Void> error(CommandEnvironment environment, String title, String text, Object... args);
+
+    // send (interactive)
+
+    Mono<Void> text(InteractionCreateEvent event, String text, Object... args);
+
+    Mono<Void> info(InteractionCreateEvent event, String title, String text, Object... args);
+
+    Mono<Void> info(InteractionCreateEvent event, Consumer<EmbedCreateSpec> embed);
+
+    Mono<Void> err(InteractionCreateEvent event, String text, Object... args);
+
+    Mono<Void> error(InteractionCreateEvent event, String title, String text, Object... args);
 
     // data
 
