@@ -2,7 +2,7 @@ package inside.command;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
-import discord4j.core.object.entity.channel.TextChannel;
+import discord4j.core.object.entity.channel.GuildMessageChannel;
 import inside.command.model.*;
 import inside.data.entity.GuildConfig;
 import inside.data.service.EntityRetriever;
@@ -40,7 +40,6 @@ public class DefaultCommandHandler implements CommandHandler{
         String message = environment.getMessage().getContent();
         Snowflake guildId = environment.getAuthorAsMember().getGuildId();
         Mono<Guild> guild = environment.getMessage().getGuild();
-        Mono<TextChannel> channel = environment.getReplyChannel().ofType(TextChannel.class);
         Snowflake selfId = environment.getClient().getSelfId();
 
         Mono<String> prefix = entityRetriever.getGuildConfigById(guildId)
@@ -77,9 +76,9 @@ public class DefaultCommandHandler implements CommandHandler{
 
             messageService.awaitEdit(environment.getMessage().getId());
             if(closest != null){
-                return messageService.err(channel, "command.response.found-closest", closest);
+                return messageService.err(environment, "command.response.found-closest", closest);
             }
-            return prefix.flatMap(str -> messageService.err(channel, "command.response.unknown", str));
+            return prefix.flatMap(str -> messageService.err(environment, "command.response.unknown", str));
         });
 
         return text.flatMap(TupleUtils.function((commandstr, cmd) -> Mono.justOrEmpty(commandHolder.getCommand(cmd))
@@ -100,7 +99,7 @@ public class DefaultCommandHandler implements CommandHandler{
                     while(true){
                         if(index >= info.params().length && !argstr.isEmpty()){
                             messageService.awaitEdit(environment.getMessage().getId());
-                            return prefix.flatMap(str -> messageService.error(channel, "command.response.many-arguments.title",
+                            return prefix.flatMap(str -> messageService.error(environment, "command.response.many-arguments.title",
                                     argsres, str, cmd, messageService.get(environment.context(), info.paramText())));
                         }else if(argstr.isEmpty()){
                             break;
@@ -119,7 +118,7 @@ public class DefaultCommandHandler implements CommandHandler{
                         if(next == -1){
                             if(!satisfied){
                                 messageService.awaitEdit(environment.getMessage().getId());
-                                return prefix.flatMap(str -> messageService.error(channel, "command.response.few-arguments.title",
+                                return prefix.flatMap(str -> messageService.error(environment, "command.response.few-arguments.title",
                                         argsres, str, cmd, messageService.get(environment.context(), info.paramText())));
                             }
                             result.add(new CommandOption(info.params()[index], argstr));
@@ -136,7 +135,7 @@ public class DefaultCommandHandler implements CommandHandler{
 
                     if(!satisfied && info.params().length > 0 && !info.params()[0].optional()){
                         messageService.awaitEdit(environment.getMessage().getId());
-                        return prefix.flatMap(str -> messageService.error(channel, "command.response.few-arguments.title",
+                        return prefix.flatMap(str -> messageService.error(environment, "command.response.few-arguments.title",
                                 argsres, str, cmd, messageService.get(environment.context(), info.paramText())));
                     }
 
@@ -145,14 +144,15 @@ public class DefaultCommandHandler implements CommandHandler{
                             t.getMessage().contains("Missing Permissions"));
 
                     Function<Throwable, Mono<Void>> fallback = t -> Flux.fromIterable(info.permissions())
-                            .filterWhen(permission -> channel.flatMap(targetChannel ->
+                            .filterWhen(permission -> environment.getReplyChannel().cast(GuildMessageChannel.class)
+                                    .flatMap(targetChannel ->
                                     targetChannel.getEffectivePermissions(selfId))
                                     .map(set -> !set.contains(permission)))
                             .map(permission -> messageService.getEnum(environment.context(), permission))
                             .map("• "::concat)
                             .collect(Collectors.joining("\n"))
                             .filter(s -> !s.isBlank())
-                            .flatMap(s -> messageService.text(channel, String.format("%s%n%n%s",
+                            .flatMap(s -> messageService.text(environment, String.format("%s%n%n%s",
                             messageService.get(environment.context(), "message.error.permission-denied.title"),
                             messageService.format(environment.context(), "message.error.permission-denied.description", s)))
                             .onErrorResume(missingAccess, t0 -> guild.flatMap(Guild::getOwner)

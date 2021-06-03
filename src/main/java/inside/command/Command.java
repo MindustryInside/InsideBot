@@ -22,7 +22,7 @@ public abstract class Command{
     }
 
     public Mono<Void> help(CommandEnvironment env){
-        return messageService.text(env.getReplyChannel(), "command.help.default");
+        return messageService.text(env, "command.help.default");
     }
 
     protected DiscordCommand getAnnotation(){

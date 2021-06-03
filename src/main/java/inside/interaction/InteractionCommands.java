@@ -869,7 +869,8 @@ public class InteractionCommands{
             });
 
             return result.publishOn(Schedulers.boundedElastic())
-                    .onErrorResume(t -> t instanceof ArithmeticException || t instanceof Expression.ExpressionException,
+                    .onErrorResume(t -> t instanceof ArithmeticException || t instanceof Expression.ExpressionException ||
+                                    t instanceof NumberFormatException,
                     t -> messageService.error(env.event(), "command.math.error.title", t.getMessage()).then(Mono.empty()))
                     .flatMap(decimal -> messageService.text(env.event(), MessageUtil.substringTo(decimal.toString(), Message.MAX_CONTENT_LENGTH)));
         }
