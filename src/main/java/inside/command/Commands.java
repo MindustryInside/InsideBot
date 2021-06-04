@@ -1264,7 +1264,7 @@ public class Commands{
             return env.getAuthorAsMember().getVoiceState()
                     .switchIfEmpty(messageService.err(env, "command.voice.not-in-channel").then(Mono.empty()))
                     .flatMap(ignored -> Mono.fromRunnable(() -> voiceService.getOrCreate(guildId).getPlayer().setPaused(true))
-                            .and(env.getMessage().addReaction(ok)));
+                            .then(env.getMessage().addReaction(ok)));
         }
     }
 
@@ -1282,7 +1282,7 @@ public class Commands{
                     .flatMap(VoiceChannel::getVoiceConnection)
                     .flatMap(VoiceConnection::disconnect)
                     .doFirst(() -> voiceService.getOrCreate(guildId).getPlayer().stopTrack())
-                    .and(env.getMessage().addReaction(ok));
+                    .then(env.getMessage().addReaction(ok));
         }
     }
 
@@ -1298,7 +1298,7 @@ public class Commands{
             return env.getAuthorAsMember().getVoiceState()
                     .switchIfEmpty(messageService.err(env, "command.voice.not-in-channel").then(Mono.empty()))
                     .flatMap(ignored -> Mono.fromRunnable(voiceRegistry.getTrackLoader()::nextTrack)
-                            .and(env.getMessage().addReaction(ok)));
+                            .then(env.getMessage().addReaction(ok)));
         }
     }
 
@@ -1314,7 +1314,7 @@ public class Commands{
             return env.getAuthorAsMember().getVoiceState()
                     .switchIfEmpty(messageService.err(env, "command.voice.not-in-channel").then(Mono.empty()))
                     .flatMap(ignored -> Mono.fromRunnable(voiceRegistry.getTrackLoader()::clear)
-                            .and(env.getMessage().addReaction(ok)));
+                            .then(env.getMessage().addReaction(ok)));
         }
     }
 
@@ -1331,7 +1331,7 @@ public class Commands{
             return env.getAuthorAsMember().getVoiceState()
                     .switchIfEmpty(messageService.err(env, "command.voice.not-in-channel").then(Mono.empty()))
                     .flatMap(ignored -> Mono.fromRunnable(voiceRegistry.getPlayer()::stopTrack)
-                    .and(env.getMessage().addReaction(ok)));
+                    .then(env.getMessage().addReaction(ok)));
         }
     }
 
@@ -1346,7 +1346,7 @@ public class Commands{
                     .flatMap(VoiceState::getChannel)
                     .flatMap(VoiceChannel::getVoiceConnection)
                     .flatMap(VoiceConnection::reconnect)
-                    .and(env.getMessage().addReaction(ok));
+                    .then(env.getMessage().addReaction(ok));
         }
     }
 
