@@ -122,6 +122,9 @@ public class Commands{
 
             Mono<Void> categories = Flux.fromIterable(categoriesWithCommands.get().entrySet())
                     .distinct(Map.Entry::getKey)
+                    .filterWhen(entry -> Flux.fromIterable(entry.getValue())
+                            .filterWhen(command -> command.filter(env))
+                            .hasElements())
                     .map(entry -> {
                         String canonicalName = entry.getValue().get(0).getClass()
                                 .getSuperclass().getCanonicalName();
@@ -144,6 +147,10 @@ public class Commands{
                     .switchIfEmpty(categories.then(Mono.never()))
                     .mapNotNull(categoriesWithCommands.get()::get)
                     .switchIfEmpty(snowHelp.then(Mono.never()))
+                    .filterWhen(entry -> Flux.fromIterable(entry)
+                            .filterWhen(command -> command.filter(env))
+                            .hasElements())
+                    .switchIfEmpty(messageService.err(env, "command.help.unknown").then(Mono.never()))
                     .flatMapMany(Flux::fromIterable)
                     .map(commandHolder.getCommandInfoMap()::get)
                     .sort((o1, o2) -> Arrays.compare(o1.text(), o2.text()))
