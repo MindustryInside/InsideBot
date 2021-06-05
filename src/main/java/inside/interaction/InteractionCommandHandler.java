@@ -1,6 +1,5 @@
-package inside.service;
+package inside.interaction;
 
-import inside.interaction.*;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
