@@ -581,9 +581,11 @@ public class Commands{
             Map<String, String> map = russian ? rusLeetSpeak : engLeetSpeak;
             UnaryOperator<String> get = s -> {
                 String result = Optional.ofNullable(map.get(s.toLowerCase()))
-                        .orElse(map.keySet().stream()
-                                .filter(s::equalsIgnoreCase)
-                                .findFirst().orElse(""));
+                        .or(() -> map.entrySet().stream()
+                                .filter(entry -> entry.getValue().equalsIgnoreCase(s))
+                                .map(Map.Entry::getKey)
+                                .findFirst())
+                        .orElse("");
 
                 return s.chars().anyMatch(Character::isUpperCase) ? result.toUpperCase() : result;
             };
@@ -654,9 +656,11 @@ public class Commands{
         public static String translit(String text){
             UnaryOperator<String> get = s -> {
                 String result = Optional.ofNullable(translit.get(s.toLowerCase()))
-                        .orElse(translit.keySet().stream()
-                                .filter(s::equalsIgnoreCase)
-                                .findFirst().orElse(""));
+                        .or(() -> translit.entrySet().stream()
+                                .filter(entry -> entry.getValue().equalsIgnoreCase(s))
+                                .map(Map.Entry::getKey)
+                                .findFirst())
+                        .orElse("");
 
                 return s.chars().anyMatch(Character::isUpperCase) ? result.toUpperCase() : result;
             };
