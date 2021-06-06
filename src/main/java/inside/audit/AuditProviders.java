@@ -200,11 +200,21 @@ public class AuditProviders{
         }
     }
 
-    @ForwardAuditProvider(AuditActionType.MEMBER_UPDATE)
+    // curentrly unused
+    @ForwardAuditProvider(AuditActionType.MEMBER_AVATAR_UPDATE)
     public static class MemberUpdateAuditProvider extends BaseAuditProvider{
         @Override
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
+            String url = action.getAttribute(AVATAR_URL);
+            String oldUrl = action.getAttribute(OLD_AVATAR_URL);
+            if(oldUrl == null || url == null){
+                return;
+            }
 
+            embed.setAuthor(action.user().name(), null, url);
+            embed.setDescription(messageService.format(context, "audit.member.update-avatar.title",
+                    getUserReference(context, action.user())));
+            embed.setThumbnail(oldUrl);
             addTimestamp(context, action, embed);
         }
     }
