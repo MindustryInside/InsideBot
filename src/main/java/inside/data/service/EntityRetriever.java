@@ -29,9 +29,7 @@ public interface EntityRetriever{
 
     Mono<LocalMember> getLocalMemberById(Snowflake userId, Snowflake guildId);
 
-    default Mono<LocalMember> getLocalMemberById(Member member){
-        return getLocalMemberById(member.getId(), member.getGuildId());
-    }
+    Mono<LocalMember> getAndUpdateLocalMemberById(Member member);
 
     Mono<Void> save(LocalMember localMember);
 
