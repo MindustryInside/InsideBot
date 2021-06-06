@@ -646,6 +646,7 @@ public class InteractionCommands{
                     .flatMap(ApplicationCommandInteractionOption::getValue)
                     .map(ApplicationCommandInteractionOptionValue::asString)
                     .map(str -> Commands.LeetSpeakCommand.leeted(str, russian))
+                    .filter(str -> !str.isBlank())
                     .orElse(MessageService.placeholder);
 
             return env.event().reply(text);
@@ -689,6 +690,7 @@ public class InteractionCommands{
                     .flatMap(ApplicationCommandInteractionOption::getValue)
                     .map(ApplicationCommandInteractionOptionValue::asString)
                     .map(Commands.TransliterationCommand::translit)
+                    .filter(str -> !str.isBlank())
                     .orElse(MessageService.placeholder);
 
             return env.event().reply(text);
