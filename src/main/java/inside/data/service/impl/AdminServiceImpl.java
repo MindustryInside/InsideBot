@@ -58,8 +58,8 @@ public class AdminServiceImpl implements AdminService{
     @Override
     @Transactional
     public Mono<Void> mute(Member admin, Member target, DateTime end, @Nullable String reason){
-        Mono<Void> saveAction = entityRetriever.getLocalMemberById(admin)
-                .zipWith(entityRetriever.getLocalMemberById(target))
+        Mono<Void> saveAction = entityRetriever.getAndUpdateLocalMemberById(admin)
+                .zipWith(entityRetriever.getAndUpdateLocalMemberById(target))
                 .flatMap(function((adminLocalMember, targetLocalMember) -> Mono.fromRunnable(() -> repository.save(AdminAction.builder()
                         .guildId(admin.getGuildId())
                         .type(AdminActionType.mute)
@@ -92,7 +92,7 @@ public class AdminServiceImpl implements AdminService{
     @Override
     @Transactional
     public Mono<Void> unmute(Member target){
-        Mono<Void> createIfAbsent = entityRetriever.getLocalMemberById(target)
+        Mono<Void> createIfAbsent = entityRetriever.getAndUpdateLocalMemberById(target)
                 .switchIfEmpty(entityRetriever.createLocalMember(target))
                 .then();
 
@@ -118,7 +118,7 @@ public class AdminServiceImpl implements AdminService{
         Mono<AdminConfig> getOrCreateAdminConfig = entityRetriever.getAdminConfigById(admin.getGuildId())
                 .switchIfEmpty(entityRetriever.createAdminConfig(admin.getGuildId()));
 
-        return Mono.zip(entityRetriever.getLocalMemberById(admin), entityRetriever.getLocalMemberById(target),
+        return Mono.zip(entityRetriever.getAndUpdateLocalMemberById(admin), entityRetriever.getAndUpdateLocalMemberById(target),
                 getOrCreateAdminConfig)
                 .flatMap(function((adminLocalMember, targetLocalMember, adminConfig) -> Mono.fromRunnable(() -> repository.save(AdminAction.builder()
                         .guildId(admin.getGuildId())

@@ -67,6 +67,17 @@ public class EntityRetrieverImpl implements EntityRetriever{
     }
 
     @Override
+    public Mono<LocalMember> getAndUpdateLocalMemberById(Member member){
+        Snowflake userId = member.getId();
+        Snowflake guildId = member.getGuildId();
+        return getLocalMemberById(userId, guildId)
+                .map(localMember -> {
+                    localMember.effectiveName(member.getDisplayName());
+                    return localMember;
+                });
+    }
+
+    @Override
     public Mono<Void> save(LocalMember localMember){
         return Mono.from(store.execute(UpdateStoreActions.localMemberSave(localMember)));
     }

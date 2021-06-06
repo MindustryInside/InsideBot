@@ -62,7 +62,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
         Snowflake guildId = member.getGuildId();
 
-        Mono<LocalMember> localMember = entityRetriever.getLocalMemberById(member)
+        Mono<LocalMember> localMember = entityRetriever.getAndUpdateLocalMemberById(member)
                 .switchIfEmpty(entityRetriever.createLocalMember(member));
 
         DateTime time = new DateTime(message.getTimestamp().toEpochMilli());
@@ -130,7 +130,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
                     Mono<?> command = Mono.defer(() -> {
                         if(messageService.isAwaitEdit(message.getId())){
-                            return entityRetriever.getLocalMemberById(member)
+                            return entityRetriever.getAndUpdateLocalMemberById(member)
                                     .switchIfEmpty(entityRetriever.createLocalMember(member))
                                     .flatMap(localMember -> commandHandler.handleMessage(CommandEnvironment.builder()
                                             .localMember(localMember)

@@ -127,7 +127,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
     public Publisher<?> onMemberUpdate(MemberUpdateEvent event){
         return event.getMember()
                 .filter(DiscordUtil::isNotBot)
-                .flatMap(member -> entityRetriever.getLocalMemberById(member.getId(), member.getGuildId())
+                .flatMap(member -> entityRetriever.getAndUpdateLocalMemberById(member)
                         .switchIfEmpty(entityRetriever.createLocalMember(member))
                         .flatMap(localMember -> {
                             localMember.effectiveName(event.getCurrentNickname().orElse(member.getUsername()));
