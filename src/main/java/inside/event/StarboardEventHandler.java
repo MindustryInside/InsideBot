@@ -88,7 +88,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                     .flatMap(function((source, target) -> target.edit(spec -> spec.setEmbed(embed -> embed.from(target.getEmbeds().get(0).getData())
                             .setColor(lerp(offsetColor, targetColor, Mathf.round(l / 6f, lerpStep))))
                             .setContent(messageService.format(context, "starboard.format",
-                                    stars[Mathf.clamp(l - 1, 0, stars.length - 1)]
+                                    stars[Mathf.clamp((l - 1) / 5, 0, stars.length - 1)]
                                             .asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
                                             .orElseThrow(AssertionError::new),
                                     l, DiscordUtil.getChannelMention(source.getChannelId()))))))
