@@ -442,6 +442,128 @@ public class Commands{
     public static class TranslateCommand extends Command{
         private final HttpClient httpClient = ReactorResources.DEFAULT_HTTP_CLIENT.get();
 
+        public static final String[] languages = {
+                "Afrikaans (af)",
+                "Albanian (sq)",
+                "Amharic (am)",
+                "Arabic (ar)",
+                "Armenian (hy)",
+                "Automatic (auto)",
+                "Azerbaijani (az)",
+                "Basque (eu)",
+                "Belarusian (be)",
+                "Bengali (bn)",
+                "Bosnian (bs)",
+                "Bulgarian (bg)",
+                "Catalan (ca)",
+                "Cebuano (ceb)",
+                "Chichewa (ny)",
+                "Chinese Simplified (zh-cn)",
+                "Chinese Traditional (zh-tw)",
+                "Corsican (co)",
+                "Croatian (hr)",
+                "Czech (cs)",
+                "Danish (da)",
+                "Dutch (nl)",
+                "English (en)",
+                "Esperanto (eo)",
+                "Estonian (et)",
+                "Filipino (tl)",
+                "Finnish (fi)",
+                "French (fr)",
+                "Frisian (fy)",
+                "Galician (gl)",
+                "Georgian (ka)",
+                "German (de)",
+                "Greek (el)",
+                "Gujarati (gu)",
+                "Haitian Creole (ht)",
+                "Hausa (ha)",
+                "Hawaiian (haw)",
+                "Hebrew (iw)",
+                "Hindi (hi)",
+                "Hmong (hmn)",
+                "Hungarian (hu)",
+                "Icelandic (is)",
+                "Igbo (ig)",
+                "Indonesian (id)",
+                "Irish (ga)",
+                "Italian (it)",
+                "Japanese (ja)",
+                "Javanese (jw)",
+                "Kannada (kn)",
+                "Kazakh (kk)",
+                "Khmer (km)",
+                "Korean (ko)",
+                "Kurdish (Kurmanji) (ku)",
+                "Kyrgyz (ky)",
+                "Lao (lo)",
+                "Latin (la)",
+                "Latvian (lv)",
+                "Lithuanian (lt)",
+                "Luxembourgish (lb)",
+                "Macedonian (mk)",
+                "Malagasy (mg)",
+                "Malay (ms)",
+                "Malayalam (ml)",
+                "Maltese (mt)",
+                "Maori (mi)",
+                "Marathi (mr)",
+                "Mongolian (mn)",
+                "Myanmar (Burmese) (my)",
+                "Nepali (ne)",
+                "Norwegian (no)",
+                "Pashto (ps)",
+                "Persian (fa)",
+                "Polish (pl)",
+                "Portuguese (pt)",
+                "Punjabi (ma)",
+                "Romanian (ro)",
+                "Russian (ru)",
+                "Samoan (sm)",
+                "Scots Gaelic (gd)",
+                "Serbian (sr)",
+                "Sesotho (st)",
+                "Shona (sn)",
+                "Sindhi (sd)",
+                "Sinhala (si)",
+                "Slovak (sk)",
+                "Slovenian (sl)",
+                "Somali (so)",
+                "Spanish (es)",
+                "Sundanese (su)",
+                "Swahili (sw)",
+                "Swedish (sv)",
+                "Tajik (tg)",
+                "Tamil (ta)",
+                "Telugu (te)",
+                "Thai (th)",
+                "Turkish (tr)",
+                "Ukrainian (uk)",
+                "Urdu (ur)",
+                "Uzbek (uz)",
+                "Vietnamese (vi)",
+                "Welsh (cy)",
+                "Xhosa (xh)",
+                "Yiddish (yi)",
+                "Yoruba (yo)",
+                "Zulu (zu)"
+        };
+
+        private static final inside.util.Lazy<String> cachedLanguages = inside.util.Lazy.of(() -> {
+            StringBuilder builder = new StringBuilder();
+            for(int i = 0; i < languages.length; i++){
+                builder.append(languages[i]);
+                if(i != languages.length - 1){
+                    builder.append(", ");
+                }
+                if(i % 6 == 0){
+                    builder.append('\n');
+                }
+            }
+            return builder.toString();
+        });
+
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             String from = interaction.getOption(0)
@@ -475,6 +597,15 @@ public class Commands{
                             .map(single -> single.get("trans").asText())
                             .orElse(MessageService.placeholder))
                     .flatMap(str -> messageService.text(env, str));
+        }
+
+        @Override
+        public Mono<Void> help(CommandEnvironment env){
+            return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
+                    .map(GuildConfig::prefix)
+                    .flatMap(prefix -> messageService.info(env, "command.help.title", "command.translate.help",
+                            GuildConfig.formatPrefix(prefix),
+                            cachedLanguages.get()));
         }
 
         // I hope this not for long

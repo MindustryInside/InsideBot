@@ -248,15 +248,11 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
         float b = source.getBlue()/255f;
         b += t * (target.getBlue()/255f - b);
 
-        Color c = clamp(r, g, b);
+        Color c = Color.of(Mathf.clamp(r), Mathf.clamp(g), Mathf.clamp(b));
         return toIntBits(c) < toIntBits(target) ? target : c;
     }
 
     private int toIntBits(Color c){
-        return ((int)(255f * c.getBlue()) << 16 | (int)(255f * c.getGreen()) << 8 | (int)(255f * c.getRed()));
-    }
-
-    private Color clamp(float r, float g, float b){
-        return Color.of(Mathf.clamp(r), Mathf.clamp(g), Mathf.clamp(b));
+        return (int)(255f * c.getBlue()) << 16 | (int)(255f * c.getGreen()) << 8 | (int)(255f * c.getRed());
     }
 }

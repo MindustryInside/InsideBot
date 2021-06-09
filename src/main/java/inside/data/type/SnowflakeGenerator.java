@@ -21,6 +21,6 @@ public final class SnowflakeGenerator implements IdentifierGenerator, Configurab
 
     @Override
     public Serializable generate(SharedSessionContractImplementor session, Object obj) throws HibernateException{
-        return (System.currentTimeMillis() - timestamp) << 22;
+        return System.currentTimeMillis() - timestamp << 22;
     }
 }
