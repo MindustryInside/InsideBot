@@ -4,7 +4,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.InteractionCreateEvent;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
-import discord4j.core.spec.EmbedCreateSpec;
+import discord4j.core.spec.*;
 import inside.command.model.CommandEnvironment;
 import reactor.core.publisher.Mono;
 import reactor.util.context.ContextView;
@@ -32,6 +32,8 @@ public interface MessageService extends MessageHolderService{
     // send (command)
 
     Mono<Void> text(CommandEnvironment environment, String text, Object... args);
+
+    Mono<Void> text(CommandEnvironment environment, Consumer<MessageCreateSpec> message);
 
     Mono<Void> info(Mono<? extends MessageChannel> channel, String title, String text, Object... args); // for using in DM
 

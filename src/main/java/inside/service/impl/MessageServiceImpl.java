@@ -4,7 +4,7 @@ import com.github.benmanes.caffeine.cache.*;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.InteractionCreateEvent;
 import discord4j.core.object.entity.channel.MessageChannel;
-import discord4j.core.spec.EmbedCreateSpec;
+import discord4j.core.spec.*;
 import discord4j.rest.util.AllowedMentions;
 import inside.Settings;
 import inside.command.model.CommandEnvironment;
@@ -78,6 +78,18 @@ public class MessageServiceImpl implements MessageService{
                     spec.setContent(text.isBlank() ? placeholder : format(ctx, text, args));
                     spec.setAllowedMentions(AllowedMentions.suppressAll());
                 }))
+                .then());
+    }
+
+    @Override
+    public Mono<Void> text(CommandEnvironment environment, Consumer<MessageCreateSpec> message){
+        return Mono.deferContextual(ctx -> environment.getReplyChannel().publishOn(Schedulers.boundedElastic())
+                .flatMap(c -> c.createMessage(message.andThen(spec -> {
+                    if(ctx.<Boolean>getOrEmpty(KEY_REPLY).isPresent()){
+                        spec.setMessageReference(environment.getMessage().getId());
+                    }
+                    spec.setAllowedMentions(AllowedMentions.suppressAll());
+                })))
                 .then());
     }
 
