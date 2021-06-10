@@ -44,6 +44,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.*;
 import java.util.stream.*;
 
@@ -255,6 +256,9 @@ public class Commands{
 
     @DiscordCommand(key = {"base64", "b64"}, params = "command.base64.params", description = "command.base64.description")
     public static class Base64Command extends Command{
+        private final inside.util.Lazy<HttpClient> httpClient =
+                inside.util.Lazy.of(ReactorResources.DEFAULT_HTTP_CLIENT);
+
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             boolean encode = interaction.getOption("encode/decode")
@@ -263,18 +267,34 @@ public class Commands{
                     .map(str -> str.matches("(?i)enc(ode)?"))
                     .orElse(false);
 
-            String text = interaction.getOption("text")
+            AtomicBoolean attachmentMode = new AtomicBoolean(false);
+
+            Mono<String> handleAttachment = Mono.justOrEmpty(env.getMessage().getAttachments().stream()
+                    .filter(att -> att.getWidth().isEmpty())
+                    .filter(att -> att.getContentType().map(str -> str.startsWith("text")).orElse(true))
+                    .findFirst())
+                    .flatMap(att -> httpClient.get().get().uri(att.getUrl())
+                            .responseSingle((res, buf) -> buf.asString()))
+                    .doFirst(() -> attachmentMode.set(true));
+
+            Mono<String> result = Mono.justOrEmpty(interaction.getOption("text")
                     .flatMap(CommandOption::getValue)
-                    .map(OptionValue::asString)
-                    .orElseThrow(AssertionError::new);
+                    .map(OptionValue::asString))
+                    .switchIfEmpty(handleAttachment)
+                    .switchIfEmpty(messageService.err(env, "command.base64.missed-text").then(Mono.empty()))
+                    .map(String::trim)
+                    .flatMap(str -> Mono.fromCallable(() ->
+                            encode ? Base64Coder.encodeString(str) : Base64Coder.decodeString(str)));
 
-            Mono<String> result = Mono.fromCallable(() ->
-                    encode ? Base64Coder.encodeString(text) : Base64Coder.decodeString(text));
-
-            return result.onErrorResume(t -> t instanceof IllegalArgumentException,
+            return Mono.deferContextual(ctx -> result.onErrorResume(t -> t instanceof IllegalArgumentException,
                     t -> messageService.err(env, t.getMessage()).then(Mono.empty()))
-                    .flatMap(str -> messageService.text(env,
-                            MessageUtil.substringTo(str, Message.MAX_CONTENT_LENGTH)));
+                    .flatMap(str -> messageService.text(env, spec -> {
+                        if(str.length() < Message.MAX_CONTENT_LENGTH && !attachmentMode.get()){
+                            spec.setContent(str);
+                        }else if(str.length() > Message.MAX_CONTENT_LENGTH || attachmentMode.get()){
+                            spec.addFile(MESSAGE_TXT, ReusableByteInputStream.ofString(str));
+                        }
+                    })));
         }
 
         @Override
