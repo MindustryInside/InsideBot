@@ -261,7 +261,7 @@ public class Commands{
 
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            boolean encode = interaction.getOption("encode/decode")
+            boolean encode = interaction.getOption(0)
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
                     .map(str -> str.matches("(?i)enc(ode)?"))
@@ -277,7 +277,7 @@ public class Commands{
                             .responseSingle((res, buf) -> buf.asString()))
                     .doFirst(() -> attachmentMode.set(true));
 
-            Mono<String> result = Mono.justOrEmpty(interaction.getOption("text")
+            Mono<String> result = Mono.justOrEmpty(interaction.getOption(1)
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString))
                     .switchIfEmpty(handleAttachment)
@@ -362,7 +362,7 @@ public class Commands{
     public static class MathCommand extends Command{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            String text = interaction.getOption("math expression")
+            String text = interaction.getOption(0)
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
                     .orElseThrow(AssertionError::new);
@@ -420,7 +420,7 @@ public class Commands{
     public static class StatusCommand extends TestCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            String activity = interaction.getOption("status")
+            String activity = interaction.getOption(0)
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
                     .map(String::toLowerCase)
@@ -537,7 +537,6 @@ public class Commands{
                     "q", text, "tl", to, "sl", from
             ));
 
-            // TODO: use context locale if possible
             return httpClient.get().uri("https://translate.google.com/translate_a/t" + paramstr)
                     .responseSingle((res, buf) -> buf.asString()
                             .flatMap(byteBuf -> Mono.fromCallable(() ->
@@ -581,13 +580,13 @@ public class Commands{
 
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            boolean en = interaction.getOption("from ru/en")
+            boolean en = interaction.getOption(0)
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
                     .map("en"::equalsIgnoreCase)
                     .orElse(false);
 
-            String text = interaction.getOption("text")
+            String text = interaction.getOption(1)
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
                     .orElseThrow(AssertionError::new);
@@ -642,13 +641,13 @@ public class Commands{
 
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            boolean ru = interaction.getOption("ru/en")
+            boolean ru = interaction.getOption(0)
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
                     .map("ru"::equalsIgnoreCase)
                     .orElse(false);
 
-            String text = interaction.getOption("text")
+            String text = interaction.getOption(1)
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
                     .map(str -> MessageUtil.substringTo(leeted(str, ru), Message.MAX_CONTENT_LENGTH))
@@ -724,7 +723,7 @@ public class Commands{
 
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            String translited = interaction.getOption("text")
+            String translited = interaction.getOption(0)
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
                     .map(str -> MessageUtil.substringTo(translit(str), Message.MAX_CONTENT_LENGTH))
@@ -777,7 +776,7 @@ public class Commands{
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Member member = env.getAuthorAsMember();
 
-            String prefix = interaction.getOption("prefix")
+            String prefix = interaction.getOption(0)
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
                     .orElseThrow(AssertionError::new);
@@ -803,15 +802,15 @@ public class Commands{
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Member member = env.getAuthorAsMember();
 
-            boolean present = interaction.getOption("timezone").isPresent();
+            boolean present = interaction.getOption(0).isPresent();
 
-            DateTimeZone timeZone = interaction.getOption("timezone")
+            DateTimeZone timeZone = interaction.getOption(0)
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
                     .map(TimezoneCommand::findTimeZone)
                     .orElse(null);
 
-            String str =  interaction.getOption("timezone")
+            String str =  interaction.getOption(0)
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
                     .orElse("");
@@ -855,9 +854,9 @@ public class Commands{
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Member member = env.getAuthorAsMember();
 
-            boolean present = interaction.getOption("locale").isPresent();
+            boolean present = interaction.getOption(0).isPresent();
 
-            Locale locale = interaction.getOption("locale")
+            Locale locale = interaction.getOption(0)
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
                     .map(LocaleUtil::get)
@@ -1061,7 +1060,6 @@ public class Commands{
                         Mono<Void> warnings = Mono.defer(() -> adminService.warnings(member).count()).flatMap(count -> {
                             Mono<Void> message = messageService.text(env, "command.admin.warn", member.getUsername(), count);
 
-                            // TODO: test
                             Mono<AdminConfig> config = entityRetriever.getAdminConfigById(guildId)
                                     .switchIfEmpty(entityRetriever.createAdminConfig(guildId));
                             return message.then(config.filter(adminConfig -> count >= adminConfig.maxWarnCount())
@@ -1342,8 +1340,6 @@ public class Commands{
                     .then();
         }
     }
-
-    // TODO: fix voice channel check
 
     @DiscordCommand(key = "pause", description = "command.voice.pause.description",
                     permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS,
