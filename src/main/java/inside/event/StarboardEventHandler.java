@@ -34,6 +34,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
     private static final Color offsetColor = Color.of(0xffefc0), targetColor = Color.of(0xdaa520);
     private static final float lerpStep = 1.0E-05f;
 
+    // TODO: Check whether it is possible to use a direct type indication
     private final ReactionEmoji[] stars = {
             ReactionEmoji.unicode("\u2B50"),
             ReactionEmoji.unicode("\uD83C\uDF1F"),
@@ -230,12 +231,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
     @Override
     public Publisher<?> onMessageDelete(MessageDeleteEvent event){
-        Snowflake guildId = event.getGuildId().orElse(null);
-        if(guildId == null){
-            return Mono.empty();
-        }
-
-        return entityRetriever.deleteStarboardById(guildId, event.getMessageId());
+        return Mono.justOrEmpty(event.getGuildId()).flatMap(guildId -> entityRetriever.deleteStarboardById(guildId, event.getMessageId()));
     }
 
     private Color lerp(Color source, Color target, float t){

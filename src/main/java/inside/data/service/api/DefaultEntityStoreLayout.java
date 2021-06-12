@@ -5,7 +5,7 @@ import inside.data.entity.*;
 import inside.data.service.StoreHolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.*;
 
 @Service
 public class DefaultEntityStoreLayout implements EntityStoreLayout, EntityAccessor, EntityUpdater{
@@ -39,6 +39,12 @@ public class DefaultEntityStoreLayout implements EntityStoreLayout, EntityAccess
     public Mono<AuditConfig> getAuditConfigById(long guildId){
         return storeHolder.getAuditConfigService()
                 .find(guildId);
+    }
+
+    @Override
+    public Flux<LocalMember> getAllLocalMembers(){
+        return storeHolder.getLocalMemberService()
+                .getAll();
     }
 
     @Override

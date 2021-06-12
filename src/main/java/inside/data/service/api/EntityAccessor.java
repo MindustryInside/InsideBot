@@ -1,7 +1,7 @@
 package inside.data.service.api;
 
 import inside.data.entity.*;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.*;
 
 public interface EntityAccessor{
 
@@ -10,6 +10,8 @@ public interface EntityAccessor{
     Mono<AdminConfig> getAdminConfigById(long guildId);
 
     Mono<AuditConfig> getAuditConfigById(long guildId);
+
+    Flux<LocalMember> getAllLocalMembers();
 
     Mono<LocalMember> getLocalMemberById(long userId, long guildId);
 

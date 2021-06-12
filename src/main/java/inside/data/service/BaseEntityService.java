@@ -4,7 +4,7 @@ import inside.Settings;
 import inside.data.entity.base.BaseEntity;
 import inside.data.repository.base.BaseRepository;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.*;
 import reactor.util.annotation.Nullable;
 
 public abstract class BaseEntityService<K, V extends BaseEntity, R extends BaseRepository<V>> implements EntityService<K, V>{
@@ -21,6 +21,12 @@ public abstract class BaseEntityService<K, V extends BaseEntity, R extends BaseR
     @Override
     public Mono<V> find(K id){
         return Mono.defer(() -> Mono.justOrEmpty(find0(id)));
+    }
+
+    @Override
+    @Transactional
+    public Flux<V> getAll(){
+        return Flux.defer(() -> Flux.fromIterable(repository.findAll()));
     }
 
     @Nullable
