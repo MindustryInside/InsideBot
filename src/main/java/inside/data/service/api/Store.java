@@ -34,6 +34,7 @@ public class Store{
                 .map(GetAdminConfigAction.class, action -> entityAccessor.getAdminConfigById(action.guildId))
                 .map(GetAuditConfigAction.class, action -> entityAccessor.getAuditConfigById(action.guildId))
                 .map(GetLocalMemberAction.class, action -> entityAccessor.getLocalMemberById(action.userId, action.guildId))
+                .map(GetAllLocalMembersAction.class, action -> entityAccessor.getAllLocalMembers())
                 .map(GetMessageInfoAction.class, action -> entityAccessor.getMessageInfoById(action.messageId))
                 .map(GetStarboardConfigAction.class, action -> entityAccessor.getStarboardConfigById(action.guildId))
                 .map(GetStarboardAction.class, action -> entityAccessor.getStarboardById(action.guildId, action.sourceMessageId))

@@ -65,10 +65,9 @@ public class MessageEventHandler extends ReactiveEventAdapter{
         Mono<LocalMember> localMember = entityRetriever.getAndUpdateLocalMemberById(member)
                 .switchIfEmpty(entityRetriever.createLocalMember(member));
 
-        DateTime time = new DateTime(message.getTimestamp().toEpochMilli());
-
         Mono<Void> updateLastSendMessage = localMember.flatMap(localMember0 -> {
-            localMember0.lastSentMessage(time);
+            localMember0.activity().lastSentMessage(new DateTime(message.getTimestamp().toEpochMilli()));
+            localMember0.activity().incrementMessageCount();
             return entityRetriever.save(localMember0);
         });
 

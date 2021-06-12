@@ -2,8 +2,7 @@ package inside.data.entity;
 
 import discord4j.common.util.Snowflake;
 import inside.data.entity.base.GuildEntity;
-import org.joda.time.DateTime;
-import reactor.util.annotation.Nullable;
+import org.joda.time.*;
 
 import javax.persistence.*;
 import java.io.Serial;
@@ -21,8 +20,8 @@ public class LocalMember extends GuildEntity{
     @Column(name = "effective_name", length = 32)
     private String effectiveName;
 
-    @Column(name = "last_sent_message")
-    private DateTime lastSentMessage;
+    @OneToOne(cascade = CascadeType.ALL)
+    private Activity activity;
 
     public Snowflake userId(){
         return Snowflake.of(userId);
@@ -40,13 +39,19 @@ public class LocalMember extends GuildEntity{
         this.effectiveName = Objects.requireNonNull(effectiveName, "effectiveName");
     }
 
-    @Nullable
-    public DateTime lastSentMessage(){
-        return lastSentMessage;
+    public Activity activity(){
+        return activity;
     }
 
-    public void lastSentMessage(@Nullable DateTime lastSentMessage){
-        this.lastSentMessage = lastSentMessage;
+    public void activity(Activity activity){
+        this.activity = activity;
+    }
+
+    @Transient
+    public boolean isActiveUser(){
+        DateTime last = activity.lastSentMessage();
+        return last != null && Weeks.weeksBetween(last, DateTime.now()).getWeeks() < 3 &&
+                activity.messageCount() >= 75; // TODO: save to GuildConfig
     }
 
     @Override
@@ -54,7 +59,7 @@ public class LocalMember extends GuildEntity{
         return "LocalMember{" +
                 "userId=" + userId +
                 ", effectiveName='" + effectiveName + '\'' +
-                ", lastSentMessage=" + lastSentMessage +
+                ", activity=" + activity +
                 "} " + super.toString();
     }
 }

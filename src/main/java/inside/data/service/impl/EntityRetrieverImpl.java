@@ -12,7 +12,7 @@ import inside.util.*;
 import org.joda.time.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.*;
 
 @Service
 public class EntityRetrieverImpl implements EntityRetriever{
@@ -59,6 +59,11 @@ public class EntityRetrieverImpl implements EntityRetriever{
     @Override
     public Mono<Void> save(AuditConfig auditConfig){
         return Mono.from(store.execute(UpdateStoreActions.auditConfigSave(auditConfig)));
+    }
+
+    @Override
+    public Flux<LocalMember> getAllLocalMembers(){
+        return Flux.from(store.execute(ReadStoreActions.getAllLocalMembers()));
     }
 
     @Override
@@ -172,6 +177,9 @@ public class EntityRetrieverImpl implements EntityRetriever{
             localMember.userId(userId);
             localMember.guildId(guildId);
             localMember.effectiveName(effectiveNickname);
+            Activity activity = new Activity();
+            activity.guildId(guildId);
+            localMember.activity(activity); // TODO: lazy initializing?
             return save(localMember).thenReturn(localMember);
         });
     }

@@ -3,7 +3,7 @@ package inside.data.service;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import inside.data.entity.*;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.*;
 
 public interface EntityRetriever{
 
@@ -26,6 +26,8 @@ public interface EntityRetriever{
     Mono<Void> save(AuditConfig auditConfig);
 
     // member
+
+    Flux<LocalMember> getAllLocalMembers();
 
     Mono<LocalMember> getLocalMemberById(Snowflake userId, Snowflake guildId);
 
