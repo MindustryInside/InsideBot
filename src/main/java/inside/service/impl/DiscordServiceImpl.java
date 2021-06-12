@@ -118,10 +118,17 @@ public class DiscordServiceImpl implements DiscordService{
     @Scheduled(cron = "* */2 * * * *")
     public void activeUsers(){
         entityRetriever.getAllLocalMembers()
-                .flatMap(localMember -> Mono.zip(Mono.just(localMember), gateway.getMemberById(localMember.guildId(), localMember.userId())))
+                .filter(localMember -> localMember.activity().activeUserConfig().isEnable())
+                .flatMap(localMember -> Mono.zip(Mono.just(localMember),
+                        gateway.getMemberById(localMember.guildId(), localMember.userId())))
                 .flatMap(TupleUtils.function((localMember, member) -> {
-                    Snowflake roleId = Snowflake.of(697929564210331681L); // TODO: read Activity comments
-                    if(localMember.isActiveUser()){
+                    Snowflake roleId = localMember.activity()
+                            .activeUserConfig().roleId().orElse(null); // asserted above
+                    if(roleId == null){
+                        return Mono.empty();
+                    }
+
+                    if(localMember.activity().isActive()){
                         return member.addRole(roleId);
                     }else{
                         return Mono.when(member.removeRole(roleId), Mono.fromRunnable(localMember.activity()::resetIfAfter),

@@ -20,6 +20,9 @@ public class Activity extends GuildEntity{
     @Column(name = "last_sent_message")
     private DateTime lastSentMessage;
 
+    @OneToOne(cascade = CascadeType.ALL)
+    private ActiveUserConfig activeUserConfig;
+
     @Transient
     public void incrementMessageCount(){
         messageCount += 1;
@@ -27,9 +30,16 @@ public class Activity extends GuildEntity{
 
     @Transient
     public void resetIfAfter(){
-        if(lastSentMessage != null &&  Weeks.weeksBetween(lastSentMessage, DateTime.now()).getWeeks() > 3){
+        if(lastSentMessage != null && Days.daysBetween(lastSentMessage, DateTime.now()).getDays() > activeUserConfig.keepCountingPeriod()){
             messageCount = 0;
         }
+    }
+
+    @Transient
+    public boolean isActive(){
+        DateTime last = lastSentMessage;
+        return last != null && Days.daysBetween(lastSentMessage, DateTime.now()).getDays() < activeUserConfig.keepCountingPeriod() &&
+                messageCount >= 75;
     }
 
     public int messageCount(){
@@ -49,11 +59,20 @@ public class Activity extends GuildEntity{
         this.lastSentMessage = lastSentMessage;
     }
 
+    public ActiveUserConfig activeUserConfig(){
+        return activeUserConfig;
+    }
+
+    public void activeUserConfig(ActiveUserConfig activeUserConfig){
+        this.activeUserConfig = activeUserConfig;
+    }
+
     @Override
     public String toString(){
         return "Activity{" +
                 "messageCount=" + messageCount +
                 ", lastSentMessage=" + lastSentMessage +
+                ", activeUserConfig=" + activeUserConfig +
                 "} " + super.toString();
     }
 }
