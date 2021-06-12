@@ -2,7 +2,6 @@ package inside.data.entity;
 
 import discord4j.common.util.Snowflake;
 import inside.data.entity.base.GuildEntity;
-import org.joda.time.*;
 
 import javax.persistence.*;
 import java.io.Serial;
@@ -45,13 +44,6 @@ public class LocalMember extends GuildEntity{
 
     public void activity(Activity activity){
         this.activity = activity;
-    }
-
-    @Transient
-    public boolean isActiveUser(){
-        DateTime last = activity.lastSentMessage();
-        return last != null && Weeks.weeksBetween(last, DateTime.now()).getWeeks() < 3 &&
-                activity.messageCount() >= 75; // TODO: save to GuildConfig
     }
 
     @Override

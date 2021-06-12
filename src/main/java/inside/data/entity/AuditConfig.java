@@ -46,7 +46,7 @@ public class AuditConfig extends GuildEntity{
 
     public boolean isEnable(){
         return enable;
-    }
+    } // TODO: rename
 
     public void setEnable(boolean enable){
         this.enable = enable;

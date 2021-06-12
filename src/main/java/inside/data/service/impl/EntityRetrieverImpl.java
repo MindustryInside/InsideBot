@@ -179,6 +179,11 @@ public class EntityRetrieverImpl implements EntityRetriever{
             localMember.effectiveName(effectiveNickname);
             Activity activity = new Activity();
             activity.guildId(guildId);
+            ActiveUserConfig activeUserConfig = new ActiveUserConfig();
+            activeUserConfig.guildId(guildId);
+            activeUserConfig.keepCountingPeriod(settings.getDefaults().getActiveUserKeepCountingPeriod());
+            activeUserConfig.messageBarrier(settings.getDefaults().getActiveUserMessageBarrier());
+            activity.activeUserConfig(activeUserConfig);
             localMember.activity(activity); // TODO: lazy initializing?
             return save(localMember).thenReturn(localMember);
         });
@@ -202,7 +207,7 @@ public class EntityRetrieverImpl implements EntityRetriever{
         return Mono.defer(() -> {
             StarboardConfig starboardConfig = new StarboardConfig();
             starboardConfig.guildId(guildId);
-            starboardConfig.lowerStarBarrier(3);
+            starboardConfig.lowerStarBarrier(settings.getDefaults().getStarboardLowerStarBarrier());
             return save(starboardConfig).thenReturn(starboardConfig);
         });
     }

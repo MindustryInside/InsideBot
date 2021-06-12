@@ -117,6 +117,12 @@ public class Settings{
 
         private Duration muteEvade = Duration.ofDays(15);
 
+        private int starboardLowerStarBarrier = 3;
+
+        private int activeUserKeepCountingPeriod = 21;
+
+        private int activeUserMessageBarrier = 75;
+
         public String getPrefix(){
             return prefix;
         }
@@ -171,6 +177,30 @@ public class Settings{
 
         public void setMuteEvade(Duration muteEvade){
             this.muteEvade = muteEvade;
+        }
+
+        public int getActiveUserKeepCountingPeriod(){
+            return activeUserKeepCountingPeriod;
+        }
+
+        public void setActiveUserKeepCountingPeriod(int activeUserKeepCountingPeriod){
+            this.activeUserKeepCountingPeriod = activeUserKeepCountingPeriod;
+        }
+
+        public int getActiveUserMessageBarrier(){
+            return activeUserMessageBarrier;
+        }
+
+        public void setActiveUserMessageBarrier(int activeUserMessageBarrier){
+            this.activeUserMessageBarrier = activeUserMessageBarrier;
+        }
+
+        public int getStarboardLowerStarBarrier(){
+            return starboardLowerStarBarrier;
+        }
+
+        public void setStarboardLowerStarBarrier(int starboardLowerStarBarrier){
+            this.starboardLowerStarBarrier = starboardLowerStarBarrier;
         }
     }
 
