@@ -26,7 +26,7 @@ public class ActiveUserConfig extends ConfigEntity{
     @Transient
     public boolean resetIfAfter(Activity activity){
         DateTime last = activity.lastSentMessage();
-        if(last != null && keepCountingPeriod.toIntervalFrom(last).isAfterNow()){
+        if(last != null && last.isBefore(DateTime.now().minus(keepCountingPeriod))){
             activity.messageCount(0);
             return true;
         }
@@ -36,8 +36,8 @@ public class ActiveUserConfig extends ConfigEntity{
     @Transient
     public boolean isActive(Activity activity){
         DateTime last = activity.lastSentMessage();
-        return last != null && keepCountingPeriod.toIntervalFrom(last).isBeforeNow() &&
-                activity.messageCount() >= 75;
+        return last != null && last.isAfter(DateTime.now().minus(keepCountingPeriod)) &&
+                activity.messageCount() >= messageBarrier;
     }
 
     public Duration keepCountingPeriod(){

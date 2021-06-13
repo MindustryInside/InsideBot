@@ -231,7 +231,8 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
     @Override
     public Publisher<?> onMessageDelete(MessageDeleteEvent event){
-        return Mono.justOrEmpty(event.getGuildId()).flatMap(guildId -> entityRetriever.deleteStarboardById(guildId, event.getMessageId()));
+        return Mono.justOrEmpty(event.getGuildId()).flatMap(guildId ->
+                entityRetriever.deleteStarboardById(guildId, event.getMessageId()));
     }
 
     private Color lerp(Color source, Color target, float t){
