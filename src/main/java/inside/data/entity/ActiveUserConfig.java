@@ -15,7 +15,7 @@ public class ActiveUserConfig extends ConfigEntity{
     private static final long serialVersionUID = -3848703477201041407L;
 
     @Column(name = "keep_counting_period")
-    private int keepCountingPeriod;
+    private Duration keepCountingPeriod;
 
     @Column(name = "message_barrier")
     private int messageBarrier;
@@ -26,7 +26,7 @@ public class ActiveUserConfig extends ConfigEntity{
     @Transient
     public boolean resetIfAfter(Activity activity){
         DateTime last = activity.lastSentMessage();
-        if(last != null && Days.daysBetween(last, DateTime.now()).getDays() > keepCountingPeriod){
+        if(last != null && keepCountingPeriod.toIntervalFrom(last).isAfterNow()){
             activity.messageCount(0);
             return true;
         }
@@ -36,16 +36,16 @@ public class ActiveUserConfig extends ConfigEntity{
     @Transient
     public boolean isActive(Activity activity){
         DateTime last = activity.lastSentMessage();
-        return last != null && Days.daysBetween(last, DateTime.now()).getDays() < keepCountingPeriod &&
+        return last != null && keepCountingPeriod.toIntervalFrom(last).isBeforeNow() &&
                 activity.messageCount() >= 75;
     }
 
-    public int keepCountingPeriod(){
+    public Duration keepCountingPeriod(){
         return keepCountingPeriod;
     }
 
-    public void keepCountingPeriod(int keepCountingPeriod){
-        this.keepCountingPeriod = keepCountingPeriod;
+    public void keepCountingPeriod(Duration keepCountingPeriod){
+        this.keepCountingPeriod = Objects.requireNonNull(keepCountingPeriod, "keepCountingPeriod");
     }
 
     public int messageBarrier(){
@@ -60,7 +60,7 @@ public class ActiveUserConfig extends ConfigEntity{
         return Optional.ofNullable(roleId).map(Snowflake::of);
     }
 
-    public void setRoleId(Snowflake roleId){
+    public void roleId(Snowflake roleId){
         this.roleId = Objects.requireNonNull(roleId, "roleId").asString();
     }
 

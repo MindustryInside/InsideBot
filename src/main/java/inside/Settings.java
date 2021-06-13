@@ -119,7 +119,7 @@ public class Settings{
 
         private int starboardLowerStarBarrier = 3;
 
-        private int activeUserKeepCountingPeriod = 21;
+        private Duration activeUserKeepCountingPeriod = Duration.ofDays(21);
 
         private int activeUserMessageBarrier = 75;
 
@@ -179,11 +179,11 @@ public class Settings{
             this.muteEvade = muteEvade;
         }
 
-        public int getActiveUserKeepCountingPeriod(){
+        public Duration getActiveUserKeepCountingPeriod(){
             return activeUserKeepCountingPeriod;
         }
 
-        public void setActiveUserKeepCountingPeriod(int activeUserKeepCountingPeriod){
+        public void setActiveUserKeepCountingPeriod(Duration activeUserKeepCountingPeriod){
             this.activeUserKeepCountingPeriod = activeUserKeepCountingPeriod;
         }
 

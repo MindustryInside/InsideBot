@@ -74,8 +74,141 @@ public class InteractionCommands{
             Snowflake guildId = env.event().getInteraction().getGuildId()
                     .orElseThrow(AssertionError::new);
 
+            Function<Boolean, String> formatBool = bool ->
+                    messageService.get(env.context(), bool == null ? "command.settings.absent" :
+                            bool ? "command.settings.enabled" : "command.settings.disabled");
+
+            Function<Duration, String> formatDuration = duration -> PeriodFormat.wordBased(env.context().get(KEY_LOCALE))
+                    .print(duration.toPeriod());
+
+            Mono<Void> handleStarboard = Mono.justOrEmpty(env.event().getInteraction().getCommandInteraction()
+                    .getOption("starboard"))
+                    .zipWith(entityRetriever.getStarboardConfigById(guildId)
+                            .switchIfEmpty(entityRetriever.createStarboardConfig(guildId)))
+                    .flatMap(function((group, starboardConfig) -> {
+                        Mono<Void> lowerStarBarrierCommand = Mono.justOrEmpty(group.getOption("lower-star-barrier"))
+                                .flatMap(command -> Mono.justOrEmpty(command.getOption("value")))
+                                .switchIfEmpty(messageService.text(env.event(), "command.settings.lower-star-barrier.current",
+                                        starboardConfig.lowerStarBarrier()).then(Mono.empty()))
+                                .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
+                                        .map(ApplicationCommandInteractionOptionValue::asLong))
+                                .filter(l -> l > 0)
+                                .switchIfEmpty(messageService.text(env.event(),
+                                        "command.settings.negative-number").then(Mono.empty()))
+                                .flatMap(l -> {
+                                    starboardConfig.lowerStarBarrier(Math.toIntExact(l)); // TODO: use long
+                                    return messageService.text(env.event(), "command.settings.lower-star-barrier.update", l)
+                                            .and(entityRetriever.save(starboardConfig));
+                                });
+
+                        Mono<Void> channelCommand = Mono.justOrEmpty(group.getOption("channel"))
+                                .switchIfEmpty(lowerStarBarrierCommand.then(Mono.empty()))
+                                .flatMap(command -> Mono.justOrEmpty(command.getOption("value")))
+                                .switchIfEmpty(messageService.text(env.event(), "command.settings.starboard-channel.current",
+                                        starboardConfig.starboardChannelId().map(DiscordUtil::getChannelMention)
+                                                .orElse(messageService.get(env.context(), "command.settings.absent")))
+                                        .then(Mono.empty()))
+                                .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
+                                        .flatMap(ApplicationCommandInteractionOptionValue::asChannel))
+                                .map(Channel::getId)
+                                .flatMap(channelId -> {
+                                    starboardConfig.starboardChannelId(channelId);
+                                    return messageService.text(env.event(), "command.settings.starboard-channel.update",
+                                            DiscordUtil.getChannelMention(channelId))
+                                            .and(entityRetriever.save(starboardConfig));
+                                });
+
+                        return Mono.justOrEmpty(group.getOption("enable"))
+                                .switchIfEmpty(channelCommand.then(Mono.empty()))
+                                .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")
+                                        .flatMap(ApplicationCommandInteractionOption::getValue)))
+                                .map(ApplicationCommandInteractionOptionValue::asBoolean)
+                                .switchIfEmpty(messageService.text(env.event(), "command.settings.starboard-enable.update",
+                                        formatBool.apply(starboardConfig.isEnabled())).then(Mono.empty()))
+                                .flatMap(bool -> {
+                                    starboardConfig.setEnabled(bool);
+                                    return messageService.text(env.event(), "command.settings.starboard-enable.update",
+                                            formatBool.apply(bool))
+                                            .and(entityRetriever.save(starboardConfig));
+                                });
+                    }));
+
+            Mono<Void> handleActivities = Mono.justOrEmpty(env.event().getInteraction().getCommandInteraction()
+                    .getOption("activities"))
+                    .switchIfEmpty(handleStarboard.then(Mono.empty()))
+                    .zipWith(entityRetriever.getActiveUserConfigById(guildId)
+                            .switchIfEmpty(entityRetriever.createActiveUserConfig(guildId)))
+                    .flatMap(function((group, activeUserConfig) -> {
+                        Mono<Void> keepCountingPeriodCommand = Mono.justOrEmpty(group.getOption("delay"))
+                                .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")
+                                        .flatMap(ApplicationCommandInteractionOption::getValue)))
+                                .map(ApplicationCommandInteractionOptionValue::asString)
+                                .switchIfEmpty(messageService.text(env.event(), "command.settings.keep-counting-period.current",
+                                        formatDuration.apply(activeUserConfig.keepCountingPeriod())).then(Mono.empty()))
+                                .flatMap(str -> {
+                                    Duration duration = Optional.ofNullable(MessageUtil.parseDuration(str))
+                                            .map(jduration -> Duration.millis(jduration.toMillis()))
+                                            .orElse(null);
+                                    if(duration == null){
+                                        return messageService.err(env.event(), "command.settings.incorrect-duration");
+                                    }
+
+                                    activeUserConfig.keepCountingPeriod(duration);
+                                    return messageService.text(env.event(), "command.settings.keep-counting-period.update",
+                                            formatDuration.apply(duration))
+                                            .and(entityRetriever.save(activeUserConfig));
+                                });
+
+                        Mono<Void> messageBarrierCommand = Mono.justOrEmpty(group.getOption("message-barrier"))
+                                .switchIfEmpty(keepCountingPeriodCommand.then(Mono.empty()))
+                                .flatMap(command -> Mono.justOrEmpty(command.getOption("value")))
+                                .switchIfEmpty(messageService.text(env.event(), "command.settings.message-barrier.current",
+                                        activeUserConfig.messageBarrier()).then(Mono.empty()))
+                                .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
+                                        .map(ApplicationCommandInteractionOptionValue::asLong))
+                                .filter(l -> l > 0)
+                                .switchIfEmpty(messageService.text(env.event(),
+                                        "command.settings.negative-number").then(Mono.empty()))
+                                .flatMap(l -> {
+                                    activeUserConfig.messageBarrier(Math.toIntExact(l)); // TODO: use long
+                                    return messageService.text(env.event(), "command.settings.message-barrier.update", l)
+                                            .and(entityRetriever.save(activeUserConfig));
+                                });
+
+                        Mono<Void> activeUserRoleCommand = Mono.justOrEmpty(group.getOption("active-user-role"))
+                                .switchIfEmpty(messageBarrierCommand.then(Mono.empty()))
+                                .flatMap(command -> Mono.justOrEmpty(command.getOption("value")))
+                                .switchIfEmpty(messageService.text(env.event(), "command.settings.active-user-role.current",
+                                        activeUserConfig.roleId().map(DiscordUtil::getRoleMention)
+                                                .orElse(messageService.get(env.context(), "command.settings.absent")))
+                                        .then(Mono.empty()))
+                                .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
+                                        .flatMap(ApplicationCommandInteractionOptionValue::asRole))
+                                .map(Role::getId)
+                                .flatMap(roleId -> {
+                                    activeUserConfig.roleId(roleId);
+                                    return messageService.text(env.event(), "command.settings.active-user-role.update",
+                                            DiscordUtil.getRoleMention(roleId))
+                                            .and(entityRetriever.save(activeUserConfig));
+                                });
+
+                        return Mono.justOrEmpty(group.getOption("enable"))
+                                .switchIfEmpty(activeUserRoleCommand.then(Mono.empty()))
+                                .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")
+                                        .flatMap(ApplicationCommandInteractionOption::getValue)))
+                                .map(ApplicationCommandInteractionOptionValue::asBoolean)
+                                .switchIfEmpty(messageService.text(env.event(), "command.settings.active-user-enable.update",
+                                        formatBool.apply(activeUserConfig.isEnabled())).then(Mono.empty()))
+                                .flatMap(bool -> {
+                                    activeUserConfig.setEnabled(bool);
+                                    return messageService.text(env.event(), "command.settings.active-user-enable.update", formatBool.apply(bool))
+                                            .and(entityRetriever.save(activeUserConfig));
+                                });
+                    }));
+
             Mono<Void> handleAdmin = Mono.justOrEmpty(env.event().getInteraction().getCommandInteraction()
                     .getOption("admin"))
+                    .switchIfEmpty(handleActivities.then(Mono.empty()))
                     .zipWith(entityRetriever.getAdminConfigById(guildId)
                             .switchIfEmpty(entityRetriever.createAdminConfig(guildId)))
                     .flatMap(function((group, adminConfig) -> {
@@ -169,9 +302,6 @@ public class InteractionCommands{
                                     }));
                                 }))).and(entityRetriever.save(adminConfig));
 
-                        Function<Duration, String> formatDuration = duration -> PeriodFormat.wordBased(env.context().get(KEY_LOCALE))
-                                .print(duration.toPeriod());
-
                         Mono<Void> warnDelayCommand = Mono.justOrEmpty(group.getOption("warn-delay"))
                                 .switchIfEmpty(adminRolesCommand.then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")
@@ -179,7 +309,7 @@ public class InteractionCommands{
                                 .map(ApplicationCommandInteractionOptionValue::asString)
                                 .switchIfEmpty(messageService.text(env.event(), "command.settings.warn-delay.current",
                                         formatDuration.apply(adminConfig.warnExpireDelay())).then(Mono.empty()))
-                                .flatMap(str -> Mono.defer(() -> {
+                                .flatMap(str -> {
                                     Duration duration = Optional.ofNullable(MessageUtil.parseDuration(str))
                                             .map(jduration -> Duration.millis(jduration.toMillis()))
                                             .orElse(null);
@@ -191,7 +321,7 @@ public class InteractionCommands{
                                     return messageService.text(env.event(), "command.settings.warn-delay.update",
                                             formatDuration.apply(duration))
                                             .and(entityRetriever.save(adminConfig));
-                                }));
+                                });
 
                         return Mono.justOrEmpty(group.getOption("delay"))
                                 .switchIfEmpty(warnDelayCommand.then(Mono.empty()))
@@ -200,7 +330,7 @@ public class InteractionCommands{
                                 .map(ApplicationCommandInteractionOptionValue::asString)
                                 .switchIfEmpty(messageService.text(env.event(), "command.settings.base-delay.current",
                                         formatDuration.apply(adminConfig.muteBaseDelay())).then(Mono.empty()))
-                                .flatMap(str -> Mono.defer(() -> {
+                                .flatMap(str -> {
                                     Duration duration = Optional.ofNullable(MessageUtil.parseDuration(str))
                                             .map(jduration -> Duration.millis(jduration.toMillis()))
                                             .orElse(null);
@@ -212,7 +342,7 @@ public class InteractionCommands{
                                     return messageService.text(env.event(), "command.settings.base-delay.update",
                                             formatDuration.apply(duration))
                                             .and(entityRetriever.save(adminConfig));
-                                }));
+                                });
                     }));
 
             Mono<Void> handleAudit = Mono.justOrEmpty(env.event().getInteraction().getCommandInteraction()
@@ -223,19 +353,19 @@ public class InteractionCommands{
                     .flatMap(function((group, auditConfig) -> {
                         Mono<Void> channelCommand = Mono.justOrEmpty(group.getOption("channel")
                                 .flatMap(command -> command.getOption("value")))
-                                .switchIfEmpty(messageService.text(env.event(), "command.settings.channel.current",
+                                .switchIfEmpty(messageService.text(env.event(), "command.settings.log-channel.current",
                                         auditConfig.logChannelId().map(DiscordUtil::getChannelMention)
                                                 .orElse(messageService.get(env.context(), "command.settings.absent")))
                                         .then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
                                         .flatMap(ApplicationCommandInteractionOptionValue::asChannel))
                                 .map(Channel::getId)
-                                .flatMap(channelId -> Mono.defer(() -> {
+                                .flatMap(channelId -> {
                                     auditConfig.logChannelId(channelId);
-                                    return messageService.text(env.event(), "command.settings.channel.update",
+                                    return messageService.text(env.event(), "command.settings.log-channel.update",
                                             DiscordUtil.getChannelMention(channelId))
                                             .and(entityRetriever.save(auditConfig));
-                                }));
+                                });
 
                         Mono<Void> actionsCommand = Mono.justOrEmpty(group.getOption("actions"))
                                 .switchIfEmpty(channelCommand.then(Mono.empty()))
@@ -320,21 +450,18 @@ public class InteractionCommands{
                                     return messageService.error(env.event(), "command.settings.actions.conflicted.title", response);
                                 }))).and(entityRetriever.save(auditConfig));
 
-                        Function<Boolean, String> formatBool = bool ->
-                                messageService.get(env.context(), bool ? "command.settings.enabled" : "command.settings.disabled");
-
                         return Mono.justOrEmpty(group.getOption("enable"))
                                 .switchIfEmpty(actionsCommand.then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")
                                         .flatMap(ApplicationCommandInteractionOption::getValue)))
                                 .map(ApplicationCommandInteractionOptionValue::asBoolean)
-                                .switchIfEmpty(messageService.text(env.event(), "command.settings.enable.update",
+                                .switchIfEmpty(messageService.text(env.event(), "command.settings.audit-enable.update",
                                         formatBool.apply(auditConfig.isEnabled())).then(Mono.empty()))
-                                .flatMap(bool -> Mono.defer(() -> {
+                                .flatMap(bool -> {
                                     auditConfig.setEnabled(bool);
-                                    return messageService.text(env.event(), "command.settings.enable.update", formatBool.apply(bool))
+                                    return messageService.text(env.event(), "command.settings.audit-enable.update", formatBool.apply(bool))
                                             .and(entityRetriever.save(auditConfig));
-                                }));
+                                });
                     }));
 
             return Mono.justOrEmpty(env.event().getInteraction().getCommandInteraction()
@@ -349,7 +476,7 @@ public class InteractionCommands{
                                         guildConfig.timeZone()).then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
                                         .map(ApplicationCommandInteractionOptionValue::asString))
-                                .flatMap(str -> Mono.defer(() -> {
+                                .flatMap(str -> {
                                     DateTimeZone timeZone = Commands.TimezoneCommand.findTimeZone(str);
                                     if(timeZone == null){
                                         String suggest = Strings.findClosest(DateTimeZone.getAvailableIDs(), str);
@@ -365,7 +492,7 @@ public class InteractionCommands{
                                             "command.settings.timezone.update", ctx.<Locale>get(KEY_TIMEZONE)))
                                             .contextWrite(ctx -> ctx.put(KEY_TIMEZONE, timeZone))
                                             .and(entityRetriever.save(guildConfig));
-                                }));
+                                });
 
                         Mono<Void> localeCommand = Mono.justOrEmpty(group.getOption("locale"))
                                 .switchIfEmpty(timezoneCommand.then(Mono.empty()))
@@ -374,7 +501,7 @@ public class InteractionCommands{
                                         guildConfig.locale()).then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
                                         .map(ApplicationCommandInteractionOptionValue::asString))
-                                .flatMap(str -> Mono.defer(() -> {
+                                .flatMap(str -> {
                                     Locale locale = LocaleUtil.get(str);
                                     if(locale == null){
                                         String all = formatCollection(LocaleUtil.locales.values(), Locale::toString);
@@ -386,7 +513,7 @@ public class InteractionCommands{
                                             ctx.<Locale>get(KEY_LOCALE)))
                                             .contextWrite(ctx -> ctx.put(KEY_LOCALE, locale))
                                             .and(entityRetriever.save(guildConfig));
-                                }));
+                                });
 
                         return Mono.justOrEmpty(group.getOption("prefix"))
                                 .switchIfEmpty(localeCommand.then(Mono.empty()))
@@ -395,11 +522,11 @@ public class InteractionCommands{
                                         guildConfig.prefix()).then(Mono.empty()))
                                 .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
                                         .map(ApplicationCommandInteractionOptionValue::asString))
-                                .flatMap(str -> Mono.defer(() -> {
+                                .flatMap(str -> {
                                     guildConfig.prefix(str);
                                     return messageService.text(env.event(), "command.settings.prefix.update", guildConfig.prefix())
                                             .and(entityRetriever.save(guildConfig));
-                                }));
+                                });
 
                     }));
         }
@@ -447,6 +574,86 @@ public class InteractionCommands{
                                             .name("value")
                                             .description("New time zone")
                                             .type(ApplicationCommandOptionType.STRING.getValue())
+                                            .build())
+                                    .build())
+                            .build())
+                    .addOption(ApplicationCommandOptionData.builder()
+                            .name("activities")
+                            .description("Activity features settings")
+                            .type(ApplicationCommandOptionType.SUB_COMMAND_GROUP.getValue())
+                            .addOption(ApplicationCommandOptionData.builder()
+                                    .name("enable")
+                                    .description("Enable activity features")
+                                    .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
+                                    .addOption(ApplicationCommandOptionData.builder()
+                                            .name("value")
+                                            .description("Boolean value")
+                                            .type(ApplicationCommandOptionType.BOOLEAN.getValue())
+                                            .build())
+                                    .build())
+                            .addOption(ApplicationCommandOptionData.builder()
+                                    .name("active-user-role")
+                                    .description("Configure active user role")
+                                    .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
+                                    .addOption(ApplicationCommandOptionData.builder()
+                                            .name("value")
+                                            .description("Active user role")
+                                            .type(ApplicationCommandOptionType.ROLE.getValue())
+                                            .build())
+                                    .build())
+                            .addOption(ApplicationCommandOptionData.builder()
+                                    .name("message-barrier")
+                                    .description("Configure message barrier")
+                                    .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
+                                    .addOption(ApplicationCommandOptionData.builder()
+                                            .name("value")
+                                            .description("Minimal message count")
+                                            .type(ApplicationCommandOptionType.INTEGER.getValue())
+                                            .build())
+                                    .build())
+                            .addOption(ApplicationCommandOptionData.builder()
+                                    .name("keep-counting-period")
+                                    .description("Configure keep counting period")
+                                    .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
+                                    .addOption(ApplicationCommandOptionData.builder()
+                                            .name("value")
+                                            .description("Period value")
+                                            .type(ApplicationCommandOptionType.STRING.getValue())
+                                            .build())
+                                    .build())
+                            .build())
+                    .addOption(ApplicationCommandOptionData.builder()
+                            .name("starboard")
+                            .description("Starboard settings")
+                            .type(ApplicationCommandOptionType.SUB_COMMAND_GROUP.getValue())
+                            .addOption(ApplicationCommandOptionData.builder()
+                                    .name("enable")
+                                    .description("Enable starboard")
+                                    .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
+                                    .addOption(ApplicationCommandOptionData.builder()
+                                            .name("value")
+                                            .description("Boolean value")
+                                            .type(ApplicationCommandOptionType.BOOLEAN.getValue())
+                                            .build())
+                                    .build())
+                            .addOption(ApplicationCommandOptionData.builder()
+                                    .name("lower-star-barrier")
+                                    .description("Set star barrier")
+                                    .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
+                                    .addOption(ApplicationCommandOptionData.builder()
+                                            .name("value")
+                                            .description("Integer value")
+                                            .type(ApplicationCommandOptionType.INTEGER.getValue())
+                                            .build())
+                                    .build())
+                            .addOption(ApplicationCommandOptionData.builder()
+                                    .name("channel")
+                                    .description("Configure starboard channel")
+                                    .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
+                                    .addOption(ApplicationCommandOptionData.builder()
+                                            .name("value")
+                                            .description("Starboard channel")
+                                            .type(ApplicationCommandOptionType.CHANNEL.getValue())
                                             .build())
                                     .build())
                             .build())
@@ -872,7 +1079,7 @@ public class InteractionCommands{
 
             return result.publishOn(Schedulers.boundedElastic())
                     .onErrorResume(t -> t instanceof ArithmeticException || t instanceof Expression.ExpressionException ||
-                                    t instanceof NumberFormatException,
+                            t instanceof NumberFormatException,
                     t -> messageService.error(env.event(), "command.math.error.title", t.getMessage()).then(Mono.empty()))
                     .flatMap(decimal -> messageService.text(env.event(), MessageUtil.substringTo(decimal.toString(), Message.MAX_CONTENT_LENGTH)));
         }
