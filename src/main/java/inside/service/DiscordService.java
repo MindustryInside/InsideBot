@@ -11,6 +11,4 @@ public interface DiscordService extends InteractionCommandHandler{
     GatewayDiscordClient gateway();
 
     Mono<TextChannel> getTextChannelById(Snowflake channelId);
-
-    void activeUsers();
 }

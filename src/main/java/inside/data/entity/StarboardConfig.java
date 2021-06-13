@@ -1,7 +1,7 @@
 package inside.data.entity;
 
 import discord4j.common.util.Snowflake;
-import inside.data.entity.base.GuildEntity;
+import inside.data.entity.base.ConfigEntity;
 
 import javax.persistence.*;
 import java.io.Serial;
@@ -9,7 +9,7 @@ import java.util.*;
 
 @Entity
 @Table(name = "starboard_config")
-public class StarboardConfig extends GuildEntity{
+public class StarboardConfig extends ConfigEntity{
     @Serial
     private static final long serialVersionUID = -6712118196617253351L;
 
@@ -18,9 +18,6 @@ public class StarboardConfig extends GuildEntity{
 
     @Column(name = "starboard_channel_id")
     private String starboardChannelId;
-
-    @Column
-    private boolean enable;
 
     public int lowerStarBarrier(){
         return lowerStarBarrier;
@@ -38,20 +35,11 @@ public class StarboardConfig extends GuildEntity{
         this.starboardChannelId = Objects.requireNonNull(starboardChannelId, "starboardChannelId").asString();
     }
 
-    public boolean isEnable(){
-        return enable;
-    }
-
-    public void setEnable(boolean enable){
-        this.enable = enable;
-    }
-
     @Override
     public String toString(){
         return "StarboardConfig{" +
                 "lowerStarBarrier=" + lowerStarBarrier +
                 ", starboardChannelId='" + starboardChannelId + '\'' +
-                ", enable=" + enable +
                 "} " + super.toString();
     }
 }

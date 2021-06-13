@@ -38,6 +38,7 @@ public class Store{
                 .map(GetMessageInfoAction.class, action -> entityAccessor.getMessageInfoById(action.messageId))
                 .map(GetStarboardConfigAction.class, action -> entityAccessor.getStarboardConfigById(action.guildId))
                 .map(GetStarboardAction.class, action -> entityAccessor.getStarboardById(action.guildId, action.sourceMessageId))
+                .map(GetActiveUserConfigAction.class, action -> entityAccessor.getActiveUserConfigById(action.guildId))
                 .build();
     }
 
@@ -54,6 +55,7 @@ public class Store{
                 .map(StarboardConfigSaveAction.class, action -> entityUpdater.onStarboardConfigSave(action.starboardConfig))
                 .map(StarboardSaveAction.class, action -> entityUpdater.onStarboardSave(action.starboard))
                 .map(StarboardDeleteAction.class, action -> entityUpdater.onStarboardDelete(action.starboard))
+                .map(ActiveUserConfigSaveAction.class, action -> entityUpdater.onActiveUserConfigSave(action.activeUserConfig))
                 .build();
     }
 

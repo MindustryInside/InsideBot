@@ -72,6 +72,12 @@ public class DefaultEntityStoreLayout implements EntityStoreLayout, EntityAccess
     }
 
     @Override
+    public Mono<ActiveUserConfig> getActiveUserConfigById(long guildId){
+        return storeHolder.getActiveUserConfigService()
+                .find(guildId);
+    }
+
+    @Override
     public Mono<Void> onGuildConfigSave(GuildConfig guildConfig){
         return storeHolder.getGuildConfigService()
                 .save(guildConfig);
@@ -123,5 +129,11 @@ public class DefaultEntityStoreLayout implements EntityStoreLayout, EntityAccess
     public Mono<Void> onStarboardDelete(Starboard starboard){
         return storeHolder.getStarboardService()
                 .delete(starboard);
+    }
+
+    @Override
+    public Mono<Void> onActiveUserConfigSave(ActiveUserConfig activeUserConfig){
+        return storeHolder.getActiveUserConfigService()
+                .save(activeUserConfig);
     }
 }

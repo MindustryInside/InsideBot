@@ -83,16 +83,15 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                 .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
                         KEY_TIMEZONE, guildConfig.timeZone()));
 
-        Mono<Void> handleMessage = localMember.zipWith(initContext)
-                .map(function((localMember0, context) -> CommandEnvironment.builder()
-                        .message(message)
-                        .member(member)
-                        .context(context)
-                        .localMember(localMember0)
-                        .build()))
-                .flatMap(environment -> commandHandler.handleMessage(environment));
+        Mono<Void> handleMessage = Mono.deferContextual(ctx -> localMember.map(localMember0 -> CommandEnvironment.builder()
+                .message(message)
+                .member(member)
+                .context(ctx)
+                .localMember(localMember0)
+                .build())
+                .flatMap(commandHandler::handleMessage));
 
-        return initContext.flatMap(context -> Mono.when(updateLastSendMessage, safeMessageInfo, handleMessage).contextWrite(context));
+        return initContext.flatMap(context -> Mono.when(handleMessage, updateLastSendMessage, safeMessageInfo).contextWrite(context));
     }
 
     @Override

@@ -15,6 +15,7 @@ import discord4j.store.api.mapping.MappingStoreService;
 import discord4j.store.api.noop.NoOpStoreService;
 import discord4j.store.jdk.JdkStoreService;
 import inside.Settings;
+import inside.data.entity.Activity;
 import inside.data.service.EntityRetriever;
 import inside.interaction.*;
 import inside.service.DiscordService;
@@ -22,11 +23,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-import reactor.function.TupleUtils;
 
 import javax.annotation.*;
-import javax.transaction.Transactional;
 import java.util.*;
+
+import static reactor.function.TupleUtils.*;
 
 @Service
 public class DiscordServiceImpl implements DiscordService{
@@ -113,28 +114,31 @@ public class DiscordServiceImpl implements DiscordService{
         return gateway.getChannelById(channelId).ofType(TextChannel.class);
     }
 
-    @Override
-    @Transactional
-    @Scheduled(cron = "* */2 * * * *")
-    public void activeUsers(){
+    @Scheduled(cron = "0 */2 * * * *")
+    private void activeUsers(){
         entityRetriever.getAllLocalMembers()
-                .filter(localMember -> localMember.activity().activeUserConfig().isEnable())
                 .flatMap(localMember -> Mono.zip(Mono.just(localMember),
-                        gateway.getMemberById(localMember.guildId(), localMember.userId())))
-                .flatMap(TupleUtils.function((localMember, member) -> {
-                    Snowflake roleId = localMember.activity()
-                            .activeUserConfig().roleId().orElse(null); // asserted above
+                        gateway.getMemberById(localMember.guildId(), localMember.userId()),
+                        entityRetriever.getActiveUserConfigById(localMember.guildId())))
+                .filter(predicate((localMember, member, activeUserConfig) -> activeUserConfig.isEnabled()))
+                .flatMap(function((localMember, member, activeUserConfig) -> Mono.defer(() -> {
+                    Snowflake roleId = activeUserConfig.roleId().orElse(null);
                     if(roleId == null){
                         return Mono.empty();
                     }
 
-                    if(localMember.activity().isActive()){
+                    Activity activity = localMember.activity();
+                    if(activeUserConfig.isActive(activity)){
                         return member.addRole(roleId);
-                    }else{
-                        return Mono.when(member.removeRole(roleId), Mono.fromRunnable(localMember.activity()::resetIfAfter),
-                                entityRetriever.save(localMember));
                     }
-                }))
+
+                    return member.removeRole(roleId);
+                }).and(Mono.defer(() -> {
+                    if(activeUserConfig.resetIfAfter(localMember.activity())){
+                        return entityRetriever.save(localMember);
+                    }
+                    return Mono.empty();
+                }))))
                 .subscribe();
     }
 }

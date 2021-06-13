@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-public class StoreHolder{
+public final class StoreHolder{
     private final GuildConfigService guildConfigService;
 
     private final AdminConfigService adminConfigService;
@@ -20,13 +20,16 @@ public class StoreHolder{
 
     private final StarboardService starboardService;
 
+    private final ActiveUserConfigService activeUserConfigService;
+
     public StoreHolder(@Autowired GuildConfigService guildConfigService,
                        @Autowired AdminConfigService adminConfigService,
                        @Autowired LocalMemberService localMemberService,
                        @Autowired AuditConfigService auditConfigService,
                        @Autowired MessageInfoService messageInfoService,
                        @Autowired StarboardConfigService starboardConfigService,
-                       @Autowired StarboardService starboardService){
+                       @Autowired StarboardService starboardService,
+                       @Autowired ActiveUserConfigService activeUserConfigService){
         this.guildConfigService = guildConfigService;
         this.adminConfigService = adminConfigService;
         this.localMemberService = localMemberService;
@@ -34,6 +37,7 @@ public class StoreHolder{
         this.messageInfoService = messageInfoService;
         this.starboardConfigService = starboardConfigService;
         this.starboardService = starboardService;
+        this.activeUserConfigService = activeUserConfigService;
     }
 
     public GuildConfigService getGuildConfigService(){
@@ -62,5 +66,9 @@ public class StoreHolder{
 
     public StarboardService getStarboardService(){
         return starboardService;
+    }
+
+    public ActiveUserConfigService getActiveUserConfigService(){
+        return activeUserConfigService;
     }
 }

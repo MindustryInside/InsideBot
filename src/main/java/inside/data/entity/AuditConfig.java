@@ -2,7 +2,7 @@ package inside.data.entity;
 
 import discord4j.common.util.Snowflake;
 import inside.audit.AuditActionType;
-import inside.data.entity.base.GuildEntity;
+import inside.data.entity.base.ConfigEntity;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
@@ -11,7 +11,7 @@ import java.util.*;
 
 @Entity
 @Table(name = "audit_config")
-public class AuditConfig extends GuildEntity{
+public class AuditConfig extends ConfigEntity{
     @Serial
     private static final long serialVersionUID = 31286754508621209L;
 
@@ -20,10 +20,7 @@ public class AuditConfig extends GuildEntity{
 
     @Type(type = "json")
     @Column(columnDefinition = "json")
-    private Set<AuditActionType> enabled;
-
-    @Column
-    private boolean enable;
+    private Set<AuditActionType> types;
 
     public Optional<Snowflake> logChannelId(){
         return Optional.ofNullable(logChannelId).map(Snowflake::of);
@@ -33,36 +30,28 @@ public class AuditConfig extends GuildEntity{
         this.logChannelId = Objects.requireNonNull(logChannelId, "logChannelId").asString();
     }
 
-    public Set<AuditActionType> enabled(){
-        if(enabled == null){
-            enabled = new HashSet<>();
+    public Set<AuditActionType> types(){
+        if(types == null){
+            types = new HashSet<>();
         }
-        return enabled;
+        return types;
     }
 
-    public void enabled(Set<AuditActionType> enabled){
-        this.enabled = Objects.requireNonNull(enabled, "enabled");
-    }
-
-    public boolean isEnable(){
-        return enable;
-    } // TODO: rename
-
-    public void setEnable(boolean enable){
-        this.enable = enable;
+    public void types(Set<AuditActionType> enabled){
+        this.types = Objects.requireNonNull(enabled, "enabled");
     }
 
     @Transient
     public boolean isEnabled(AuditActionType type){
-        return logChannelId != null && enabled != null && enable && !enabled.isEmpty() && enabled.contains(type);
+        return logChannelId != null && types != null &&
+                enabled && !types.isEmpty() && types.contains(type);
     }
 
     @Override
     public String toString(){
         return "AuditConfig{" +
                 "logChannelId='" + logChannelId + '\'' +
-                ", enabled=" + enabled +
-                ", enable=" + enable +
+                ", types=" + types +
                 "} " + super.toString();
     }
 }
