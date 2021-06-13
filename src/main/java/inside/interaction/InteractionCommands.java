@@ -249,7 +249,7 @@ public class InteractionCommands{
                                                 .then(Mono.empty()))
                                         .zipWith(Mono.justOrEmpty(opt.getOption("value"))
                                                 .switchIfEmpty(messageService.text(env.event(), "command.settings.actions.current",
-                                                        formatCollection(auditConfig.enabled(), type ->
+                                                        formatCollection(auditConfig.types(), type ->
                                                                 messageService.getEnum(env.context(), type)))
                                                         .then(Mono.empty()))
                                                 .flatMap(subopt -> Mono.justOrEmpty(subopt.getValue()))
@@ -266,7 +266,7 @@ public class InteractionCommands{
 
                                     Set<String> toHelp = new HashSet<>();
                                     Set<String> removed = new HashSet<>();
-                                    Set<AuditActionType> flags = auditConfig.enabled();
+                                    Set<AuditActionType> flags = auditConfig.types();
                                     if(enums.equalsIgnoreCase("all")){
                                         if(add){
                                             flags.addAll(all.stream().map(Tuple2::getT1).collect(Collectors.toSet()));
@@ -303,7 +303,7 @@ public class InteractionCommands{
                                     }
 
                                     if(toHelp.isEmpty()){
-                                        auditConfig.enabled(flags);
+                                        auditConfig.types(flags);
                                         if(add){
                                             String formatted = flags.stream()
                                                     .map(type -> messageService.getEnum(env.context(), type))
@@ -329,9 +329,9 @@ public class InteractionCommands{
                                         .flatMap(ApplicationCommandInteractionOption::getValue)))
                                 .map(ApplicationCommandInteractionOptionValue::asBoolean)
                                 .switchIfEmpty(messageService.text(env.event(), "command.settings.enable.update",
-                                        formatBool.apply(auditConfig.isEnable())).then(Mono.empty()))
+                                        formatBool.apply(auditConfig.isEnabled())).then(Mono.empty()))
                                 .flatMap(bool -> Mono.defer(() -> {
-                                    auditConfig.setEnable(bool);
+                                    auditConfig.setEnabled(bool);
                                     return messageService.text(env.event(), "command.settings.enable.update", formatBool.apply(bool))
                                             .and(entityRetriever.save(auditConfig));
                                 }));

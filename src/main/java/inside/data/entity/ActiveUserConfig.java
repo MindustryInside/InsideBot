@@ -1,16 +1,16 @@
 package inside.data.entity;
 
 import discord4j.common.util.Snowflake;
-import inside.data.entity.base.GuildEntity;
+import inside.data.entity.base.ConfigEntity;
+import org.joda.time.*;
 
 import javax.persistence.*;
 import java.io.Serial;
 import java.util.*;
 
-// directly not used
 @Entity
 @Table(name = "active_user_config")
-public class ActiveUserConfig extends GuildEntity{
+public class ActiveUserConfig extends ConfigEntity{
     @Serial
     private static final long serialVersionUID = -3848703477201041407L;
 
@@ -23,8 +23,22 @@ public class ActiveUserConfig extends GuildEntity{
     @Column(name = "role_id")
     private String roleId;
 
-    @Column
-    private boolean enable;
+    @Transient
+    public boolean resetIfAfter(Activity activity){
+        DateTime last = activity.lastSentMessage();
+        if(last != null && Days.daysBetween(last, DateTime.now()).getDays() > keepCountingPeriod){
+            activity.messageCount(0);
+            return true;
+        }
+        return false;
+    }
+
+    @Transient
+    public boolean isActive(Activity activity){
+        DateTime last = activity.lastSentMessage();
+        return last != null && Days.daysBetween(last, DateTime.now()).getDays() < keepCountingPeriod &&
+                activity.messageCount() >= 75;
+    }
 
     public int keepCountingPeriod(){
         return keepCountingPeriod;
@@ -50,21 +64,12 @@ public class ActiveUserConfig extends GuildEntity{
         this.roleId = Objects.requireNonNull(roleId, "roleId").asString();
     }
 
-    public boolean isEnable(){
-        return enable;
-    }
-
-    public void setEnable(boolean enable){
-        this.enable = enable;
-    }
-
     @Override
     public String toString(){
         return "ActiveUserConfig{" +
                 "keepCountingPeriod=" + keepCountingPeriod +
                 ", messageBarrier=" + messageBarrier +
                 ", roleId='" + roleId + '\'' +
-                ", enable=" + enable +
                 "} " + super.toString();
     }
 }

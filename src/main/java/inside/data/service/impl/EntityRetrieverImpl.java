@@ -138,6 +138,16 @@ public class EntityRetrieverImpl implements EntityRetriever{
     }
 
     @Override
+    public Mono<ActiveUserConfig> getActiveUserConfigById(Snowflake guildId){
+        return Mono.from(store.execute(ReadStoreActions.getActiveUserConfigById(guildId.asLong())));
+    }
+
+    @Override
+    public Mono<Void> save(ActiveUserConfig activeUserConfig){
+        return Mono.from(store.execute(UpdateStoreActions.activeUserConfigSave(activeUserConfig)));
+    }
+
+    @Override
     public Mono<GuildConfig> createGuildConfig(Snowflake guildId){
         return Mono.defer(() -> {
             GuildConfig guildConfig = new GuildConfig();
@@ -179,11 +189,6 @@ public class EntityRetrieverImpl implements EntityRetriever{
             localMember.effectiveName(effectiveNickname);
             Activity activity = new Activity();
             activity.guildId(guildId);
-            ActiveUserConfig activeUserConfig = new ActiveUserConfig();
-            activeUserConfig.guildId(guildId);
-            activeUserConfig.keepCountingPeriod(settings.getDefaults().getActiveUserKeepCountingPeriod());
-            activeUserConfig.messageBarrier(settings.getDefaults().getActiveUserMessageBarrier());
-            activity.activeUserConfig(activeUserConfig);
             localMember.activity(activity); // TODO: lazy initializing?
             return save(localMember).thenReturn(localMember);
         });
@@ -209,6 +214,17 @@ public class EntityRetrieverImpl implements EntityRetriever{
             starboardConfig.guildId(guildId);
             starboardConfig.lowerStarBarrier(settings.getDefaults().getStarboardLowerStarBarrier());
             return save(starboardConfig).thenReturn(starboardConfig);
+        });
+    }
+
+    @Override
+    public Mono<ActiveUserConfig> createActiveUserConfig(Snowflake guildId){
+        return Mono.defer(() -> {
+            ActiveUserConfig activeUserConfig = new ActiveUserConfig();
+            activeUserConfig.guildId(guildId);
+            activeUserConfig.keepCountingPeriod(settings.getDefaults().getActiveUserKeepCountingPeriod());
+            activeUserConfig.messageBarrier(settings.getDefaults().getActiveUserMessageBarrier());
+            return save(activeUserConfig).thenReturn(activeUserConfig);
         });
     }
 

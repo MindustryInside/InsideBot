@@ -22,4 +22,6 @@ public interface EntityUpdater{
     Mono<Void> onStarboardSave(Starboard starboard);
 
     Mono<Void> onStarboardDelete(Starboard starboard);
+
+    Mono<Void> onActiveUserConfigSave(ActiveUserConfig activeUserConfig);
 }

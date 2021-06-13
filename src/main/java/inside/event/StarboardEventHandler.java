@@ -74,7 +74,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
         return initContext.zipWith(starboardConfig).flatMap(function((context, config) -> emojisCount.flatMap(l -> {
             Snowflake channelId = config.starboardChannelId().orElse(null);
-            if(!config.isEnable() || channelId == null){
+            if(!config.isEnabled() || channelId == null){
                 return Mono.empty();
             }
 
@@ -166,7 +166,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
         return initContext.zipWith(starboardConfig).flatMap(function((context, config) -> emojisCount.flatMap(l -> {
             Snowflake channelId = config.starboardChannelId().orElse(null);
-            if(!config.isEnable() || channelId == null){
+            if(!config.isEnabled() || channelId == null){
                 return Mono.empty();
             }
 
@@ -217,7 +217,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
         return starboardConfig.flatMap(config -> {
             Snowflake channelId = config.starboardChannelId().orElse(null);
-            if(!config.isEnable() || channelId == null){
+            if(!config.isEnabled() || channelId == null){
                 return Mono.empty();
             }
 

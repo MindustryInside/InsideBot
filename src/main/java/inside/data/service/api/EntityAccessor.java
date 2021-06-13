@@ -20,4 +20,6 @@ public interface EntityAccessor{
     Mono<StarboardConfig> getStarboardConfigById(long guildId);
 
     Mono<Starboard> getStarboardById(long guildId, long sourceMessageId);
+
+    Mono<ActiveUserConfig> getActiveUserConfigById(long guildId);
 }
