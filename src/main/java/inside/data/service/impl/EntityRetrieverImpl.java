@@ -222,7 +222,7 @@ public class EntityRetrieverImpl implements EntityRetriever{
         return Mono.defer(() -> {
             ActiveUserConfig activeUserConfig = new ActiveUserConfig();
             activeUserConfig.guildId(guildId);
-            activeUserConfig.keepCountingPeriod(settings.getDefaults().getActiveUserKeepCountingPeriod());
+            activeUserConfig.keepCountingPeriod(Duration.millis(settings.getDefaults().getActiveUserKeepCountingPeriod().toMillis()));
             activeUserConfig.messageBarrier(settings.getDefaults().getActiveUserMessageBarrier());
             return save(activeUserConfig).thenReturn(activeUserConfig);
         });
