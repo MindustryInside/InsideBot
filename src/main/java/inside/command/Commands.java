@@ -110,6 +110,13 @@ public class Commands{
                         builder.append("**");
                         builder.append(info.text()[0]);
                         builder.append("**");
+                        if(info.text().length > 1){
+                            StringJoiner joiner = new StringJoiner(", ");
+                            for(int i = 1; i < info.text().length; i++){
+                                joiner.add(info.text()[i]);
+                            }
+                            builder.append(" (").append(joiner).append(")");
+                        }
                         if(info.params().length > 0){
                             builder.append(" ");
                             builder.append(messageService.get(env.context(), info.paramText()));
