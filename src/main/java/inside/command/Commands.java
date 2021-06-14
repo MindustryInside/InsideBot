@@ -46,6 +46,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.*;
+import java.util.regex.*;
 import java.util.stream.*;
 
 import static inside.audit.Attribute.COUNT;
@@ -771,6 +772,37 @@ public class Commands{
                 }
             }
             return result.toString();
+        }
+    }
+
+    @DiscordCommand(key = {"random", "rand", "rnd"}, params = "command.random.params", description = "command.random.description")
+    public static class RandomCommand extends Command{
+        private static final Pattern rangePattern = Pattern.compile("^[(\\[]([-+]?[0-9]+);([-+]?[0-9]+)[])]$");
+
+        @Override
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            String range = interaction.getOption(0)
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .orElseThrow(AssertionError::new);
+
+            Matcher matcher = rangePattern.matcher(range);
+            if(!matcher.matches()){
+                return messageService.err(env, "command.random.incorrect-format");
+            }
+
+            Random random = new Random();
+            boolean linc = range.startsWith("[");
+            int lower = Strings.parseInt(matcher.group(1)) + (linc ? 0 : 1);
+            boolean hinc = range.endsWith("]");
+            int higher = Strings.parseInt(matcher.group(2));
+
+            if(lower >= higher){
+                return messageService.err(env, "command.random.equals");
+            }
+
+            String str = String.valueOf(lower + random.nextInt(higher - lower + (hinc ? 1 : 0)));
+            return messageService.text(env, str);
         }
     }
 
