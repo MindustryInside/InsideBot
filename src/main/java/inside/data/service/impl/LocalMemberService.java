@@ -29,7 +29,7 @@ public class LocalMemberService extends BaseEntityService<LongLongTuple2, LocalM
     @Override
     @Transactional
     @Scheduled(cron = "0 0 0 * * *")
-    public void cleanUp(){
+    protected void cleanUp(){
         repository.deleteAllByActivityLastSentMessageBefore(DateTime.now().minus(settings.getAudit().getMemberKeep().toMillis()));
     }
 }
