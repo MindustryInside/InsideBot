@@ -793,7 +793,7 @@ public class Commands{
             }
 
             String fgroup = matcher.group(1);
-            String sgroup = matcher.group(1);
+            String sgroup = matcher.group(2);
             if(!Strings.canParseLong(fgroup) || !Strings.canParseLong(sgroup)){
                 return messageService.err(env, "command.random.overflow");
             }
