@@ -25,7 +25,7 @@ public final class CommandHolder{
     }
 
     @Autowired(required = false)
-    public void init(List<Command> commands){
+    private void init(List<Command> commands){
         for(Command command : commands){
             CommandInfo info = compile(command);
             this.commands.put(info.text(), command);
@@ -86,11 +86,11 @@ public final class CommandHolder{
     }
 
     public Map<String[], Command> getCommandsMap(){
-        return commands;
+        return Collections.unmodifiableMap(commands);
     }
 
     public Map<Command, CommandInfo> getCommandInfoMap(){
-        return commandInfo;
+        return Collections.unmodifiableMap(commandInfo);
     }
 
     public Optional<Command> getCommand(String key){

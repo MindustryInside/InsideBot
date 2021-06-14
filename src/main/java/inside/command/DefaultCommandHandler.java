@@ -92,7 +92,7 @@ public class DefaultCommandHandler implements CommandHandler{
                     String argsres = info.paramText().isEmpty() ? "command.response.incorrect-arguments.empty" :
                                      "command.response.incorrect-arguments";
 
-                    if(argstr.matches("(?i)(help|\\?)")){
+                    if(argstr.matches("^(?i)(help|\\?)$")){
                         return command.filter(environment).flatMap(bool -> bool ? command.help(environment) : Mono.empty());
                     }
 
