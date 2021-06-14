@@ -27,6 +27,10 @@ public abstract class Strings{
         return Try.ofCallable(() -> Integer.parseInt(s)).orElse(defaultValue);
     }
 
+    public static boolean canParseLong(String s){
+        return Try.ofCallable(() -> Long.parseLong(s)).isSuccess();
+    }
+
     public static long parseLong(String s){
         return parseLong(s, Long.MIN_VALUE);
     }
