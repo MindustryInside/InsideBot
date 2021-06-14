@@ -792,16 +792,22 @@ public class Commands{
                 return messageService.err(env, "command.random.incorrect-format");
             }
 
+            String fgroup = matcher.group(1);
+            String sgroup = matcher.group(1);
+            if(!Strings.canParseLong(fgroup) || !Strings.canParseLong(sgroup)){
+                return messageService.err(env, "command.random.overflow");
+            }
+
             boolean linc = range.startsWith("[");
-            int lower = Strings.parseInt(matcher.group(1));
+            long lower = Strings.parseLong(fgroup);
             boolean hinc = range.endsWith("]");
-            int higher = Strings.parseInt(matcher.group(2));
+            long higher = Strings.parseLong(sgroup);
 
             if(lower >= higher){
                 return messageService.err(env, "command.random.equals");
             }
 
-            String str = String.valueOf(ThreadLocalRandom.current().nextInt(lower + (!linc ? 1 : 0), higher + (hinc ? 1 : 0)));
+            String str = String.valueOf(ThreadLocalRandom.current().nextLong(lower + (!linc ? 1 : 0), higher + (hinc ? 1 : 0)));
             return messageService.text(env, str);
         }
     }
