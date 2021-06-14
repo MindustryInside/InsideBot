@@ -44,6 +44,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.*;
 import java.util.regex.*;
@@ -791,9 +792,8 @@ public class Commands{
                 return messageService.err(env, "command.random.incorrect-format");
             }
 
-            Random random = new Random();
             boolean linc = range.startsWith("[");
-            int lower = Strings.parseInt(matcher.group(1)) + (linc ? 0 : 1);
+            int lower = Strings.parseInt(matcher.group(1));
             boolean hinc = range.endsWith("]");
             int higher = Strings.parseInt(matcher.group(2));
 
@@ -801,7 +801,7 @@ public class Commands{
                 return messageService.err(env, "command.random.equals");
             }
 
-            String str = String.valueOf(lower + random.nextInt(higher - lower + (hinc ? 1 : 0)));
+            String str = String.valueOf(ThreadLocalRandom.current().nextInt(lower + (!linc ? 1 : 0), higher + (hinc ? 1 : 0)));
             return messageService.text(env, str);
         }
     }
