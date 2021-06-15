@@ -1,7 +1,9 @@
 package inside.data.entity;
 
 import discord4j.common.util.Snowflake;
+import discord4j.discordjson.json.EmojiData;
 import inside.data.entity.base.ConfigEntity;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import java.io.Serial;
@@ -19,6 +21,10 @@ public class StarboardConfig extends ConfigEntity{
     @Column(name = "starboard_channel_id")
     private String starboardChannelId;
 
+    @Type(type = "json")
+    @Column(columnDefinition = "json")
+    private List<EmojiData> emojis;
+
     public int lowerStarBarrier(){
         return lowerStarBarrier;
     }
@@ -35,11 +41,20 @@ public class StarboardConfig extends ConfigEntity{
         this.starboardChannelId = Objects.requireNonNull(starboardChannelId, "starboardChannelId").asString();
     }
 
+    public List<EmojiData> emojis(){
+        return emojis;
+    }
+
+    public void emojis(List<EmojiData> emojis){
+        this.emojis = Objects.requireNonNull(emojis, "emojis");
+    }
+
     @Override
     public String toString(){
         return "StarboardConfig{" +
                 "lowerStarBarrier=" + lowerStarBarrier +
                 ", starboardChannelId='" + starboardChannelId + '\'' +
+                ", emojis=" + emojis +
                 "} " + super.toString();
     }
 }

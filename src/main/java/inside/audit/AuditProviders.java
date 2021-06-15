@@ -230,7 +230,7 @@ public class AuditProviders{
             }
 
             embed.setDescription(messageService.format(context, "audit.reaction.add.description",
-                    getUserReference(context, action.user()), DiscordUtil.getEmoji(emoji),
+                    getUserReference(context, action.user()), DiscordUtil.getEmojiString(emoji),
                     action.guildId().asString(), action.channel().id(), messageId.asString()));
 
             addTimestamp(context, action, embed);
@@ -248,7 +248,7 @@ public class AuditProviders{
             }
 
             embed.setDescription(messageService.format(context, "audit.reaction.remove.description",
-                    DiscordUtil.getEmoji(emoji), getUserReference(context, action.user()),
+                    DiscordUtil.getEmojiString(emoji), getUserReference(context, action.user()),
                     action.guildId().asString(), action.channel().id(), messageId.asString()));
 
             addTimestamp(context, action, embed);

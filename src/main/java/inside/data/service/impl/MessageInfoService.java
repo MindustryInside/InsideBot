@@ -27,7 +27,7 @@ public class MessageInfoService extends BaseLongObjEntityService<MessageInfo, Me
     @Override
     @Transactional
     @Scheduled(cron = "0 0 */4 * * *")
-    protected void cleanUp(){
+    public void cleanUp(){
         repository.deleteAllByTimestampBefore(DateTime.now().minus(settings.getAudit().getHistoryKeep().toMillis()));
     }
 }

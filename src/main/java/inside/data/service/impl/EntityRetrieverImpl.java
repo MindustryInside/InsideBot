@@ -2,6 +2,7 @@ package inside.data.service.impl;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
+import discord4j.discordjson.json.EmojiData;
 import inside.Settings;
 import inside.data.entity.*;
 import inside.data.service.EntityRetriever;
@@ -14,8 +15,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
 
+import java.util.*;
+
 @Service
 public class EntityRetrieverImpl implements EntityRetriever{
+
+    private static final List<EmojiData> defaultStarsEmojis = Arrays.asList( // NOTE: if you do not set the id, then you get an analog of ReactionEmoji.Unicode
+            EmojiData.builder().name("\u2B50").build(),
+            EmojiData.builder().name("\uD83C\uDF1F").build(),
+            EmojiData.builder().name("\uD83D\uDCAB").build()
+    );
 
     private final Store store;
 
@@ -214,6 +223,7 @@ public class EntityRetrieverImpl implements EntityRetriever{
             StarboardConfig starboardConfig = new StarboardConfig();
             starboardConfig.guildId(guildId);
             starboardConfig.lowerStarBarrier(settings.getDefaults().getStarboardLowerStarBarrier());
+            starboardConfig.emojis(defaultStarsEmojis);
             return save(starboardConfig).thenReturn(starboardConfig);
         });
     }
