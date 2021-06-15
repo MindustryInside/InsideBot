@@ -376,14 +376,7 @@ public class Commands{
                     .map(OptionValue::asString)
                     .orElseThrow(AssertionError::new);
 
-            Mono<BigDecimal> result = Mono.fromCallable(() -> {
-                Expression exp = new Expression(text);
-                exp.addOperator(divideAlias);
-                exp.addLazyFunction(levenshteinDstFunction);
-                return exp.eval();
-            });
-
-            return result.publishOn(Schedulers.boundedElastic())
+            return createExpression(text).publishOn(Schedulers.boundedElastic())
                     .onErrorResume(t -> t instanceof ArithmeticException || t instanceof Expression.ExpressionException ||
                             t instanceof NumberFormatException,
                     t -> messageService.error(env, "command.math.error.title", t.getMessage()).then(Mono.empty()))
@@ -398,29 +391,62 @@ public class Commands{
                             GuildConfig.formatPrefix(prefix)));
         }
 
-        public static final LazyOperator divideAlias = new AbstractOperator(":", Expression.OPERATOR_PRECEDENCE_MULTIPLICATIVE, true){
+        public static Mono<BigDecimal> createExpression(String text){
+            return Mono.fromCallable(() -> {
+                Expression exp = new Expression(text);
+                exp.addOperator(divideAlias);
+                exp.addLazyFunction(levenshteinDstFunction);
+                exp.addLazyFunction(factorialFunction);
+                return exp.eval();
+            });
+        }
+
+        private static final LazyOperator divideAlias = new AbstractOperator(":", Expression.OPERATOR_PRECEDENCE_MULTIPLICATIVE, true){
             @Override
             public BigDecimal eval(BigDecimal v1, BigDecimal v2){
                 return v1.divide(v2, MathContext.DECIMAL32);
             }
         };
 
-        public static final LazyFunction levenshteinDstFunction = new AbstractLazyFunction("LEVEN", 2){
+        private static Expression.LazyNumber createNumber(Supplier<BigDecimal> bigDecimal){
+            return new Expression.LazyNumber(){
+                @Override
+                public BigDecimal eval(){
+                    return bigDecimal.get();
+                }
+
+                @Override
+                public String getString(){
+                    return eval().toPlainString();
+                }
+            };
+        }
+
+        private static final LazyFunction factorialFunction = new AbstractLazyFunction("FACT", 1){
+            @Override
+            public Expression.LazyNumber lazyEval(List<Expression.LazyNumber> lazyParams){
+                var fist = lazyParams.get(0);
+                if(fist.eval().longValue() > 100){
+                    throw new ArithmeticException("The number is too big!");
+                }
+
+                return createNumber(() -> {
+                    int number = lazyParams.get(0).eval().intValue();
+                    BigDecimal factorial = BigDecimal.ONE;
+                    for(int i = 1; i <= number; i++){
+                        factorial = factorial.multiply(new BigDecimal(i));
+                    }
+                    return factorial;
+                });
+            }
+        };
+
+        private static final LazyFunction levenshteinDstFunction = new AbstractLazyFunction("LEVEN", 2){
             @Override
             public Expression.LazyNumber lazyEval(List<Expression.LazyNumber> lazyParams){
                 Expression.LazyNumber first = lazyParams.get(0);
                 Expression.LazyNumber second = lazyParams.get(1);
-                return new Expression.LazyNumber(){
-                    @Override
-                    public BigDecimal eval(){
-                        return BigDecimal.valueOf(Strings.levenshtein(first.getString(), second.getString()));
-                    }
-
-                    @Override
-                    public String getString(){
-                        return eval().toPlainString();
-                    }
-                };
+                return createNumber(() -> BigDecimal.valueOf(Strings.levenshtein(first.getString(), second.getString())));
             }
         };
     }
