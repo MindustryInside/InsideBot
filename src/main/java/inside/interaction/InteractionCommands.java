@@ -6,7 +6,7 @@ import discord4j.core.object.command.*;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
 import discord4j.discordjson.json.*;
-import discord4j.rest.util.ApplicationCommandOptionType;
+import discord4j.rest.util.*;
 import inside.Settings;
 import inside.audit.*;
 import inside.command.Commands;
@@ -18,7 +18,6 @@ import org.joda.time.*;
 import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
-import reactor.bool.BooleanUtils;
 import reactor.core.publisher.*;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.function.*;
@@ -33,6 +32,7 @@ import java.util.stream.Collectors;
 import static inside.audit.Attribute.COUNT;
 import static inside.audit.BaseAuditProvider.MESSAGE_TXT;
 import static inside.util.ContextUtil.*;
+import static reactor.bool.BooleanUtils.*;
 import static reactor.function.TupleUtils.*;
 
 public class InteractionCommands{
@@ -63,17 +63,25 @@ public class InteractionCommands{
                     .map(adminService::isAdmin)
                     .orElse(Mono.just(false));
 
-            return BooleanUtils.and(super.filter(env), isAdmin);
+            return and(super.filter(env), isAdmin);
         }
     }
 
     public static abstract class OwnerCommand extends GuildCommand{
         @Override
         public Mono<Boolean> filter(InteractionCommandEnvironment env){
-            return env.event().getInteraction().getMember()
-                    .map(member -> member.getGuild().flatMap(Guild::getOwner)
-                            .map(member::equals))
-                    .orElse(Mono.just(false));
+            Member member = env.event().getInteraction().getMember().orElse(null);
+            if(member == null){
+                return Mono.just(false);
+            }
+
+            Mono<Boolean> isOwner = member.getGuild().flatMap(Guild::getOwner)
+                    .map(member::equals);
+
+            Mono<Boolean> isGuildManager = member.getHighestRole()
+                    .map(role -> role.getPermissions().contains(Permission.MANAGE_GUILD));
+
+            return and(super.filter(env), or(isOwner, isGuildManager));
         }
     }
 
