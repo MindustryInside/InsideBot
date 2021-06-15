@@ -23,6 +23,7 @@ import reactor.util.function.Tuples;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static inside.util.ContextUtil.*;
@@ -33,13 +34,6 @@ import static reactor.function.TupleUtils.function;
 public class StarboardEventHandler extends ReactiveEventAdapter{
     private static final Color offsetColor = Color.of(0xffefc0), targetColor = Color.of(0xdaa520);
     private static final float lerpStep = 1.0E-05f;
-
-    // TODO: Check whether it is possible to use a direct type indication
-    private final ReactionEmoji[] stars = {
-            ReactionEmoji.unicode("\u2B50"),
-            ReactionEmoji.unicode("\uD83C\uDF1F"),
-            ReactionEmoji.unicode("\uD83D\uDCAB")
-    };
 
     @Autowired
     private EntityRetriever entityRetriever;
@@ -52,7 +46,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
         ReactionEmoji emoji = event.getEmoji();
         Snowflake guildId = event.getGuildId().orElse(null);
         Mono<User> author = event.getMessage().map(Message::getAuthor).flatMap(Mono::justOrEmpty);
-        if(Arrays.stream(stars).noneMatch(emoji::equals) || guildId == null){
+        if(guildId == null){
             return Mono.empty();
         }
 
@@ -63,80 +57,83 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
         Mono<StarboardConfig> starboardConfig = entityRetriever.getStarboardConfigById(guildId);
 
-        List<ReactionEmoji> arr = Arrays.asList(stars);
-
-        Mono<Integer> emojisCount = event.getMessage().flatMapMany(message -> Flux.fromIterable(message.getReactions()))
-                .filter(reaction -> arr.contains(reaction.getEmoji()))
+        Function<List<ReactionEmoji>, Mono<Integer>> emojisCount = emojis -> event.getMessage()
+                .flatMapMany(message -> Flux.fromIterable(message.getReactions()))
+                .filter(reaction -> emojis.contains(reaction.getEmoji()))
                 .map(Reaction::getCount)
                 .as(MathFlux::max);
 
         Mono<Starboard> starboard = entityRetriever.getStarboardById(guildId, event.getMessageId());
 
-        return initContext.zipWith(starboardConfig).flatMap(function((context, config) -> emojisCount.flatMap(l -> {
-            Snowflake channelId = config.starboardChannelId().orElse(null);
-            if(!config.isEnabled() || channelId == null){
-                return Mono.empty();
-            }
+        return initContext.zipWith(starboardConfig).zipWhen(tuple -> Mono.just(tuple.getT2().emojis().stream()
+                        .map(DiscordUtil::toReactionEmoji)
+                        .collect(Collectors.toList())),
+                (tuple, emojis) -> Tuples.of(tuple.getT1(), tuple.getT2(), emojis))
+                .flatMap(function((context, config, emojis) -> emojisCount.apply(emojis).flatMap(l -> {
+                    Snowflake channelId = config.starboardChannelId().orElse(null);
+                    if(!config.isEnabled() || channelId == null || !emojis.contains(emoji)){
+                        return Mono.empty();
+                    }
 
-            Mono<GuildMessageChannel> starboardChannel = event.getGuild()
-                    .flatMap(guild -> guild.getChannelById(channelId))
-                    .cast(GuildMessageChannel.class);
+                    List<String> formatted = emojis.stream()
+                            .map(DiscordUtil::getEmojiString)
+                            .collect(Collectors.toList());
 
-            Mono<Message> targetMessage = starboard.zipWith(starboardChannel)
-                    .flatMap(function((board, channel) -> channel.getMessageById(board.targetMessageId())));
+                    Mono<GuildMessageChannel> starboardChannel = event.getGuild()
+                            .flatMap(guild -> guild.getChannelById(channelId))
+                            .cast(GuildMessageChannel.class);
 
-            Mono<Void> updateOld = event.getMessage().zipWith(targetMessage)
-                    .flatMap(function((source, target) -> target.edit(spec -> spec.setEmbed(embed -> embed.from(target.getEmbeds().get(0).getData())
-                            .setColor(lerp(offsetColor, targetColor, Mathf.round(l / 6f, lerpStep))))
-                            .setContent(messageService.format(context, "starboard.format",
-                                    stars[Mathf.clamp((l - 1) / 5, 0, stars.length - 1)]
-                                            .asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
-                                            .orElseThrow(AssertionError::new),
-                                    l, DiscordUtil.getChannelMention(source.getChannelId()))))))
-                    .then();
+                    Mono<Message> targetMessage = starboard.zipWith(starboardChannel)
+                            .flatMap(function((board, channel) -> channel.getMessageById(board.targetMessageId())));
 
-            Mono<Starboard> findIfAbsent = Mono.zip(starboardChannel, event.getMessage(), author)
-                    .flatMap(function((channel, source, user) -> channel.getMessagesBefore(Snowflake.of(Instant.now()))
-                    .filter(m -> m.getEmbeds().size() == 1 && m.getEmbeds().get(0).getFields().size() >= 1)
-                    .filter(m -> m.getEmbeds().get(0).getFields().get(0)
-                            .getValue().endsWith(source.getId().asString() + ")")) // match md link
-                    .next()
-                    .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId()))));
+                    Mono<Void> updateOld = event.getMessage().zipWith(targetMessage)
+                            .flatMap(function((source, target) -> target.edit(spec -> spec.setEmbed(embed -> embed.from(target.getEmbeds().get(0).getData())
+                                    .setColor(lerp(offsetColor, targetColor, Mathf.round(l / 6f, lerpStep))))
+                                    .setContent(messageService.format(context, "starboard.format",
+                                            formatted.get(Mathf.clamp((l - 1) / 5, 0, formatted.size() - 1)),
+                                            l, DiscordUtil.getChannelMention(source.getChannelId()))))))
+                            .then();
 
-            Mono<Starboard> createNew = Mono.zip(starboardChannel, event.getMessage(), author).flatMap(function((channel, source, user) ->
-                    channel.createMessage(spec -> spec.setContent(messageService.format(
-                            context, "starboard.format", stars[Mathf.clamp((l - 1) / 5, 0, stars.length - 1)]
-                                    .asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
-                                    .orElseThrow(AssertionError::new),
-                            l, DiscordUtil.getChannelMention(source.getChannelId())))
-                            .setAllowedMentions(AllowedMentions.suppressAll())
-                            .setEmbed(embed -> {
-                                embed.setFooter(DateTimeFormat.longDateTime()
-                                        .withLocale(context.get(KEY_LOCALE))
-                                        .withZone(context.get(KEY_TIMEZONE))
-                                        .print(DateTime.now()), null);
-                                embed.setAuthor(user.getUsername(), null, user.getAvatarUrl());
-                                embed.setDescription(source.getContent());
-                                embed.setColor(lerp(offsetColor, targetColor, Mathf.round(l / 6f, lerpStep)));
-                                embed.addField(messageService.get(context, "starboard.source"), messageService.format(context, "starboard.jump",
-                                        guildId.asString(), source.getChannelId().asString(), source.getId().asString()), false);
-                                Set<Attachment> files = source.getAttachments().stream()
-                                        .filter(att -> !att.getContentType().map(str -> str.startsWith("image")).orElse(false))
-                                        .collect(Collectors.toSet());
-
-                                if(files.size() != 0){
-                                    String key = files.size() == 1 ? "starboard.attachment" : "starboard.attachments";
-                                    embed.addField(messageService.get(context, key), files.stream()
-                                            .map(att -> String.format("[%s](%s)", att.getFilename(), att.getUrl()))
-                                            .collect(Collectors.joining("\n")), false);
-                                }
-
-                                source.getAttachments().stream()
-                                        .filter(att -> att.getContentType().map(str -> str.startsWith("image")).orElse(false))
-                                        .map(Attachment::getUrl)
-                                        .findFirst().ifPresent(embed::setImage);
-                            }))
+                    Mono<Starboard> findIfAbsent = Mono.zip(starboardChannel, event.getMessage(), author)
+                            .flatMap(function((channel, source, user) -> channel.getMessagesBefore(Snowflake.of(Instant.now()))
+                            .filter(m -> m.getEmbeds().size() == 1 && m.getEmbeds().get(0).getFields().size() >= 1)
+                            .filter(m -> m.getEmbeds().get(0).getFields().get(0)
+                                    .getValue().endsWith(source.getId().asString() + ")")) // match md link
+                            .next()
                             .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId()))));
+
+                    Mono<Starboard> createNew = Mono.zip(starboardChannel, event.getMessage(), author).flatMap(function((channel, source, user) ->
+                            channel.createMessage(spec -> spec.setContent(messageService.format(
+                                    context, "starboard.format", formatted.get(Mathf.clamp((l - 1) / 5, 0, formatted.size() - 1)),
+                                    l, DiscordUtil.getChannelMention(source.getChannelId())))
+                                    .setAllowedMentions(AllowedMentions.suppressAll())
+                                    .setEmbed(embed -> {
+                                        embed.setFooter(DateTimeFormat.longDateTime()
+                                                .withLocale(context.get(KEY_LOCALE))
+                                                .withZone(context.get(KEY_TIMEZONE))
+                                                .print(DateTime.now()), null);
+                                        embed.setAuthor(user.getUsername(), null, user.getAvatarUrl());
+                                        embed.setDescription(source.getContent());
+                                        embed.setColor(lerp(offsetColor, targetColor, Mathf.round(l / 6f, lerpStep)));
+                                        embed.addField(messageService.get(context, "starboard.source"), messageService.format(context, "starboard.jump",
+                                                guildId.asString(), source.getChannelId().asString(), source.getId().asString()), false);
+                                        Set<Attachment> files = source.getAttachments().stream()
+                                                .filter(att -> !att.getContentType().map(str -> str.startsWith("image")).orElse(false))
+                                                .collect(Collectors.toSet());
+
+                                        if(files.size() != 0){
+                                            String key = files.size() == 1 ? "starboard.attachment" : "starboard.attachments";
+                                            embed.addField(messageService.get(context, key), files.stream()
+                                                    .map(att -> String.format("[%s](%s)", att.getFilename(), att.getUrl()))
+                                                    .collect(Collectors.joining("\n")), false);
+                                        }
+
+                                        source.getAttachments().stream()
+                                                .filter(att -> att.getContentType().map(str -> str.startsWith("image")).orElse(false))
+                                                .map(Attachment::getUrl)
+                                                .findFirst().ifPresent(embed::setImage);
+                                    }))
+                                    .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId()))));
 
             return and(Mono.just(l >= config.lowerStarBarrier()), not(starboard.hasElement()))
                     .flatMap(bool -> bool ? findIfAbsent.switchIfEmpty(createNew) : updateOld);
@@ -147,7 +144,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
     public Publisher<?> onReactionRemove(ReactionRemoveEvent event){
         ReactionEmoji emoji = event.getEmoji();
         Snowflake guildId = event.getGuildId().orElse(null);
-        if(Arrays.stream(stars).noneMatch(emoji::equals) || guildId == null){
+        if(guildId == null){
             return Mono.empty();
         }
 
@@ -158,47 +155,54 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
         Mono<StarboardConfig> starboardConfig = entityRetriever.getStarboardConfigById(guildId);
 
-        Mono<Integer> emojisCount = event.getMessage().flatMapMany(message -> Flux.fromIterable(message.getReactions()))
-                .filter(reaction -> Arrays.asList(stars).contains(reaction.getEmoji()))
+        Function<List<ReactionEmoji>, Mono<Integer>> emojisCount = emojis -> event.getMessage()
+                .flatMapMany(message -> Flux.fromIterable(message.getReactions()))
+                .filter(reaction -> emojis.contains(reaction.getEmoji()))
                 .map(Reaction::getCount)
                 .as(MathFlux::max)
                 .defaultIfEmpty(0);
 
-        return initContext.zipWith(starboardConfig).flatMap(function((context, config) -> emojisCount.flatMap(l -> {
-            Snowflake channelId = config.starboardChannelId().orElse(null);
-            if(!config.isEnabled() || channelId == null){
-                return Mono.empty();
-            }
+        return initContext.zipWith(starboardConfig).zipWhen(tuple -> Mono.just(tuple.getT2().emojis().stream()
+                        .map(DiscordUtil::toReactionEmoji)
+                        .collect(Collectors.toList())),
+                (tuple, emojis) -> Tuples.of(tuple.getT1(), tuple.getT2(), emojis))
+                .flatMap(function((context, config, emojis) -> emojisCount.apply(emojis).flatMap(l -> {
+                    Snowflake channelId = config.starboardChannelId().orElse(null);
+                    if(!config.isEnabled() || channelId == null || !emojis.contains(emoji)){
+                        return Mono.empty();
+                    }
 
-            Mono<GuildMessageChannel> starboardChannel = event.getGuild().flatMap(guild -> guild.getChannelById(channelId))
-                    .cast(GuildMessageChannel.class);
+                    List<String> formatted = emojis.stream()
+                            .map(DiscordUtil::getEmojiString)
+                            .collect(Collectors.toList());
 
-            Mono<Starboard> findIfAbsent = Mono.zip(starboardChannel, event.getMessage())
-                    .flatMap(function((channel, source) -> channel.getMessagesBefore(Snowflake.of(Instant.now()))
-                    .filter(m -> m.getEmbeds().size() == 1 && m.getEmbeds().get(0).getFields().size() >= 1)
-                    .filter(m -> m.getEmbeds().get(0).getFields().get(0)
-                            .getValue().endsWith(source.getId().asString() + ")")) // match md link
-                    .next()
-                    .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId()))));
+                    Mono<GuildMessageChannel> starboardChannel = event.getGuild().flatMap(guild -> guild.getChannelById(channelId))
+                            .cast(GuildMessageChannel.class);
 
-            Mono<Starboard> starboard = entityRetriever.getStarboardById(guildId, event.getMessageId())
-                    .switchIfEmpty(findIfAbsent);
+                    Mono<Starboard> findIfAbsent = Mono.zip(starboardChannel, event.getMessage())
+                            .flatMap(function((channel, source) -> channel.getMessagesBefore(Snowflake.of(Instant.now()))
+                            .filter(m -> m.getEmbeds().size() == 1 && m.getEmbeds().get(0).getFields().size() >= 1)
+                            .filter(m -> m.getEmbeds().get(0).getFields().get(0)
+                                    .getValue().endsWith(source.getId().asString() + ")")) // match md link
+                            .next()
+                            .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId()))));
 
-            return Mono.zip(starboard, starboardChannel)
-                    .zipWhen(tuple -> tuple.getT2().getMessageById(tuple.getT1().targetMessageId()),
-                            (tuple, message) -> Tuples.of(tuple.getT1(), tuple.getT2(), message))
-                    .flatMap(function((board, channel, target) -> {
-                        if(l < config.lowerStarBarrier()){
-                            return target.delete().and(entityRetriever.delete(board));
-                        }
+                    Mono<Starboard> starboard = entityRetriever.getStarboardById(guildId, event.getMessageId())
+                            .switchIfEmpty(findIfAbsent);
 
-                        Snowflake sourceChannelId = event.getChannelId();
-                        return target.edit(spec -> spec.setEmbed(embed -> embed.from(target.getEmbeds().get(0).getData())
-                                .setColor(lerp(offsetColor, targetColor, Mathf.round(l / 6f, lerpStep))))
-                                .setContent(messageService.format(context, "starboard.format",
-                                        stars[Mathf.clamp((l - 1) / 5, 0, stars.length - 1)]
-                                                .asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
-                                                .orElseThrow(AssertionError::new),
+                    return Mono.zip(starboard, starboardChannel)
+                            .zipWhen(tuple -> tuple.getT2().getMessageById(tuple.getT1().targetMessageId()),
+                                    (tuple, message) -> Tuples.of(tuple.getT1(), tuple.getT2(), message))
+                            .flatMap(function((board, channel, target) -> {
+                                if(l < config.lowerStarBarrier()){
+                                    return target.delete().and(entityRetriever.delete(board));
+                                }
+
+                                Snowflake sourceChannelId = event.getChannelId();
+                                return target.edit(spec -> spec.setEmbed(embed -> embed.from(target.getEmbeds().get(0).getData())
+                                        .setColor(lerp(offsetColor, targetColor, Mathf.round(l / 6f, lerpStep))))
+                                        .setContent(messageService.format(context, "starboard.format",
+                                                formatted.get(Mathf.clamp((l - 1) / 5, 0, formatted.size() - 1)),
                                         l, DiscordUtil.getChannelMention(sourceChannelId))));
                     }));
         }).contextWrite(context)));

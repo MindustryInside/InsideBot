@@ -3,13 +3,16 @@ package inside.util;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import discord4j.discordjson.possible.PossibleModule;
+import discord4j.discordjson.possible.*;
 
 import java.lang.reflect.Type;
 
+// TODO: delete and use JacksonResources
 @SuppressWarnings("unchecked")
 public abstract class JacksonUtil{
     private static final ObjectMapper mapper = new ObjectMapper()
+            .setDefaultPropertyInclusion(JsonInclude.Value.construct(JsonInclude.Include.CUSTOM,
+                    JsonInclude.Include.ALWAYS, PossibleFilter.class, null))
             .setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
             .setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.PUBLIC_ONLY)
             .setVisibility(PropertyAccessor.CREATOR, JsonAutoDetect.Visibility.ANY)
