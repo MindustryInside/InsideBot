@@ -22,7 +22,6 @@ import reactor.core.publisher.*;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.function.*;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -1201,14 +1200,7 @@ public class InteractionCommands{
                     .map(ApplicationCommandInteractionOptionValue::asString)
                     .orElseThrow(AssertionError::new);
 
-            Mono<BigDecimal> result = Mono.fromCallable(() -> {
-                Expression exp = new Expression(expression);
-                exp.addOperator(Commands.MathCommand.divideAlias);
-                exp.addLazyFunction(Commands.MathCommand.levenshteinDstFunction);
-                return exp.eval();
-            });
-
-            return result.publishOn(Schedulers.boundedElastic())
+            return Commands.MathCommand.createExpression(expression).publishOn(Schedulers.boundedElastic())
                     .onErrorResume(t -> t instanceof ArithmeticException || t instanceof Expression.ExpressionException ||
                             t instanceof NumberFormatException,
                     t -> messageService.error(env.event(), "command.math.error.title", t.getMessage()).then(Mono.empty()))
