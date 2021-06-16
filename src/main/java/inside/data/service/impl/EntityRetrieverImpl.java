@@ -3,11 +3,10 @@ package inside.data.service.impl;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import discord4j.discordjson.json.EmojiData;
+import discord4j.store.api.util.LongLongTuple2;
 import inside.Settings;
 import inside.data.entity.*;
-import inside.data.service.EntityRetriever;
-import inside.data.service.actions.*;
-import inside.data.service.api.Store;
+import inside.data.service.*;
 import inside.service.MessageService;
 import inside.util.*;
 import org.joda.time.*;
@@ -20,68 +19,78 @@ import java.util.*;
 @Service
 public class EntityRetrieverImpl implements EntityRetriever{
 
-    private static final List<EmojiData> defaultStarsEmojis = Arrays.asList( // NOTE: if you do not set the id, then you get an analog of ReactionEmoji.Unicode
+    // NOTE: if you do not set the id, then you get an analog of ReactionEmoji.Unicode
+    private static final List<EmojiData> defaultStarsEmojis = Arrays.asList(
             EmojiData.builder().name("\u2B50").build(),
             EmojiData.builder().name("\uD83C\uDF1F").build(),
             EmojiData.builder().name("\uD83D\uDCAB").build()
     );
 
-    private final Store store;
+    private final StoreHolder storeHolder;
 
     private final Settings settings;
 
     private final MessageService messageService;
 
-    public EntityRetrieverImpl(@Autowired Store store,
+    public EntityRetrieverImpl(@Autowired StoreHolder storeHolder,
                                @Autowired Settings settings,
                                @Autowired MessageService messageService){
-        this.store = store;
+        this.storeHolder = storeHolder;
         this.settings = settings;
         this.messageService = messageService;
     }
 
     @Override
     public Mono<GuildConfig> getGuildConfigById(Snowflake guildId){
-        return Mono.from(store.execute(ReadStoreActions.getGuildConfigById(guildId.asLong())));
+        Objects.requireNonNull(guildId, "guildId");
+        return storeHolder.getGuildConfigService().find(guildId.asLong());
     }
 
     @Override
     public Mono<Void> save(GuildConfig guildConfig){
-        return Mono.from(store.execute(UpdateStoreActions.guildConfigSave(guildConfig)));
+        Objects.requireNonNull(guildConfig, "guildConfig");
+        return storeHolder.getGuildConfigService().save(guildConfig);
     }
 
     @Override
     public Mono<AdminConfig> getAdminConfigById(Snowflake guildId){
-        return Mono.from(store.execute(ReadStoreActions.getAdminConfigById(guildId.asLong())));
+        Objects.requireNonNull(guildId, "guildId");
+        return storeHolder.getAdminConfigService().find(guildId.asLong());
     }
 
     @Override
     public Mono<Void> save(AdminConfig adminConfig){
-        return Mono.from(store.execute(UpdateStoreActions.adminConfigSave(adminConfig)));
+        Objects.requireNonNull(adminConfig, "adminConfig");
+        return storeHolder.getAdminConfigService().save(adminConfig);
     }
 
     @Override
     public Mono<AuditConfig> getAuditConfigById(Snowflake guildId){
-        return Mono.from(store.execute(ReadStoreActions.getAuditConfigById(guildId.asLong())));
+        Objects.requireNonNull(guildId, "guildId");
+        return storeHolder.getAuditConfigService().find(guildId.asLong());
     }
 
     @Override
     public Mono<Void> save(AuditConfig auditConfig){
-        return Mono.from(store.execute(UpdateStoreActions.auditConfigSave(auditConfig)));
+        Objects.requireNonNull(auditConfig, "auditConfig");
+        return storeHolder.getAuditConfigService().save(auditConfig);
     }
 
     @Override
     public Flux<LocalMember> getAllLocalMembers(){
-        return Flux.from(store.execute(ReadStoreActions.getAllLocalMembers()));
+        return storeHolder.getLocalMemberService().getAll();
     }
 
     @Override
     public Mono<LocalMember> getLocalMemberById(Snowflake userId, Snowflake guildId){
-        return Mono.from(store.execute(ReadStoreActions.getLocalMemberById(userId.asLong(), guildId.asLong())));
+        Objects.requireNonNull(userId, "userId");
+        Objects.requireNonNull(guildId, "guildId");
+        return storeHolder.getLocalMemberService().find(LongLongTuple2.of(userId.asLong(), guildId.asLong()));
     }
 
     @Override
     public Mono<LocalMember> getAndUpdateLocalMemberById(Member member){
+        Objects.requireNonNull(member, "member");
         return getLocalMemberById(member.getId(), member.getGuildId())
                 .flatMap(localMember -> Mono.defer(() -> {
                     if(!localMember.effectiveName().equals(member.getDisplayName())){
@@ -94,12 +103,14 @@ public class EntityRetrieverImpl implements EntityRetriever{
 
     @Override
     public Mono<Void> save(LocalMember localMember){
-        return Mono.from(store.execute(UpdateStoreActions.localMemberSave(localMember)));
+        Objects.requireNonNull(localMember, "localMember");
+        return storeHolder.getLocalMemberService().save(localMember);
     }
 
     @Override
     public Mono<MessageInfo> getMessageInfoById(Snowflake messageId){
-        return Mono.from(store.execute(ReadStoreActions.getMessageInfoById(messageId.asLong())));
+        Objects.requireNonNull(messageId, "messageId");
+        return storeHolder.getMessageInfoService().find(messageId.asLong());
     }
 
     @Override
@@ -109,27 +120,33 @@ public class EntityRetrieverImpl implements EntityRetriever{
 
     @Override
     public Mono<Void> delete(MessageInfo messageInfo){
-        return Mono.from(store.execute(UpdateStoreActions.messageInfoDelete(messageInfo)));
+        Objects.requireNonNull(messageInfo, "messageInfo");
+        return storeHolder.getMessageInfoService().delete(messageInfo);
     }
 
     @Override
     public Mono<Void> save(MessageInfo messageInfo){
-        return Mono.from(store.execute(UpdateStoreActions.messageInfoSave(messageInfo)));
+        Objects.requireNonNull(messageInfo, "messageInfo");
+        return storeHolder.getMessageInfoService().save(messageInfo);
     }
 
     @Override
     public Mono<StarboardConfig> getStarboardConfigById(Snowflake guildId){
-        return Mono.from(store.execute(ReadStoreActions.getStarboardConfigById(guildId.asLong())));
+        Objects.requireNonNull(guildId, "guildId");
+        return storeHolder.getStarboardConfigService().find(guildId.asLong());
     }
 
     @Override
     public Mono<Void> save(StarboardConfig starboardConfig){
-        return Mono.from(store.execute(UpdateStoreActions.starboardConfigSave(starboardConfig)));
+        Objects.requireNonNull(starboardConfig, "starboardConfig");
+        return storeHolder.getStarboardConfigService().save(starboardConfig);
     }
 
     @Override
     public Mono<Starboard> getStarboardById(Snowflake guildId, Snowflake sourceMessageId){
-        return Mono.from(store.execute(ReadStoreActions.getStarboardById(guildId.asLong(), sourceMessageId.asLong())));
+        Objects.requireNonNull(guildId, "guildId");
+        Objects.requireNonNull(sourceMessageId, "sourceMessageId");
+        return storeHolder.getStarboardService().find(LongLongTuple2.of(guildId.asLong(), guildId.asLong()));
     }
 
     @Override
@@ -139,26 +156,31 @@ public class EntityRetrieverImpl implements EntityRetriever{
 
     @Override
     public Mono<Void> delete(Starboard starboard){
-        return Mono.from(store.execute(UpdateStoreActions.starboardDelete(starboard)));
+        Objects.requireNonNull(starboard, "starboard");
+        return storeHolder.getStarboardService().delete(starboard);
     }
 
     @Override
     public Mono<Void> save(Starboard starboard){
-        return Mono.from(store.execute(UpdateStoreActions.starboardSave(starboard)));
+        Objects.requireNonNull(starboard, "starboard");
+        return storeHolder.getStarboardService().save(starboard);
     }
 
     @Override
     public Mono<ActiveUserConfig> getActiveUserConfigById(Snowflake guildId){
-        return Mono.from(store.execute(ReadStoreActions.getActiveUserConfigById(guildId.asLong())));
+        Objects.requireNonNull(guildId, "guildId");
+        return storeHolder.getActiveUserConfigService().find(guildId.asLong());
     }
 
     @Override
     public Mono<Void> save(ActiveUserConfig activeUserConfig){
-        return Mono.from(store.execute(UpdateStoreActions.activeUserConfigSave(activeUserConfig)));
+        Objects.requireNonNull(activeUserConfig, "activeUserConfig");
+        return storeHolder.getActiveUserConfigService().save(activeUserConfig);
     }
 
     @Override
     public Mono<GuildConfig> createGuildConfig(Snowflake guildId){
+        Objects.requireNonNull(guildId, "guildId");
         return Mono.defer(() -> {
             GuildConfig guildConfig = new GuildConfig();
             guildConfig.guildId(guildId);
@@ -171,6 +193,7 @@ public class EntityRetrieverImpl implements EntityRetriever{
 
     @Override
     public Mono<AdminConfig> createAdminConfig(Snowflake guildId){
+        Objects.requireNonNull(guildId, "guildId");
         return Mono.defer(() -> {
             AdminConfig adminConfig = new AdminConfig();
             adminConfig.guildId(guildId);
@@ -183,6 +206,7 @@ public class EntityRetrieverImpl implements EntityRetriever{
 
     @Override
     public Mono<AuditConfig> createAuditConfig(Snowflake guildId){
+        Objects.requireNonNull(guildId, "guildId");
         return Mono.defer(() -> {
             AuditConfig auditConfig = new AuditConfig();
             auditConfig.guildId(guildId);
@@ -191,14 +215,15 @@ public class EntityRetrieverImpl implements EntityRetriever{
     }
 
     @Override
-    public Mono<LocalMember> createLocalMember(Snowflake userId, Snowflake guildId, String effectiveNickname){
+    public Mono<LocalMember> createLocalMember(Member member){
+        Objects.requireNonNull(member, "member");
         return Mono.defer(() -> {
             LocalMember localMember = new LocalMember();
-            localMember.userId(userId);
-            localMember.guildId(guildId);
-            localMember.effectiveName(effectiveNickname);
+            localMember.userId(member.getId());
+            localMember.guildId(member.getGuildId());
+            localMember.effectiveName(member.getDisplayName());
             Activity activity = new Activity();
-            activity.guildId(guildId);
+            activity.guildId(member.getGuildId());
             localMember.activity(activity); // TODO: lazy initializing?
             return save(localMember).thenReturn(localMember);
         });
@@ -206,6 +231,7 @@ public class EntityRetrieverImpl implements EntityRetriever{
 
     @Override
     public Mono<MessageInfo> createMessageInfo(Message message){
+        Objects.requireNonNull(message, "message");
         return Mono.defer(() -> {
             MessageInfo messageInfo = new MessageInfo();
             messageInfo.messageId(message.getId());
@@ -219,6 +245,7 @@ public class EntityRetrieverImpl implements EntityRetriever{
 
     @Override
     public Mono<StarboardConfig> createStarboardConfig(Snowflake guildId){
+        Objects.requireNonNull(guildId, "guildId");
         return Mono.defer(() -> {
             StarboardConfig starboardConfig = new StarboardConfig();
             starboardConfig.guildId(guildId);
@@ -230,6 +257,7 @@ public class EntityRetrieverImpl implements EntityRetriever{
 
     @Override
     public Mono<ActiveUserConfig> createActiveUserConfig(Snowflake guildId){
+        Objects.requireNonNull(guildId, "guildId");
         return Mono.defer(() -> {
             ActiveUserConfig activeUserConfig = new ActiveUserConfig();
             activeUserConfig.guildId(guildId);
@@ -241,6 +269,9 @@ public class EntityRetrieverImpl implements EntityRetriever{
 
     @Override
     public Mono<Starboard> createStarboard(Snowflake guildId, Snowflake sourceMessageId, Snowflake targetMessageId){
+        Objects.requireNonNull(guildId, "guildId");
+        Objects.requireNonNull(sourceMessageId, "sourceMessageId");
+        Objects.requireNonNull(targetMessageId, "targetMessageId");
         return Mono.defer(() -> {
             Starboard starboard = new Starboard();
             starboard.guildId(guildId);

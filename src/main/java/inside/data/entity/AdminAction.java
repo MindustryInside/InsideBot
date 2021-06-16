@@ -43,8 +43,10 @@ public class AdminAction extends GuildEntity{
     protected AdminAction(){}
 
     @Builder.Constructor
-    protected AdminAction(long guildId, AdminActionType type, LocalMember admin, LocalMember target,
-                          @Nullable String reason, DateTime timestamp, @Nullable DateTime endTimestamp){
+    protected AdminAction(long guildId, AdminActionType type,
+                          LocalMember admin, LocalMember target,
+                          @Nullable String reason, DateTime timestamp,
+                          @Nullable DateTime endTimestamp){
         this.guildId = guildId;
         this.type = type;
         this.admin = admin;

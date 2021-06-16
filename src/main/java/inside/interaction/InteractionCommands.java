@@ -17,7 +17,6 @@ import inside.util.io.ReusableByteInputStream;
 import org.joda.time.*;
 import org.joda.time.format.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import reactor.core.publisher.*;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.function.*;
@@ -52,7 +51,6 @@ public class InteractionCommands{
     }
 
     public static abstract class AdminCommand extends GuildCommand{
-        @Lazy
         @Autowired
         protected AdminService adminService;
 

@@ -75,11 +75,7 @@ public interface EntityRetriever{
 
     Mono<AuditConfig> createAuditConfig(Snowflake guildId);
 
-    Mono<LocalMember> createLocalMember(Snowflake userId, Snowflake guildId, String effectiveNickname);
-
-    default Mono<LocalMember> createLocalMember(Member member){
-        return createLocalMember(member.getId(), member.getGuildId(), member.getDisplayName());
-    }
+    Mono<LocalMember> createLocalMember(Member member);
 
     Mono<ActiveUserConfig> createActiveUserConfig(Snowflake guildId);
 
