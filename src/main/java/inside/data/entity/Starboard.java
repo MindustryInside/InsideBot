@@ -23,12 +23,12 @@ public class Starboard extends GuildEntity{
         return Snowflake.of(sourceMessageId);
     }
 
-    public Snowflake targetMessageId(){
-        return Snowflake.of(targetMessageId);
-    }
-
     public void sourceMessageId(Snowflake sourceMessageId){
         this.sourceMessageId = Objects.requireNonNull(sourceMessageId, "sourceMessageId").asLong();
+    }
+
+    public Snowflake targetMessageId(){
+        return Snowflake.of(targetMessageId);
     }
 
     public void targetMessageId(Snowflake targetMessageId){

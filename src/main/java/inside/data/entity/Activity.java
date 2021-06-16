@@ -6,6 +6,7 @@ import reactor.util.annotation.Nullable;
 
 import javax.persistence.*;
 import java.io.Serial;
+import java.util.Objects;
 
 // directly not used
 @Entity
@@ -38,8 +39,8 @@ public class Activity extends GuildEntity{
         return lastSentMessage;
     }
 
-    public void lastSentMessage(@Nullable DateTime lastSentMessage){
-        this.lastSentMessage = lastSentMessage;
+    public void lastSentMessage(DateTime lastSentMessage){
+        this.lastSentMessage = Objects.requireNonNull(lastSentMessage, "lastSentMessage");
     }
 
     @Override
