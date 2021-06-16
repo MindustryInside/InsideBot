@@ -28,7 +28,6 @@ import org.joda.time.*;
 import org.joda.time.format.*;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import reactor.bool.BooleanUtils;
 import reactor.core.publisher.*;
 import reactor.core.scheduler.Schedulers;
@@ -62,7 +61,6 @@ public class Commands{
     private Commands(){}
 
     public static abstract class AdminCommand extends Command{
-        @Lazy
         @Autowired
         protected AdminService adminService;
 
@@ -91,7 +89,7 @@ public class Commands{
         @Autowired
         private CommandHolder commandHolder;
 
-        private final inside.util.Lazy<Map<String, List<Command>>> categoriesWithCommands = inside.util.Lazy.of(() ->
+        private final Lazy<Map<String, List<Command>>> categoriesWithCommands = Lazy.of(() ->
                 commandHolder.getCommandInfoMap().keySet().stream().collect(Collectors.groupingBy(command -> {
                     String canonicalName = command.getClass()
                             .getSuperclass().getCanonicalName();
@@ -265,8 +263,7 @@ public class Commands{
 
     @DiscordCommand(key = {"base64", "b64"}, params = "command.base64.params", description = "command.base64.description")
     public static class Base64Command extends Command{
-        private final inside.util.Lazy<HttpClient> httpClient =
-                inside.util.Lazy.of(ReactorResources.DEFAULT_HTTP_CLIENT);
+        private final Lazy<HttpClient> httpClient = Lazy.of(ReactorResources.DEFAULT_HTTP_CLIENT);
 
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -535,7 +532,7 @@ public class Commands{
                 "Yiddish (`yi`)", "Yoruba (`yo`)", "Zulu (`zu`)"
         };
 
-        private static final inside.util.Lazy<String> cachedLanguages = inside.util.Lazy.of(() -> {
+        private static final Lazy<String> cachedLanguages = Lazy.of(() -> {
             StringBuilder builder = new StringBuilder();
             for(int i = 0; i < languages.length; i++){
                 builder.append(languages[i]);
@@ -988,14 +985,14 @@ public class Commands{
             return entityRetriever.getAdminConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createAdminConfig(guildId))
                     .filter(adminConfig -> adminConfig.muteRoleID().isPresent())
-                    .switchIfEmpty(messageService.err(env, "command.disabled.mute").then(Mono.empty()))
+                    .switchIfEmpty(messageService.err(env, "command.disabled.mute").then(Mono.never()))
                     .flatMap(ignored -> Mono.justOrEmpty(targetId)).flatMap(id -> env.getClient().getMemberById(guildId, id))
-                    .switchIfEmpty(messageService.err(env, "command.incorrect-name").then(Mono.empty()))
+                    .switchIfEmpty(messageService.err(env, "command.incorrect-name").then(Mono.never()))
                     .filterWhen(member -> BooleanUtils.not(adminService.isMuted(member)))
                     .switchIfEmpty(messageService.err(env, "command.admin.mute.already-muted").then(Mono.never()))
                     .filterWhen(member -> Mono.zip(adminService.isAdmin(member), adminService.isOwner(author))
                             .map(function((admin, owner) -> !(admin && !owner))))
-                    .switchIfEmpty(messageService.err(env, "command.admin.user-is-admin").then(Mono.empty()))
+                    .switchIfEmpty(messageService.err(env, "command.admin.user-is-admin").then(Mono.never()))
                     .flatMap(member -> Mono.defer(() -> {
                         if(author.equals(member)){
                             return messageService.err(env, "command.admin.mute.self-user");
