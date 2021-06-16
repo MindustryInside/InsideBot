@@ -53,16 +53,16 @@ public class MemberEventHandler extends ReactiveEventAdapter{
 
         Mono<AdminConfig> adminConfig = entityRetriever.getAdminConfigById(member.getGuildId());
 
-        Mono<Void> warn = initContext.flatMap(context -> member.getGuild().flatMap(Guild::getOwner)
+        Mono<Void> warn = Mono.deferContextual(ctx -> member.getGuild().flatMap(Guild::getOwner)
                 .filterWhen(ignored -> adminConfig.flatMap(config -> adminService.warnings(member).count()
                         .map(c -> c >= config.maxWarnCount())))
-                .flatMap(owner -> adminService.warn(owner, member, messageService.get(context, "audit.member.warn.evade"))));
+                .flatMap(owner -> adminService.warn(owner, member, messageService.get(ctx, "audit.member.warn.evade"))));
 
-        Mono<?> muteEvade = initContext.flatMap(context -> member.getGuild().flatMap(Guild::getOwner)
+        Mono<?> muteEvade = Mono.deferContextual(ctx -> member.getGuild().flatMap(Guild::getOwner)
                 .filterWhen(ignored -> adminService.isMuted(member))
                 .flatMap(owner -> adminConfig.flatMap(config -> adminService.mute(owner, member,
                         DateTime.now().plus(config.muteBaseDelay()),
-                        messageService.get(context, "audit.member.mute.evade"))
+                        messageService.get(ctx, "audit.member.mute.evade"))
                         .thenReturn(owner)))
                 .switchIfEmpty(warn.then(Mono.empty())));
 
@@ -88,7 +88,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                 .withUser(user)
                 .save();
 
-        Mono<Void> kick = initContext.flatMap(context -> event.getGuild()
+        Mono<Void> kick = Mono.deferContextual(ctx -> event.getGuild()
                 .flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MEMBER_KICK)))
                 .flatMap(part -> Flux.fromIterable(part.getEntries()))
                 .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now(Clock.systemUTC()).minusMillis(TIMEOUT_MILLIS)) &&
@@ -99,13 +99,13 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                                 .withUser(admin)
                                 .withTargetUser(user)
                                 .withAttribute(REASON, entry.getReason()
-                                        .orElse(messageService.get(context, "common.not-defined")))
+                                        .orElse(messageService.get(ctx, "common.not-defined")))
                                 .save())
                         .thenReturn(entry))
                 .switchIfEmpty(log.then(Mono.empty()))
                 .then());
 
-        return initContext.flatMap(context -> event.getGuild()
+        return initContext.flatMap(ctx -> event.getGuild()
                 .flatMapMany(guild -> guild.getAuditLog(spec -> spec.setActionType(ActionType.MEMBER_BAN_ADD)))
                 .flatMap(part -> Flux.fromIterable(part.getEntries()))
                 .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now(Clock.systemUTC()).minusMillis(TIMEOUT_MILLIS)) &&
@@ -116,11 +116,11 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                                 .withUser(admin)
                                 .withTargetUser(user)
                                 .withAttribute(REASON, entry.getReason()
-                                        .orElse(messageService.get(context, "common.not-defined")))
+                                        .orElse(messageService.get(ctx, "common.not-defined")))
                                 .save())
                         .thenReturn(entry))
                 .switchIfEmpty(kick.then(Mono.empty()))
-                .contextWrite(context));
+                .contextWrite(ctx));
     }
 
     @Override
