@@ -174,7 +174,6 @@ public class InteractionCommands{
                                                     return messageService.err(env.event(), "command.settings.emojis.limit");
                                                 }
 
-                                                starboardConfig.emojis(emojis);
                                                 if(add){
                                                     return messageService.text(env.event(), "command.settings.added", list.stream()
                                                             .map(DiscordUtil::getEmojiString)
@@ -183,7 +182,7 @@ public class InteractionCommands{
 
                                                 return messageService.text(env.event(), "command.settings.removed", list.stream()
                                                         .map(DiscordUtil::getEmojiString)
-                                                        .collect(Collectors.joining(", "))); // TODO: format removed emojis
+                                                        .collect(Collectors.joining(", ")));
                                             });
                                 }))).and(entityRetriever.save(starboardConfig));
 
