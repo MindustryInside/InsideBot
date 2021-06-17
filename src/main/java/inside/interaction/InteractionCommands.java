@@ -13,6 +13,7 @@ import inside.command.Commands;
 import inside.data.service.AdminService;
 import inside.service.MessageService;
 import inside.util.*;
+import inside.util.func.BooleanFunction;
 import inside.util.io.ReusableByteInputStream;
 import org.joda.time.*;
 import org.joda.time.format.*;
@@ -89,9 +90,8 @@ public class InteractionCommands{
             Snowflake guildId = env.event().getInteraction().getGuildId()
                     .orElseThrow(AssertionError::new);
 
-            Function<Boolean, String> formatBool = bool ->
-                    messageService.get(env.context(), bool == null ? "command.settings.absent" :
-                            bool ? "command.settings.enabled" : "command.settings.disabled");
+            BooleanFunction<String> formatBool = bool ->
+                    messageService.get(env.context(), bool ? "command.settings.enabled" : "command.settings.disabled");
 
             Function<Duration, String> formatDuration = duration -> PeriodFormat.wordBased(env.context().get(KEY_LOCALE))
                     .print(duration.toPeriod());
@@ -129,9 +129,14 @@ public class InteractionCommands{
                                                 .flatMap(subopt -> Mono.justOrEmpty(subopt.getValue()))
                                                 .map(ApplicationCommandInteractionOptionValue::asString)))
                                 .flatMap(function((choice, enums) -> Mono.defer(() -> {
+                                    List<EmojiData> emojis = starboardConfig.emojis();
+                                    if(choice.equals("clear")){
+                                        emojis.clear();
+                                        return messageService.text(env.event(), "command.settings.emojis.clear");
+                                    }
+
                                     boolean add = choice.equals("add");
 
-                                    List<EmojiData> emojis = starboardConfig.emojis();
                                     if(enums.matches("^(#\\d+)$") && !add){ // index mode
                                         String str = enums.substring(1);
                                         if(!MessageUtil.canParseInt(str)){
@@ -173,14 +178,12 @@ public class InteractionCommands{
                                                 }
 
                                                 if(add){
-                                                    return messageService.text(env.event(), "command.settings.added", list.stream()
-                                                            .map(DiscordUtil::getEmojiString)
-                                                            .collect(Collectors.joining(", ")));
+                                                    return messageService.text(env.event(), "command.settings.added",
+                                                            formatCollection(list, DiscordUtil::getEmojiString));
                                                 }
 
-                                                return messageService.text(env.event(), "command.settings.removed", list.stream()
-                                                        .map(DiscordUtil::getEmojiString)
-                                                        .collect(Collectors.joining(", ")));
+                                                return messageService.text(env.event(), "command.settings.removed",
+                                                        formatCollection(list, DiscordUtil::getEmojiString));
                                             });
                                 }))).and(entityRetriever.save(starboardConfig));
 
@@ -355,11 +358,16 @@ public class InteractionCommands{
                                                 .flatMap(subopt -> Mono.justOrEmpty(subopt.getValue()))
                                                 .map(ApplicationCommandInteractionOptionValue::asString)))
                                 .flatMap(function((choice, enums) -> Mono.defer(() -> {
+                                    Set<Snowflake> roleIds = adminConfig.adminRoleIds();
+                                    if(choice.equals("clear")){
+                                        roleIds.clear();
+                                        return messageService.text(env.event(), "command.settings.admin-roles.clear");
+                                    }
+
                                     boolean add = choice.equals("add");
 
                                     List<String> toHelp = new ArrayList<>();
                                     List<Snowflake> removed = new ArrayList<>();
-                                    Set<Snowflake> roleIds = adminConfig.adminRoleIds();
                                     String[] text = enums.split("(\\s+)?,(\\s+)?");
                                     Mono<Void> fetch = Flux.fromArray(text)
                                             .flatMap(str -> env.event().getInteraction().getGuild()
@@ -395,7 +403,9 @@ public class InteractionCommands{
                                             return messageService.text(env.event(), "command.settings.removed",
                                                     formatCollection(removed, DiscordUtil::getRoleMention));
                                         }else{
-                                            String response = toHelp.stream().map(s -> " • " + s + "\n").collect(Collectors.joining());
+                                            String response = toHelp.stream()
+                                                    .map(s -> " • " + s + "\n")
+                                                    .collect(Collectors.joining());
                                             return messageService.error(env.event(), "command.settings.admin-roles.conflicted.title", response);
                                         }
                                     }));
@@ -484,6 +494,12 @@ public class InteractionCommands{
                                                 .flatMap(subopt -> Mono.justOrEmpty(subopt.getValue()))
                                                 .map(ApplicationCommandInteractionOptionValue::asString)))
                                 .flatMap(function((choice, enums) -> Mono.defer(() -> {
+                                    Set<AuditActionType> flags = auditConfig.types();
+                                    if(choice.equals("clear")){
+                                        flags.clear();
+                                        return messageService.text(env.event(), "command.settings.actions.clear");
+                                    }
+
                                     List<Tuple2<AuditActionType, String>> all = Arrays.stream(AuditActionType.values())
                                             .map(type -> Tuples.of(type, messageService.getEnum(env.context(), type)))
                                             .collect(Collectors.toUnmodifiableList());
@@ -493,9 +509,8 @@ public class InteractionCommands{
 
                                     boolean add = choice.equals("add");
 
-                                    Set<String> toHelp = new HashSet<>();
+                                    List<String> toHelp = new ArrayList<>();
                                     Set<String> removed = new HashSet<>();
-                                    Set<AuditActionType> flags = auditConfig.types();
                                     if(enums.equalsIgnoreCase("all")){
                                         if(add){
                                             flags.addAll(all.stream().map(Tuple2::getT1).collect(Collectors.toSet()));
@@ -534,9 +549,8 @@ public class InteractionCommands{
                                     if(toHelp.isEmpty()){
                                         auditConfig.types(flags);
                                         if(add){
-                                            String formatted = flags.stream()
-                                                    .map(type -> messageService.getEnum(env.context(), type))
-                                                    .collect(Collectors.joining(", "));
+                                            String formatted = formatCollection(flags,
+                                                    type -> messageService.getEnum(env.context(), type));
 
                                             return messageService.text(env.event(), "command.settings.added", formatted);
                                         }
@@ -766,6 +780,10 @@ public class InteractionCommands{
                                                     .name("Remove emoji(s)")
                                                     .value("remove")
                                                     .build())
+                                            .addChoice(ApplicationCommandOptionChoiceData.builder()
+                                                    .name("Remove all emojis")
+                                                    .value("clear")
+                                                    .build())
                                             .build())
                                     .addOption(ApplicationCommandOptionData.builder()
                                             .name("value")
@@ -822,12 +840,16 @@ public class InteractionCommands{
                                                     .value("help")
                                                     .build())
                                             .addChoice(ApplicationCommandOptionChoiceData.builder()
-                                                    .name("Add audit action type")
+                                                    .name("Add audit action type(s)")
                                                     .value("add")
                                                     .build())
                                             .addChoice(ApplicationCommandOptionChoiceData.builder()
-                                                    .name("Remove audit action type")
+                                                    .name("Remove audit action type(s)")
                                                     .value("remove")
+                                                    .build())
+                                            .addChoice(ApplicationCommandOptionChoiceData.builder()
+                                                    .name("Remove all audit actions")
+                                                    .value("clear")
                                                     .build())
                                             .build())
                                     .addOption(ApplicationCommandOptionData.builder()
@@ -895,12 +917,16 @@ public class InteractionCommands{
                                                     .value("help")
                                                     .build())
                                             .addChoice(ApplicationCommandOptionChoiceData.builder()
-                                                    .name("Add admin role")
+                                                    .name("Add admin role(s)")
                                                     .value("add")
                                                     .build())
                                             .addChoice(ApplicationCommandOptionChoiceData.builder()
-                                                    .name("Remove admin role")
+                                                    .name("Remove admin role(s)")
                                                     .value("remove")
+                                                    .build())
+                                            .addChoice(ApplicationCommandOptionChoiceData.builder()
+                                                    .name("Remove all admin roles")
+                                                    .value("clear")
                                                     .build())
                                             .build())
                                     .addOption(ApplicationCommandOptionData.builder()
