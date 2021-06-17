@@ -16,7 +16,16 @@ public abstract class BaseLongObjEntityService<V extends BaseEntity, R extends B
 
     @Override
     public Mono<V> find(long id){
-        return super.find(id);
+        return Mono.defer(() -> {
+            var entity = find0(id);
+            if(entity == null){
+                synchronized(lock){
+                    entity = find0(id);
+                }
+            }
+
+            return Mono.justOrEmpty(entity);
+        });
     }
 
     @Nullable
@@ -30,6 +39,6 @@ public abstract class BaseLongObjEntityService<V extends BaseEntity, R extends B
 
     @Override
     public Mono<Void> delete(long id){
-        return super.delete(id);
+        return find(id).flatMap(this::delete);
     }
 }
