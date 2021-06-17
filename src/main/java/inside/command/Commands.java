@@ -461,7 +461,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "translate", params = "command.translate.params", description = "command.translate.description")
+    @DiscordCommand(key = {"translate", "tr"}, params = "command.translate.params", description = "command.translate.description")
     public static class TranslateCommand extends Command{
         private final HttpClient httpClient = ReactorResources.DEFAULT_HTTP_CLIENT.get();
 
@@ -695,7 +695,7 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "tr", params = "command.transliteration.params", description = "command.transliteration.description")
+    @DiscordCommand(key = "translit", params = "command.transliteration.params", description = "command.transliteration.description")
     public static class TransliterationCommand extends Command{
         public static final Map<String, String> translit;
 

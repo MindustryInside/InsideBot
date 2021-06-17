@@ -18,8 +18,9 @@ import reactor.core.publisher.*;
 import reactor.util.context.Context;
 
 import java.time.*;
+import java.util.*;
 
-import static inside.audit.Attribute.REASON;
+import static inside.audit.Attribute.*;
 import static inside.audit.AuditActionType.*;
 import static inside.util.ContextUtil.*;
 
@@ -125,13 +126,52 @@ public class MemberEventHandler extends ReactiveEventAdapter{
 
     @Override
     public Publisher<?> onMemberUpdate(MemberUpdateEvent event){
-        return event.getMember()
+        Member old = event.getOld().orElse(null);
+        Snowflake guildId = event.getGuildId();
+        if(old == null){
+            return Mono.empty();
+        }
+
+        Mono<Context> initContext = entityRetriever.getGuildConfigById(guildId)
+                .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
+                .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
+                        KEY_TIMEZONE, guildConfig.timeZone()));
+
+        return initContext.flatMap(context -> event.getMember()
                 .filter(DiscordUtil::isNotBot)
                 .flatMap(member -> entityRetriever.getAndUpdateLocalMemberById(member)
                         .switchIfEmpty(entityRetriever.createLocalMember(member))
                         .flatMap(localMember -> {
+                            Mono<Void> logAvatarUpdate = Mono.defer(() -> {
+                                if(!old.getAvatarUrl().equals(member.getAvatarUrl())){
+                                    return auditService.log(guildId, MEMBER_AVATAR_UPDATE)
+                                            .withUser(member)
+                                            .withAttribute(AVATAR_URL, member.getAvatarUrl())
+                                            .withAttribute(OLD_AVATAR_URL, old.getAvatarUrl())
+                                            .save();
+                                }
+                                return Mono.empty();
+                            });
+
+                            Mono<Void> logRoleUpdate = Mono.defer(() -> {
+                                Set<Snowflake> oldRoleIds = old.getRoleIds();
+                                if(event.getCurrentRoleIds().equals(oldRoleIds)){
+                                    return logAvatarUpdate;
+                                }
+
+                                boolean added = oldRoleIds.size() < event.getCurrentRoleIds().size();
+                                List<Snowflake> difference = new ArrayList<>(added ? event.getCurrentRoleIds() : oldRoleIds);
+                                difference.removeIf(added ? oldRoleIds::contains : event.getCurrentRoleIds()::contains);
+
+                                return auditService.log(guildId, added ? MEMBER_ROLE_ADD : MEMBER_ROLE_REMOVE)
+                                        .withUser(member)
+                                        .withAttribute(AVATAR_URL, member.getAvatarUrl())
+                                        .withAttribute(ROLE_ID, difference.get(0)) // TODO: check if bulk deletion/addition is possible
+                                        .save();
+                            });
+
                             localMember.effectiveName(event.getCurrentNickname().orElse(member.getUsername()));
-                            return entityRetriever.save(localMember);
-                        }));
+                            return entityRetriever.save(localMember).and(logRoleUpdate);
+                        })).contextWrite(context));
     }
 }

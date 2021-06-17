@@ -23,6 +23,8 @@ public final class Attribute<T>{
 
     public static final Attribute<ReactionEmoji> REACTION_EMOJI = new Attribute<>("reaction_emoji");
 
+    public static final Attribute<Snowflake> ROLE_ID = new Attribute<>("role_id");
+
     public final String name;
 
     private Attribute(String name){
