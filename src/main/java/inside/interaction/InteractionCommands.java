@@ -1193,12 +1193,15 @@ public class InteractionCommands{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
             long start = System.currentTimeMillis();
-            return env.event().getInteractionResponse()
+            return env.event().acknowledge().then(env.event().getInteractionResponse()
                     .createFollowupMessage(messageService.get(env.context(), "command.ping.testing"))
                     .map(data -> new Message(env.getClient(), data))
-                    .flatMap(message -> message.edit(spec -> spec.setContent(messageService.format(env.context(), "command.ping.completed",
-                            System.currentTimeMillis() - start))))
-                    .then();
+                    .flatMap(message -> env.event().getInteractionResponse()
+                            .editFollowupMessage(message.getId().asLong(), WebhookMessageEditRequest.builder()
+                                    .content(messageService.format(env.context(), "command.ping.completed",
+                                            System.currentTimeMillis() - start))
+                                    .build(), true))
+                    .then());
         }
 
         @Override
