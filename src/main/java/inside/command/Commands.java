@@ -185,35 +185,6 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "diff", params = "command.diff.params", description = "command.diff.description")
-    public static class DiffCommand extends Command{
-        private final Differ differ = new Differ();
-
-        @Override
-        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            Optional<Snowflake> message0 = interaction.getOption(0)
-                    .flatMap(CommandOption::getValue)
-                    .map(OptionValue::asSnowflake);
-
-            Optional<Snowflake> message1 = interaction.getOption(1)
-                    .flatMap(CommandOption::getValue)
-                    .map(OptionValue::asSnowflake);
-
-            return Mono.justOrEmpty(message0)
-                    .switchIfEmpty(messageService.err(env, "command.diff.incorrect-id").then(Mono.empty()))
-                    .flatMap(messageId -> env.getReplyChannel().flatMap(channel -> channel.getMessageById(messageId)))
-                    .map(Message::getContent)
-                    .zipWith(Mono.justOrEmpty(message1)
-                            .switchIfEmpty(messageService.err(env, "command.diff.incorrect-id").then(Mono.empty()))
-                            .flatMap(messageId -> env.getReplyChannel().flatMap(channel -> channel.getMessageById(messageId)))
-                            .map(Message::getContent))
-                    .flatMap(function((m0, m1) -> messageService.text(env, String.format("```diff%n%s%n```",
-                            differ.getPatch(m0, m1).stream()
-                                    .map(Differ.Patch::toString)
-                                    .collect(Collectors.joining())))));
-        }
-    }
-
     // @DiscordCommand(key = "js", params = "command.javascript.params", description = "command.javascript.description")
     // public static class JsCommand extends Command{
     //     private static final List<String> blacklist = List.of(
