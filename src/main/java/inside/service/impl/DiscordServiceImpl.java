@@ -27,6 +27,7 @@ import reactor.core.publisher.Mono;
 
 import javax.annotation.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static reactor.function.TupleUtils.*;
 
@@ -78,11 +79,11 @@ public class DiscordServiceImpl implements DiscordService{
         Objects.requireNonNull(gateway, "impossible"); // for ide
 
         long applicationId = Objects.requireNonNull(gateway.rest().getApplicationId().block(), "impossible");
-        for(InteractionCommand command : commands){
-            gateway.rest().getApplicationService()
-                    .createGlobalApplicationCommand(applicationId, command.getRequest())
-                    .subscribe();
-        }
+        gateway.rest().getApplicationService()
+                .bulkOverwriteGlobalApplicationCommand(applicationId, commands.stream()
+                        .map(InteractionCommand::getRequest)
+                        .collect(Collectors.toList()))
+                .subscribe();
 
         gateway.on(ReactiveEventAdapter.from(adapters)).subscribe();
     }
