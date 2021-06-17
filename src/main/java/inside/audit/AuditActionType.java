@@ -21,7 +21,9 @@ public enum AuditActionType{
     MEMBER_BAN(0xffcc00),
     MEMBER_MUTE(0xffca59),
     MEMBER_UNMUTE(0x85ea88),
-    MEMBER_AVATAR_UPDATE(0x27b827);
+    MEMBER_AVATAR_UPDATE(0x27b827),
+    MEMBER_ROLE_ADD(0x4286f4),
+    MEMBER_ROLE_REMOVE(0x2c4d82);
 
     public final Color color;
 

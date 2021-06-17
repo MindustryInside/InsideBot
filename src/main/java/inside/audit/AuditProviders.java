@@ -200,6 +200,40 @@ public class AuditProviders{
         }
     }
 
+    @ForwardAuditProvider(AuditActionType.MEMBER_ROLE_ADD)
+    public static class MemberRoleAddAuditProvider extends BaseAuditProvider{
+        @Override
+        protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
+            String url = action.getAttribute(AVATAR_URL);
+            Snowflake roleId = action.getAttribute(ROLE_ID);
+            if(url == null || roleId == null){
+                return;
+            }
+
+            embed.setAuthor(action.user().name(), null, url);
+            embed.setDescription(messageService.format(context, "audit.member.role-add.title",
+                    DiscordUtil.getRoleMention(roleId), getUserReference(context, action.user())));
+            addTimestamp(context, action, embed);
+        }
+    }
+
+    @ForwardAuditProvider(AuditActionType.MEMBER_ROLE_REMOVE)
+    public static class MemberRoleRemoveAuditProvider extends BaseAuditProvider{
+        @Override
+        protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
+            String url = action.getAttribute(AVATAR_URL);
+            Snowflake roleId = action.getAttribute(ROLE_ID);
+            if(url == null || roleId == null){
+                return;
+            }
+
+            embed.setAuthor(action.user().name(), null, url);
+            embed.setDescription(messageService.format(context, "audit.member.role-remove.title",
+                    DiscordUtil.getRoleMention(roleId), getUserReference(context, action.user())));
+            addTimestamp(context, action, embed);
+        }
+    }
+
     // curentrly unused
     @ForwardAuditProvider(AuditActionType.MEMBER_AVATAR_UPDATE)
     public static class MemberUpdateAuditProvider extends BaseAuditProvider{

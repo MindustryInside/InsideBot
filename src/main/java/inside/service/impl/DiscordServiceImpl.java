@@ -6,6 +6,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.*;
 import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.object.entity.channel.TextChannel;
+import discord4j.core.shard.MemberRequestFilter;
 import discord4j.discordjson.json.PresenceData;
 import discord4j.gateway.intent.*;
 import discord4j.rest.request.RouteMatcher;
@@ -57,6 +58,7 @@ public class DiscordServiceImpl implements DiscordService{
                 .onClientResponse(ResponseFunction.emptyOnErrorStatus(RouteMatcher.route(Routes.REACTION_CREATE), 400))
                 .build()
                 .gateway()
+                .setMemberRequestFilter(MemberRequestFilter.all())
                 .setStore(Store.fromLayout(LegacyStoreLayout.of(MappingStoreService.create()
                         .setMapping(new NoOpStoreService(), PresenceData.class)
                         // .setMapping(new CaffeineStoreService(caffeine -> caffeine.weakKeys()
