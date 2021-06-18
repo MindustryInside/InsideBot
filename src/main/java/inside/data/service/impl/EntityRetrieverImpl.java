@@ -146,7 +146,7 @@ public class EntityRetrieverImpl implements EntityRetriever{
     public Mono<Starboard> getStarboardById(Snowflake guildId, Snowflake sourceMessageId){
         Objects.requireNonNull(guildId, "guildId");
         Objects.requireNonNull(sourceMessageId, "sourceMessageId");
-        return storeHolder.getStarboardService().find(LongLongTuple2.of(guildId.asLong(), guildId.asLong()));
+        return storeHolder.getStarboardService().find(LongLongTuple2.of(guildId.asLong(), sourceMessageId.asLong()));
     }
 
     @Override

@@ -27,7 +27,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static inside.util.ContextUtil.*;
-import static reactor.bool.BooleanUtils.*;
+import static reactor.bool.BooleanUtils.not;
 import static reactor.function.TupleUtils.function;
 
 @Component
@@ -71,7 +71,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                 (tuple, emojis) -> Tuples.of(tuple.getT1(), tuple.getT2(), emojis))
                 .flatMap(function((context, config, emojis) -> emojisCount.apply(emojis).flatMap(l -> {
                     Snowflake channelId = config.starboardChannelId().orElse(null);
-                    if(!config.isEnabled() || channelId == null || !emojis.contains(emoji)){
+                    if(!config.isEnabled() || channelId == null || !emojis.contains(emoji) || l < config.lowerStarBarrier()){
                         return Mono.empty();
                     }
 
@@ -135,9 +135,8 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                     }))
                                     .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId()))));
 
-            return and(Mono.just(l >= config.lowerStarBarrier()), not(starboard.hasElement()))
-                    .flatMap(bool -> bool ? findIfAbsent.switchIfEmpty(createNew) : updateOld);
-        }).contextWrite(context)));
+                    return not(starboard.hasElement()).flatMap(bool -> bool ? findIfAbsent.switchIfEmpty(createNew) : updateOld);
+                }).contextWrite(context)));
     }
 
     @Override
