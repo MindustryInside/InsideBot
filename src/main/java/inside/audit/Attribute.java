@@ -2,6 +2,9 @@ package inside.audit;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.reaction.ReactionEmoji;
+import inside.data.entity.base.NamedReference;
+
+import java.util.Objects;
 
 public final class Attribute<T>{
 
@@ -25,9 +28,29 @@ public final class Attribute<T>{
 
     public static final Attribute<Snowflake> ROLE_ID = new Attribute<>("role_id");
 
+    public static final Attribute<NamedReference> OLD_CHANNEL = new Attribute<>("old_channel");
+
     public final String name;
 
     private Attribute(String name){
         this.name = name;
+    }
+
+    @Override
+    public boolean equals(Object o){
+        if(this == o) return true;
+        if(o == null || getClass() != o.getClass()) return false;
+        Attribute<?> attribute = (Attribute<?>)o;
+        return name.equals(attribute.name);
+    }
+
+    @Override
+    public int hashCode(){
+        return Objects.hash(name);
+    }
+
+    @Override
+    public String toString(){
+        return "Attribute{" + name + '}';
     }
 }
