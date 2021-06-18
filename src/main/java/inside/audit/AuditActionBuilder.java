@@ -26,6 +26,26 @@ public abstract class AuditActionBuilder{
         action.attributes(new HashMap<>(7));
     }
 
+    public static NamedReference getReference(Member member){
+        Objects.requireNonNull(member, "member");
+        return new NamedReference(member.getId(), member.getUsername());
+    }
+
+    public static NamedReference getReference(User user){
+        Objects.requireNonNull(user, "user");
+        return new NamedReference(user.getId(), user.getUsername());
+    }
+
+    public static NamedReference getReference(LocalMember member){
+        Objects.requireNonNull(member, "member");
+        return new NamedReference(member.userId(), member.effectiveName());
+    }
+
+    public static NamedReference getReference(GuildChannel channel){
+        Objects.requireNonNull(channel, "channel");
+        return new NamedReference(channel.getId(), channel.getName());
+    }
+
     public AuditActionBuilder withUser(Member user){
         action.user(getReference(user));
         return this;
@@ -72,22 +92,6 @@ public abstract class AuditActionBuilder{
         }
         attachments.add(Tuples.of(key, data));
         return this;
-    }
-
-    private NamedReference getReference(Member member){
-        return new NamedReference(member.getId(), member.getUsername());
-    }
-
-    private NamedReference getReference(User user){
-        return new NamedReference(user.getId(), user.getUsername());
-    }
-
-    private NamedReference getReference(LocalMember member){
-        return new NamedReference(member.userId(), member.effectiveName());
-    }
-
-    private NamedReference getReference(GuildChannel channel){
-        return new NamedReference(channel.getId(), channel.getName());
     }
 
     public abstract Mono<Void> save();

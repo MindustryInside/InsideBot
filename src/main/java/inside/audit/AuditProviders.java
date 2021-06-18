@@ -13,7 +13,6 @@ import reactor.util.context.ContextView;
 import static inside.audit.Attribute.*;
 import static inside.util.ContextUtil.*;
 
-// TODO: check channel permissions and error handling; non-ignore bots
 public class AuditProviders{
 
     private AuditProviders(){}
@@ -234,7 +233,6 @@ public class AuditProviders{
         }
     }
 
-    // curentrly unused
     @ForwardAuditProvider(AuditActionType.MEMBER_AVATAR_UPDATE)
     public static class MemberUpdateAuditProvider extends BaseAuditProvider{
         @Override
@@ -321,6 +319,23 @@ public class AuditProviders{
         protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
             embed.setDescription(messageService.format(context, "audit.voice.leave.description",
                     getUserReference(context, action.user()), getShortReference(context, action.channel())));
+            addTimestamp(context, action, embed);
+        }
+    }
+
+    @ForwardAuditProvider(AuditActionType.VOICE_MOVE)
+    public static class VoiceMoveAuditProvider extends BaseAuditProvider{
+        @Override
+        protected void build(AuditAction action, ContextView context, MessageCreateSpec spec, EmbedCreateSpec embed){
+            NamedReference oldChannel = action.getAttribute(OLD_CHANNEL);
+            if(oldChannel == null){
+                return;
+            }
+
+            embed.setDescription(messageService.format(context, "audit.voice.move.description",
+                    getUserReference(context, action.user()),
+                    getShortReference(context, oldChannel),
+                    getShortReference(context, action.channel())));
             addTimestamp(context, action, embed);
         }
     }

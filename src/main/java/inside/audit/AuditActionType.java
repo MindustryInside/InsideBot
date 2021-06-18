@@ -14,6 +14,7 @@ public enum AuditActionType{
 
     VOICE_JOIN(0xff33cc),
     VOICE_LEAVE(0x9900cc),
+    VOICE_MOVE(0x9778a2),
 
     MEMBER_JOIN(0x6666cc),
     MEMBER_LEAVE(0x6633cc),
@@ -21,7 +22,7 @@ public enum AuditActionType{
     MEMBER_BAN(0xffcc00),
     MEMBER_MUTE(0xffca59),
     MEMBER_UNMUTE(0x85ea88),
-    MEMBER_AVATAR_UPDATE(0x27b827),
+    MEMBER_AVATAR_UPDATE(0x208320),
     MEMBER_ROLE_ADD(0x4286f4),
     MEMBER_ROLE_REMOVE(0x2c4d82);
 

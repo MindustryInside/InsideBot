@@ -2,7 +2,7 @@ package inside.audit;
 
 import discord4j.common.util.Snowflake;
 import inside.Settings;
-import inside.data.entity.*;
+import inside.data.entity.AuditAction;
 import inside.data.repository.AuditActionRepository;
 import inside.data.service.EntityRetriever;
 import org.joda.time.DateTime;
@@ -40,13 +40,13 @@ public class AuditServiceImpl implements AuditService{
     @Override
     @Transactional
     public Mono<Void> save(AuditAction action, List<Tuple2<String, InputStream>> attachments){
-        Mono<AuditConfig> auditConfig = entityRetriever.getAuditConfigById(action.guildId());
         AuditProvider forwardProvider = providers.get(action.type());
         if(forwardProvider != null){
             if(settings.getDiscord().isAuditLogSaving()){
                 repository.save(action);
             }
-            return auditConfig.flatMap(config -> forwardProvider.send(config, action, attachments));
+            return entityRetriever.getAuditConfigById(action.guildId())
+                    .flatMap(config -> forwardProvider.send(config, action, attachments));
         }
         return Mono.error(new NoSuchElementException("Missed audit provider for type: " + action.type()));
     }

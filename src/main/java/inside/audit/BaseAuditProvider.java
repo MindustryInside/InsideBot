@@ -1,9 +1,12 @@
 package inside.audit;
 
+import discord4j.core.object.entity.*;
 import discord4j.core.spec.*;
+import discord4j.rest.util.Permission;
 import inside.data.entity.*;
 import inside.data.entity.base.NamedReference;
 import inside.service.*;
+import inside.util.DiscordUtil;
 import org.joda.time.format.DateTimeFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
@@ -27,14 +30,24 @@ public abstract class BaseAuditProvider implements AuditProvider{
 
     @Override
     public Mono<Void> send(AuditConfig config, AuditAction action, List<Tuple2<String, InputStream>> attachments){
-        return Mono.justOrEmpty(config.logChannelId())
+        return Mono.deferContextual(ctx -> Mono.justOrEmpty(config.logChannelId())
                 .flatMap(discordService::getTextChannelById)
                 .filter(ignored -> config.isEnabled(action.type()))
-                .flatMap(textChannel -> Mono.deferContextual(ctx -> textChannel.createMessage(spec -> {
+                .filterWhen(channel -> channel.getEffectivePermissions(discordService.gateway().getSelfId())
+                        .map(set -> set.contains(Permission.SEND_MESSAGES))
+                        .filterWhen(bool -> bool ? Mono.just(true) : discordService.gateway()
+                                .getGuildById(action.guildId())
+                                .flatMap(Guild::getOwner)
+                                .flatMap(User::getPrivateChannel)
+                                .flatMap(dm -> dm.createMessage(messageService.format(ctx, "audit.permission-denied",
+                                        DiscordUtil.getChannelMention(config.logChannelId()
+                                                .orElseThrow(IllegalStateException::new))))) // asserted above
+                                .thenReturn(false)))
+                .flatMap(channel -> channel.createMessage(spec -> {
                     spec.setEmbed(embed -> build(action, ctx, spec, embed.setColor(action.type().color)));
                     attachments.forEach(TupleUtils.consumer(spec::addFile));
-                })))
-                .then();
+                }))
+                .then());
     }
 
     protected void addTimestamp(ContextView context, AuditAction action, EmbedCreateSpec embed){
