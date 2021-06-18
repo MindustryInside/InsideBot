@@ -2,6 +2,7 @@ package inside.data.service;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
+import discord4j.discordjson.json.EmojiData;
 import inside.data.entity.*;
 import reactor.core.publisher.*;
 
@@ -67,6 +68,14 @@ public interface EntityRetriever{
 
     Mono<Void> save(ActiveUserConfig activeUserConfig);
 
+    // emoji dispenser
+
+    Mono<EmojiDispenser> getEmojiDispenserById(Snowflake messageId);
+
+    Mono<Void> delete(EmojiDispenser emojiDispenser);
+
+    Mono<Void> save(EmojiDispenser emojiDispenser);
+
     // factory methods
 
     Mono<GuildConfig> createGuildConfig(Snowflake guildId);
@@ -84,4 +93,6 @@ public interface EntityRetriever{
     Mono<StarboardConfig> createStarboardConfig(Snowflake guildId);
 
     Mono<Starboard> createStarboard(Snowflake guildId, Snowflake sourceMessageId, Snowflake targetMessageId);
+
+    Mono<EmojiDispenser> createEmojiDispenser(Snowflake guildId, Snowflake messageId, Snowflake roleId, EmojiData emojiData);
 }
