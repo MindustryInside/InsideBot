@@ -22,6 +22,8 @@ public final class StoreHolder{
 
     private final ActiveUserConfigService activeUserConfigService;
 
+    private final EmojiDispenserService emojiDispenserService;
+
     public StoreHolder(@Autowired GuildConfigService guildConfigService,
                        @Autowired AdminConfigService adminConfigService,
                        @Autowired LocalMemberService localMemberService,
@@ -29,7 +31,8 @@ public final class StoreHolder{
                        @Autowired MessageInfoService messageInfoService,
                        @Autowired StarboardConfigService starboardConfigService,
                        @Autowired StarboardService starboardService,
-                       @Autowired ActiveUserConfigService activeUserConfigService){
+                       @Autowired ActiveUserConfigService activeUserConfigService,
+                       @Autowired EmojiDispenserService emojiDispenserService){
         this.guildConfigService = guildConfigService;
         this.adminConfigService = adminConfigService;
         this.localMemberService = localMemberService;
@@ -38,6 +41,7 @@ public final class StoreHolder{
         this.starboardConfigService = starboardConfigService;
         this.starboardService = starboardService;
         this.activeUserConfigService = activeUserConfigService;
+        this.emojiDispenserService = emojiDispenserService;
     }
 
     public GuildConfigService getGuildConfigService(){
@@ -70,5 +74,9 @@ public final class StoreHolder{
 
     public ActiveUserConfigService getActiveUserConfigService(){
         return activeUserConfigService;
+    }
+
+    public EmojiDispenserService getEmojiDispenserService(){
+        return emojiDispenserService;
     }
 }

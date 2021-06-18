@@ -179,6 +179,24 @@ public class EntityRetrieverImpl implements EntityRetriever{
     }
 
     @Override
+    public Mono<EmojiDispenser> getEmojiDispenserById(Snowflake messageId){
+        Objects.requireNonNull(messageId, "messageId");
+        return storeHolder.getEmojiDispenserService().find(messageId.asLong());
+    }
+
+    @Override
+    public Mono<Void> delete(EmojiDispenser emojiDispenser){
+        Objects.requireNonNull(emojiDispenser, "emojiDispenser");
+        return storeHolder.getEmojiDispenserService().delete(emojiDispenser);
+    }
+
+    @Override
+    public Mono<Void> save(EmojiDispenser emojiDispenser){
+        Objects.requireNonNull(emojiDispenser, "emojiDispenser");
+        return storeHolder.getEmojiDispenserService().save(emojiDispenser);
+    }
+
+    @Override
     public Mono<GuildConfig> createGuildConfig(Snowflake guildId){
         Objects.requireNonNull(guildId, "guildId");
         return Mono.defer(() -> {
@@ -278,6 +296,22 @@ public class EntityRetrieverImpl implements EntityRetriever{
             starboard.sourceMessageId(sourceMessageId);
             starboard.targetMessageId(targetMessageId);
             return save(starboard).thenReturn(starboard);
+        });
+    }
+
+    @Override
+    public Mono<EmojiDispenser> createEmojiDispenser(Snowflake guildId, Snowflake messageId, Snowflake roleId, EmojiData emojiData){
+        Objects.requireNonNull(guildId, "guildId");
+        Objects.requireNonNull(messageId, "messageId");
+        Objects.requireNonNull(roleId, "roleId");
+        Objects.requireNonNull(emojiData, "emojiData");
+        return Mono.defer(() -> {
+            EmojiDispenser emojiDispenser = new EmojiDispenser();
+            emojiDispenser.guildId(guildId);
+            emojiDispenser.messageId(messageId);
+            emojiDispenser.roleId(roleId);
+            emojiDispenser.emoji(emojiData);
+            return save(emojiDispenser).thenReturn(emojiDispenser);
         });
     }
 }
