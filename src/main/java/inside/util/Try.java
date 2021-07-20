@@ -305,7 +305,7 @@ public abstract class Try<T>{
         if(isFailure()){
             Throwable cause = getCause();
             if(exceptionType.isAssignableFrom(cause.getClass())){
-                return Try.ofCallable(() -> function.apply((X)cause));
+                return ofCallable(() -> function.apply((X)cause));
             }
         }
         return this;
@@ -339,14 +339,14 @@ public abstract class Try<T>{
     public final <X extends Throwable> Try<T> recover(Class<X> exceptionType, T value){
         Objects.requireNonNull(exceptionType, "exceptionType");
         return isFailure() && exceptionType.isAssignableFrom(getCause().getClass())
-               ? Try.success(value)
+               ? success(value)
                : this;
     }
 
     public final Try<T> recover(Function<? super Throwable, ? extends T> function){
         Objects.requireNonNull(function, "function");
         if(isFailure()){
-            return Try.ofCallable(() -> function.apply(getCause()));
+            return ofCallable(() -> function.apply(getCause()));
         }
         return this;
     }

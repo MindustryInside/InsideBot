@@ -8,7 +8,6 @@ plugins{
 ext{
     caffeine_version = '3.0.2'
     evalex_version = '2.5'
-    lavaplayer_version = '1.3.77'
 
     servicer_version = '1.0.3'
     immutables_version = '2.8.2'
@@ -27,7 +26,6 @@ allprojects{
     repositories{
         mavenCentral()
         mavenLocal()
-        maven{url 'https://m2.dv8tion.net/releases'}
         maven{url 'https://oss.sonatype.org/content/repositories/snapshots'}
         maven{url 'https://www.jitpack.io'}
     }
@@ -60,11 +58,8 @@ dependencies{
         api project(':legacy')
     }
 
-    implementation "com.discord4j.discord4j:discord4j-voice:master-SNAPSHOT"
-
     implementation "com.github.ben-manes.caffeine:caffeine:$caffeine_version"
     implementation "com.udojava:EvalEx:$evalex_version"
-    implementation "com.sedmelluq:lavaplayer:$lavaplayer_version"
 
     // data dependencies
     runtimeOnly "org.postgresql:postgresql"

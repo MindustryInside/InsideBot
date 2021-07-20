@@ -48,11 +48,6 @@ public class Settings{
 
         private Duration errorEmbedTtl = Duration.ofSeconds(7);
 
-        private String youtubeApiKey;
-
-        // TODO: implement api
-        private String spotifyApiKey;
-
         public int getMaxClearedCount(){
             return maxClearedCount;
         }
@@ -83,22 +78,6 @@ public class Settings{
 
         public void setErrorEmbedTtl(Duration errorEmbedTtl){
             this.errorEmbedTtl = errorEmbedTtl;
-        }
-
-        public String getYoutubeApiKey(){
-            return youtubeApiKey;
-        }
-
-        public void setYoutubeApiKey(String youtubeApiKey){
-            this.youtubeApiKey = youtubeApiKey;
-        }
-
-        public String getSpotifyApiKey(){
-            return spotifyApiKey;
-        }
-
-        public void setSpotifyApiKey(String spotifyApiKey){
-            this.spotifyApiKey = spotifyApiKey;
         }
     }
 

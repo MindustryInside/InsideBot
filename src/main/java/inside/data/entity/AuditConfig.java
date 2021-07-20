@@ -44,7 +44,7 @@ public class AuditConfig extends ConfigEntity{
     @Transient
     public boolean isEnabled(AuditActionType type){
         return logChannelId != null && types != null &&
-                enabled && !types.isEmpty() && types.contains(type);
+                enabled && types.contains(type);
     }
 
     @Override

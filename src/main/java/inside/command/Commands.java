@@ -1,11 +1,8 @@
 package inside.command;
 
-import com.sedmelluq.discord.lavaplayer.player.*;
 import com.udojava.evalex.*;
 import discord4j.common.ReactorResources;
 import discord4j.common.util.Snowflake;
-import discord4j.core.event.domain.VoiceStateUpdateEvent;
-import discord4j.core.object.VoiceState;
 import discord4j.core.object.audit.AuditLogEntry;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
@@ -14,7 +11,6 @@ import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.core.spec.*;
 import discord4j.rest.util.*;
-import discord4j.voice.VoiceConnection;
 import inside.Settings;
 import inside.audit.*;
 import inside.command.model.*;
@@ -24,16 +20,13 @@ import inside.service.*;
 import inside.util.*;
 import inside.util.codec.Base64Coder;
 import inside.util.io.ReusableByteInputStream;
-import inside.voice.*;
 import org.quartz.*;
-import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import reactor.bool.BooleanUtils;
 import reactor.core.publisher.*;
 import reactor.core.scheduler.Schedulers;
 import reactor.netty.http.client.HttpClient;
-import reactor.util.*;
 import reactor.util.function.Tuple2;
 
 import java.math.*;
@@ -84,11 +77,6 @@ public class Commands{
 
             return BooleanUtils.or(isOwner, isGuildManager);
         }
-    }
-
-    public static abstract class VoiceCommand extends Command{
-        @Autowired
-        protected VoiceService voiceService;
     }
 
     public static abstract class TestCommand extends Command{
@@ -1442,162 +1430,6 @@ public class Commands{
     }
 
     //endregion
-    //region voice
-
-    @DiscordCommand(key = "pause", description = "command.voice.pause.description",
-                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS,
-                                   Permission.CONNECT, Permission.SPEAK})
-    public static class VoicePauseCommand extends VoiceCommand{
-        @Override
-        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            Snowflake guildId = env.getAuthorAsMember().getGuildId();
-
-            return env.getAuthorAsMember().getVoiceState()
-                    .switchIfEmpty(messageService.err(env, "command.voice.not-in-channel").then(Mono.empty()))
-                    .flatMap(ignored -> Mono.fromRunnable(() -> voiceService.getOrCreate(guildId).getPlayer().setPaused(true))
-                            .then(env.getMessage().addReaction(ok)));
-        }
-    }
-
-    @DiscordCommand(key = {"leave", "l"}, description = "command.voice.leave.description",
-                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS,
-                                   Permission.CONNECT, Permission.SPEAK})
-    public static class VoiceLeaveCommand extends VoiceCommand{
-        @Override
-        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            Snowflake guildId = env.getAuthorAsMember().getGuildId();
-
-            return env.getAuthorAsMember().getVoiceState()
-                    .switchIfEmpty(messageService.err(env, "command.voice.not-in-channel").then(Mono.empty()))
-                    .flatMap(VoiceState::getChannel)
-                    .flatMap(VoiceChannel::getVoiceConnection)
-                    .flatMap(VoiceConnection::disconnect)
-                    .doFirst(() -> voiceService.getOrCreate(guildId).getPlayer().stopTrack())
-                    .then(env.getMessage().addReaction(ok));
-        }
-    }
-
-    @DiscordCommand(key = {"skip", "s"}, description = "command.voice.skip.description",
-                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS,
-                                   Permission.CONNECT, Permission.SPEAK})
-    public static class VoiceSkipCommand extends VoiceCommand{
-        @Override
-        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            Snowflake guildId = env.getAuthorAsMember().getGuildId();
-
-            VoiceRegistry voiceRegistry = voiceService.getOrCreate(guildId);
-            return env.getAuthorAsMember().getVoiceState()
-                    .switchIfEmpty(messageService.err(env, "command.voice.not-in-channel").then(Mono.empty()))
-                    .flatMap(ignored -> Mono.fromRunnable(voiceRegistry.getTrackLoader()::nextTrack)
-                            .then(env.getMessage().addReaction(ok)));
-        }
-    }
-
-    @DiscordCommand(key = {"clear", "c"}, description = "command.voice.clear.description",
-                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS,
-                                   Permission.CONNECT, Permission.SPEAK})
-    public static class VoiceClearCommand extends VoiceCommand{
-        @Override
-        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            Snowflake guildId = env.getAuthorAsMember().getGuildId();
-
-            VoiceRegistry voiceRegistry = voiceService.getOrCreate(guildId);
-            return env.getAuthorAsMember().getVoiceState()
-                    .switchIfEmpty(messageService.err(env, "command.voice.not-in-channel").then(Mono.empty()))
-                    .flatMap(ignored -> Mono.fromRunnable(voiceRegistry.getTrackLoader()::clear)
-                            .then(env.getMessage().addReaction(ok)));
-        }
-    }
-
-    @DiscordCommand(key = {"stop", "st"}, description = "command.voice.stop.description",
-                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS,
-                                   Permission.CONNECT, Permission.SPEAK})
-    public static class VoiceStopCommand extends VoiceCommand{
-        @Override
-        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            Snowflake guildId = env.getAuthorAsMember().getGuildId();
-
-            VoiceRegistry voiceRegistry = voiceService.getOrCreate(guildId);
-
-            return env.getAuthorAsMember().getVoiceState()
-                    .switchIfEmpty(messageService.err(env, "command.voice.not-in-channel").then(Mono.empty()))
-                    .flatMap(ignored -> Mono.fromRunnable(voiceRegistry.getPlayer()::stopTrack)
-                    .then(env.getMessage().addReaction(ok)));
-        }
-    }
-
-    @DiscordCommand(key = "reconnect", description = "command.voice.reconnect.description",
-                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS,
-                                   Permission.CONNECT, Permission.SPEAK})
-    public static class VoiceReconnectCommand extends VoiceCommand{
-        @Override
-        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            return env.getAuthorAsMember().getVoiceState()
-                    .switchIfEmpty(messageService.err(env, "command.voice.not-in-channel").then(Mono.empty()))
-                    .flatMap(VoiceState::getChannel)
-                    .flatMap(VoiceChannel::getVoiceConnection)
-                    .flatMap(VoiceConnection::reconnect)
-                    .then(env.getMessage().addReaction(ok));
-        }
-    }
-
-    @DiscordCommand(key = {"play", "p"}, params = "command.voice.play.params", description = "command.voice.play.description",
-                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.CONNECT, Permission.SPEAK})
-    public static class VoicePlayCommand extends VoiceCommand{
-        private static final Logger log = Loggers.getLogger(VoicePlayCommand.class);
-
-        @Override
-        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            String query = interaction.getOption(0)
-                    .flatMap(CommandOption::getValue)
-                    .map(OptionValue::asString)
-                    .map(str -> !str.startsWith("http:") && !str.startsWith("https:") ? "ytsearch: " + str : str) // for a more convenient search
-                    .orElseThrow(IllegalStateException::new);
-
-            VoiceRegistry voiceRegistry = voiceService.getOrCreate(env.getAuthorAsMember().getGuildId());
-
-            Mono<Void> joinIfNot = Mono.just(env.getAuthorAsMember())
-                    .flatMap(Member::getVoiceState)
-                    .switchIfEmpty(messageService.err(env, "command.voice.not-in-channel").then(Mono.empty()))
-                    .flatMap(VoiceState::getChannel)
-                    .filterWhen(channel -> channel.getVoiceConnection().hasElement().transform(BooleanUtils::not))
-                    .flatMap(channel -> channel.join(VoiceChannelJoinSpec.builder()
-                            .provider(voiceRegistry.getAudioProvider())
-                            .build())
-                            .flatMap(connection -> {
-                                Publisher<Boolean> voiceStateCounter = channel.getVoiceStates()
-                                        .count()
-                                        .map(count -> 1L == count);
-
-                                Mono<Void> onDelay = Mono.delay(Duration.ofSeconds(10L))
-                                        .filterWhen(ignored -> voiceStateCounter)
-                                        .switchIfEmpty(Mono.never())
-                                        .then();
-
-                                Mono<Void> onEvent = channel.getClient().getEventDispatcher().on(VoiceStateUpdateEvent.class)
-                                        .filter(event -> event.getOld().flatMap(VoiceState::getChannelId)
-                                                .map(channel.getId()::equals).orElse(false))
-                                        .filterWhen(ignored -> voiceStateCounter)
-                                        .next()
-                                        .then();
-
-                                return Mono.firstWithSignal(onDelay, onEvent).then(connection.disconnect());
-                            }));
-
-            AudioLoadResultHandler loadResultHandler = new FunctionalResultHandler(
-                    track -> messageService.text(env, "command.voice.play.queued", track.getInfo().title)
-                            .doFirst(() -> voiceRegistry.getTrackLoader().queue(track)).subscribe(),
-                    voiceRegistry.getTrackLoader()::queue,
-                    () -> messageService.err(env, "command.voice.play.not-found")
-                            .contextWrite(env.context()).subscribe(), // ...
-                    t -> log.error("Failed to load sound track", t));
-
-            return joinIfNot.then(Mono.fromRunnable(() -> voiceService.getAudioPlayerManager()
-                    .loadItemOrdered(voiceRegistry, query, loadResultHandler))); // block task
-        }
-    }
-
-    //endregion
     //region test
 
     @DiscordCommand(key = "status", params = "command.status.params", description = "command.status.description")
@@ -1644,4 +1476,3 @@ public class Commands{
 
     //endregion
 }
-

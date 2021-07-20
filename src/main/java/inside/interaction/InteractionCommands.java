@@ -5,7 +5,6 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.*;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
-import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.discordjson.json.*;
 import discord4j.rest.util.*;
@@ -543,7 +542,7 @@ public class InteractionCommands{
 
                                     List<Tuple2<AuditActionType, String>> all = Arrays.stream(AuditActionType.all)
                                             .map(type -> Tuples.of(type, messageService.getEnum(env.context(), type)))
-                                            .collect(Collectors.toUnmodifiableList());
+                                            .toList();
 
                                     boolean add = choice.equals("add");
 
@@ -617,7 +616,7 @@ public class InteractionCommands{
 
                                     Function<EmojiDispenser, String> formatEmojiDispenser = e -> String.format("%s -> %s (%s)\n",
                                             e.messageId().asString(), DiscordUtil.getRoleMention(e.roleId()),
-                                            DiscordUtil.getEmojiString(ReactionEmoji.of(e.emoji())));
+                                            DiscordUtil.getEmojiString(e.emoji()));
 
                                     if(choice.equals("help")){
                                         return entityRetriever.getAllEmojiDispenserInGuild(guildId)
