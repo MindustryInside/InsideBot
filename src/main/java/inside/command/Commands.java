@@ -10,6 +10,7 @@ import discord4j.core.object.presence.ClientPresence;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.core.spec.*;
+import discord4j.discordjson.json.*;
 import discord4j.rest.util.*;
 import inside.Settings;
 import inside.audit.*;
@@ -52,7 +53,9 @@ import static reactor.function.TupleUtils.function;
 
 public class Commands{
 
-    private Commands(){}
+    private Commands(){
+
+    }
 
     public static abstract class AdminCommand extends Command{
         @Autowired
@@ -171,8 +174,8 @@ public class Commands{
                     .map(builder -> builder.append(messageService.get(env.context(), "command.help.disclaimer.user"))
                             .append("\n").append(messageService.get(env.context(), "command.help.disclaimer.help")))
                     .flatMap(str -> messageService.info(env, spec -> spec.title(messageService.get(env.context(),
-                            categoriesWithCommands.get().get(category.orElseThrow(AssertionError::new)).get(0).getClass()
-                                    .getSuperclass().getCanonicalName()))
+                                    categoriesWithCommands.get().get(category.orElseThrow(AssertionError::new)).get(0).getClass()
+                                            .getSuperclass().getCanonicalName()))
                             .description(str.toString())));
         }
     }
@@ -224,16 +227,16 @@ public class Commands{
             AtomicBoolean attachmentMode = new AtomicBoolean(false);
 
             Mono<String> handleAttachment = Mono.justOrEmpty(env.getMessage().getAttachments().stream()
-                    .filter(att -> att.getWidth().isEmpty())
-                    .filter(att -> att.getContentType().map(str -> str.startsWith("text")).orElse(true))
-                    .findFirst())
+                            .filter(att -> att.getWidth().isEmpty())
+                            .filter(att -> att.getContentType().map(str -> str.startsWith("text")).orElse(true))
+                            .findFirst())
                     .flatMap(att -> httpClient.get().get().uri(att.getUrl())
                             .responseSingle((res, buf) -> buf.asString()))
                     .doFirst(() -> attachmentMode.set(true));
 
             Mono<String> result = Mono.justOrEmpty(interaction.getOption(1)
-                    .flatMap(CommandOption::getValue)
-                    .map(OptionValue::asString))
+                            .flatMap(CommandOption::getValue)
+                            .map(OptionValue::asString))
                     .switchIfEmpty(handleAttachment)
                     .switchIfEmpty(messageService.err(env, "command.base64.missed-text").then(Mono.empty()))
                     .map(String::trim)
@@ -241,14 +244,14 @@ public class Commands{
                             encode ? Base64Coder.encodeString(str) : Base64Coder.decodeString(str)));
 
             return Mono.deferContextual(ctx -> result.onErrorResume(t -> t instanceof IllegalArgumentException,
-                    t -> messageService.err(env, t.getMessage()).then(Mono.empty()))
-                    .flatMap(str -> messageService.text(env, spec -> {
-                        if(str.length() < Message.MAX_CONTENT_LENGTH && !attachmentMode.get()){
-                            spec.content(str);
-                        }else if(str.length() > Message.MAX_CONTENT_LENGTH || attachmentMode.get()){
-                            spec.addFile(MESSAGE_TXT, ReusableByteInputStream.ofString(str));
-                        }
-                    })))
+                                    t -> messageService.err(env, t.getMessage()).then(Mono.empty()))
+                            .flatMap(str -> messageService.text(env, spec -> {
+                                if(str.length() < Message.MAX_CONTENT_LENGTH && !attachmentMode.get()){
+                                    spec.content(str);
+                                }else if(str.length() > Message.MAX_CONTENT_LENGTH || attachmentMode.get()){
+                                    spec.addFile(MESSAGE_TXT, ReusableByteInputStream.ofString(str));
+                                }
+                            })))
                     .contextWrite(ctx -> ctx.put(KEY_REPLY, true));
         }
 
@@ -263,8 +266,6 @@ public class Commands{
 
     @DiscordCommand(key = {"translate", "tr"}, params = "command.translate.params", description = "command.translate.description")
     public static class TranslateCommand extends Command{
-        private final Lazy<HttpClient> httpClient = Lazy.of(ReactorResources.DEFAULT_HTTP_CLIENT);
-
         public static final String[] languages = {
                 "Afrikaans (`af`)", "Albanian (`sq`)", "Amharic (`am`)",
                 "Arabic (`ar`)", "Armenian (`hy`)", "Automatic (`auto`)",
@@ -302,7 +303,6 @@ public class Commands{
                 "Vietnamese (`vi`)", "Welsh (`cy`)", "Xhosa (`xh`)",
                 "Yiddish (`yi`)", "Yoruba (`yo`)", "Zulu (`zu`)"
         };
-
         private static final Lazy<String> cachedLanguages = Lazy.of(() -> {
             StringBuilder builder = new StringBuilder();
             for(int i = 0; i < languages.length; i++){
@@ -316,6 +316,15 @@ public class Commands{
             }
             return builder.toString();
         });
+        private final Lazy<HttpClient> httpClient = Lazy.of(ReactorResources.DEFAULT_HTTP_CLIENT);
+
+        // I hope this not for long
+        private static String params(Map<String, Object> map){
+            return map.entrySet().stream()
+                    .map(entry -> URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8) + "=" +
+                            URLEncoder.encode(Objects.toString(entry.getValue()), StandardCharsets.UTF_8))
+                    .collect(Collectors.joining("&", "?", ""));
+        }
 
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -360,14 +369,6 @@ public class Commands{
                             GuildConfig.formatPrefix(prefix.get(0)),
                             cachedLanguages.get()));
         }
-
-        // I hope this not for long
-        private static String params(Map<String, Object> map){
-            return map.entrySet().stream()
-                    .map(entry -> URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8) + "=" +
-                            URLEncoder.encode(Objects.toString(entry.getValue()), StandardCharsets.UTF_8))
-                    .collect(Collectors.joining("&", "?", ""));
-        }
     }
 
     @DiscordCommand(key = "r", params = "command.text-layout.params", description = "command.text-layout.description")
@@ -380,6 +381,20 @@ public class Commands{
             String rus = "Й-Ц-У-К-Е-Н-Г-Ш-Щ-З-Ф-Ы-В-А-П-Р-О-Л-Д-Я-Ч-С-М-И-Т-Ь";
             engPattern = (eng + "-" + eng.toLowerCase() + "-\\^-:-\\$-@-&-~-`-\\{-\\[-\\}-\\]-\"-'-<->-;-\\?-\\/-\\.-,-#").split("-");
             rusPattern = (rus + "-" + rus.toLowerCase() + "-:-Ж-;-\"-\\?-Ё-ё-Х-х-Ъ-ъ-Э-э-Б-Ю-ж-,-\\.-ю-б-№").split("-");
+        }
+
+        public static String text2rus(String text){
+            for(int i = 0; i < engPattern.length; i++){
+                text = text.replaceAll(engPattern[i], rusPattern[i]);
+            }
+            return text;
+        }
+
+        public static String text2eng(String text){
+            for(int i = 0; i < rusPattern.length; i++){
+                text = text.replaceAll(rusPattern[i], engPattern[i]);
+            }
+            return text;
         }
 
         @Override
@@ -397,20 +412,6 @@ public class Commands{
 
             return messageService.text(env, en ? text2rus(text) : text2eng(text))
                     .contextWrite(ctx -> ctx.put(KEY_REPLY, true));
-        }
-
-        public static String text2rus(String text){
-            for(int i = 0; i < engPattern.length; i++){
-                text = text.replaceAll(engPattern[i], rusPattern[i]);
-            }
-            return text;
-        }
-
-        public static String text2eng(String text){
-            for(int i = 0; i < rusPattern.length; i++){
-                text = text.replaceAll(rusPattern[i], engPattern[i]);
-            }
-            return text;
         }
     }
 
@@ -441,29 +442,6 @@ public class Commands{
                     "u", "u", "v", "v", "w", "w", "x", "x",
                     "y", "y", "z", "2"
             );
-        }
-
-        @Override
-        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            boolean ru = interaction.getOption(0)
-                    .flatMap(CommandOption::getValue)
-                    .map(OptionValue::asString)
-                    .map("ru"::equalsIgnoreCase)
-                    .orElse(false);
-
-            String text = interaction.getOption(1)
-                    .flatMap(CommandOption::getValue)
-                    .map(OptionValue::asString)
-                    .map(str -> leeted(str, ru))
-                    .orElse("");
-
-            return messageService.text(env, spec -> {
-                if(text.length() >= Message.MAX_CONTENT_LENGTH){
-                    spec.addFile(MESSAGE_TXT, ReusableByteInputStream.ofString(text));
-                }else{
-                    spec.content(text);
-                }
-            }).contextWrite(ctx -> ctx.put(KEY_REPLY, true));
         }
 
         public static String leeted(String text, boolean russian){
@@ -498,6 +476,29 @@ public class Commands{
             }
             return result.toString();
         }
+
+        @Override
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            boolean ru = interaction.getOption(0)
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .map("ru"::equalsIgnoreCase)
+                    .orElse(false);
+
+            String text = interaction.getOption(1)
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .map(str -> leeted(str, ru))
+                    .orElse("");
+
+            return messageService.text(env, spec -> {
+                if(text.length() >= Message.MAX_CONTENT_LENGTH){
+                    spec.addFile(MESSAGE_TXT, ReusableByteInputStream.ofString(text));
+                }else{
+                    spec.content(text);
+                }
+            }).contextWrite(ctx -> ctx.put(KEY_REPLY, true));
+        }
     }
 
     @DiscordCommand(key = "translit", params = "command.transliteration.params", description = "command.transliteration.description")
@@ -531,23 +532,6 @@ public class Commands{
             return Map.copyOf(map);
         }
 
-        @Override
-        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            String translited = interaction.getOption(0)
-                    .flatMap(CommandOption::getValue)
-                    .map(OptionValue::asString)
-                    .map(TransliterationCommand::translit)
-                    .orElse("");
-
-            return messageService.text(env, spec -> {
-                if(translited.length() >= Message.MAX_CONTENT_LENGTH){
-                    spec.addFile(MESSAGE_TXT, ReusableByteInputStream.ofString(translited));
-                }else{
-                    spec.content(translited);
-                }
-            }).contextWrite(ctx -> ctx.put(KEY_REPLY, true));
-        }
-
         public static String translit(String text){
             UnaryOperator<String> get = s -> {
                 String result = Optional.ofNullable(translit.get(s.toLowerCase()))
@@ -578,6 +562,23 @@ public class Commands{
                 }
             }
             return result.toString();
+        }
+
+        @Override
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            String translited = interaction.getOption(0)
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .map(TransliterationCommand::translit)
+                    .orElse("");
+
+            return messageService.text(env, spec -> {
+                if(translited.length() >= Message.MAX_CONTENT_LENGTH){
+                    spec.addFile(MESSAGE_TXT, ReusableByteInputStream.ofString(translited));
+                }else{
+                    spec.content(translited);
+                }
+            }).contextWrite(ctx -> ctx.put(KEY_REPLY, true));
         }
     }
 
@@ -618,7 +619,7 @@ public class Commands{
                     .flatMap(message -> Mono.justOrEmpty(message.getAuthor()));
 
             return Mono.justOrEmpty(firstOpt.map(OptionValue::asSnowflake)).flatMap(id -> env.getClient()
-                    .withRetrievalStrategy(EntityRetrievalStrategy.REST).getUserById(id))
+                            .withRetrievalStrategy(EntityRetrievalStrategy.REST).getUserById(id))
                     .switchIfEmpty(referencedUser)
                     .switchIfEmpty(env.getClient().withRetrievalStrategy(EntityRetrievalStrategy.REST)
                             .getUserById(env.getAuthorAsMember().getId())
@@ -640,6 +641,63 @@ public class Commands{
 
     @DiscordCommand(key = {"math", "calc"}, params = "command.math.params", description = "command.math.description")
     public static class MathCommand extends Command{
+        private static final LazyOperator divideAlias = new AbstractOperator(":", Expression.OPERATOR_PRECEDENCE_MULTIPLICATIVE, true){
+            @Override
+            public BigDecimal eval(BigDecimal v1, BigDecimal v2){
+                return v1.divide(v2, MathContext.DECIMAL32);
+            }
+        };
+        private static final LazyFunction factorialFunction = new AbstractLazyFunction("FACT", 1){
+            @Override
+            public Expression.LazyNumber lazyEval(List<Expression.LazyNumber> lazyParams){
+                var fist = lazyParams.get(0);
+                if(fist.eval().longValue() > 100){
+                    throw new ArithmeticException("The number is too big!");
+                }
+
+                return createNumber(() -> {
+                    int number = lazyParams.get(0).eval().intValue();
+                    BigDecimal factorial = BigDecimal.ONE;
+                    for(int i = 1; i <= number; i++){
+                        factorial = factorial.multiply(new BigDecimal(i));
+                    }
+                    return factorial;
+                });
+            }
+        };
+        private static final LazyFunction levenshteinDstFunction = new AbstractLazyFunction("LEVEN", 2){
+            @Override
+            public Expression.LazyNumber lazyEval(List<Expression.LazyNumber> lazyParams){
+                var first = lazyParams.get(0);
+                var second = lazyParams.get(1);
+                return createNumber(() -> BigDecimal.valueOf(Strings.levenshtein(first.getString(), second.getString())));
+            }
+        };
+
+        public static Mono<BigDecimal> createExpression(String text){
+            return Mono.fromCallable(() -> {
+                Expression exp = new Expression(text);
+                exp.addOperator(divideAlias);
+                exp.addLazyFunction(levenshteinDstFunction);
+                exp.addLazyFunction(factorialFunction);
+                return exp.eval();
+            });
+        }
+
+        private static Expression.LazyNumber createNumber(Supplier<BigDecimal> bigDecimal){
+            return new Expression.LazyNumber(){
+                @Override
+                public BigDecimal eval(){
+                    return bigDecimal.get();
+                }
+
+                @Override
+                public String getString(){
+                    return eval().toPlainString();
+                }
+            };
+        }
+
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             String text = interaction.getOption(0)
@@ -668,65 +726,6 @@ public class Commands{
                     .flatMap(prefix -> messageService.info(env, "command.help.title", "command.math.help",
                             GuildConfig.formatPrefix(prefix.get(0))));
         }
-
-        public static Mono<BigDecimal> createExpression(String text){
-            return Mono.fromCallable(() -> {
-                Expression exp = new Expression(text);
-                exp.addOperator(divideAlias);
-                exp.addLazyFunction(levenshteinDstFunction);
-                exp.addLazyFunction(factorialFunction);
-                return exp.eval();
-            });
-        }
-
-        private static final LazyOperator divideAlias = new AbstractOperator(":", Expression.OPERATOR_PRECEDENCE_MULTIPLICATIVE, true){
-            @Override
-            public BigDecimal eval(BigDecimal v1, BigDecimal v2){
-                return v1.divide(v2, MathContext.DECIMAL32);
-            }
-        };
-
-        private static Expression.LazyNumber createNumber(Supplier<BigDecimal> bigDecimal){
-            return new Expression.LazyNumber(){
-                @Override
-                public BigDecimal eval(){
-                    return bigDecimal.get();
-                }
-
-                @Override
-                public String getString(){
-                    return eval().toPlainString();
-                }
-            };
-        }
-
-        private static final LazyFunction factorialFunction = new AbstractLazyFunction("FACT", 1){
-            @Override
-            public Expression.LazyNumber lazyEval(List<Expression.LazyNumber> lazyParams){
-                var fist = lazyParams.get(0);
-                if(fist.eval().longValue() > 100){
-                    throw new ArithmeticException("The number is too big!");
-                }
-
-                return createNumber(() -> {
-                    int number = lazyParams.get(0).eval().intValue();
-                    BigDecimal factorial = BigDecimal.ONE;
-                    for(int i = 1; i <= number; i++){
-                        factorial = factorial.multiply(new BigDecimal(i));
-                    }
-                    return factorial;
-                });
-            }
-        };
-
-        private static final LazyFunction levenshteinDstFunction = new AbstractLazyFunction("LEVEN", 2){
-            @Override
-            public Expression.LazyNumber lazyEval(List<Expression.LazyNumber> lazyParams){
-                var first = lazyParams.get(0);
-                var second = lazyParams.get(1);
-                return createNumber(() -> BigDecimal.valueOf(Strings.levenshtein(first.getString(), second.getString())));
-            }
-        };
     }
 
     @DiscordCommand(key = {"random", "rand", "rnd"}, params = "command.random.params", description = "command.random.description")
@@ -760,7 +759,9 @@ public class Commands{
                 return messageService.err(env, "command.random.equals");
             }
 
-            String str = String.valueOf(ThreadLocalRandom.current().nextLong(lower + (!linc ? 1 : 0), higher + (hinc ? 1 : 0)));
+            String str = String.valueOf(ThreadLocalRandom.current().nextLong(lower + (!linc ? 1 : 0), higher + (hinc
+                    ? 1
+                    : 0)));
             return messageService.text(env, str);
         }
     }
@@ -821,16 +822,16 @@ public class Commands{
                     .then(Mono.just(message));
 
             return channel.flatMap(reply -> reply.createMessage(MessageCreateSpec.builder()
-                    .allowedMentions(AllowedMentions.suppressAll())
-                    .addEmbed(EmbedCreateSpec.builder()
-                            .title(title)
-                            .color(settings.getDefaults().getNormalColor())
-                            .description(IntStream.range(1, vars.length)
-                                    .mapToObj(i -> String.format("**%d**. %s%n", i, vars[i]))
-                                    .collect(Collectors.joining()))
-                            .author(author.getUsername(), null, author.getAvatarUrl())
-                            .build())
-                    .build()))
+                            .allowedMentions(AllowedMentions.suppressAll())
+                            .addEmbed(EmbedCreateSpec.builder()
+                                    .title(title)
+                                    .color(settings.getDefaults().getNormalColor())
+                                    .description(IntStream.range(1, vars.length)
+                                            .mapToObj(i -> String.format("**%d**. %s%n", i, vars[i]))
+                                            .collect(Collectors.joining()))
+                                    .author(author.getUsername(), null, author.getAvatarUrl())
+                                    .build())
+                            .build()))
                     .flatMap(poll -> Mono.defer(() -> reactions.apply(poll, count)))
                     .then();
         }
@@ -858,10 +859,10 @@ public class Commands{
                     .orElseThrow(IllegalStateException::new);
 
             return env.getReplyChannel().flatMap(reply -> reply.createMessage(MessageCreateSpec.builder()
-                    .content(messageService.format(env.context(),
-                            "command.qpoll.text", env.getAuthorAsMember().getUsername(), text))
-                    .allowedMentions(AllowedMentions.suppressAll())
-                    .build()))
+                            .content(messageService.format(env.context(),
+                                    "command.qpoll.text", env.getAuthorAsMember().getUsername(), text))
+                            .allowedMentions(AllowedMentions.suppressAll())
+                            .build()))
                     .flatMap(message1 -> message1.addReaction(up)
                             .and(message1.addReaction(down)));
         }
@@ -906,7 +907,43 @@ public class Commands{
                     .build();
 
             Try.run(() -> schedulerFactoryBean.getScheduler().scheduleJob(job, trigger));
-            return env.getMessage().addReaction(MessageService.ok);
+            return env.getMessage().addReaction(ok);
+        }
+    }
+
+    @DiscordCommand(key = "link", params = "command.link.params", description = "command.link.description")
+    public static class LinkCommand extends Command{
+        @Override
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            Snowflake channelId = env.getMessage().getChannelId();
+            String link = interaction.getOption(0)
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .orElseThrow(IllegalStateException::new);
+
+            String text = interaction.getOption(1)
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .orElseThrow(IllegalStateException::new);
+
+            return env.getClient().rest().getApplicationId()
+                    .flatMap(applicationId -> env.getClient().rest().getWebhookService()
+                            .getChannelWebhooks(channelId.asLong())
+                            .filter(data -> data.applicationId().map(id -> id.asLong() == applicationId).orElse(false)
+                                    && data.name().map(s -> env.getAuthorAsMember().getDisplayName().equals(s)).orElse(false))
+                            .next()
+                            .switchIfEmpty(env.getClient().rest().getWebhookService()
+                                    .createWebhook(channelId.asLong(), WebhookCreateRequest.builder()
+                                            .name(env.getAuthorAsMember().getDisplayName())
+                                            .avatarOrNull(env.getAuthorAsMember().getAvatarUrl())
+                                            .build(), null))
+                            .flatMap(webhookData -> env.getClient().rest().getWebhookService()
+                                    .executeWebhook(webhookData.id().asLong(), webhookData.token().get(), true,
+                                            MultipartRequest.ofRequest(WebhookExecuteRequest.builder()
+                                                    .content("[" + text + "](" + link + ")")
+                                                    .allowedMentions(AllowedMentions.suppressAll().toData())
+                                                    .build()))))
+                    .then(env.getMessage().delete());
         }
     }
 
@@ -972,7 +1009,7 @@ public class Commands{
                     .flatMap(str -> Try.ofCallable(() -> ZoneId.of(str)).toOptional())
                     .orElse(null);
 
-            String str =  interaction.getOption(0)
+            String str = interaction.getOption(0)
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
                     .orElse("");
@@ -992,7 +1029,7 @@ public class Commands{
 
                         guildConfig.timeZone(timeZone);
                         return Mono.deferContextual(ctx -> messageService.text(env,
-                                "command.settings.timezone.update", ctx.<Locale>get(KEY_TIMEZONE)))
+                                        "command.settings.timezone.update", ctx.<Locale>get(KEY_TIMEZONE)))
                                 .contextWrite(ctx -> ctx.put(KEY_TIMEZONE, timeZone))
                                 .and(entityRetriever.save(guildConfig));
                     }));
@@ -1029,7 +1066,7 @@ public class Commands{
 
                         guildConfig.locale(locale);
                         return Mono.deferContextual(ctx -> messageService.text(env, "command.settings.locale.update",
-                                ctx.<Locale>get(KEY_LOCALE).getDisplayName()))
+                                        ctx.<Locale>get(KEY_LOCALE).getDisplayName()))
                                 .contextWrite(ctx -> ctx.put(KEY_LOCALE, locale))
                                 .and(entityRetriever.save(guildConfig));
                     });
@@ -1040,7 +1077,7 @@ public class Commands{
     //region moderation
 
     @DiscordCommand(key = "mute", params = "command.admin.mute.params", description = "command.admin.mute.description",
-                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_ROLES})
+            permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_ROLES})
     public static class MuteCommand extends AdminCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1120,8 +1157,8 @@ public class Commands{
     }
 
     @DiscordCommand(key = "delete", params = "command.admin.delete.params", description = "command.admin.delete.description",
-                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS,
-                                   Permission.MANAGE_MESSAGES, Permission.READ_MESSAGE_HISTORY})
+            permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS,
+                           Permission.MANAGE_MESSAGES, Permission.READ_MESSAGE_HISTORY})
     public static class DeleteCommand extends AdminCommand{
         @Autowired
         private Settings settings;
@@ -1173,18 +1210,18 @@ public class Commands{
             };
 
             Mono<Void> history = reply.flatMapMany(channel -> channel.getMessagesBefore(env.getMessage().getId())
-                    .take(number, true)
-                    .sort(Comparator.comparing(Message::getId))
-                    .filter(message -> message.getTimestamp().isAfter(limit))
-                    .flatMap(message -> message.getAuthorAsMember()
-                            .doOnNext(member -> appendInfo.accept(message, member))
-                            .flatMap(ignored -> entityRetriever.deleteMessageInfoById(message.getId()))
-                            .thenReturn(message))
-                    .transform(messages -> number > 1 ? channel.bulkDeleteMessages(messages).then() :
-                            messages.next().flatMap(Message::delete).then()))
+                            .take(number, true)
+                            .sort(Comparator.comparing(Message::getId))
+                            .filter(message -> message.getTimestamp().isAfter(limit))
+                            .flatMap(message -> message.getAuthorAsMember()
+                                    .doOnNext(member -> appendInfo.accept(message, member))
+                                    .flatMap(ignored -> entityRetriever.deleteMessageInfoById(message.getId()))
+                                    .thenReturn(message))
+                            .transform(messages -> number > 1 ? channel.bulkDeleteMessages(messages).then() :
+                                    messages.next().flatMap(Message::delete).then()))
                     .then();
 
-            Mono<Void> log =  reply.flatMap(channel -> auditService.newBuilder(author.getGuildId(), AuditActionType.MESSAGE_CLEAR)
+            Mono<Void> log = reply.flatMap(channel -> auditService.newBuilder(author.getGuildId(), AuditActionType.MESSAGE_CLEAR)
                     .withUser(author)
                     .withChannel(channel)
                     .withAttribute(COUNT, number)
@@ -1204,7 +1241,7 @@ public class Commands{
     }
 
     @DiscordCommand(key = "warn", params = "command.admin.warn.params", description = "command.admin.warn.description",
-                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.BAN_MEMBERS})
+            permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.BAN_MEMBERS})
     public static class WarnCommand extends AdminCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1266,7 +1303,7 @@ public class Commands{
     }
 
     @DiscordCommand(key = "softban", params = "command.admin.softban.params", description = "command.admin.softban.description",
-                    permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS, Permission.BAN_MEMBERS})
+            permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS, Permission.BAN_MEMBERS})
     public static class SoftbanCommand extends AdminCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1307,9 +1344,9 @@ public class Commands{
                             .map(function((admin, owner) -> !(admin && !owner))))
                     .switchIfEmpty(messageService.err(env, "command.admin.user-is-admin").then(Mono.never()))
                     .flatMap(member -> member.getGuild().flatMap(guild -> guild.ban(member.getId(), BanQuerySpec.builder()
-                            .reason(reason)
-                            .deleteMessageDays(deleteDays)
-                            .build()))
+                                    .reason(reason)
+                                    .deleteMessageDays(deleteDays)
+                                    .build()))
                             .then(member.getGuild().flatMap(guild -> guild.unban(member.getId()))))
                     .and(env.getMessage().addReaction(ok));
         }
@@ -1465,11 +1502,11 @@ public class Commands{
                     .getApplicationId();
 
             return applicationId.flatMap(id -> env.getClient().rest().getApplicationService()
-                    .getGlobalApplicationCommands(id)
-                    .filter(command -> command.name().equalsIgnoreCase(commandName)).next()
-                    .switchIfEmpty(messageService.err(env, "command.rm-cmd.unknown-command").then(Mono.empty()))
-                    .flatMap(command -> env.getClient().rest().getApplicationService()
-                            .deleteGlobalApplicationCommand(id, Snowflake.asLong(command.id()))))
+                            .getGlobalApplicationCommands(id)
+                            .filter(command -> command.name().equalsIgnoreCase(commandName)).next()
+                            .switchIfEmpty(messageService.err(env, "command.rm-cmd.unknown-command").then(Mono.empty()))
+                            .flatMap(command -> env.getClient().rest().getApplicationService()
+                                    .deleteGlobalApplicationCommand(id, Snowflake.asLong(command.id()))))
                     .then(env.getMessage().addReaction(ok));
         }
     }
