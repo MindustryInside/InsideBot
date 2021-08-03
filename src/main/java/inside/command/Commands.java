@@ -2,7 +2,7 @@ package inside.command;
 
 import com.udojava.evalex.*;
 import discord4j.common.ReactorResources;
-import discord4j.common.util.Snowflake;
+import discord4j.common.util.*;
 import discord4j.core.object.audit.AuditLogEntry;
 import discord4j.core.object.component.*;
 import discord4j.core.object.entity.*;
@@ -34,7 +34,7 @@ import java.math.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
-import java.time.format.*;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -1372,10 +1372,6 @@ public class Commands{
 
             Snowflake guildId = env.getAuthorAsMember().getGuildId();
 
-            DateTimeFormatter formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
-                    .withLocale(env.context().get(KEY_LOCALE))
-                    .withZone(env.context().get(KEY_TIMEZONE));
-
             Snowflake authorId = env.getAuthorAsMember().getId();
 
             return Mono.justOrEmpty(targetId)
@@ -1389,7 +1385,7 @@ public class Commands{
                             .take(PER_PAGE, true).index()
                             .map(function((idx, warn) ->
                                     EmbedCreateFields.Field.of(String.format("%2s. %s", idx + 1,
-                                            formatter.format(warn.timestamp())), String.format("%s%n%s",
+                                            TimestampFormat.LONG_DATE_TIME.format(warn.timestamp())), String.format("%s%n%s",
                                             messageService.format(env.context(), "common.admin", warn.admin().effectiveName()),
                                             messageService.format(env.context(), "common.reason", warn.reason()
                                                     .orElse(messageService.get(env.context(), "common.not-defined")))),
