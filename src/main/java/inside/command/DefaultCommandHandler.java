@@ -140,8 +140,7 @@ public class DefaultCommandHandler implements CommandHandler{
 
                     Function<Throwable, Mono<Void>> fallback = t -> Flux.fromIterable(info.permissions())
                             .filterWhen(permission -> environment.getReplyChannel().cast(GuildMessageChannel.class)
-                                    .flatMap(targetChannel ->
-                                            targetChannel.getEffectivePermissions(selfId))
+                                    .flatMap(targetChannel -> targetChannel.getEffectivePermissions(selfId))
                                     .map(set -> !set.contains(permission)))
                             .map(permission -> messageService.getEnum(environment.context(), permission))
                             .map("• "::concat)

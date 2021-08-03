@@ -929,8 +929,9 @@ public class Commands{
                                             .avatarOrNull(env.getAuthorAsMember().getAvatarUrl())
                                             .build(), null))
                             .flatMap(webhookData -> env.getClient().rest().getWebhookService()
-                                    .executeWebhook(webhookData.id().asLong(), webhookData.token().get(), true,
+                                    .executeWebhook(webhookData.id().asLong(), webhookData.token().get(), false,
                                             MultipartRequest.ofRequest(WebhookExecuteRequest.builder()
+                                                    .avatarUrl(env.getAuthorAsMember().getAvatarUrl())
                                                     .content("[" + text + "](" + link + ")")
                                                     .allowedMentions(AllowedMentions.suppressAll().toData())
                                                     .build()))))
