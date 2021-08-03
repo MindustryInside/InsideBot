@@ -16,7 +16,7 @@ import inside.audit.*;
 import inside.command.model.*;
 import inside.data.entity.*;
 import inside.scheduler.job.RemindJob;
-import inside.service.*;
+import inside.service.AdminService;
 import inside.util.*;
 import inside.util.codec.Base64Coder;
 import inside.util.io.ReusableByteInputStream;
@@ -227,7 +227,9 @@ public class Commands{
             return Mono.deferContextual(ctx -> result.onErrorResume(t -> t instanceof IllegalArgumentException,
                                     t -> messageService.err(env, t.getMessage()).then(Mono.empty()))
                             .flatMap(str -> messageService.text(env, spec -> {
-                                if(str.length() < Message.MAX_CONTENT_LENGTH && !attachmentMode.get()){
+                                if(str.isBlank()){
+                                    spec.content(messageService.get(env.context(), "message.placeholder"));
+                                }else if(str.length() < Message.MAX_CONTENT_LENGTH && !attachmentMode.get()){
                                     spec.content(str);
                                 }else if(str.length() > Message.MAX_CONTENT_LENGTH || attachmentMode.get()){
                                     spec.addFile(MESSAGE_TXT, ReusableByteInputStream.ofString(str));
@@ -337,7 +339,7 @@ public class Commands{
                     .map(node -> Optional.ofNullable(node.get("sentences"))
                             .map(arr -> arr.get(0))
                             .map(single -> single.get("trans").asText())
-                            .orElse(MessageService.placeholder))
+                            .orElseGet(() -> messageService.get(env.context(), "message.placeholder")))
                     .flatMap(str -> messageService.text(env, str))
                     .contextWrite(ctx -> ctx.put(KEY_REPLY, true));
         }
@@ -473,7 +475,9 @@ public class Commands{
                     .orElse("");
 
             return messageService.text(env, spec -> {
-                if(text.length() >= Message.MAX_CONTENT_LENGTH){
+                if(text.isBlank()){
+                    spec.content(messageService.get(env.context(), "message.placeholder"));
+                }else if(text.length() >= Message.MAX_CONTENT_LENGTH){
                     spec.addFile(MESSAGE_TXT, ReusableByteInputStream.ofString(text));
                 }else{
                     spec.content(text);
@@ -554,7 +558,9 @@ public class Commands{
                     .orElse("");
 
             return messageService.text(env, spec -> {
-                if(translited.length() >= Message.MAX_CONTENT_LENGTH){
+                if(translited.isBlank()){
+                    spec.content(messageService.get(env.context(), "message.placeholder"));
+                }else if(translited.length() >= Message.MAX_CONTENT_LENGTH){
                     spec.addFile(MESSAGE_TXT, ReusableByteInputStream.ofString(translited));
                 }else{
                     spec.content(translited);
@@ -692,7 +698,9 @@ public class Commands{
                             t -> messageService.error(env, "command.math.error.title", t.getMessage()).then(Mono.empty()))
                     .map(BigDecimal::toString)
                     .flatMap(decimal -> messageService.text(env, spec -> {
-                        if(decimal.length() >= Message.MAX_CONTENT_LENGTH){
+                        if(decimal.isBlank()){
+                            spec.content(messageService.get(env.context(), "message.placeholder"));
+                        }else if(decimal.length() >= Message.MAX_CONTENT_LENGTH){
                             spec.addFile(MESSAGE_TXT, ReusableByteInputStream.ofString(decimal));
                         }else{
                             spec.content(decimal);

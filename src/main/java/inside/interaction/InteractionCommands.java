@@ -12,7 +12,7 @@ import inside.Settings;
 import inside.audit.*;
 import inside.command.Commands;
 import inside.data.entity.*;
-import inside.service.*;
+import inside.service.AdminService;
 import inside.util.*;
 import inside.util.func.BooleanFunction;
 import inside.util.io.ReusableByteInputStream;
@@ -1260,7 +1260,7 @@ public class InteractionCommands{
                     .map(str -> russian
                             ? Commands.TextLayoutCommand.text2eng(str)
                             : Commands.TextLayoutCommand.text2rus(str))
-                    .orElse(MessageService.placeholder);
+                    .orElseGet(() -> messageService.get(env.context(), "message.placeholder"));
 
             return env.event().reply(text);
         }
@@ -1309,7 +1309,7 @@ public class InteractionCommands{
                     .map(ApplicationCommandInteractionOptionValue::asString)
                     .map(str -> Commands.LeetSpeakCommand.leeted(str, russian))
                     .filter(str -> !str.isBlank())
-                    .orElse(MessageService.placeholder);
+                    .orElseGet(() -> messageService.get(env.context(), "message.placeholder"));
 
             return env.event().reply(text);
         }
@@ -1352,7 +1352,7 @@ public class InteractionCommands{
                     .map(ApplicationCommandInteractionOptionValue::asString)
                     .map(Commands.TransliterationCommand::translit)
                     .filter(str -> !str.isBlank())
-                    .orElse(MessageService.placeholder);
+                    .orElseGet(() -> messageService.get(env.context(), "message.placeholder"));
 
             return env.event().reply(text);
         }

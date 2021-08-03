@@ -126,9 +126,8 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     public Mono<Void> text(CommandEnvironment environment, String text, Object... args){
-        //TODO: doesn't return placeholder
         return Mono.deferContextual(ctx -> text(environment, spec ->
-                spec.content(text.isBlank() ? placeholder : format(ctx, text, args))));
+                spec.content(text.isBlank() ? get(ctx, "message.placeholder") : format(ctx, text, args))));
     }
 
     @Override
@@ -215,7 +214,7 @@ public class MessageServiceImpl implements MessageService{
         return Mono.deferContextual(ctx -> event.reply(InteractionApplicationCommandCallbackSpec.builder()
                 .allowedMentions(AllowedMentions.suppressAll())
                 .ephemeral(ctx.<Boolean>getOrEmpty(KEY_EPHEMERAL).map(Possible::of).orElse(Possible.absent()))
-                .content(text.isBlank() ? placeholder : format(ctx, text, args))
+                .content(text.isBlank() ? get(ctx, "message.placeholder") : format(ctx, text, args))
                 .build()));
     }
 

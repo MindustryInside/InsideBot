@@ -18,8 +18,6 @@ public interface MessageService{
 
     ReactionEmoji failed = ReactionEmoji.unicode("❌");
 
-    String placeholder = ":eyes: (?)";
-
     // bundle
 
     String get(ContextView ctx, String key);
