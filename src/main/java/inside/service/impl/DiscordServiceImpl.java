@@ -11,7 +11,7 @@ import discord4j.rest.http.client.ClientException;
 import discord4j.rest.request.*;
 import discord4j.rest.response.ResponseFunction;
 import discord4j.rest.route.Routes;
-import discord4j.rest.util.RouteUtils;
+import discord4j.rest.util.*;
 import inside.Settings;
 import inside.data.entity.Activity;
 import inside.data.service.EntityRetriever;
@@ -57,6 +57,7 @@ public class DiscordServiceImpl implements DiscordService{
         gateway = DiscordClientBuilder.create(token)
                 .onClientResponse(ResponseFunction.emptyIfNotFound())
                 .onClientResponse(ResponseFunction.emptyOnErrorStatus(RouteMatcher.route(Routes.REACTION_CREATE), 400))
+                .setDefaultAllowedMentions(AllowedMentions.suppressAll())
                 .build()
                 .gateway()
                 .setMemberRequestFilter(MemberRequestFilter.all())

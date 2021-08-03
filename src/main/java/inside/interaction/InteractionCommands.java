@@ -1441,7 +1441,7 @@ public class InteractionCommands{
             return Commands.MathCommand.createExpression(expression).publishOn(Schedulers.boundedElastic())
                     .onErrorResume(t -> t instanceof ArithmeticException || t instanceof Expression.ExpressionException ||
                                     t instanceof NumberFormatException,
-                            t -> messageService.error(env.event(), "command.math.error.title", t.getMessage())
+                            t -> messageService.errTitled(env.event(), "command.math.error.title", t.getMessage())
                                     .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true)).then(Mono.empty()))
                     .flatMap(decimal -> messageService.text(env.event(), MessageUtil.substringTo(decimal.toString(), Message.MAX_CONTENT_LENGTH)));
         }

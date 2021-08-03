@@ -89,7 +89,7 @@ public class DefaultCommandHandler implements CommandHandler{
                         if(index >= info.params().length && !argstr.isEmpty()){
                             messageService.awaitEdit(environment.getMessage().getId());
                             return prefix.map(GuildConfig::formatPrefix)
-                                    .flatMap(str -> messageService.error(environment, "command.response.many-arguments.title",
+                                    .flatMap(str -> messageService.errTitled(environment, "command.response.many-arguments.title",
                                             argsres, str, cmdkey, messageService.get(environment.context(), info.paramText())));
                         }else if(argstr.isEmpty()){
                             break;
@@ -109,7 +109,7 @@ public class DefaultCommandHandler implements CommandHandler{
                             if(!satisfied){
                                 messageService.awaitEdit(environment.getMessage().getId());
                                 return prefix.map(GuildConfig::formatPrefix)
-                                        .flatMap(str -> messageService.error(environment, "command.response.few-arguments.title",
+                                        .flatMap(str -> messageService.errTitled(environment, "command.response.few-arguments.title",
                                                 argsres, str, cmdkey, messageService.get(environment.context(), info.paramText())));
                             }
                             result.add(new CommandOption(info.params()[index], argstr));
@@ -130,7 +130,7 @@ public class DefaultCommandHandler implements CommandHandler{
                             environment.getMessage().getMessageReference().isEmpty()){
                         messageService.awaitEdit(environment.getMessage().getId());
                         return prefix.map(GuildConfig::formatPrefix)
-                                .flatMap(str -> messageService.error(environment, "command.response.few-arguments.title",
+                                .flatMap(str -> messageService.errTitled(environment, "command.response.few-arguments.title",
                                         argsres, str, cmdkey, messageService.get(environment.context(), info.paramText())));
                     }
 

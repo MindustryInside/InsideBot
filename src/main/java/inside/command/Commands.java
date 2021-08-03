@@ -4,6 +4,7 @@ import com.udojava.evalex.*;
 import discord4j.common.ReactorResources;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.audit.AuditLogEntry;
+import discord4j.core.object.component.*;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
 import discord4j.core.object.reaction.ReactionEmoji;
@@ -27,7 +28,7 @@ import reactor.bool.BooleanUtils;
 import reactor.core.publisher.*;
 import reactor.core.scheduler.Schedulers;
 import reactor.netty.http.client.HttpClient;
-import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
 import java.math.*;
 import java.net.URLEncoder;
@@ -242,7 +243,7 @@ public class Commands{
         public Mono<Void> help(CommandEnvironment env){
             return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
                     .map(GuildConfig::prefixes)
-                    .flatMap(prefix -> messageService.info(env, "command.help.title", "command.base64.help",
+                    .flatMap(prefix -> messageService.infoTitled(env, "command.help.title", "command.base64.help",
                             GuildConfig.formatPrefix(prefix.get(0))));
         }
     }
@@ -297,6 +298,7 @@ public class Commands{
                     builder.append('\n');
                 }
             }
+            builder.trimToSize();
             return builder.toString();
         });
         private final Lazy<HttpClient> httpClient = Lazy.of(ReactorResources.DEFAULT_HTTP_CLIENT);
@@ -348,7 +350,7 @@ public class Commands{
         public Mono<Void> help(CommandEnvironment env){
             return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
                     .map(GuildConfig::prefixes)
-                    .flatMap(prefix -> messageService.info(env, "command.help.title", "command.translate.help",
+                    .flatMap(prefix -> messageService.infoTitled(env, "command.help.title", "command.translate.help",
                             GuildConfig.formatPrefix(prefix.get(0)),
                             cachedLanguages.get()));
         }
@@ -621,7 +623,7 @@ public class Commands{
         public Mono<Void> help(CommandEnvironment env){
             return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
                     .map(GuildConfig::prefixes)
-                    .flatMap(prefix -> messageService.info(env, "command.help.title", "command.avatar.help",
+                    .flatMap(prefix -> messageService.infoTitled(env, "command.help.title", "command.avatar.help",
                             GuildConfig.formatPrefix(prefix.get(0))));
         }
     }
@@ -695,7 +697,7 @@ public class Commands{
             return createExpression(text).publishOn(Schedulers.boundedElastic())
                     .onErrorResume(t -> t instanceof ArithmeticException || t instanceof Expression.ExpressionException ||
                                     t instanceof NumberFormatException,
-                            t -> messageService.error(env, "command.math.error.title", t.getMessage()).then(Mono.empty()))
+                            t -> messageService.errTitled(env, "command.math.error.title", t.getMessage()).then(Mono.empty()))
                     .map(BigDecimal::toString)
                     .flatMap(decimal -> messageService.text(env, spec -> {
                         if(decimal.isBlank()){
@@ -712,7 +714,7 @@ public class Commands{
         public Mono<Void> help(CommandEnvironment env){
             return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
                     .map(GuildConfig::prefixes)
-                    .flatMap(prefix -> messageService.info(env, "command.help.title", "command.math.help",
+                    .flatMap(prefix -> messageService.infoTitled(env, "command.help.title", "command.math.help",
                             GuildConfig.formatPrefix(prefix.get(0))));
         }
     }
@@ -829,7 +831,7 @@ public class Commands{
         public Mono<Void> help(CommandEnvironment env){
             return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
                     .map(GuildConfig::prefixes)
-                    .flatMap(prefix -> messageService.info(env, "command.help.title", "command.poll.help",
+                    .flatMap(prefix -> messageService.infoTitled(env, "command.help.title", "command.poll.help",
                             GuildConfig.formatPrefix(prefix.get(0))));
         }
     }
@@ -860,7 +862,7 @@ public class Commands{
         public Mono<Void> help(CommandEnvironment env){
             return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
                     .map(GuildConfig::prefixes)
-                    .flatMap(prefix -> messageService.info(env, "command.help.title", "command.qpoll.help",
+                    .flatMap(prefix -> messageService.infoTitled(env, "command.help.title", "command.qpoll.help",
                             GuildConfig.formatPrefix(prefix.get(0))));
         }
     }
@@ -1230,7 +1232,7 @@ public class Commands{
         public Mono<Void> help(CommandEnvironment env){
             return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
                     .map(GuildConfig::prefixes)
-                    .flatMap(prefix -> messageService.info(env, "command.help.title", "command.admin.delete.help",
+                    .flatMap(prefix -> messageService.infoTitled(env, "command.help.title", "command.admin.delete.help",
                             GuildConfig.formatPrefix(prefix.get(0))));
         }
     }
@@ -1352,6 +1354,11 @@ public class Commands{
     @DiscordCommand(key = "warnings", params = "command.admin.warnings.params", description = "command.admin.warnings.description",
             category = CommandCategory.admin)
     public static class WarningsCommand extends AdminCommand{
+        public static final int PER_PAGE = 9;
+
+        @Autowired
+        private Settings settings;
+
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Optional<Snowflake> targetId = interaction.getOption(0)
@@ -1369,21 +1376,7 @@ public class Commands{
                     .withLocale(env.context().get(KEY_LOCALE))
                     .withZone(env.context().get(KEY_TIMEZONE));
 
-            Collector<Tuple2<Long, AdminAction>, EmbedCreateSpec.Builder, EmbedCreateSpec> collector = Collector.of(EmbedCreateSpec::builder,
-                    (spec, tuple) -> {
-                        long index = tuple.getT1();
-                        AdminAction warn = tuple.getT2();
-                        String value = String.format("%s%n%s",
-                                messageService.format(env.context(), "common.admin", warn.admin().effectiveName()),
-                                messageService.format(env.context(), "common.reason", warn.reason()
-                                        .orElse(messageService.get(env.context(), "common.not-defined"))));
-
-                        String title = String.format("%2s. %s", index + 1, formatter.format(warn.timestamp()));
-
-                        spec.addField(EmbedCreateFields.Field.of(title, value, true));
-                    },
-                    (builder0, builder1) -> builder0, /* non-mergable */
-                    EmbedCreateSpec.Builder::build);
+            Snowflake authorId = env.getAuthorAsMember().getId();
 
             return Mono.justOrEmpty(targetId)
                     .flatMap(userId -> env.getClient().getMemberById(guildId, userId))
@@ -1393,9 +1386,29 @@ public class Commands{
                     .switchIfEmpty(messageService.err(env, "common.bot").then(Mono.never()))
                     .zipWhen(member -> adminService.warnings(member)
                             .switchIfEmpty(messageService.text(env, "command.admin.warnings.empty").then(Mono.never()))
-                            .take(21, true).index().collect(collector))
-                    .flatMap(function((target, embed) -> messageService.info(env, spec -> spec.from(embed)
-                            .title(messageService.format(env.context(), "command.admin.warnings.title", target.getDisplayName())))));
+                            .take(PER_PAGE, true).index()
+                            .map(function((idx, warn) ->
+                                    EmbedCreateFields.Field.of(String.format("%2s. %s", idx + 1,
+                                            formatter.format(warn.timestamp())), String.format("%s%n%s",
+                                            messageService.format(env.context(), "common.admin", warn.admin().effectiveName()),
+                                            messageService.format(env.context(), "common.reason", warn.reason()
+                                                    .orElse(messageService.get(env.context(), "common.not-defined")))),
+                                    true)))
+                            .collectList())
+                    .zipWhen(tuple -> adminService.warnings(tuple.getT1()).count(),
+                            (tuple, count) -> Tuples.of(tuple.getT1(), tuple.getT2(), count))
+                    .flatMap(function((target, fields, count) -> messageService.text(env, spec -> spec.addEmbed(EmbedCreateSpec.builder()
+                                    .fields(fields)
+                                    .color(settings.getDefaults().getNormalColor())
+                                    .footer(String.format("Страница 1/%d", Mathf.ceilPositive(count / (float)PER_PAGE)), null)
+                                    .build())
+                            .addComponent(ActionRow.of(
+                                    Button.primary("inside-warnings-"  + authorId.asString() +
+                                            "-" + target.getId().asString() + "-prev-0",
+                                            messageService.get(env.context(), "common.prev-page")).disabled(),
+                                    Button.primary("inside-warnings-"  + authorId.asString() +
+                                            "-" + target.getId().asString() + "-next-1",
+                                            messageService.get(env.context(), "common.prev-page")).disabled(count <= PER_PAGE))))));
         }
     }
 

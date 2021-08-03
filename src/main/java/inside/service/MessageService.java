@@ -42,25 +42,25 @@ public interface MessageService{
 
     Mono<Void> info(Mono<? extends MessageChannel> channel, String title, String text, Object... args); // for using in DM
 
-    Mono<Void> info(CommandEnvironment environment, String title, String text, Object... args);
+    Mono<Void> infoTitled(CommandEnvironment environment, String title, String text, Object... args);
 
     Mono<Void> info(CommandEnvironment environment, Consumer<EmbedCreateSpec.Builder> embed);
 
     Mono<Void> err(CommandEnvironment environment, String text, Object... args);
 
-    Mono<Void> error(CommandEnvironment environment, String title, String text, Object... args);
+    Mono<Void> errTitled(CommandEnvironment environment, String title, String text, Object... args);
 
     // send (interactive)
 
     Mono<Void> text(InteractionCreateEvent event, String text, Object... args);
 
-    Mono<Void> info(InteractionCreateEvent event, String title, String text, Object... args);
+    Mono<Void> infoTitled(InteractionCreateEvent event, String title, String text, Object... args);
 
     Mono<Void> info(InteractionCreateEvent event, Consumer<EmbedCreateSpec.Builder> embed);
 
     Mono<Void> err(InteractionCreateEvent event, String text, Object... args);
 
-    Mono<Void> error(InteractionCreateEvent event, String title, String text, Object... args);
+    Mono<Void> errTitled(InteractionCreateEvent event, String title, String text, Object... args);
 
     // data
 

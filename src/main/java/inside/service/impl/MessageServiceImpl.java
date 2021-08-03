@@ -161,7 +161,7 @@ public class MessageServiceImpl implements MessageService{
     }
 
     @Override
-    public Mono<Void> info(CommandEnvironment environment, String title, String text, Object... args){
+    public Mono<Void> infoTitled(CommandEnvironment environment, String title, String text, Object... args){
         return Mono.deferContextual(ctx -> info(environment, embed -> embed.title(get(ctx, title))
                 .description(format(ctx, text, args))));
     }
@@ -187,11 +187,11 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     public Mono<Void> err(CommandEnvironment environment, String text, Object... args){
-        return error(environment, "message.error.general.title", text, args);
+        return errTitled(environment, "message.error.general.title", text, args);
     }
 
     @Override
-    public Mono<Void> error(CommandEnvironment environment, String title, String text, Object... args){
+    public Mono<Void> errTitled(CommandEnvironment environment, String title, String text, Object... args){
         return Mono.deferContextual(ctx -> environment.getReplyChannel()
                         .flatMap(c -> c.createMessage(MessageCreateSpec.builder()
                                 .messageReference(ctx.<Boolean>getOrEmpty(KEY_REPLY).orElse(false)
@@ -219,7 +219,7 @@ public class MessageServiceImpl implements MessageService{
     }
 
     @Override
-    public Mono<Void> info(InteractionCreateEvent event, String title, String text, Object... args){
+    public Mono<Void> infoTitled(InteractionCreateEvent event, String title, String text, Object... args){
         return Mono.deferContextual(ctx -> info(event, embed -> embed.title(get(ctx, title))
                 .description(format(ctx, text, args))));
     }
@@ -238,11 +238,11 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     public Mono<Void> err(InteractionCreateEvent event, String text, Object... args){
-        return error(event, "message.error.general.title", text, args);
+        return errTitled(event, "message.error.general.title", text, args);
     }
 
     @Override
-    public Mono<Void> error(InteractionCreateEvent event, String title, String text, Object... args){
+    public Mono<Void> errTitled(InteractionCreateEvent event, String title, String text, Object... args){
         return Mono.deferContextual(ctx -> event.reply(InteractionApplicationCommandCallbackSpec.builder()
                 .allowedMentions(AllowedMentions.suppressAll())
                 .ephemeral(ctx.<Boolean>getOrEmpty(KEY_EPHEMERAL).map(Possible::of).orElse(Possible.absent()))

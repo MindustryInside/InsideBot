@@ -28,10 +28,12 @@ public abstract class GuildEntity extends BaseEntity{
         if(this == o){
             return true;
         }
-        if(o == null || getClass() != o.getClass()){
+        if(!(o instanceof GuildEntity that)){
             return false;
         }
-        GuildEntity that = (GuildEntity)o;
+        if(!super.equals(o)){
+            return false;
+        }
         return guildId == that.guildId;
     }
 

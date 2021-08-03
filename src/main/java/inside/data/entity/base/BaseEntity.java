@@ -34,15 +34,14 @@ public abstract class BaseEntity implements Serializable{
         if(this == o){
             return true;
         }
-        if(o == null || getClass() != o.getClass()){
+        if(!(o instanceof BaseEntity that)){
             return false;
         }
-        BaseEntity that = (BaseEntity)o;
         return id == that.id;
     }
 
     @Override
     public int hashCode(){
-        return Objects.hash(id);
+        return Objects.hashCode(id);
     }
 }
