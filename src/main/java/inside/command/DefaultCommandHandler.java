@@ -57,7 +57,9 @@ public class DefaultCommandHandler implements CommandHandler{
 
         Mono<Tuple2<String, String>> text = prefix.switchIfEmpty(mention)
                 .map(s -> message.substring(s.length()).trim())
-                .zipWhen(s -> Mono.just(s.contains(" ") ? s.substring(0, s.indexOf(" ")) : s).map(String::toLowerCase))
+                .zipWhen(s -> Mono.just(s.contains(" ") ? s.substring(0, s.indexOf(" ")) : s)
+                        .map(String::toLowerCase)
+                        .filter(Predicate.not(String::isBlank)))
                 .cache();
 
         Mono<Void> suggestion = text.map(Tuple2::getT1).flatMap(commandName -> commandHolder.getCommandInfoMap().values().stream()
