@@ -1,6 +1,7 @@
 package inside.command.model;
 
 import discord4j.rest.util.Permission;
+import inside.command.CommandCategory;
 import org.springframework.stereotype.Component;
 
 import java.lang.annotation.*;
@@ -17,4 +18,6 @@ public @interface DiscordCommand{
     String description();
 
     Permission[] permissions() default {Permission.SEND_MESSAGES, Permission.EMBED_LINKS};
+
+    CommandCategory category() default CommandCategory.common;
 }

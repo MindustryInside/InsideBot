@@ -1269,7 +1269,7 @@ public class InteractionCommands{
         public ApplicationCommandRequest getRequest(){
             return ApplicationCommandRequest.builder()
                     .name("r")
-                    .description("Change text layout.")
+                    .description("Change key layout.")
                     .addOption(ApplicationCommandOptionData.builder()
                             .name("type")
                             .description("Text layout type")
@@ -1318,7 +1318,7 @@ public class InteractionCommands{
         public ApplicationCommandRequest getRequest(){
             return ApplicationCommandRequest.builder()
                     .name("1337")
-                    .description("Translate text into leet speak.")
+                    .description("Translate key into leet speak.")
                     .addOption(ApplicationCommandOptionData.builder()
                             .name("type")
                             .description("Leet speak type")
@@ -1361,7 +1361,7 @@ public class InteractionCommands{
         public ApplicationCommandRequest getRequest(){
             return ApplicationCommandRequest.builder()
                     .name("tr")
-                    .description("Translating text into transliteration.")
+                    .description("Translating key into transliteration.")
                     .addOption(ApplicationCommandOptionData.builder()
                             .name("text")
                             .description("Translation text")

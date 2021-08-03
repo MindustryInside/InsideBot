@@ -433,7 +433,7 @@ public class DurationFormatBuilder{
         private final String text;
 
         SimpleAffix(String text){
-            this.text = Objects.requireNonNull(text, "text");
+            this.text = Objects.requireNonNull(text, "key");
         }
 
         @Override
@@ -911,7 +911,7 @@ public class DurationFormatBuilder{
         private final String text;
 
         Literal(String text){
-            this.text = Objects.requireNonNull(text, "text");
+            this.text = Objects.requireNonNull(text, "key");
         }
 
         @Override
@@ -943,7 +943,7 @@ public class DurationFormatBuilder{
         Separator(String text, String finalText,
                   DurationPrinter beforePrinter,
                   boolean useBefore, boolean useAfter){
-            this.text = Objects.requireNonNull(text, "text");
+            this.text = Objects.requireNonNull(text, "key");
             this.finalText = Objects.requireNonNull(finalText, "finalText");
             this.beforePrinter = Objects.requireNonNull(beforePrinter, "beforePrinter");
             this.useBefore = useBefore;

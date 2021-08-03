@@ -6,7 +6,6 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.audit.AuditLogEntry;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.*;
-import discord4j.core.object.presence.ClientPresence;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.core.spec.*;
@@ -82,15 +81,6 @@ public class Commands{
         }
     }
 
-    public static abstract class TestCommand extends Command{
-        @Override
-        public Mono<Boolean> filter(CommandEnvironment env){
-            return env.getClient().getApplicationInfo()
-                    .map(ApplicationInfo::getOwnerId)
-                    .map(owner -> owner.equals(env.getAuthorAsMember().getId()));
-        }
-    }
-
     //region common
 
     @DiscordCommand(key = {"help", "?", "man"}, params = "command.help.params", description = "command.help.description")
@@ -98,14 +88,9 @@ public class Commands{
         @Autowired
         private CommandHolder commandHolder;
 
-        private final Lazy<Map<String, List<Command>>> categoriesWithCommands = Lazy.of(() ->
-                commandHolder.getCommandInfoMap().keySet().stream().collect(Collectors.groupingBy(command -> {
-                    String canonicalName = command.getClass()
-                            .getSuperclass().getCanonicalName();
-                    String key = canonicalName.toLowerCase(Locale.ROOT).substring(canonicalName.lastIndexOf(".") + 1,
-                            canonicalName.lastIndexOf("C"));
-                    return key.isEmpty() ? "common" : key;
-                })));
+        private final Lazy<Map<CommandCategory, List<Map.Entry<Command, CommandInfo>>>> categoriesWithCommands = Lazy.of(() ->
+                commandHolder.getCommandInfoMap().entrySet().stream()
+                        .collect(Collectors.groupingBy(e -> e.getValue().category())));
 
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -117,12 +102,12 @@ public class Commands{
             Collector<CommandInfo, StringBuilder, StringBuilder> categoryCollector = Collector.of(StringBuilder::new,
                     (builder, info) -> {
                         builder.append("**");
-                        builder.append(info.text()[0]);
+                        builder.append(info.key()[0]);
                         builder.append("**");
-                        if(info.text().length > 1){
+                        if(info.key().length > 1){
                             StringJoiner joiner = new StringJoiner(", ");
-                            for(int i = 1; i < info.text().length; i++){
-                                joiner.add(info.text()[i]);
+                            for(int i = 1; i < info.key().length; i++){
+                                joiner.add(info.key()[i]);
                             }
                             builder.append(" (").append(joiner).append(")");
                         }
@@ -139,13 +124,9 @@ public class Commands{
             Mono<Void> categories = Flux.fromIterable(categoriesWithCommands.get().entrySet())
                     .distinct(Map.Entry::getKey)
                     .filterWhen(entry -> Flux.fromIterable(entry.getValue())
-                            .filterWhen(command -> command.filter(env))
+                            .filterWhen(e -> e.getKey().filter(env))
                             .hasElements())
-                    .map(entry -> {
-                        String canonicalName = entry.getValue().get(0).getClass()
-                                .getSuperclass().getCanonicalName();
-                        return String.format("• %s (`%s`)%n", messageService.get(env.context(), canonicalName), entry.getKey());
-                    })
+                    .map(e -> String.format("• %s (`%s`)%n", messageService.getEnum(env.context(), e.getKey()), e.getKey()))
                     .collect(Collectors.joining())
                     .flatMap(categoriesStr -> messageService.info(env, spec ->
                             spec.title(messageService.get(env.context(), "command.help"))
@@ -154,28 +135,28 @@ public class Commands{
             Mono<Void> snowHelp = Mono.defer(() -> {
                 String unwrapped = category.orElse("");
                 return categoriesWithCommands.get().keySet().stream()
-                        .min(Comparator.comparingInt(s -> Strings.levenshtein(s, unwrapped)))
+                        .min(Comparator.comparingInt(s -> Strings.levenshtein(s.name(), unwrapped)))
                         .map(s -> messageService.err(env, "command.help.found-closest", s))
                         .orElse(messageService.err(env, "command.help.unknown"));
             });
 
             return Mono.justOrEmpty(category)
+                    .mapNotNull(s -> Try.ofCallable(() -> CommandCategory.valueOf(s)).orElse(null))
                     .switchIfEmpty(categories.then(Mono.never()))
                     .mapNotNull(categoriesWithCommands.get()::get)
                     .switchIfEmpty(snowHelp.then(Mono.never()))
                     .filterWhen(entry -> Flux.fromIterable(entry)
-                            .filterWhen(command -> command.filter(env))
+                            .filterWhen(e -> e.getKey().filter(env))
                             .hasElements())
                     .switchIfEmpty(messageService.err(env, "command.help.unknown").then(Mono.never()))
                     .flatMapMany(Flux::fromIterable)
-                    .map(commandHolder.getCommandInfoMap()::get)
-                    .sort((o1, o2) -> Arrays.compare(o1.text(), o2.text()))
+                    .map(Map.Entry::getValue)
+                    .sort((o1, o2) -> Arrays.compare(o1.key(), o2.key()))
                     .collect(categoryCollector)
                     .map(builder -> builder.append(messageService.get(env.context(), "command.help.disclaimer.user"))
                             .append("\n").append(messageService.get(env.context(), "command.help.disclaimer.help")))
-                    .flatMap(str -> messageService.info(env, spec -> spec.title(messageService.get(env.context(),
-                                    categoriesWithCommands.get().get(category.orElseThrow(AssertionError::new)).get(0).getClass()
-                                            .getSuperclass().getCanonicalName()))
+                    .flatMap(str -> messageService.info(env, spec -> spec.title(messageService.getEnum(env.context(),
+                                    category.map(CommandCategory::valueOf).orElseThrow(IllegalStateException::new)))
                             .description(str.toString())));
         }
     }
@@ -228,7 +209,7 @@ public class Commands{
 
             Mono<String> handleAttachment = Mono.justOrEmpty(env.getMessage().getAttachments().stream()
                             .filter(att -> att.getWidth().isEmpty())
-                            .filter(att -> att.getContentType().map(str -> str.startsWith("text")).orElse(true))
+                            .filter(att -> att.getContentType().map(str -> str.startsWith("key")).orElse(true))
                             .findFirst())
                     .flatMap(att -> httpClient.get().get().uri(att.getUrl())
                             .responseSingle((res, buf) -> buf.asString()))
@@ -796,7 +777,7 @@ public class Commands{
             Mono<MessageChannel> channel = env.getReplyChannel();
             Member author = env.getAuthorAsMember();
 
-            String text = interaction.getOption("poll text")
+            String text = interaction.getOption("poll key")
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
                     .orElseThrow(IllegalStateException::new);
@@ -950,7 +931,8 @@ public class Commands{
     //endregion
     //region settings
 
-    @DiscordCommand(key = "prefix", params = "command.settings.prefix.params", description = "command.settings.prefix.description")
+    @DiscordCommand(key = "prefix", params = "command.settings.prefix.params", description = "command.settings.prefix.description",
+            category = CommandCategory.owner)
     public static class PrefixCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -995,7 +977,8 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "timezone", params = "command.settings.timezone.params", description = "command.settings.timezone.description")
+    @DiscordCommand(key = "timezone", params = "command.settings.timezone.params", description = "command.settings.timezone.description",
+            category = CommandCategory.owner)
     public static class TimezoneCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1036,7 +1019,8 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "locale", params = "command.settings.locale.params", description = "command.settings.locale.description")
+    @DiscordCommand(key = "locale", params = "command.settings.locale.params", description = "command.settings.locale.description",
+            category = CommandCategory.owner)
     public static class LocaleCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1077,7 +1061,8 @@ public class Commands{
     //region moderation
 
     @DiscordCommand(key = "mute", params = "command.admin.mute.params", description = "command.admin.mute.description",
-            permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_ROLES})
+            permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.MANAGE_ROLES},
+            category = CommandCategory.admin)
     public static class MuteCommand extends AdminCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1133,7 +1118,8 @@ public class Commands{
     }
 
     @DiscordCommand(key = "unmute", params = "command.admin.unmute.params", description = "command.admin.unmute.description",
-            permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS, Permission.MANAGE_ROLES})
+            permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS, Permission.MANAGE_ROLES},
+            category = CommandCategory.admin)
     public static class UnmuteCommand extends AdminCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1158,7 +1144,8 @@ public class Commands{
 
     @DiscordCommand(key = "delete", params = "command.admin.delete.params", description = "command.admin.delete.description",
             permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS,
-                           Permission.MANAGE_MESSAGES, Permission.READ_MESSAGE_HISTORY})
+                           Permission.MANAGE_MESSAGES, Permission.READ_MESSAGE_HISTORY},
+            category = CommandCategory.admin)
     public static class DeleteCommand extends AdminCommand{
         @Autowired
         private Settings settings;
@@ -1241,7 +1228,8 @@ public class Commands{
     }
 
     @DiscordCommand(key = "warn", params = "command.admin.warn.params", description = "command.admin.warn.description",
-            permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.BAN_MEMBERS})
+            permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.BAN_MEMBERS},
+            category = CommandCategory.admin)
     public static class WarnCommand extends AdminCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1303,7 +1291,8 @@ public class Commands{
     }
 
     @DiscordCommand(key = "softban", params = "command.admin.softban.params", description = "command.admin.softban.description",
-            permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS, Permission.BAN_MEMBERS})
+            permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS, Permission.BAN_MEMBERS},
+            category = CommandCategory.admin)
     public static class SoftbanCommand extends AdminCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1352,7 +1341,8 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "warnings", params = "command.admin.warnings.params", description = "command.admin.warnings.description")
+    @DiscordCommand(key = "warnings", params = "command.admin.warnings.params", description = "command.admin.warnings.description",
+            category = CommandCategory.admin)
     public static class WarningsCommand extends AdminCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1401,7 +1391,8 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "unwarn", params = "command.admin.unwarn.params", description = "command.admin.unwarn.description")
+    @DiscordCommand(key = "unwarn", params = "command.admin.unwarn.params", description = "command.admin.unwarn.description",
+            category = CommandCategory.admin)
     public static class UnwarnCommand extends AdminCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1443,7 +1434,8 @@ public class Commands{
         }
     }
 
-    @DiscordCommand(key = "unwarnall", params = "command.admin.unwarnall.params", description = "command.admin.unwarnall.description")
+    @DiscordCommand(key = "unwarnall", params = "command.admin.unwarnall.params", description = "command.admin.unwarnall.description",
+            category = CommandCategory.admin)
     public static class UnwarnAllCommand extends AdminCommand{
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1463,51 +1455,6 @@ public class Commands{
                     .switchIfEmpty(messageService.err(env, "command.admin.unwarnall.permission-denied").then(Mono.never())) // pluralized variant
                     .flatMap(target -> messageService.text(env, "command.admin.unwarnall", target.getUsername())
                             .then(adminService.unwarnAll(guildId, target.getId())));
-        }
-    }
-
-    //endregion
-    //region test
-
-    @DiscordCommand(key = "status", params = "command.status.params", description = "command.status.description")
-    public static class StatusCommand extends TestCommand{
-        @Override
-        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            String activity = interaction.getOption(0)
-                    .flatMap(CommandOption::getValue)
-                    .map(OptionValue::asString)
-                    .map(String::toLowerCase)
-                    .orElse("");
-
-            return switch(activity){
-                case "online" -> env.getClient().updatePresence(ClientPresence.online());
-                case "dnd" -> env.getClient().updatePresence(ClientPresence.doNotDisturb());
-                case "idle" -> env.getClient().updatePresence(ClientPresence.idle());
-                case "invisible" -> env.getClient().updatePresence(ClientPresence.invisible());
-                default -> messageService.err(env, "command.status.unknown-presence");
-            };
-        }
-    }
-
-    @DiscordCommand(key = "rm-cmd", params = "command.rm-cmd.params", description = "command.rm-cmd.description")
-    public static class RemoveCommand extends TestCommand{
-        @Override
-        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-            String commandName = interaction.getOption(0)
-                    .flatMap(CommandOption::getValue)
-                    .map(OptionValue::asString)
-                    .orElseThrow(IllegalStateException::new);
-
-            Mono<Long> applicationId = env.getClient().rest()
-                    .getApplicationId();
-
-            return applicationId.flatMap(id -> env.getClient().rest().getApplicationService()
-                            .getGlobalApplicationCommands(id)
-                            .filter(command -> command.name().equalsIgnoreCase(commandName)).next()
-                            .switchIfEmpty(messageService.err(env, "command.rm-cmd.unknown-command").then(Mono.empty()))
-                            .flatMap(command -> env.getClient().rest().getApplicationService()
-                                    .deleteGlobalApplicationCommand(id, Snowflake.asLong(command.id()))))
-                    .then(env.getMessage().addReaction(ok));
         }
     }
 

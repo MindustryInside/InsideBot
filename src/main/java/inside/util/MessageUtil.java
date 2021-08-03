@@ -64,11 +64,6 @@ public abstract class MessageUtil{
     }
 
     @Nullable
-    public static Snowflake parseUserId(String message){
-        return parseId(message.replaceAll("[<>@!]", ""));
-    }
-
-    @Nullable
     public static Snowflake parseRoleId(String message){
         return parseId(message.replaceAll("[<>@&]", ""));
     }

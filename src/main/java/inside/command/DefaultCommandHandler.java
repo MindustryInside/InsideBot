@@ -61,7 +61,7 @@ public class DefaultCommandHandler implements CommandHandler{
                 .cache();
 
         Mono<Void> suggestion = text.map(Tuple2::getT1).flatMap(commandName -> commandHolder.getCommandInfoMap().values().stream()
-                .flatMap(commandInfo -> Arrays.stream(commandInfo.text()))
+                .flatMap(commandInfo -> Arrays.stream(commandInfo.key()))
                 .min(Comparator.comparingInt(s -> Strings.levenshtein(s, commandName)))
                 .map(s -> messageService.err(environment, "command.response.found-closest", s))
                 .orElse(prefix.map(GuildConfig::formatPrefix).flatMap(str ->

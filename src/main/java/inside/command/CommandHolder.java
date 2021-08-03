@@ -37,7 +37,7 @@ public final class CommandHolder{
     private void registerCommands(List<Command> commands){
         for(Command command : commands){
             CommandInfo info = compile(command);
-            this.commands.put(info.text(), command);
+            this.commands.put(info.key(), command);
             commandInfo.put(command, info);
         }
     }
@@ -49,14 +49,14 @@ public final class CommandHolder{
             for(String s : meta.key()){
                 Preconditions.requireState(s.matches("^[\\S-]{1,32}$"), "Incorrect command alias '" + s + "' format!");
 
-                for(String s1 : commandInfo0.text()){
+                for(String s1 : commandInfo0.key()){
                     Preconditions.requireState(!s1.equals(s), () -> "Duplicate command alias '" + s + "' in '" +
                             command.getClass().getCanonicalName() + "' and '" + command0.getClass().getCanonicalName() + "'!");
                 }
             }
         });
 
-        // get 'en' parameter text for validation and option search
+        // get 'en' parameter key for validation and option search
         String paramText = messageService.get(Context.of(KEY_LOCALE, messageService.getDefaultLocale()), meta.params());
         String[] psplit = paramText.split("(?<=(\\]|>))\\s+(?=(\\[|<))");
         CommandParam[] params = CommandParam.empty;
@@ -91,7 +91,8 @@ public final class CommandHolder{
             }
         }
 
-        return new CommandInfo(meta.key(), meta.params(), meta.description(), params, meta.permissions());
+        return new CommandInfo(meta.key(), meta.params(), meta.description(),
+                params, meta.permissions(), meta.category());
     }
 
     public Map<String[], Command> getCommandsMap(){
