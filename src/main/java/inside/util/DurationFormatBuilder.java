@@ -26,9 +26,7 @@ public class DurationFormatBuilder{
 
     private static final ConcurrentMap<String, Pattern> PATTERNS = new ConcurrentHashMap<>();
 
-    private int minPrintedDigits;
     private int printZeroSetting;
-    private int maxParsedDigits;
     private boolean rejectSignedValues;
 
     private PeriodFieldAffix prefix;
@@ -56,69 +54,6 @@ public class DurationFormatBuilder{
         return new DurationFormatter(formatter);
     }
 
-    static void appendPaddedInteger(StringBuilder buf, int value, int size){
-        if(value < 0){
-            buf.append('-');
-            if(value != Integer.MIN_VALUE){
-                value = -value;
-            }else{
-                for(; size > 10; size--){
-                    buf.append('0');
-                }
-                buf.append(-(long)Integer.MIN_VALUE);
-                return;
-            }
-        }
-        if(value < 10){
-            for(; size > 1; size--){
-                buf.append('0');
-            }
-            buf.append((char)(value + '0'));
-        }else if(value < 100){
-            for(; size > 2; size--){
-                buf.append('0');
-            }
-            // Calculate value div/mod by 10 without using two expensive
-            // division operations. (2 ^ 27) / 10 = 13421772. Add one to
-            // value to correct rounding error.
-            int d = (value + 1) * 13421772 >> 27;
-            buf.append((char)(d + '0'));
-            // Append remainder by calculating (value - d * 10).
-            buf.append((char)(value - (d << 3) - (d << 1) + '0'));
-        }else{
-            int digits = Mathf.digits(value);
-            for(; size > digits; size--){
-                buf.append('0');
-            }
-            buf.append(value);
-        }
-    }
-
-    static void appendUnpaddedInteger(StringBuilder buf, int value){
-        if(value < 0){
-            buf.append('-');
-            if(value != Integer.MIN_VALUE){
-                value = -value;
-            }else{
-                buf.append(-(long)Integer.MIN_VALUE);
-                return;
-            }
-        }
-        if(value < 10){
-            buf.append((char)(value + '0'));
-        }else if(value < 100){
-            // Calculate value div/mod by 10 without using two expensive
-            // division operations. (2 ^ 27) / 10 = 13421772. Add one to
-            // value to correct rounding error.
-            int d = (value + 1) * 13421772 >> 27;
-            buf.append((char)(d + '0'));
-            // Append remainder by calculating (value - d * 10).
-            buf.append((char)(value - (d << 3) - (d << 1) + '0'));
-        }else{
-            buf.append(value);
-        }
-    }
-
     public DurationFormatter toFormatter(){
         DurationFormatter formatter = toFormatter(printers);
         for(FieldFormatter fieldFormatter : fieldFormatters){
@@ -134,9 +69,7 @@ public class DurationFormatBuilder{
     }
 
     public void clear(){
-        minPrintedDigits = 1;
         printZeroSetting = PRINT_ZERO_RARELY_LAST;
-        maxParsedDigits = 2;
         rejectSignedValues = false;
         prefix = null;
         if(printers == null){
@@ -162,16 +95,6 @@ public class DurationFormatBuilder{
     public DurationFormatBuilder appendLiteral(String text){
         Preconditions.requireState(prefix == null, "Prefix not followed by field");
         printers.add(new Literal(text));
-        return this;
-    }
-
-    public DurationFormatBuilder minimumPrintedDigits(int minDigits){
-        minPrintedDigits = minDigits;
-        return this;
-    }
-
-    public DurationFormatBuilder maximumParsedDigits(int maxDigits){
-        maxParsedDigits = maxDigits;
         return this;
     }
 
@@ -268,18 +191,9 @@ public class DurationFormatBuilder{
         return this;
     }
 
-    public DurationFormatBuilder appendMillis3Digit(){
-        appendField(7, 3);
-        return this;
-    }
-
     private void appendField(int type){
-        appendField(type, minPrintedDigits);
-    }
-
-    private void appendField(int type, int minPrinted){
-        FieldFormatter field = new FieldFormatter(minPrinted, printZeroSetting,
-                maxParsedDigits, rejectSignedValues, type, fieldFormatters, prefix, null);
+        FieldFormatter field = new FieldFormatter(printZeroSetting, rejectSignedValues,
+                type, fieldFormatters, prefix, null);
         printers.add(field);
         fieldFormatters[type] = field;
         prefix = null;
@@ -724,9 +638,7 @@ public class DurationFormatBuilder{
     }
 
     static class FieldFormatter implements DurationPrinter{
-        private final int minPrintedDigits;
         private final int printZeroSetting;
-        private final int maxParsedDigits;
         private final boolean rejectSignedValues;
 
         private final int fieldType;
@@ -738,13 +650,10 @@ public class DurationFormatBuilder{
         @Nullable
         private final PeriodFieldAffix suffix;
 
-        FieldFormatter(int minPrintedDigits, int printZeroSetting,
-                       int maxParsedDigits, boolean rejectSignedValues,
+        FieldFormatter(int printZeroSetting, boolean rejectSignedValues,
                        int fieldType, FieldFormatter[] fieldFormatters,
                        @Nullable PeriodFieldAffix prefix, @Nullable PeriodFieldAffix suffix){
-            this.minPrintedDigits = minPrintedDigits;
             this.printZeroSetting = printZeroSetting;
-            this.maxParsedDigits = maxParsedDigits;
             this.rejectSignedValues = rejectSignedValues;
             this.fieldType = fieldType;
             this.fieldFormatters = Objects.requireNonNull(fieldFormatters, "fieldFormatters");
@@ -755,9 +664,7 @@ public class DurationFormatBuilder{
         FieldFormatter(FieldFormatter field, PeriodFieldAffix suffix){
             Objects.requireNonNull(field, "field");
             Objects.requireNonNull(suffix, "suffix");
-            minPrintedDigits = field.minPrintedDigits;
             printZeroSetting = field.printZeroSetting;
-            maxParsedDigits = field.maxParsedDigits;
             rejectSignedValues = field.rejectSignedValues;
             fieldType = field.fieldType;
             fieldFormatters = field.fieldFormatters;
@@ -807,7 +714,7 @@ public class DurationFormatBuilder{
                 return 0;
             }
 
-            int sum = Math.max(Mathf.digits(valueLong), minPrintedDigits);
+            int sum = Mathf.digits(valueLong);
             int value = (int)valueLong;
 
             if(prefix != null){
@@ -831,12 +738,7 @@ public class DurationFormatBuilder{
             if(prefix != null){
                 prefix.formatTo(buf, value);
             }
-            int minDigits = minPrintedDigits;
-            if(minDigits <= 1){
-                appendUnpaddedInteger(buf, value);
-            }else{
-                appendPaddedInteger(buf, value, minDigits);
-            }
+            buf.append(value);
             if(suffix != null){
                 suffix.formatTo(buf, value);
             }
