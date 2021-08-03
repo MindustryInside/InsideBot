@@ -33,13 +33,12 @@ import static reactor.function.TupleUtils.*;
 public class DiscordServiceImpl implements DiscordService{
 
     private static final Logger log = Loggers.getLogger("inside.service.ActiveUserMonitor");
+    private final Map<String, InteractionCommand> commandMap = new LinkedHashMap<>();
 
     private GatewayDiscordClient gateway;
 
     @Autowired(required = false)
     private List<InteractionCommand> commands;
-
-    private final Map<String, InteractionCommand> commandMap = new LinkedHashMap<>();
 
     @Autowired(required = false)
     private ReactiveEventAdapter[] adapters;
@@ -67,7 +66,8 @@ public class DiscordServiceImpl implements DiscordService{
                         Intent.GUILD_MESSAGES,
                         Intent.GUILD_VOICE_STATES,
                         Intent.GUILD_MESSAGE_REACTIONS,
-                        Intent.DIRECT_MESSAGES
+                        Intent.DIRECT_MESSAGES,
+                        Intent.GUILD_WEBHOOKS
                 ))
                 .login()
                 .blockOptional()

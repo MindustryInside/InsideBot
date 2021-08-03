@@ -4,7 +4,8 @@ import java.util.function.Supplier;
 
 public abstract class Preconditions{
 
-    private Preconditions(){}
+    private Preconditions(){
+    }
 
     public static void requireArgument(boolean expression){
         if(!expression){

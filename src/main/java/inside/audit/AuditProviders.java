@@ -19,7 +19,8 @@ import static inside.util.ContextUtil.*;
 
 public class AuditProviders{
 
-    private AuditProviders(){}
+    private AuditProviders(){
+    }
 
     //region message
 

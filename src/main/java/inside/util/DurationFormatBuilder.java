@@ -43,6 +43,82 @@ public class DurationFormatBuilder{
         clear();
     }
 
+    private static DurationFormatter toFormatter(List<? extends DurationPrinter> printers){
+        int size = printers.size();
+        if(size >= 2 && printers.get(0) instanceof Separator sep){
+            if(sep.afterPrinter == null){
+                DurationFormatter f = toFormatter(printers.subList(2, size));
+                return new DurationFormatter(sep.finish(f.getPrinter()));
+            }
+        }
+
+        DurationPrinter formatter = printers.isEmpty() ? Literal.EMPTY : printers.get(0);
+        return new DurationFormatter(formatter);
+    }
+
+    static void appendPaddedInteger(StringBuilder buf, int value, int size){
+        if(value < 0){
+            buf.append('-');
+            if(value != Integer.MIN_VALUE){
+                value = -value;
+            }else{
+                for(; size > 10; size--){
+                    buf.append('0');
+                }
+                buf.append(-(long)Integer.MIN_VALUE);
+                return;
+            }
+        }
+        if(value < 10){
+            for(; size > 1; size--){
+                buf.append('0');
+            }
+            buf.append((char)(value + '0'));
+        }else if(value < 100){
+            for(; size > 2; size--){
+                buf.append('0');
+            }
+            // Calculate value div/mod by 10 without using two expensive
+            // division operations. (2 ^ 27) / 10 = 13421772. Add one to
+            // value to correct rounding error.
+            int d = (value + 1) * 13421772 >> 27;
+            buf.append((char)(d + '0'));
+            // Append remainder by calculating (value - d * 10).
+            buf.append((char)(value - (d << 3) - (d << 1) + '0'));
+        }else{
+            int digits = Mathf.digits(value);
+            for(; size > digits; size--){
+                buf.append('0');
+            }
+            buf.append(value);
+        }
+    }
+
+    static void appendUnpaddedInteger(StringBuilder buf, int value){
+        if(value < 0){
+            buf.append('-');
+            if(value != Integer.MIN_VALUE){
+                value = -value;
+            }else{
+                buf.append(-(long)Integer.MIN_VALUE);
+                return;
+            }
+        }
+        if(value < 10){
+            buf.append((char)(value + '0'));
+        }else if(value < 100){
+            // Calculate value div/mod by 10 without using two expensive
+            // division operations. (2 ^ 27) / 10 = 13421772. Add one to
+            // value to correct rounding error.
+            int d = (value + 1) * 13421772 >> 27;
+            buf.append((char)(d + '0'));
+            // Append remainder by calculating (value - d * 10).
+            buf.append((char)(value - (d << 3) - (d << 1) + '0'));
+        }else{
+            buf.append(value);
+        }
+    }
+
     public DurationFormatter toFormatter(){
         DurationFormatter formatter = toFormatter(printers);
         for(FieldFormatter fieldFormatter : fieldFormatters){
@@ -286,19 +362,6 @@ public class DurationFormatBuilder{
         pairs.add(separator);
         pairs.add(separator);
         return this;
-    }
-
-    private static DurationFormatter toFormatter(List<? extends DurationPrinter> printers){
-        int size = printers.size();
-        if(size >= 2 && printers.get(0) instanceof Separator sep){
-            if(sep.afterPrinter == null){
-                DurationFormatter f = toFormatter(printers.subList(2, size));
-                return new DurationFormatter(sep.finish(f.getPrinter()));
-            }
-        }
-
-        DurationPrinter formatter = printers.isEmpty() ? Literal.EMPTY : printers.get(0);
-        return new DurationFormatter(formatter);
     }
 
     interface PeriodFieldAffix{
@@ -817,7 +880,7 @@ public class DurationFormatBuilder{
                         }else{
                             return Long.MAX_VALUE;
                         }
-                        break;
+                        return value;
                     case PRINT_ZERO_RARELY_FIRST:
                         if(duration.isZero() && fieldFormatters[fieldType] == this){
                             int i = fieldType;
@@ -830,7 +893,7 @@ public class DurationFormatBuilder{
                         }else{
                             return Long.MAX_VALUE;
                         }
-                        break;
+                        return value;
                 }
             }
 
@@ -948,69 +1011,6 @@ public class DurationFormatBuilder{
         Separator finish(DurationPrinter afterPrinter){
             this.afterPrinter = afterPrinter;
             return this;
-        }
-    }
-
-    static void appendPaddedInteger(StringBuilder buf, int value, int size){
-        if(value < 0){
-            buf.append('-');
-            if(value != Integer.MIN_VALUE){
-                value = -value;
-            }else{
-                for(; size > 10; size--){
-                    buf.append('0');
-                }
-                buf.append(-(long)Integer.MIN_VALUE);
-                return;
-            }
-        }
-        if(value < 10){
-            for(; size > 1; size--){
-                buf.append('0');
-            }
-            buf.append((char)(value + '0'));
-        }else if(value < 100){
-            for(; size > 2; size--){
-                buf.append('0');
-            }
-            // Calculate value div/mod by 10 without using two expensive
-            // division operations. (2 ^ 27) / 10 = 13421772. Add one to
-            // value to correct rounding error.
-            int d = (value + 1) * 13421772 >> 27;
-            buf.append((char)(d + '0'));
-            // Append remainder by calculating (value - d * 10).
-            buf.append((char)(value - (d << 3) - (d << 1) + '0'));
-        }else{
-            int digits = Mathf.digits(value);
-            for(; size > digits; size--){
-                buf.append('0');
-            }
-            buf.append(value);
-        }
-    }
-
-    static void appendUnpaddedInteger(StringBuilder buf, int value){
-        if(value < 0){
-            buf.append('-');
-            if(value != Integer.MIN_VALUE){
-                value = -value;
-            }else{
-                buf.append(-(long)Integer.MIN_VALUE);
-                return;
-            }
-        }
-        if(value < 10){
-            buf.append((char)(value + '0'));
-        }else if(value < 100){
-            // Calculate value div/mod by 10 without using two expensive
-            // division operations. (2 ^ 27) / 10 = 13421772. Add one to
-            // value to correct rounding error.
-            int d = (value + 1) * 13421772 >> 27;
-            buf.append((char)(d + '0'));
-            // Append remainder by calculating (value - d * 10).
-            buf.append((char)(value - (d << 3) - (d << 1) + '0'));
-        }else{
-            buf.append(value);
         }
     }
 }

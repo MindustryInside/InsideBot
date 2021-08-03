@@ -9,14 +9,14 @@ public final class Mathf{
 
     public static int digits(int n){
         return n < 100000 ?
-               n < 100 ?
-               n < 10 ? 1 : 2 :
-               n < 1000 ? 3 :
-               n < 10000 ? 4 : 5 :
-               n < 10000000 ?
-               n < 1000000 ? 6 : 7 :
-               n < 100000000 ? 8 :
-               n < 1000000000 ? 9 : 10;
+                n < 100 ?
+                n < 10 ? 1 : 2 :
+                n < 1000 ? 3 :
+                n < 10000 ? 4 : 5 :
+                n < 10000000 ?
+                n < 1000000 ? 6 : 7 :
+                n < 100000000 ? 8 :
+                n < 1000000000 ? 9 : 10;
     }
 
     public static int digits(long n){
@@ -44,7 +44,9 @@ public final class Mathf{
     }
 
     public static int nextPowerOfTwo(int value){
-        if(value == 0) return 1;
+        if(value == 0){
+            return 1;
+        }
         value--;
         value |= value >> 1;
         value |= value >> 2;
@@ -58,11 +60,11 @@ public final class Mathf{
         return value != 0 && (value & value - 1) == 0;
     }
 
-    public static short max(short a, short b) {
+    public static short max(short a, short b){
         return a >= b ? a : b;
     }
 
-    public static short min(short a, short b) {
+    public static short min(short a, short b){
         return a <= b ? a : b;
     }
 
@@ -88,10 +90,6 @@ public final class Mathf{
 
     public static double clamp(double value, double min, double max){
         return Math.max(min, Math.min(max, value));
-    }
-
-    public static float maxZero(float val){
-        return Math.max(val, 0);
     }
 
     public static int floor(float value){

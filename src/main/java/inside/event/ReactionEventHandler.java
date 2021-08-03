@@ -37,7 +37,7 @@ public class ReactionEventHandler extends ReactiveEventAdapter{
                         KEY_TIMEZONE, guildConfig.timeZone()));
 
         return initContext.flatMap(context -> Mono.zip(event.getUser().flatMap(user -> user.asMember(guildId)),
-                event.getChannel().ofType(GuildChannel.class))
+                        event.getChannel().ofType(GuildChannel.class))
                 .flatMap(function((member, channel) -> auditService.newBuilder(guildId, AuditActionType.REACTION_ADD)
                         .withUser(member)
                         .withChannel(channel)
@@ -60,7 +60,7 @@ public class ReactionEventHandler extends ReactiveEventAdapter{
                         KEY_TIMEZONE, guildConfig.timeZone()));
 
         return initContext.flatMap(context -> Mono.zip(event.getUser().flatMap(user -> user.asMember(guildId)),
-                event.getChannel().ofType(GuildChannel.class))
+                        event.getChannel().ofType(GuildChannel.class))
                 .flatMap(function((member, channel) -> auditService.newBuilder(guildId, AuditActionType.REACTION_REMOVE)
                         .withUser(member)
                         .withChannel(channel)

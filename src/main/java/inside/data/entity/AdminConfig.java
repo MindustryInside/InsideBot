@@ -82,7 +82,7 @@ public class AdminConfig extends GuildEntity{
 
     public void adminRoleIds(Set<Snowflake> adminRoleIDs){
         Objects.requireNonNull(adminRoleIDs, "adminRoleIDs");
-        this.adminRoleIds = adminRoleIDs.stream()
+        adminRoleIds = adminRoleIDs.stream()
                 .map(id -> Id.of(id.asLong()))
                 .collect(Collectors.toSet());
     }

@@ -62,8 +62,8 @@ public class MemberEventHandler extends ReactiveEventAdapter{
         Mono<?> muteEvade = Mono.deferContextual(ctx -> member.getGuild().flatMap(Guild::getOwner)
                 .filterWhen(ignored -> adminService.isMuted(member))
                 .flatMap(owner -> adminConfig.flatMap(config -> adminService.mute(owner, member,
-                        Instant.now().plus(config.muteBaseDelay()),
-                        messageService.get(ctx, "audit.member.mute.evade"))
+                                Instant.now().plus(config.muteBaseDelay()),
+                                messageService.get(ctx, "audit.member.mute.evade"))
                         .thenReturn(owner)))
                 .switchIfEmpty(warn.then(Mono.empty())));
 
@@ -164,7 +164,9 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                                 }
 
                                 boolean added = oldRoleIds.size() < event.getCurrentRoleIds().size();
-                                List<Snowflake> difference = new ArrayList<>(added ? event.getCurrentRoleIds() : oldRoleIds);
+                                List<Snowflake> difference = new ArrayList<>(added
+                                        ? event.getCurrentRoleIds()
+                                        : oldRoleIds);
                                 difference.removeIf(added ? oldRoleIds::contains : event.getCurrentRoleIds()::contains);
 
                                 return auditService.newBuilder(guildId, added ? MEMBER_ROLE_ADD : MEMBER_ROLE_REMOVE)

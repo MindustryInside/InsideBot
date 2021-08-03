@@ -19,15 +19,15 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @SpringBootApplication
 public class InsideBot{
 
+    public static void main(String[] args){
+        SpringApplication.run(InsideBot.class, args);
+    }
+
     @Bean
     public MessageSource messageSource(){
         ResourceBundleMessageSource bundle = new ResourceBundleMessageSource();
         bundle.setBasename("bundle");
         bundle.setDefaultEncoding("utf-8");
         return bundle;
-    }
-
-    public static void main(String[] args){
-        SpringApplication.run(InsideBot.class, args);
     }
 }

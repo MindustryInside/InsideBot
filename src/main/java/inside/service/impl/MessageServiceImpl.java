@@ -138,9 +138,9 @@ public class MessageServiceImpl implements MessageService{
                     var messageSpec = MessageCreateSpec.builder();
 
                     message.andThen(spec -> spec.messageReference(ctx.<Boolean>getOrEmpty(KEY_REPLY).orElse(false)
-                            ? Possible.of(environment.getMessage().getId())
-                            : Possible.absent())
-                            .allowedMentions(AllowedMentions.suppressAll()))
+                                            ? Possible.of(environment.getMessage().getId())
+                                            : Possible.absent())
+                                    .allowedMentions(AllowedMentions.suppressAll()))
                             .accept(messageSpec);
 
                     return c.createMessage(messageSpec.build());
@@ -151,13 +151,13 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public Mono<Void> info(Mono<? extends MessageChannel> channel, String title, String text, Object... args){
         return Mono.deferContextual(ctx -> channel.flatMap(c -> c.createMessage(MessageCreateSpec.builder()
-                .allowedMentions(AllowedMentions.suppressAll())
-                .addEmbed(EmbedCreateSpec.builder()
-                        .title(get(ctx, title))
-                        .description(format(ctx, text, args))
-                        .color(settings.getDefaults().getNormalColor())
-                        .build())
-                .build())))
+                        .allowedMentions(AllowedMentions.suppressAll())
+                        .addEmbed(EmbedCreateSpec.builder()
+                                .title(get(ctx, title))
+                                .description(format(ctx, text, args))
+                                .color(settings.getDefaults().getNormalColor())
+                                .build())
+                        .build())))
                 .then();
     }
 
@@ -194,17 +194,17 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public Mono<Void> error(CommandEnvironment environment, String title, String text, Object... args){
         return Mono.deferContextual(ctx -> environment.getReplyChannel()
-                .flatMap(c -> c.createMessage(MessageCreateSpec.builder()
-                        .messageReference(ctx.<Boolean>getOrEmpty(KEY_REPLY).orElse(false)
-                                ? Possible.of(environment.getMessage().getId())
-                                : Possible.absent())
-                        .allowedMentions(AllowedMentions.suppressAll())
-                        .addEmbed(EmbedCreateSpec.builder()
-                                .color(settings.getDefaults().getErrorColor())
-                                .description(format(ctx, text, args))
-                                .title(get(ctx, title))
-                                .build())
-                        .build())))
+                        .flatMap(c -> c.createMessage(MessageCreateSpec.builder()
+                                .messageReference(ctx.<Boolean>getOrEmpty(KEY_REPLY).orElse(false)
+                                        ? Possible.of(environment.getMessage().getId())
+                                        : Possible.absent())
+                                .allowedMentions(AllowedMentions.suppressAll())
+                                .addEmbed(EmbedCreateSpec.builder()
+                                        .color(settings.getDefaults().getErrorColor())
+                                        .description(format(ctx, text, args))
+                                        .title(get(ctx, title))
+                                        .build())
+                                .build())))
                 .flatMap(message -> Mono.delay(settings.getDiscord().getErrorEmbedTtl())
                         .then(message.delete().and(environment.getMessage().addReaction(failed))));
     }

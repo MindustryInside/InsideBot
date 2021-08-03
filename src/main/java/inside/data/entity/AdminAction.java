@@ -40,7 +40,8 @@ public class AdminAction extends GuildEntity{
     @Column(name = "end_timestamp")
     private Instant endTimestamp;
 
-    protected AdminAction(){}
+    protected AdminAction(){
+    }
 
     @Builder.Constructor
     protected AdminAction(long guildId, AdminActionType type,

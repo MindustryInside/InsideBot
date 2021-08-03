@@ -115,7 +115,9 @@ public class DefaultCommandHandler implements CommandHandler{
                         }else{
                             String arg = argstr.substring(0, next);
                             argstr = argstr.substring(arg.length() + 1);
-                            if(arg.isBlank()) continue;
+                            if(arg.isBlank()){
+                                continue;
+                            }
                             result.add(new CommandOption(info.params()[index], arg));
                         }
 
@@ -132,25 +134,25 @@ public class DefaultCommandHandler implements CommandHandler{
 
                     Predicate<Throwable> missingAccess = t -> t.getMessage() != null &&
                             (t.getMessage().contains("Missing Access") ||
-                            t.getMessage().contains("Missing Permissions"));
+                                    t.getMessage().contains("Missing Permissions"));
 
                     Function<Throwable, Mono<Void>> fallback = t -> Flux.fromIterable(info.permissions())
                             .filterWhen(permission -> environment.getReplyChannel().cast(GuildMessageChannel.class)
                                     .flatMap(targetChannel ->
-                                    targetChannel.getEffectivePermissions(selfId))
+                                            targetChannel.getEffectivePermissions(selfId))
                                     .map(set -> !set.contains(permission)))
                             .map(permission -> messageService.getEnum(environment.context(), permission))
                             .map("• "::concat)
                             .collect(Collectors.joining("\n"))
                             .filter(s -> !s.isBlank())
                             .flatMap(s -> messageService.text(environment, String.format("%s%n%n%s",
-                            messageService.get(environment.context(), "message.error.permission-denied.title"),
-                            messageService.format(environment.context(), "message.error.permission-denied.description", s)))
-                            .onErrorResume(missingAccess, t0 -> guild.flatMap(Guild::getOwner)
-                                    .flatMap(User::getPrivateChannel)
-                                    .transform(c -> messageService.info(c,
                                             messageService.get(environment.context(), "message.error.permission-denied.title"),
-                                            messageService.format(environment.context(), "message.error.permission-denied.description", s)))));
+                                            messageService.format(environment.context(), "message.error.permission-denied.description", s)))
+                                    .onErrorResume(missingAccess, t0 -> guild.flatMap(Guild::getOwner)
+                                            .flatMap(User::getPrivateChannel)
+                                            .transform(c -> messageService.info(c,
+                                                    messageService.get(environment.context(), "message.error.permission-denied.title"),
+                                                    messageService.format(environment.context(), "message.error.permission-denied.description", s)))));
 
                     return Mono.just(command)
                             .filterWhen(c -> c.filter(environment))
@@ -164,7 +166,7 @@ public class DefaultCommandHandler implements CommandHandler{
         for(int i = 0; i < text.length(); i++){
             char c = text.charAt(i);
             if(Character.isWhitespace(c) && (i + 1 < text.length() && !Character.isWhitespace(text.charAt(i + 1)) ||
-                    i - 1 != -1 && !Character.isWhitespace(text.charAt(i -1)))){
+                    i - 1 != -1 && !Character.isWhitespace(text.charAt(i - 1)))){
                 return i;
             }
         }

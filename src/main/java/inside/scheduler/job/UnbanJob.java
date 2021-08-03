@@ -13,6 +13,7 @@ import java.util.UUID;
 import static inside.scheduler.job.RemindJob.*;
 import static inside.util.ContextUtil.*;
 
+// TODO: currently unused
 @Component
 public class UnbanJob implements Job{
 
@@ -27,6 +28,14 @@ public class UnbanJob implements Job{
     @Autowired
     private EntityRetriever entityRetriever;
 
+    public static JobDetail createDetails(Member member){
+        return JobBuilder.newJob(UnbanJob.class)
+                .withIdentity(GROUP + "-" + UUID.randomUUID(), GROUP)
+                .usingJobData(ATT_GUILD_ID, member.getGuildId().asString())
+                .usingJobData(ATT_USER_ID, member.getId().asString())
+                .build();
+    }
+
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException{
         Snowflake guildId = Snowflake.of(context.getMergedJobDataMap().getString(ATT_GUILD_ID));
@@ -38,13 +47,5 @@ public class UnbanJob implements Job{
                         adminService.unban(target).contextWrite(ctx -> ctx.put(KEY_LOCALE, guildConfig.locale())
                                 .put(KEY_TIMEZONE, guildConfig.timeZone()))))
                 .subscribe();
-    }
-
-    public static JobDetail createDetails(Member member){
-        return JobBuilder.newJob(UnbanJob.class)
-                .withIdentity(GROUP + "-" + UUID.randomUUID(), GROUP)
-                .usingJobData(ATT_GUILD_ID, member.getGuildId().asString())
-                .usingJobData(ATT_USER_ID, member.getId().asString())
-                .build();
     }
 }

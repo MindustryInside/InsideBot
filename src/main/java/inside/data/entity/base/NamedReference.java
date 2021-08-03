@@ -17,7 +17,8 @@ public class NamedReference{
     @Column
     private String discriminator;
 
-    protected NamedReference(){}
+    protected NamedReference(){
+    }
 
     public NamedReference(Snowflake id, String name, String discriminator){
         this.id = Objects.requireNonNull(id, "id").asString();
@@ -57,8 +58,12 @@ public class NamedReference{
 
     @Override
     public boolean equals(Object o){
-        if(this == o) return true;
-        if(o == null || getClass() != o.getClass()) return false;
+        if(this == o){
+            return true;
+        }
+        if(o == null || getClass() != o.getClass()){
+            return false;
+        }
         NamedReference that = (NamedReference)o;
         return id.equals(that.id) && name.equals(that.name) &&
                 Objects.equals(discriminator, that.discriminator);

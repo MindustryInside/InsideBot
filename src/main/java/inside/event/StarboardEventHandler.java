@@ -66,9 +66,9 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
         Mono<Starboard> starboard = entityRetriever.getStarboardById(guildId, event.getMessageId());
 
         return initContext.zipWith(starboardConfig).zipWhen(tuple -> Mono.just(tuple.getT2().emojis().stream()
-                        .map(ReactionEmoji::of)
-                        .collect(Collectors.toList())),
-                (tuple, emojis) -> Tuples.of(tuple.getT1(), tuple.getT2(), emojis))
+                                .map(ReactionEmoji::of)
+                                .collect(Collectors.toList())),
+                        (tuple, emojis) -> Tuples.of(tuple.getT1(), tuple.getT2(), emojis))
                 .flatMap(function((context, config, emojis) -> emojisCount.apply(emojis).flatMap(l -> {
                     Snowflake channelId = config.starboardChannelId().orElse(null);
                     if(!config.isEnabled() || channelId == null || !emojis.contains(emoji) || l < config.lowerStarBarrier()){
@@ -85,14 +85,14 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
                     Mono<Message> findIfAbsent = Mono.zip(starboardChannel, event.getMessage(), author)
                             .flatMap(function((channel, source, user) -> channel.getLastMessageId()
-                            .map(channel::getMessagesBefore).orElse(Flux.empty())
-                            .take(Duration.ofSeconds(4))
-                            .filter(m -> m.getEmbeds().size() == 1 && m.getEmbeds().get(0).getFields().size() >= 1)
-                            .filter(m -> m.getEmbeds().get(0).getFields().get(0)
-                                    .getValue().endsWith(source.getId().asString() + ")")) // match md link
-                            .next()
-                            .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId())
-                                    .thenReturn(target))))
+                                    .map(channel::getMessagesBefore).orElse(Flux.empty())
+                                    .take(Duration.ofSeconds(4))
+                                    .filter(m -> m.getEmbeds().size() == 1 && m.getEmbeds().get(0).getFields().size() >= 1)
+                                    .filter(m -> m.getEmbeds().get(0).getFields().get(0)
+                                            .getValue().endsWith(source.getId().asString() + ")")) // match md link
+                                    .next()
+                                    .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId())
+                                            .thenReturn(target))))
                             .timeout(Duration.ofSeconds(6), Mono.empty());
 
                     Mono<Message> targetMessage = starboard.zipWith(starboardChannel)
@@ -120,7 +120,9 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                             .collect(Collectors.toSet());
 
                                     if(files.size() != 0){
-                                        String key = files.size() == 1 ? "starboard.attachment" : "starboard.attachments";
+                                        String key = files.size() == 1
+                                                ? "starboard.attachment"
+                                                : "starboard.attachments";
                                         embedSpec.addField(messageService.get(context, key), files.stream()
                                                 .map(att -> String.format("[%s](%s)%n", att.getFilename(), att.getUrl()))
                                                 .collect(Collectors.joining()), false);
@@ -185,12 +187,12 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                 .findFirst().ifPresent(embedSpec::image);
 
                         return channel.createMessage(MessageCreateSpec.builder()
-                                .content(messageService.format(
-                                        context, "starboard.format", formatted.get(Mathf.clamp((l - 1) / 5, 0, formatted.size() - 1)),
-                                        l, DiscordUtil.getChannelMention(source.getChannelId())))
-                                .allowedMentions(AllowedMentions.suppressAll())
-                                .addEmbed(embedSpec.build())
-                                .build())
+                                        .content(messageService.format(
+                                                context, "starboard.format", formatted.get(Mathf.clamp((l - 1) / 5, 0, formatted.size() - 1)),
+                                                l, DiscordUtil.getChannelMention(source.getChannelId())))
+                                        .allowedMentions(AllowedMentions.suppressAll())
+                                        .addEmbed(embedSpec.build())
+                                        .build())
                                 .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId())
                                         .thenReturn(target));
                     }));
@@ -222,9 +224,9 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                 .defaultIfEmpty(0);
 
         return initContext.zipWith(starboardConfig).zipWhen(tuple -> Mono.just(tuple.getT2().emojis().stream()
-                        .map(ReactionEmoji::of)
-                        .collect(Collectors.toList())),
-                (tuple, emojis) -> Tuples.of(tuple.getT1(), tuple.getT2(), emojis))
+                                .map(ReactionEmoji::of)
+                                .collect(Collectors.toList())),
+                        (tuple, emojis) -> Tuples.of(tuple.getT1(), tuple.getT2(), emojis))
                 .flatMap(function((context, config, emojis) -> emojisCount.apply(emojis).flatMap(l -> {
                     Snowflake channelId = config.starboardChannelId().orElse(null);
                     if(!config.isEnabled() || channelId == null || !emojis.contains(emoji)){
@@ -241,13 +243,13 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                     Mono<Message> findIfAbsent = Mono.zip(starboardChannel, event.getMessage())
                             .flatMap(function((channel, source) -> channel.getLastMessageId()
                                     .map(channel::getMessagesBefore).orElse(Flux.empty())
-                            .take(Duration.ofSeconds(4))
-                            .filter(m -> m.getEmbeds().size() == 1 && m.getEmbeds().get(0).getFields().size() >= 1)
-                            .filter(m -> m.getEmbeds().get(0).getFields().get(0)
-                                    .getValue().endsWith(source.getId().asString() + ")")) // match md link
-                            .next()
-                            .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId())
-                                    .thenReturn(target))))
+                                    .take(Duration.ofSeconds(4))
+                                    .filter(m -> m.getEmbeds().size() == 1 && m.getEmbeds().get(0).getFields().size() >= 1)
+                                    .filter(m -> m.getEmbeds().get(0).getFields().get(0)
+                                            .getValue().endsWith(source.getId().asString() + ")")) // match md link
+                                    .next()
+                                    .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId())
+                                            .thenReturn(target))))
                             .timeout(Duration.ofSeconds(6), Mono.empty());
 
                     Mono<Starboard> starboard = entityRetriever.getStarboardById(guildId, event.getMessageId());
@@ -291,7 +293,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                                 l, DiscordUtil.getChannelMention(sourceChannelId)))
                                         .build());
                             }));
-        }).contextWrite(context)));
+                }).contextWrite(context)));
     }
 
     @Override
@@ -326,14 +328,14 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
     }
 
     private Color lerp(Color source, Color target, float t){
-        float r = source.getRed()/255f;
-        r += t * (target.getRed()/255f - r);
+        float r = source.getRed() / 255f;
+        r += t * (target.getRed() / 255f - r);
 
-        float g = source.getGreen()/255f;
-        g += t * (target.getGreen()/255f - g);
+        float g = source.getGreen() / 255f;
+        g += t * (target.getGreen() / 255f - g);
 
-        float b = source.getBlue()/255f;
-        b += t * (target.getBlue()/255f - b);
+        float b = source.getBlue() / 255f;
+        b += t * (target.getBlue() / 255f - b);
 
         Color c = Color.of(Mathf.clamp(r), Mathf.clamp(g), Mathf.clamp(b));
         return toIntBits(c) < toIntBits(target) ? target : c;

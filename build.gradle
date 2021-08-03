@@ -6,14 +6,14 @@ plugins{
 }
 
 ext{
-    caffeine_version = '3.0.2'
-    evalex_version = '2.5'
+    caffeine_version = '3.0.3'
+    evalex_version = '2.6'
 
     servicer_version = '1.0.3'
-    immutables_version = '2.8.2'
-    jackson_version = '2.12.3'
+    immutables_version = '2.8.8'
+    jackson_version = '2.12.4'
 
-    junit_version = '5.7.1'
+    junit_version = '5.7.2'
 }
 
 allprojects{
@@ -48,6 +48,10 @@ allprojects{
 
     tasks.withType(Test){
         useJUnitPlatform()
+    }
+
+    configurations.all{
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
     }
 }
 

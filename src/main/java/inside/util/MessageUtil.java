@@ -32,7 +32,8 @@ public abstract class MessageUtil{
             Pattern.CASE_INSENSITIVE
     );
 
-    private MessageUtil(){}
+    private MessageUtil(){
+    }
 
     public static boolean isEmpty(@Nullable Message message){
         return message == null || effectiveContent(message).isEmpty();

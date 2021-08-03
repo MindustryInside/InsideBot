@@ -2,22 +2,17 @@ package inside.util;
 
 public class SnowflakeIdGenerator{
 
-    protected long lastTimestamp = -1L;
-    protected long sequence = 0;
-
     protected final long epoch;
     protected final long workerId;
     protected final long processId;
+    protected long lastTimestamp = -1L;
+    protected long sequence = 0;
 
     public SnowflakeIdGenerator(long epoch, long workerId, long processId){
-        if(workerId > 31 || workerId < 0){
-            throw new IllegalArgumentException("Worker Id can't be greater than 31 or less than 0");
-        }
-
-        if(processId > 31 || processId < 0){
-            throw new IllegalArgumentException("Process Id can't be greater than 31 or less than 0");
-        }
-
+        Preconditions.requireArgument(workerId <= 31 && workerId >= 0,
+                "Worker Id can't be greater than 31 or less than 0");
+        Preconditions.requireArgument(processId <= 31 && processId >= 0,
+                "Process Id can't be greater than 31 or less than 0");
         this.epoch = epoch;
         this.workerId = workerId;
         this.processId = processId;

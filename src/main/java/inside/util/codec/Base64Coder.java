@@ -20,6 +20,7 @@ public class Base64Coder{
         return new String(encode(s.getBytes(StandardCharsets.UTF_8),
                 useUrlsafeEncoding ? urlsafeMap.encodingMap : regularMap.encodingMap));
     }
+
     public static String encodeLines(byte[] in){
         return encodeLines(in, 0, in.length, 76, System.lineSeparator(), regularMap.encodingMap);
     }
@@ -95,7 +96,9 @@ public class Base64Coder{
     }
 
     public static String decodeString(String s, boolean useUrlSafeEncoding){
-        return new String(decode(s.toCharArray(), useUrlSafeEncoding ? urlsafeMap.decodingMap : regularMap.decodingMap));
+        return new String(decode(s.toCharArray(), useUrlSafeEncoding
+                ? urlsafeMap.decodingMap
+                : regularMap.decodingMap));
     }
 
     public static byte[] decodeLines(String s){

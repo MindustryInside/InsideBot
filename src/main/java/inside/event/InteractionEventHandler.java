@@ -39,9 +39,9 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
                         ContextUtil.KEY_TIMEZONE, settings.getDefaults().getTimeZone()));
 
         return initContext.flatMap(context -> discordService.handle(InteractionCommandEnvironment.builder()
-                .event(event)
-                .context(context)
-                .build())
+                        .event(event)
+                        .context(context)
+                        .build())
                 .contextWrite(context));
     }
 }

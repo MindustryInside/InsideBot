@@ -24,12 +24,21 @@ public final class CommandHolder{
         this.messageService = messageService;
     }
 
+    private static <T> boolean contains(T[] arr, T value){
+        for(T t : arr){
+            if(Objects.equals(t, value)){
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Autowired(required = false)
     private void registerCommands(List<Command> commands){
         for(Command command : commands){
             CommandInfo info = compile(command);
             this.commands.put(info.text(), command);
-            this.commandInfo.put(command, info);
+            commandInfo.put(command, info);
         }
     }
 
@@ -108,14 +117,5 @@ public final class CommandHolder{
                 .map(Map.Entry::getValue)
                 .map(commandInfo::get)
                 .findFirst();
-    }
-
-    private static <T> boolean contains(T[] arr, T value){
-        for(T t : arr){
-            if(Objects.equals(t, value)){
-                return true;
-            }
-        }
-        return false;
     }
 }

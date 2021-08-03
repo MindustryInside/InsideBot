@@ -211,15 +211,15 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                             .sort(Comparator.comparing(AuditLogEntry::getId).reversed())
                             .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now(Clock.systemUTC()).minusMillis(TIMEOUT_MILLIS)) ||
                                     entry.getOption(OptionKey.COUNT).map(i -> i > 1).orElse(false) &&
-                                    entry.getId().getTimestamp().isAfter(Instant.now(Clock.systemUTC()).minus(5, ChronoUnit.MINUTES)))
+                                            entry.getId().getTimestamp().isAfter(Instant.now(Clock.systemUTC()).minus(5, ChronoUnit.MINUTES)))
                             .filter(entry -> entry.getTargetId().map(id -> id.equals(info.userId())).orElse(false) &&
                                     entry.getOption(OptionKey.CHANNEL_ID).map(id -> id.equals(message.getChannelId())).orElse(false))
                             .next()
                             .flatMap(entry -> Mono.justOrEmpty(entry.getResponsibleUser()));
 
                     return responsibleUser.defaultIfEmpty(author).map(user -> builder.withUser(user)
-                            .withTargetUser(author)
-                            .withAttribute(AVATAR_URL, author.getAvatarUrl()))
+                                    .withTargetUser(author)
+                                    .withAttribute(AVATAR_URL, author.getAvatarUrl()))
                             .flatMap(AuditActionBuilder::save)
                             .and(entityRetriever.delete(info));
                 }))

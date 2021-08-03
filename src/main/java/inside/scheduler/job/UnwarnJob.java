@@ -19,17 +19,17 @@ public class UnwarnJob implements Job{
     @Autowired
     private AdminActionRepository actionRepository;
 
-    @Override
-    @Transactional
-    public void execute(JobExecutionContext context) throws JobExecutionException{
-        long id = context.getMergedJobDataMap().getLongValue(ATT_ID);
-        actionRepository.deleteById(id);
-    }
-
     public static JobDetail createDetails(AdminAction action){
         return JobBuilder.newJob(UnwarnJob.class)
                 .withIdentity(GROUP + "-" + UUID.randomUUID(), GROUP)
                 .usingJobData(ATT_ID, Snowflake.asString(action.id()))
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public void execute(JobExecutionContext context) throws JobExecutionException{
+        long id = context.getMergedJobDataMap().getLongValue(ATT_ID);
+        actionRepository.deleteById(id);
     }
 }

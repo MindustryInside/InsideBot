@@ -33,6 +33,6 @@ public enum AuditActionType{
     public final Color color;
 
     AuditActionType(int hex){
-        this.color = Color.of(hex);
+        color = Color.of(hex);
     }
 }

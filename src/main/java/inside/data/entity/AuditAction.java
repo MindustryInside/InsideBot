@@ -51,7 +51,8 @@ public class AuditAction extends GuildEntity{
     @Column(columnDefinition = "json")
     private Map<String, Object> attributes;
 
-    public AuditAction(){}
+    public AuditAction(){
+    }
 
     public AuditAction(Snowflake guildId){
         this.guildId = Objects.requireNonNull(guildId, "guildId").asLong();

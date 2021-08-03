@@ -10,7 +10,8 @@ public abstract class ContextUtil{
     public static final String KEY_REPLY = "inside.reply";
     public static final String KEY_EPHEMERAL = "inside.ephemeral";
 
-    private ContextUtil(){}
+    private ContextUtil(){
+    }
 
     public static UnaryOperator<Context> reset(){
         return ctx -> ctx.delete(KEY_LOCALE)

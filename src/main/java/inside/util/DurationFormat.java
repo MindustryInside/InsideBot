@@ -28,7 +28,7 @@ public class DurationFormat{
             formatter = new DurationFormatter(dynamic, locale);
             DurationFormatter existing = FORMATTERS.putIfAbsent(locale, formatter);
             if(existing != null){
-                formatter = existing;
+                return existing;
             }
         }
         return formatter;

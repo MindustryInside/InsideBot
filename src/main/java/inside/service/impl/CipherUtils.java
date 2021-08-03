@@ -9,7 +9,8 @@ import java.security.spec.*;
 
 final class CipherUtils{
 
-    private CipherUtils(){}
+    private CipherUtils(){
+    }
 
     static SecretKey newSecretKey(String algorithm, PBEKeySpec keySpec){
         try{

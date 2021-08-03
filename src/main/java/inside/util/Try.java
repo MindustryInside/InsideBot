@@ -56,6 +56,11 @@ public abstract class Try<T>{
         return (Try<T>)t;
     }
 
+    @SuppressWarnings("unchecked")
+    private static <T extends Throwable, R> R sneakyThrow(Throwable t) throws T{
+        throw (T)t;
+    }
+
     public final Optional<T> toOptional(){
         return isSuccess() ? Optional.ofNullable(get()) : Optional.empty();
     }
@@ -226,7 +231,6 @@ public abstract class Try<T>{
         return this;
     }
 
-
     @Nullable
     public final T orElse(@Nullable T other){
         return isSuccess() ? get() : other;
@@ -332,15 +336,15 @@ public abstract class Try<T>{
         Objects.requireNonNull(exceptionType, "exceptionType");
         Objects.requireNonNull(recovered, "recovered");
         return isFailure() && exceptionType.isAssignableFrom(getCause().getClass())
-               ? narrow(recovered)
-               : this;
+                ? narrow(recovered)
+                : this;
     }
 
     public final <X extends Throwable> Try<T> recover(Class<X> exceptionType, T value){
         Objects.requireNonNull(exceptionType, "exceptionType");
         return isFailure() && exceptionType.isAssignableFrom(getCause().getClass())
-               ? success(value)
-               : this;
+                ? success(value)
+                : this;
     }
 
     public final Try<T> recover(Function<? super Throwable, ? extends T> function){
@@ -415,8 +419,12 @@ public abstract class Try<T>{
 
         @Override
         public boolean equals(Object o){
-            if(this == o) return true;
-            if(o == null || getClass() != o.getClass()) return false;
+            if(this == o){
+                return true;
+            }
+            if(o == null || getClass() != o.getClass()){
+                return false;
+            }
             Success<?> success = (Success<?>)o;
             return Objects.equals(value, success.value);
         }
@@ -464,8 +472,12 @@ public abstract class Try<T>{
 
         @Override
         public boolean equals(Object o){
-            if(this == o) return true;
-            if(o == null || getClass() != o.getClass()) return false;
+            if(this == o){
+                return true;
+            }
+            if(o == null || getClass() != o.getClass()){
+                return false;
+            }
             Failure<?> failure = (Failure<?>)o;
             return cause.equals(failure.cause);
         }
@@ -479,10 +491,5 @@ public abstract class Try<T>{
         public String toString(){
             return "Failure{" + cause + '}';
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T extends Throwable, R> R sneakyThrow(Throwable t) throws T{
-        throw (T)t;
     }
 }

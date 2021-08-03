@@ -15,13 +15,35 @@ class AesEncryptor{
     private final SecureRandom rand = new SecureRandom();
 
     public AesEncryptor(String password, CharSequence salt){
-        this(CipherUtils.newSecretKey("PBKDF2WithHmacSHA1", new PBEKeySpec(password.toCharArray(), Hex.decode(salt), 1024, 256)));
+        this(CipherUtils.newSecretKey("PBKDF2WithHmacSHA1",
+                new PBEKeySpec(password.toCharArray(), Hex.decode(salt), 1024, 256)));
     }
 
     public AesEncryptor(SecretKey secretKey){
         this.secretKey = new SecretKeySpec(secretKey.getEncoded(), "AES");
-        this.encryptor = CipherUtils.newCipher(AES_CBC_ALGORITHM);
-        this.decryptor = CipherUtils.newCipher(AES_CBC_ALGORITHM);
+        encryptor = CipherUtils.newCipher(AES_CBC_ALGORITHM);
+        decryptor = CipherUtils.newCipher(AES_CBC_ALGORITHM);
+    }
+
+    static byte[] concatenate(byte[]... arrays){
+        int length = 0;
+        for(byte[] array : arrays){
+            length += array.length;
+        }
+        byte[] newArray = new byte[length];
+        int destPos = 0;
+        for(byte[] array : arrays){
+            System.arraycopy(array, 0, newArray, destPos, array.length);
+            destPos += array.length;
+        }
+        return newArray;
+    }
+
+    static byte[] subArray(byte[] array, int beginIndex, int endIndex){
+        int length = endIndex - beginIndex;
+        byte[] subarray = new byte[length];
+        System.arraycopy(array, beginIndex, subarray, 0, length);
+        return subarray;
     }
 
     private byte[] generateKey(){
@@ -55,32 +77,11 @@ class AesEncryptor{
         return subArray(encryptedBytes, ivLength, encryptedBytes.length);
     }
 
-    public String encrypt(String text){
+    public String encrypt(CharSequence text){
         return new String(Hex.encode(encrypt(Utf8.encode(text))));
     }
 
-    public String decrypt(String encryptedText){
+    public String decrypt(CharSequence encryptedText){
         return Utf8.decode(decrypt(Hex.decode(encryptedText)));
-    }
-
-    static byte[] concatenate(byte[]... arrays){
-        int length = 0;
-        for(byte[] array : arrays){
-            length += array.length;
-        }
-        byte[] newArray = new byte[length];
-        int destPos = 0;
-        for(byte[] array : arrays){
-            System.arraycopy(array, 0, newArray, destPos, array.length);
-            destPos += array.length;
-        }
-        return newArray;
-    }
-
-    static byte[] subArray(byte[] array, int beginIndex, int endIndex){
-        int length = endIndex - beginIndex;
-        byte[] subarray = new byte[length];
-        System.arraycopy(array, beginIndex, subarray, 0, length);
-        return subarray;
     }
 }
