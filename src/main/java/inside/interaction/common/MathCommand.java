@@ -3,6 +3,7 @@ package inside.interaction.common;
 import com.udojava.evalex.Expression;
 import discord4j.core.object.command.*;
 import discord4j.core.object.entity.Message;
+import discord4j.rest.util.ApplicationCommandOptionType;
 import inside.command.Commands;
 import inside.interaction.*;
 import inside.util.MessageUtil;
@@ -13,6 +14,14 @@ import static inside.util.ContextUtil.KEY_EPHEMERAL;
 
 @InteractionDiscordCommand(name = "math", description = "Calculate math expression.")
 public class MathCommand extends BaseInteractionCommand{
+
+    public MathCommand(){
+
+        addOption(builder -> builder.name("expression")
+                .description("Math expression.")
+                .required(true)
+                .type(ApplicationCommandOptionType.STRING.getValue()));
+    }
 
     @Override
     public Mono<Void> execute(InteractionCommandEnvironment env){

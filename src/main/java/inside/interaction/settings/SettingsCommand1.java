@@ -7,14 +7,14 @@ import discord4j.core.object.entity.channel.Channel;
 import discord4j.discordjson.json.*;
 import discord4j.rest.util.ApplicationCommandOptionType;
 import inside.audit.AuditActionType;
-import inside.data.entity.*;
+import inside.data.entity.AdminActionType;
 import inside.interaction.InteractionCommandEnvironment;
 import inside.util.*;
 import inside.util.func.BooleanFunction;
 import reactor.core.publisher.*;
 import reactor.util.function.*;
 
-import java.time.*;
+import java.time.Duration;
 import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -24,9 +24,12 @@ import static inside.util.ContextUtil.*;
 import static reactor.function.TupleUtils.*;
 
 @Deprecated(forRemoval = true)
-// @InteractionDiscordCommand(name = "settings", description = "Configure guild settings.")
 public class SettingsCommand1 extends OwnerCommand{
     private static final Pattern unicode = Pattern.compile("[^\\p{L}\\p{N}\\p{P}\\p{Z}]", Pattern.UNICODE_CHARACTER_CLASS);
+
+    private SettingsCommand1(){
+        super(null);
+    }
 
     private static <T> String formatCollection(Collection<? extends T> collection, Function<T, String> formatter){
         return collection.stream()
@@ -421,7 +424,7 @@ public class SettingsCommand1 extends OwnerCommand{
                             });
                 }));
 
-        Mono<Void> handleAudit = Mono.justOrEmpty(env.event().getOption("audit"))
+        return Mono.justOrEmpty(env.event().getOption("audit"))
                 .switchIfEmpty(handleAdmin.then(Mono.empty()))
                 .zipWith(entityRetriever.getAuditConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createAuditConfig(guildId)))
@@ -526,179 +529,6 @@ public class SettingsCommand1 extends OwnerCommand{
                                         .and(entityRetriever.save(auditConfig));
                             });
                 }));
-
-        return Mono.justOrEmpty(env.event().getOption("common"))
-                .switchIfEmpty(handleAudit.then(Mono.empty()))
-                .zipWith(entityRetriever.getGuildConfigById(guildId)
-                        .switchIfEmpty(entityRetriever.createGuildConfig(guildId)))
-                .flatMap(function((group, guildConfig) -> {
-                    Mono<Void> reactionRolesCommand = Mono.justOrEmpty(group.getOption("reaction-roles"))
-                            .flatMap(opt -> Mono.zip(Mono.justOrEmpty(opt.getOption("type")
-                                                    .flatMap(ApplicationCommandInteractionOption::getValue))
-                                            .map(ApplicationCommandInteractionOptionValue::asString),
-                                    Mono.just(opt.getOption("message-id")
-                                            .flatMap(ApplicationCommandInteractionOption::getValue)
-                                            .map(ApplicationCommandInteractionOptionValue::asString)),
-                                    Mono.just(opt.getOption("emoji")
-                                            .flatMap(ApplicationCommandInteractionOption::getValue)
-                                            .map(ApplicationCommandInteractionOptionValue::asString)),
-                                    Mono.just(opt.getOption("role")
-                                            .flatMap(ApplicationCommandInteractionOption::getValue)
-                                            .map(ApplicationCommandInteractionOptionValue::asSnowflake))))
-                            .flatMap(function((choice, messageId, emojistr, role) -> {
-                                if(choice.equals("clear")){
-                                    return entityRetriever.deleteAllEmojiDispenserInGuild(guildId)
-                                            .then(messageService.text(env.event(), "command.settings.reaction-roles.clear"));
-                                }
-
-                                Function<EmojiDispenser, String> formatEmojiDispenser = e -> String.format("%s -> %s (%s)\n",
-                                        e.messageId().asString(), DiscordUtil.getRoleMention(e.roleId()),
-                                        DiscordUtil.getEmojiString(e.emoji()));
-
-                                if(choice.equals("help")){
-                                    return entityRetriever.getAllEmojiDispenserInGuild(guildId)
-                                            .map(formatEmojiDispenser)
-                                            .collect(Collectors.joining())
-                                            .flatMap(str -> messageService.text(env.event(),
-                                                    "command.settings.reaction-roles.current", str));
-                                }
-
-                                Mono<Snowflake> preparedRoleId = Mono.justOrEmpty(role)
-                                        .switchIfEmpty(messageService.text(env.event(),
-                                                "command.settings.reaction-roles.role-absent").then(Mono.empty()));
-
-                                Mono<Snowflake> preparedMessageId = Mono.justOrEmpty(messageId)
-                                        .switchIfEmpty(messageService.text(env.event(),
-                                                "command.settings.reaction-roles.message-id-absent").then(Mono.empty()))
-                                        .mapNotNull(MessageUtil::parseId) // it's safe
-                                        .switchIfEmpty(messageService.text(env.event(),
-                                                "command.settings.reaction-roles.incorrect-message-id").then(Mono.empty()));
-
-                                if(choice.equals("add")){
-                                    Mono<EmojiData> fetchEmoji = Mono.justOrEmpty(emojistr)
-                                            .switchIfEmpty(messageService.text(env.event(),
-                                                    "command.settings.reaction-roles.emoji-absent").then(Mono.empty()))
-                                            .flatMap(str -> env.getClient().getGuildEmojis(guildId)
-                                                    .filter(emoji -> emoji.asFormat().equals(str) || emoji.getName().equals(str) ||
-                                                            emoji.getId().asString().equals(str))
-                                                    .map(GuildEmoji::getData)
-                                                    .defaultIfEmpty(EmojiData.builder()
-                                                            .name(str)
-                                                            .build())
-                                                    .next());
-
-                                    return Mono.zip(preparedMessageId, fetchEmoji, preparedRoleId)
-                                            .filterWhen(ignored -> entityRetriever.getEmojiDispenserCountInGuild(guildId)
-                                                    .map(l -> l < 20))
-                                            .switchIfEmpty(messageService.text(env.event(),
-                                                    "command.settings.reaction-roles.limit").then(Mono.empty()))
-                                            .flatMap(function((id, emoji, roleId) -> entityRetriever.createEmojiDispenser(guildId, id, roleId, emoji)
-                                                    .flatMap(emojiDispenser -> messageService.text(env.event(), "command.settings.added",
-                                                            formatEmojiDispenser.apply(emojiDispenser)))));
-                                }
-
-                                return Mono.zip(preparedMessageId, preparedRoleId)
-                                        .flatMap(function(entityRetriever::getEmojiDispenserById))
-                                        .switchIfEmpty(messageService.text(env.event(),
-                                                "command.settings.reaction-roles.not-found").then(Mono.empty()))
-                                        .flatMap(emojiDispenser -> entityRetriever.delete(emojiDispenser)
-                                                .thenReturn(emojiDispenser))
-                                        .flatMap(emojiDispenser -> messageService.text(env.event(), "command.settings.removed",
-                                                formatEmojiDispenser.apply(emojiDispenser)));
-                            }));
-
-                    Mono<Void> timezoneCommand = Mono.justOrEmpty(group.getOption("timezone"))
-                            .switchIfEmpty(reactionRolesCommand.then(Mono.empty()))
-                            .flatMap(command -> Mono.justOrEmpty(command.getOption("value")))
-                            .switchIfEmpty(messageService.text(env.event(), "command.settings.timezone.current",
-                                    guildConfig.timeZone()).then(Mono.empty()))
-                            .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
-                                    .map(ApplicationCommandInteractionOptionValue::asString))
-                            .flatMap(str -> {
-                                ZoneId timeZone = Try.ofCallable(() -> ZoneId.of(str)).orElse(null);
-                                if(timeZone == null){
-                                    return ZoneId.getAvailableZoneIds().stream()
-                                            .min(Comparator.comparingInt(s -> Strings.levenshtein(s, str)))
-                                            .map(s -> messageService.err(env.event(), "command.settings.timezone.unknown.suggest", s))
-                                            .orElse(messageService.err(env.event(), "command.settings.timezone.unknown"))
-                                            .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
-                                }
-
-                                guildConfig.timeZone(timeZone);
-                                return Mono.deferContextual(ctx -> messageService.text(env.event(),
-                                                "command.settings.timezone.update", ctx.<Locale>get(KEY_TIMEZONE)))
-                                        .contextWrite(ctx -> ctx.put(KEY_TIMEZONE, timeZone))
-                                        .and(entityRetriever.save(guildConfig));
-                            });
-
-                    Mono<Void> localeCommand = Mono.justOrEmpty(group.getOption("locale"))
-                            .switchIfEmpty(timezoneCommand.then(Mono.empty()))
-                            .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")))
-                            .switchIfEmpty(messageService.text(env.event(), "command.settings.locale.current",
-                                    guildConfig.locale().getDisplayName()).then(Mono.empty()))
-                            .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
-                                    .map(ApplicationCommandInteractionOptionValue::asString))
-                            .flatMap(str -> {
-                                Locale locale = messageService.getLocale(str).orElse(null);
-                                if(locale == null){
-                                    String all = formatCollection(messageService.getSupportedLocales().values(), locale1 ->
-                                            "%s (`%s`)".formatted(locale1.getDisplayName(), locale1.toString()));
-                                    return messageService.text(env.event(), "command.settings.locale.all", all)
-                                            .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
-                                }
-
-                                guildConfig.locale(locale);
-                                return Mono.deferContextual(ctx -> messageService.text(env.event(), "command.settings.locale.update",
-                                                ctx.<Locale>get(KEY_LOCALE).getDisplayName()))
-                                        .contextWrite(ctx -> ctx.put(KEY_LOCALE, locale))
-                                        .and(entityRetriever.save(guildConfig));
-                            });
-
-                    return Mono.justOrEmpty(group.getOption("prefix"))
-                            .switchIfEmpty(localeCommand.then(Mono.empty()))
-                            .flatMap(opt -> Mono.justOrEmpty(opt.getOption("type")
-                                            .flatMap(ApplicationCommandInteractionOption::getValue))
-                                    .map(ApplicationCommandInteractionOptionValue::asString)
-                                    .filter(str -> !str.equals("help"))
-                                    .switchIfEmpty(messageService.text(env.event(), "command.settings.prefix.current",
-                                                    String.join(", ", guildConfig.prefixes()))
-                                            .then(Mono.empty()))
-                                    .zipWith(Mono.justOrEmpty(opt.getOption("value"))
-                                            .switchIfEmpty(messageService.text(env.event(), "command.settings.prefix.current",
-                                                            String.join(", ", guildConfig.prefixes()))
-                                                    .then(Mono.empty()))
-                                            .flatMap(subopt -> Mono.justOrEmpty(subopt.getValue()))
-                                            .map(ApplicationCommandInteractionOptionValue::asString)))
-                            .flatMap(function((choice, enums) -> Mono.defer(() -> {
-                                List<String> flags = guildConfig.prefixes();
-                                if(choice.equals("clear")){
-                                    flags.clear();
-                                    return messageService.text(env.event(), "command.settings.prefix.clear");
-                                }
-
-                                boolean add = choice.equals("add");
-
-                                List<String> removed = new ArrayList<>(0);
-                                String[] text = enums.split("(\\s+)?,(\\s+)?");
-                                for(String s : text){
-                                    if(add){
-                                        flags.add(s);
-                                    }else{
-                                        if(flags.remove(s)){
-                                            removed.add(s);
-                                        }
-                                    }
-                                }
-
-                                if(add){
-                                    return messageService.text(env.event(), "command.settings.added",
-                                            String.join(", ", flags));
-                                }
-                                return messageService.text(env.event(), "command.settings.removed",
-                                        String.join(", ", removed));
-                            }).and(entityRetriever.save(guildConfig))));
-
-                }));
     }
 
     @Override
@@ -706,105 +536,6 @@ public class SettingsCommand1 extends OwnerCommand{
         return ApplicationCommandRequest.builder()
                 .name("settings")
                 .description("Configure guild settings.")
-                .addOption(ApplicationCommandOptionData.builder()
-                        .name("common")
-                        .description("Different bot settings")
-                        .type(ApplicationCommandOptionType.SUB_COMMAND_GROUP.getValue())
-                        .addOption(ApplicationCommandOptionData.builder()
-                                .name("prefix")
-                                .description("Configure bot prefixes")
-                                .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
-                                .addOption(ApplicationCommandOptionData.builder()
-                                        .name("type")
-                                        .description("Action type")
-                                        .type(ApplicationCommandOptionType.STRING.getValue())
-                                        .required(true)
-                                        .addChoice(ApplicationCommandOptionChoiceData.builder()
-                                                .name("Get a help")
-                                                .value("help")
-                                                .build())
-                                        .addChoice(ApplicationCommandOptionChoiceData.builder()
-                                                .name("Add prefix(s)")
-                                                .value("add")
-                                                .build())
-                                        .addChoice(ApplicationCommandOptionChoiceData.builder()
-                                                .name("Remove prefix(s)")
-                                                .value("remove")
-                                                .build())
-                                        .addChoice(ApplicationCommandOptionChoiceData.builder()
-                                                .name("Remove all prefixes")
-                                                .value("clear")
-                                                .build())
-                                        .build())
-                                .addOption(ApplicationCommandOptionData.builder()
-                                        .name("value")
-                                        .description("Target prefix(s)")
-                                        .type(ApplicationCommandOptionType.STRING.getValue())
-                                        .build())
-                                .build())
-                        .addOption(ApplicationCommandOptionData.builder()
-                                .name("locale")
-                                .description("Configure bot locale")
-                                .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
-                                .addOption(ApplicationCommandOptionData.builder()
-                                        .name("value")
-                                        .description("New locale")
-                                        .type(ApplicationCommandOptionType.STRING.getValue())
-                                        .build())
-                                .build())
-                        .addOption(ApplicationCommandOptionData.builder()
-                                .name("timezone")
-                                .description("Configure bot time zone")
-                                .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
-                                .addOption(ApplicationCommandOptionData.builder()
-                                        .name("value")
-                                        .description("New time zone")
-                                        .type(ApplicationCommandOptionType.STRING.getValue())
-                                        .build())
-                                .build())
-                        .addOption(ApplicationCommandOptionData.builder()
-                                .name("reaction-roles")
-                                .description("Configure reaction roles")
-                                .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
-                                .addOption(ApplicationCommandOptionData.builder()
-                                        .name("type")
-                                        .description("Action type")
-                                        .type(ApplicationCommandOptionType.STRING.getValue())
-                                        .required(true)
-                                        .addChoice(ApplicationCommandOptionChoiceData.builder()
-                                                .name("Get a help")
-                                                .value("help")
-                                                .build())
-                                        .addChoice(ApplicationCommandOptionChoiceData.builder()
-                                                .name("Add reaction role")
-                                                .value("add")
-                                                .build())
-                                        .addChoice(ApplicationCommandOptionChoiceData.builder()
-                                                .name("Remove reaction role")
-                                                .value("remove")
-                                                .build())
-                                        .addChoice(ApplicationCommandOptionChoiceData.builder()
-                                                .name("Remove all reaction roles")
-                                                .value("clear")
-                                                .build())
-                                        .build())
-                                .addOption(ApplicationCommandOptionData.builder()
-                                        .name("message-id")
-                                        .description("Target message id")
-                                        .type(ApplicationCommandOptionType.STRING.getValue())
-                                        .build())
-                                .addOption(ApplicationCommandOptionData.builder()
-                                        .name("emoji")
-                                        .description("Target emoji")
-                                        .type(ApplicationCommandOptionType.STRING.getValue())
-                                        .build())
-                                .addOption(ApplicationCommandOptionData.builder()
-                                        .name("role")
-                                        .description("Target role")
-                                        .type(ApplicationCommandOptionType.ROLE.getValue())
-                                        .build())
-                                .build())
-                        .build())
                 .addOption(ApplicationCommandOptionData.builder()
                         .name("activities")
                         .description("Activity features settings")

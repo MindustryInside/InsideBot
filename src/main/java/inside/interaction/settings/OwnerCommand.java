@@ -11,6 +11,11 @@ public abstract class OwnerCommand extends SettingsCommand implements Interactio
 
     protected final Map<String, InteractionCommand> subcommands = new LinkedHashMap<>();
 
+    protected OwnerCommand(List<? extends InteractionOwnerAwareCommand<?>> subcommands){
+
+        subcommands.forEach(this::addSubCommand);
+    }
+
     @Override
     public void addSubCommand(InteractionCommand subcommand){
         subcommands.put(subcommand.getName(), subcommand);

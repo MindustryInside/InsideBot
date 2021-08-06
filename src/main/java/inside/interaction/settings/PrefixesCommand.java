@@ -15,9 +15,8 @@ import static reactor.function.TupleUtils.function;
 @InteractionDiscordCommand(name = "prefixes", description = "Configure bot prefixes.")
 public class PrefixesCommand extends OwnerCommand{
 
-    public PrefixesCommand(@Autowired(required = false) List<InteractionOwnerAwareCommand<PrefixesCommand>> subcommands){
-
-        subcommands.forEach(this::addSubCommand);
+    protected PrefixesCommand(@Autowired(required = false) List<InteractionOwnerAwareCommand<PrefixesCommand>> subcommands){
+        super(subcommands);
     }
 
     @InteractionDiscordCommand(name = "help", description = "Get a help.",
