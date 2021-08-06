@@ -68,8 +68,6 @@ public interface EntityRetriever{
 
     Mono<Starboard> getStarboardBySourceId(Snowflake guildId, Snowflake sourceMessageId);
 
-    Mono<Starboard> getStarboardByTargetId(Snowflake guildId, Snowflake targetMessageId);
-
     Mono<Void> deleteStarboardById(Snowflake guildId, Snowflake sourceMessageId);
 
     Mono<Void> save(Starboard starboard);
@@ -97,8 +95,6 @@ public interface EntityRetriever{
     Mono<Long> getEmojiDispenserCountInGuild(Snowflake guildId);
 
     Mono<Void> save(EmojiDispenser emojiDispenser);
-
-    Mono<Void> deleteEmojiDispenserById(Snowflake messageId, Snowflake roleId);
 
     Mono<Void> delete(EmojiDispenser emojiDispenser);
 

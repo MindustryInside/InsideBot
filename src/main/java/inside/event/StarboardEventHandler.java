@@ -61,7 +61,8 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                             .map(ReactionEmoji::of)
                             .collect(Collectors.toList());
 
-                    if(!config.isEnabled() || channelId == null || !emojis.contains(emoji)){
+                    // prevents recursive starboard
+                    if(!config.isEnabled() || channelId == null || !emojis.contains(emoji) || channelId.equals(event.getChannelId())){
                         return Mono.empty();
                     }
 
@@ -160,11 +161,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                             .build());
                                 });
 
-                                Mono<Message> createNew = entityRetriever.getStarboardByTargetId(guildId, event.getMessageId()).hasElement().flatMap(bool -> {
-                                    if(bool){ // prevents recursive starboard
-                                        return Mono.empty();
-                                    }
-
+                                Mono<Message> createNew = Mono.defer(() -> {
                                     var embedSpec = EmbedCreateSpec.builder();
 
                                     embedSpec.footer(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
@@ -235,7 +232,8 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                             .map(ReactionEmoji::of)
                             .collect(Collectors.toList());
 
-                    if(!config.isEnabled() || channelId == null || !emojis.contains(emoji)){
+                    // prevents recursive starboard
+                    if(!config.isEnabled() || channelId == null || !emojis.contains(emoji) || channelId.equals(event.getChannelId())){
                         return Mono.empty();
                     }
 
