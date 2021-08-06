@@ -6,3 +6,5 @@ if(file('src/legacy').exists()){
     include 'legacy'
     project(':legacy').projectDir = file('src/legacy')
 }
+
+// includeBuild '../Discord4J'

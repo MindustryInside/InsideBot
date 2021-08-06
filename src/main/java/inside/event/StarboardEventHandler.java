@@ -140,7 +140,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                                 .findFirst().ifPresent(embedSpec::image);
                                     }else{
 
-                                        embedSpec.description(old.getDescription().orElseThrow(IllegalStateException::new));
+                                        old.getDescription().ifPresent(embedSpec::description);
                                         var embedAuthor = old.getAuthor().orElseThrow(IllegalStateException::new);
                                         embedSpec.author(embedAuthor.getName().orElseThrow(IllegalStateException::new), null,
                                                 embedAuthor.getIconUrl().orElseThrow(IllegalStateException::new));
@@ -285,7 +285,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                         return Mono.empty();
                                     }else{
 
-                                        embedSpec.description(old.getDescription().orElseThrow(IllegalStateException::new));
+                                        old.getDescription().ifPresent(embedSpec::description);
                                         var embedAuthor = old.getAuthor().orElseThrow(IllegalStateException::new);
                                         embedSpec.author(embedAuthor.getName().orElseThrow(IllegalStateException::new), null,
                                                 embedAuthor.getIconUrl().orElseThrow(IllegalStateException::new));
