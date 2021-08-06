@@ -178,10 +178,17 @@ public class EntityRetrieverImpl implements EntityRetriever{
     }
 
     @Override
-    public Mono<Starboard> getStarboardById(Snowflake guildId, Snowflake sourceMessageId){
+    public Mono<Starboard> getStarboardBySourceId(Snowflake guildId, Snowflake sourceMessageId){
         Objects.requireNonNull(guildId, "guildId");
         Objects.requireNonNull(sourceMessageId, "sourceMessageId");
         return storeHolder.getStarboardService().find(LongLongTuple2.of(guildId.asLong(), sourceMessageId.asLong()));
+    }
+
+    @Override
+    public Mono<Starboard> getStarboardByTargetId(Snowflake guildId, Snowflake targetMessageId){
+        Objects.requireNonNull(guildId, "guildId");
+        Objects.requireNonNull(targetMessageId, "targetMessageId");
+        return storeHolder.getStarboardService().findByTargetId(LongLongTuple2.of(guildId.asLong(), targetMessageId.asLong()));
     }
 
     @Override
@@ -192,7 +199,7 @@ public class EntityRetrieverImpl implements EntityRetriever{
 
     @Override
     public Mono<Void> deleteStarboardById(Snowflake guildId, Snowflake sourceMessageId){
-        return getStarboardById(guildId, sourceMessageId).flatMap(this::delete);
+        return getStarboardBySourceId(guildId, sourceMessageId).flatMap(this::delete);
     }
 
     @Override

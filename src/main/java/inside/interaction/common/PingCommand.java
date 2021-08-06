@@ -2,6 +2,7 @@ package inside.interaction.common;
 
 import discord4j.core.object.entity.Message;
 import discord4j.discordjson.json.WebhookMessageEditRequest;
+import inside.interaction.*;
 import reactor.core.publisher.Mono;
 
 @InteractionDiscordCommand(name = "ping", description = "Get bot ping.")

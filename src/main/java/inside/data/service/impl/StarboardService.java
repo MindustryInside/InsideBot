@@ -24,6 +24,12 @@ public class StarboardService extends BaseEntityService<LongLongTuple2, Starboar
         return repository.findByGuildIdAndSourceMessageId(guildId, sourceMessageId);
     }
 
+    public Mono<Starboard> findByTargetId(LongLongTuple2 id){
+        long guildId = id.getT1();
+        long targetMessageId = id.getT2();
+        return Mono.fromSupplier(() -> repository.findByGuildIdAndTargetMessageId(guildId, targetMessageId));
+    }
+
     public Mono<Void> deleteAllByGuildId(long guildId){
         return Mono.fromRunnable(() -> repository.deleteAllByGuildId(guildId));
     }

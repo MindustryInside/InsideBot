@@ -98,7 +98,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                                 .thenReturn(target))
                                         .timeout(Duration.ofSeconds(6), Mono.empty());
 
-                                Mono<Message> targetMessage = entityRetriever.getStarboardById(guildId, event.getMessageId())
+                                Mono<Message> targetMessage = entityRetriever.getStarboardBySourceId(guildId, event.getMessageId())
                                         .flatMap(board -> channel.getMessageById(board.targetMessageId()))
                                         .switchIfEmpty(findIfAbsent);
 
@@ -160,7 +160,10 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                             .build());
                                 });
 
-                                Mono<Message> createNew = Mono.defer(() -> {
+                                Mono<Message> createNew = entityRetriever.getStarboardByTargetId(guildId, event.getMessageId()).hasElement().flatMap(bool -> {
+                                    if(bool){ // prevents recursive starboard
+                                        return Mono.empty();
+                                    }
 
                                     var embedSpec = EmbedCreateSpec.builder();
 
@@ -267,7 +270,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                                 .thenReturn(target))
                                         .timeout(Duration.ofSeconds(6), Mono.empty());
 
-                                Mono<Message> targetMessage = entityRetriever.getStarboardById(guildId, event.getMessageId())
+                                Mono<Message> targetMessage = entityRetriever.getStarboardBySourceId(guildId, event.getMessageId())
                                         .flatMap(board -> channel.getMessageById(board.targetMessageId()))
                                         .switchIfEmpty(findIfAbsent);
 
@@ -323,7 +326,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
         Mono<StarboardConfig> starboardConfig = entityRetriever.getStarboardConfigById(guildId);
 
-        Mono<Starboard> starboard = entityRetriever.getStarboardById(guildId, event.getMessageId());
+        Mono<Starboard> starboard = entityRetriever.getStarboardBySourceId(guildId, event.getMessageId());
 
         return starboardConfig.flatMap(config -> {
             Snowflake channelId = config.starboardChannelId().orElse(null);
