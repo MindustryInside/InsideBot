@@ -45,7 +45,6 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
     public Publisher<?> onReactionAdd(ReactionAddEvent event){
         ReactionEmoji emoji = event.getEmoji();
         Snowflake guildId = event.getGuildId().orElse(null);
-        Mono<User> author = event.getMessage().map(Message::getAuthor).flatMap(Mono::justOrEmpty);
         if(guildId == null){
             return Mono.empty();
         }
@@ -55,71 +54,133 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                 .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
                         KEY_TIMEZONE, guildConfig.timeZone()));
 
-        Mono<StarboardConfig> starboardConfig = entityRetriever.getStarboardConfigById(guildId);
-
         Function<List<ReactionEmoji>, Mono<Integer>> emojisCount = emojis -> event.getMessage()
-                .flatMapMany(message -> Flux.fromIterable(message.getReactions()))
+                .flatMapIterable(Message::getReactions)
                 .filter(reaction -> emojis.contains(reaction.getEmoji()))
                 .map(Reaction::getCount)
                 .as(MathFlux::max);
 
-        Mono<Starboard> starboard = entityRetriever.getStarboardById(guildId, event.getMessageId());
+        Mono<StarboardConfig> starboardConfig = entityRetriever.getStarboardConfigById(guildId);
 
-        return initContext.zipWith(starboardConfig).zipWhen(tuple -> Mono.just(tuple.getT2().emojis().stream()
-                                .map(ReactionEmoji::of)
-                                .collect(Collectors.toList())),
-                        (tuple, emojis) -> Tuples.of(tuple.getT1(), tuple.getT2(), emojis))
-                .flatMap(function((context, config, emojis) -> emojisCount.apply(emojis).flatMap(l -> {
+        return Mono.zip(initContext, starboardConfig)
+                .flatMap(function((context, config) -> {
                     Snowflake channelId = config.starboardChannelId().orElse(null);
-                    if(!config.isEnabled() || channelId == null || !emojis.contains(emoji) || l < config.lowerStarBarrier()){
+                    List<ReactionEmoji> emojis = config.emojis().stream()
+                            .map(ReactionEmoji::of)
+                            .collect(Collectors.toList());
+
+                    if(!config.isEnabled() || channelId == null || !emojis.contains(emoji)){
                         return Mono.empty();
                     }
 
-                    List<String> formatted = emojis.stream()
-                            .map(DiscordUtil::getEmojiString)
-                            .collect(Collectors.toList());
+                    Mono<Integer> emojiCount = emojisCount.apply(emojis).filter(l -> l >= config.lowerStarBarrier());
 
-                    Mono<GuildMessageChannel> starboardChannel = event.getGuild()
-                            .flatMap(guild -> guild.getChannelById(channelId))
+                    Mono<GuildMessageChannel> starboardChannel = event.getClient().getChannelById(channelId)
                             .cast(GuildMessageChannel.class);
 
-                    Mono<Message> findIfAbsent = Mono.zip(starboardChannel, event.getMessage(), author)
-                            .flatMap(function((channel, source, user) -> channel.getLastMessageId()
-                                    .map(channel::getMessagesBefore).orElse(Flux.empty())
-                                    .take(Duration.ofSeconds(4))
-                                    .filter(m -> m.getEmbeds().size() == 1 && m.getEmbeds().get(0).getFields().size() >= 1)
-                                    .filter(m -> m.getEmbeds().get(0).getFields().get(0)
-                                            .getValue().endsWith(source.getId().asString() + ")")) // match md link
-                                    .next()
-                                    .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId())
-                                            .thenReturn(target))))
-                            .timeout(Duration.ofSeconds(6), Mono.empty());
+                    Mono<Message> sourceMessage = event.getMessage();
 
-                    Mono<Message> targetMessage = starboard.zipWith(starboardChannel)
-                            .flatMap(function((board, channel) -> channel.getMessageById(board.targetMessageId())))
-                            .switchIfEmpty(findIfAbsent);
+                    Mono<User> author = event.getMessage().map(Message::getAuthor).flatMap(Mono::justOrEmpty);
 
-                    Mono<Message> updateOld = event.getMessage().zipWith(targetMessage)
-                            .flatMap(function((source, target) -> {
-                                var old = Try.ofCallable(() -> target.getEmbeds().get(0)).orElse(null); // IOOB
-                                var embedSpec = EmbedCreateSpec.builder();
+                    return Mono.zip(emojiCount, starboardChannel, sourceMessage, author)
+                            .flatMap(function((count, channel, source, user) -> {
+                                if(source.getInteraction().isPresent() || source.getWebhookId().isPresent()){
+                                    return Mono.empty(); // don't handle webhooks and interactions
+                                }
 
-                                if(old == null){ // someone remove embed
+                                Mono<Starboard> starboard = entityRetriever.getStarboardById(guildId, event.getMessageId());
 
-                                    var authorUser = source.getAuthor().orElseThrow(IllegalStateException::new);
-                                    embedSpec.author(authorUser.getUsername(), null, authorUser.getAvatarUrl());
+                                Mono<Message> findIfAbsent = channel.getLastMessageId()
+                                        .map(channel::getMessagesBefore).orElse(Flux.empty())
+                                        .take(Duration.ofSeconds(4))
+                                        .filter(m -> m.getEmbeds().size() == 1 && m.getEmbeds().get(0).getFields().size() >= 1)
+                                        .filter(m -> m.getEmbeds().get(0).getFields().get(0)
+                                                .getValue().endsWith(source.getId().asString() + ")")) // match md link
+                                        .next()
+                                        .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId())
+                                                .thenReturn(target))
+                                        .timeout(Duration.ofSeconds(6), Mono.empty());
 
-                                    embedSpec.description(source.getContent());
+                                Mono<Message> targetMessage = starboard.flatMap(board ->
+                                                channel.getMessageById(board.targetMessageId()))
+                                        .switchIfEmpty(findIfAbsent);
+
+                                List<String> formatted = emojis.stream()
+                                        .map(DiscordUtil::getEmojiString)
+                                        .collect(Collectors.toList());
+
+                                Mono<Message> updateOld = targetMessage.flatMap(target -> {
+                                    var old = Try.ofCallable(() -> target.getEmbeds().get(0)).orElse(null); // IOOB
+                                    var embedSpec = EmbedCreateSpec.builder();
+
+                                    if(old == null){ // someone remove embed
+
+                                        var authorUser = source.getAuthor().orElseThrow(IllegalStateException::new);
+                                        embedSpec.author(authorUser.getUsername(), null, authorUser.getAvatarUrl());
+
+                                        embedSpec.description(source.getContent());
+                                        embedSpec.footer(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
+                                                .withLocale(context.get(KEY_LOCALE))
+                                                .withZone(context.get(KEY_TIMEZONE))
+                                                .format(Instant.now()), null);
+
+                                        Set<Attachment> files = source.getAttachments().stream()
+                                                .filter(att -> !att.getContentType().map(str -> str.startsWith("image")).orElse(false))
+                                                .collect(Collectors.toSet());
+
+                                        if(!files.isEmpty()){
+                                            String key = files.size() == 1
+                                                    ? "starboard.attachment"
+                                                    : "starboard.attachments";
+                                            embedSpec.addField(messageService.get(context, key), files.stream()
+                                                    .map(att -> String.format("[%s](%s)%n", att.getFilename(), att.getUrl()))
+                                                    .collect(Collectors.joining()), false);
+                                        }
+
+                                        source.getAttachments().stream()
+                                                .filter(att -> att.getContentType().map(str -> str.startsWith("image")).orElse(false))
+                                                .map(Attachment::getUrl)
+                                                .findFirst().ifPresent(embedSpec::image);
+                                    }else{
+
+                                        embedSpec.description(old.getDescription().orElseThrow(IllegalStateException::new));
+                                        var embedAuthor = old.getAuthor().orElseThrow(IllegalStateException::new);
+                                        embedSpec.author(embedAuthor.getName().orElseThrow(IllegalStateException::new), null,
+                                                embedAuthor.getIconUrl().orElseThrow(IllegalStateException::new));
+                                        embedSpec.fields(old.getFields().stream()
+                                                .map(field -> EmbedCreateFields.Field.of(field.getName(), field.getValue(), field.isInline()))
+                                                .collect(Collectors.toList()));
+                                        old.getImage().map(Embed.Image::getUrl).ifPresent(embedSpec::image);
+                                    }
+
+                                    embedSpec.color(lerp(offsetColor, targetColor, Mathf.round(count / 6f, lerpStep)));
+
+                                    return target.edit(MessageEditSpec.builder()
+                                            .addEmbed(embedSpec.build())
+                                            .contentOrNull(messageService.format(context, "starboard.format",
+                                                    formatted.get(Mathf.clamp((count - 1) / 5, 0, formatted.size() - 1)),
+                                                    count, DiscordUtil.getChannelMention(source.getChannelId())))
+                                            .build());
+                                });
+
+                                Mono<Message> createNew = Mono.defer(() -> {
+
+                                    var embedSpec = EmbedCreateSpec.builder();
+
                                     embedSpec.footer(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
                                             .withLocale(context.get(KEY_LOCALE))
                                             .withZone(context.get(KEY_TIMEZONE))
                                             .format(Instant.now()), null);
-
+                                    embedSpec.author(user.getUsername(), null, user.getAvatarUrl());
+                                    embedSpec.description(source.getContent());
+                                    embedSpec.color(lerp(offsetColor, targetColor, Mathf.round(count / 6f, lerpStep)));
+                                    embedSpec.addField(messageService.get(context, "starboard.source"), messageService.format(context, "starboard.jump",
+                                            guildId.asString(), source.getChannelId().asString(), source.getId().asString()), false);
                                     Set<Attachment> files = source.getAttachments().stream()
                                             .filter(att -> !att.getContentType().map(str -> str.startsWith("image")).orElse(false))
                                             .collect(Collectors.toSet());
 
-                                    if(files.size() != 0){
+                                    if(!files.isEmpty()){
                                         String key = files.size() == 1
                                                 ? "starboard.attachment"
                                                 : "starboard.attachments";
@@ -132,73 +193,22 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                             .filter(att -> att.getContentType().map(str -> str.startsWith("image")).orElse(false))
                                             .map(Attachment::getUrl)
                                             .findFirst().ifPresent(embedSpec::image);
-                                }else{
 
-                                    embedSpec.description(old.getDescription().orElseThrow(IllegalStateException::new));
-                                    var embedAuthor = old.getAuthor().orElseThrow(IllegalStateException::new);
-                                    embedSpec.author(embedAuthor.getName().orElseThrow(IllegalStateException::new), null,
-                                            embedAuthor.getIconUrl().orElseThrow(IllegalStateException::new));
-                                    embedSpec.fields(old.getFields().stream()
-                                            .map(field -> EmbedCreateFields.Field.of(field.getName(), field.getValue(), field.isInline()))
-                                            .collect(Collectors.toList()));
-                                    old.getImage().map(Embed.Image::getUrl).ifPresent(embedSpec::image);
-                                }
+                                    return channel.createMessage(MessageCreateSpec.builder()
+                                                    .content(messageService.format(
+                                                            context, "starboard.format", formatted.get(Mathf.clamp((count - 1) / 5, 0, formatted.size() - 1)),
+                                                            count, DiscordUtil.getChannelMention(source.getChannelId())))
+                                                    .allowedMentions(AllowedMentions.suppressAll())
+                                                    .addEmbed(embedSpec.build())
+                                                    .build())
+                                            .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId())
+                                                    .thenReturn(target));
+                                });
 
-                                embedSpec.color(lerp(offsetColor, targetColor, Mathf.round(l / 6f, lerpStep)));
-
-                                return target.edit(MessageEditSpec.builder()
-                                        .addEmbed(embedSpec.build())
-                                        .contentOrNull(messageService.format(context, "starboard.format",
-                                                formatted.get(Mathf.clamp((l - 1) / 5, 0, formatted.size() - 1)),
-                                                l, DiscordUtil.getChannelMention(source.getChannelId())))
-                                        .build());
-                            }));
-
-                    Mono<Message> createNew = Mono.zip(starboardChannel, event.getMessage(), author).flatMap(function((channel, source, user) -> {
-                        if(source.getInteraction().isPresent() || source.getWebhookId().isPresent()){
-                            return Mono.empty(); // don't handle webhooks and interactions
-                        }
-
-                        var embedSpec = EmbedCreateSpec.builder();
-
-                        embedSpec.footer(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
-                                .withLocale(context.get(KEY_LOCALE))
-                                .withZone(context.get(KEY_TIMEZONE))
-                                .format(Instant.now()), null);
-                        embedSpec.author(user.getUsername(), null, user.getAvatarUrl());
-                        embedSpec.description(source.getContent());
-                        embedSpec.color(lerp(offsetColor, targetColor, Mathf.round(l / 6f, lerpStep)));
-                        embedSpec.addField(messageService.get(context, "starboard.source"), messageService.format(context, "starboard.jump",
-                                guildId.asString(), source.getChannelId().asString(), source.getId().asString()), false);
-                        Set<Attachment> files = source.getAttachments().stream()
-                                .filter(att -> !att.getContentType().map(str -> str.startsWith("image")).orElse(false))
-                                .collect(Collectors.toSet());
-
-                        if(files.size() != 0){
-                            String key = files.size() == 1 ? "starboard.attachment" : "starboard.attachments";
-                            embedSpec.addField(messageService.get(context, key), files.stream()
-                                    .map(att -> String.format("[%s](%s)%n", att.getFilename(), att.getUrl()))
-                                    .collect(Collectors.joining()), false);
-                        }
-
-                        source.getAttachments().stream()
-                                .filter(att -> att.getContentType().map(str -> str.startsWith("image")).orElse(false))
-                                .map(Attachment::getUrl)
-                                .findFirst().ifPresent(embedSpec::image);
-
-                        return channel.createMessage(MessageCreateSpec.builder()
-                                        .content(messageService.format(
-                                                context, "starboard.format", formatted.get(Mathf.clamp((l - 1) / 5, 0, formatted.size() - 1)),
-                                                l, DiscordUtil.getChannelMention(source.getChannelId())))
-                                        .allowedMentions(AllowedMentions.suppressAll())
-                                        .addEmbed(embedSpec.build())
-                                        .build())
-                                .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId())
-                                        .thenReturn(target));
-                    }));
-
-                    return updateOld.switchIfEmpty(createNew);
-                }).contextWrite(context)));
+                                return updateOld.switchIfEmpty(createNew);
+                            }))
+                            .contextWrite(context);
+                }));
     }
 
     @Override
