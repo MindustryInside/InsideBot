@@ -23,7 +23,6 @@ import reactor.util.context.Context;
 import java.time.*;
 import java.time.format.*;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static inside.util.ContextUtil.*;
@@ -53,12 +52,6 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                 .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
                         KEY_TIMEZONE, guildConfig.timeZone()));
 
-        Function<List<ReactionEmoji>, Mono<Integer>> emojisCount = emojis -> event.getMessage()
-                .flatMapIterable(Message::getReactions)
-                .filter(reaction -> emojis.contains(reaction.getEmoji()))
-                .map(Reaction::getCount)
-                .as(MathFlux::max);
-
         Mono<StarboardConfig> starboardConfig = entityRetriever.getStarboardConfigById(guildId);
 
         return Mono.zip(initContext, starboardConfig)
@@ -72,7 +65,12 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                         return Mono.empty();
                     }
 
-                    Mono<Integer> emojiCount = emojisCount.apply(emojis).filter(l -> l >= config.lowerStarBarrier());
+                    Mono<Integer> emojiCount = event.getMessage()
+                            .flatMapIterable(Message::getReactions)
+                            .filter(reaction -> emojis.contains(reaction.getEmoji()))
+                            .map(Reaction::getCount)
+                            .as(MathFlux::max)
+                            .filter(l -> l >= config.lowerStarBarrier());
 
                     Mono<GuildMessageChannel> starboardChannel = event.getClient().getChannelById(channelId)
                             .cast(GuildMessageChannel.class);
@@ -122,7 +120,9 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                                 .format(Instant.now()), null);
 
                                         Set<Attachment> files = source.getAttachments().stream()
-                                                .filter(att -> !att.getContentType().map(str -> str.startsWith("image")).orElse(false))
+                                                .filter(att -> !att.getContentType()
+                                                        .map(str -> str.startsWith("image"))
+                                                        .orElse(false))
                                                 .collect(Collectors.toSet());
 
                                         if(!files.isEmpty()){
@@ -228,13 +228,6 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
         Mono<StarboardConfig> starboardConfig = entityRetriever.getStarboardConfigById(guildId);
 
-        Function<List<ReactionEmoji>, Mono<Integer>> emojisCount = emojis -> event.getMessage()
-                .flatMapMany(message -> Flux.fromIterable(message.getReactions()))
-                .filter(reaction -> emojis.contains(reaction.getEmoji()))
-                .map(Reaction::getCount)
-                .as(MathFlux::max)
-                .defaultIfEmpty(0);
-
         return Mono.zip(initContext, starboardConfig)
                 .flatMap(function((context, config) -> {
                     Snowflake channelId = config.starboardChannelId().orElse(null);
@@ -246,7 +239,12 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                         return Mono.empty();
                     }
 
-                    Mono<Integer> emojiCount = emojisCount.apply(emojis);
+                    Mono<Integer> emojiCount =  event.getMessage()
+                            .flatMapMany(message -> Flux.fromIterable(message.getReactions()))
+                            .filter(reaction -> emojis.contains(reaction.getEmoji()))
+                            .map(Reaction::getCount)
+                            .as(MathFlux::max)
+                            .defaultIfEmpty(0);
 
                     Mono<GuildMessageChannel> starboardChannel = event.getClient().getChannelById(channelId)
                             .cast(GuildMessageChannel.class);

@@ -77,6 +77,7 @@ public class DiscordServiceImpl implements DiscordService{
         long applicationId = gateway.rest().getApplicationId().blockOptional().orElse(0L);
         gateway.rest().getApplicationService()
                 .bulkOverwriteGlobalApplicationCommand(applicationId, commands.stream()
+                        .filter(cmd -> cmd.getType() == ApplicationCommandOptionType.UNKNOWN)
                         .map(cmd -> {
                             var req = cmd.getRequest();
                             commandMap.put(req.name(), cmd);
@@ -101,7 +102,7 @@ public class DiscordServiceImpl implements DiscordService{
     }
 
     @Override
-    public List<InteractionCommand> getCommands(){
+    public List<? extends InteractionCommand> getCommands(){
         return commands;
     }
 

@@ -6,7 +6,7 @@ import inside.util.ContextUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 
-public abstract class GuildCommand extends InteractionCommand{
+public abstract class GuildCommand extends BaseInteractionCommand{
     @Autowired
     protected Settings settings;
 

@@ -8,7 +8,7 @@ import inside.interaction.*;
 import reactor.core.publisher.Mono;
 
 @InteractionDiscordCommand(name = "r", description = "Change text layout.")
-public class TextLayoutCommand extends InteractionCommand{
+public class TextLayoutCommand extends BaseInteractionCommand{
 
     public TextLayoutCommand(){
 

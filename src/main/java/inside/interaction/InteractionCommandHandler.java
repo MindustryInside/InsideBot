@@ -8,5 +8,5 @@ public interface InteractionCommandHandler{
 
     Mono<Void> handle(InteractionCommandEnvironment env);
 
-    List<InteractionCommand> getCommands();
+    List<? extends InteractionCommand> getCommands();
 }

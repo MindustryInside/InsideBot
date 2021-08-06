@@ -8,7 +8,7 @@ import inside.util.DiscordUtil;
 import reactor.core.publisher.Mono;
 
 @InteractionDiscordCommand(name = "avatar", description = "Get user avatar.")
-public class AvatarCommand extends InteractionCommand{
+public class AvatarCommand extends BaseInteractionCommand{
 
     public AvatarCommand(){
 

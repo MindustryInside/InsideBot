@@ -12,7 +12,7 @@ import reactor.core.scheduler.Schedulers;
 import static inside.util.ContextUtil.KEY_EPHEMERAL;
 
 @InteractionDiscordCommand(name = "math", description = "Calculate math expression.")
-public class MathCommand extends InteractionCommand{
+public class MathCommand extends BaseInteractionCommand{
 
     @Override
     public Mono<Void> execute(InteractionCommandEnvironment env){

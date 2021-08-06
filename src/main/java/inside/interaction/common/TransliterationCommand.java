@@ -9,7 +9,7 @@ import reactor.core.publisher.Mono;
 import java.util.function.Predicate;
 
 @InteractionDiscordCommand(name = "tr", description = "Translating key into transliteration.")
-public class TransliterationCommand extends InteractionCommand{
+public class TransliterationCommand extends BaseInteractionCommand{
 
     public TransliterationCommand(){
 

@@ -1,31 +1,46 @@
 package inside.interaction.settings;
 
-import discord4j.core.object.entity.*;
-import discord4j.rest.util.Permission;
-import inside.interaction.InteractionCommandEnvironment;
-import inside.interaction.common.GuildCommand;
-import inside.util.ContextUtil;
-import reactor.bool.BooleanUtils;
+import discord4j.discordjson.json.ApplicationCommandOptionData;
+import inside.interaction.*;
 import reactor.core.publisher.Mono;
 
-public abstract class OwnerCommand extends GuildCommand{
+import java.util.*;
+import java.util.stream.Collectors;
+
+public abstract class OwnerCommand extends SettingsCommand implements InteractionOwnerCommand{
+
+    protected final Map<String, InteractionCommand> subcommands = new LinkedHashMap<>();
+
     @Override
-    public Mono<Boolean> filter(InteractionCommandEnvironment env){
-        Member member = env.event().getInteraction().getMember().orElse(null);
-        if(member == null){
-            return Mono.just(false);
-        }
+    public void addSubCommand(InteractionCommand subcommand){
+        subcommands.put(subcommand.getName(), subcommand);
+    }
 
-        Mono<Boolean> isOwner = member.getGuild().flatMap(Guild::getOwner)
-                .map(member::equals);
+    @Override
+    public Optional<InteractionCommand> getSubCommand(String name){
+        return Optional.ofNullable(subcommands.get(name));
+    }
 
-        Mono<Boolean> isGuildManager = member.getHighestRole()
-                .map(role -> role.getPermissions().contains(Permission.MANAGE_GUILD));
+    @Override
+    public Mono<Void> execute(InteractionCommandEnvironment env){
+        String commandName = env.event().getOptions().get(0).getName();
+        return Mono.justOrEmpty(getSubCommand(commandName)).flatMap(subcmd -> subcmd.execute(env));
+    }
 
-        Mono<Boolean> resp = BooleanUtils.or(isOwner, isGuildManager)
-                .filterWhen(bool -> bool ? Mono.just(true) : messageService.text(env.event(), "command.owner-only")
-                        .contextWrite(ctx -> ctx.put(ContextUtil.KEY_EPHEMERAL, true)).thenReturn(false));
+    @Override
+    public List<ApplicationCommandOptionData> getOptions(){
+        return subcommands.values().stream()
+                .map(subcommand -> ApplicationCommandOptionData.builder()
+                        .name(subcommand.getName())
+                        .description(subcommand.getDescription())
+                        .type(subcommand.getType().getValue())
+                        .options(subcommand.getOptions())
+                        .build())
+                .collect(Collectors.toList());
+    }
 
-        return BooleanUtils.and(super.filter(env), resp);
+    @Override
+    public Map<String, InteractionCommand> getSubCommands(){
+        return Collections.unmodifiableMap(subcommands);
     }
 }

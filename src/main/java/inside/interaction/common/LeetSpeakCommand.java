@@ -10,7 +10,7 @@ import reactor.core.publisher.Mono;
 import java.util.function.Predicate;
 
 @InteractionDiscordCommand(name = "1337", description = "Translate key into leet speak.")
-public class LeetSpeakCommand extends InteractionCommand{
+public class LeetSpeakCommand extends BaseInteractionCommand{
 
     public LeetSpeakCommand(){
 
