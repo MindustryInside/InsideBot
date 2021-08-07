@@ -13,7 +13,7 @@ import reactor.util.annotation.Nullable;
 public class StarboardService extends BaseEntityService<LongLongTuple2, Starboard, StarboardRepository>{
 
     protected StarboardService(StarboardRepository repository, Settings settings){
-        super(repository, settings);
+        super(repository, settings.getCache().isStarboard());
     }
 
     @Nullable

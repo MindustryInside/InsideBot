@@ -9,7 +9,6 @@ ext{
     caffeine_version = '3.0.3'
     evalex_version = '2.6'
 
-    servicer_version = '1.0.3'
     immutables_version = '2.8.8'
     jackson_version = '2.12.4'
 
@@ -33,10 +32,6 @@ allprojects{
     dependencies{
         implementation "com.discord4j.discord4j:discord4j-core:master-SNAPSHOT"
 
-        compileOnly "org.immutables:value:$immutables_version"
-        annotationProcessor "org.immutables:value:$immutables_version"
-        annotationProcessor "com.austinv11.servicer:Servicer:$servicer_version"
-
         testImplementation "org.junit.jupiter:junit-jupiter-engine:$junit_version"
     }
 
@@ -56,7 +51,6 @@ allprojects{
 }
 
 dependencies{
-    compileOnly project(':encoding')
     if(findProject(':legacy') != null){
         // Module with outdated, test code
         api project(':legacy')
@@ -76,4 +70,6 @@ dependencies{
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
     compileOnly "org.immutables:builder:$immutables_version"
+    compileOnly "org.immutables:value:$immutables_version"
+    annotationProcessor "org.immutables:value:$immutables_version"
 }

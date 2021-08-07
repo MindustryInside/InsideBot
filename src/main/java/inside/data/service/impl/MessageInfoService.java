@@ -16,8 +16,11 @@ import java.time.Instant;
 @Service
 public class MessageInfoService extends BaseLongObjEntityService<MessageInfo, MessageInfoRepository>{
 
+    private final Settings settings;
+
     protected MessageInfoService(MessageInfoRepository repository, Settings settings){
-        super(repository, settings);
+        super(repository, settings.getCache().isMessageInfo());
+        this.settings = settings;
     }
 
     @Nullable

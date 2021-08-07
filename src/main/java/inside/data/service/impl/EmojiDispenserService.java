@@ -13,7 +13,7 @@ import reactor.util.annotation.Nullable;
 public class EmojiDispenserService extends BaseEntityService<LongLongTuple2, EmojiDispenser, EmojiDispenserRepository>{
 
     protected EmojiDispenserService(EmojiDispenserRepository repository, Settings settings){
-        super(repository, settings);
+        super(repository, settings.getCache().isEmojiDispenser());
     }
 
     @Nullable

@@ -11,7 +11,7 @@ import reactor.util.annotation.Nullable;
 public class StarboardConfigService extends BaseLongObjEntityService<StarboardConfig, StarboardConfigRepository>{
 
     protected StarboardConfigService(StarboardConfigRepository repository, Settings settings){
-        super(repository, settings);
+        super(repository, settings.getCache().isStarboardConfig());
     }
 
     @Nullable

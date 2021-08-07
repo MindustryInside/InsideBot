@@ -42,12 +42,12 @@ public class AuditProviders{
                     action.channel().id(),
                     messageId.asString()));
 
-            if(oldContent.length() > 0){
+            if(!oldContent.isEmpty()){
                 embed.addField(messageService.get(context, "audit.message.old-content.title"),
                         MessageUtil.substringTo(oldContent, Embed.Field.MAX_VALUE_LENGTH), false);
             }
 
-            if(newContent.length() > 0){
+            if(!newContent.isEmpty()){
                 embed.addField(messageService.get(context, "audit.message.new-content.title"),
                         MessageUtil.substringTo(newContent, Embed.Field.MAX_VALUE_LENGTH), true);
             }

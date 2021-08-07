@@ -1,8 +1,10 @@
 package inside.data.service;
 
-import inside.Settings;
+import inside.data.cache.EntityCacheManager;
 import inside.data.entity.base.BaseEntity;
 import inside.data.repository.base.BaseRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.*;
 import reactor.util.annotation.Nullable;
@@ -11,16 +13,26 @@ public abstract class BaseEntityService<K, V extends BaseEntity, R extends BaseR
 
     protected final R repository;
 
-    protected final Settings settings;
+    protected final boolean cache;
 
-    protected BaseEntityService(R repository, Settings settings){
+    @Autowired
+    private EntityCacheManager entityCacheManager;
+
+    protected BaseEntityService(R repository){
+        this(repository, false);
+    }
+
+    protected BaseEntityService(R repository, boolean cache){
         this.repository = repository;
-        this.settings = settings;
+        this.cache = cache;
     }
 
     @Override
     public Mono<V> find(K id){
-        return Mono.defer(() -> Mono.justOrEmpty(find0(id)));
+        if(cache){
+            return Mono.fromSupplier(() -> entityCacheManager.get(getEntityType(), id, this::find0));
+        }
+        return Mono.fromSupplier(() -> find0(id));
     }
 
     @Override
@@ -35,7 +47,12 @@ public abstract class BaseEntityService<K, V extends BaseEntity, R extends BaseR
     @Override
     @Transactional
     public Mono<Void> save(V entity){
-        return Mono.fromRunnable(() -> repository.save(entity));
+        return Mono.fromRunnable(() -> {
+            repository.save(entity);
+            if(cache){
+                entityCacheManager.evict(getEntityType(), entity.id());
+            }
+        });
     }
 
     @Override
@@ -48,6 +65,14 @@ public abstract class BaseEntityService<K, V extends BaseEntity, R extends BaseR
     @Transactional
     public Mono<Void> delete(V entity){
         return Mono.fromRunnable(() -> repository.delete(entity));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Class<V> getEntityType(){
+        return (Class<V>)ClassTypeInformation.from(getClass())
+                .getRequiredSuperTypeInformation(EntityService.class)
+                .getTypeArguments()
+                .get(1).getType();
     }
 
     protected void cleanUp(){

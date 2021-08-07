@@ -616,7 +616,7 @@ public class Commands{
                     .switchIfEmpty(messageService.err(env, "command.incorrect-name").then(Mono.empty()))
                     .flatMap(user -> messageService.info(env, embed -> embed.image(user.getAvatarUrl() + "?size=512")
                             .description(messageService.format(env.context(), "command.avatar.text", user.getUsername(),
-                                    DiscordUtil.getUserMention(user.getId())))));
+                                    user.getMention()))));
         }
 
         @Override

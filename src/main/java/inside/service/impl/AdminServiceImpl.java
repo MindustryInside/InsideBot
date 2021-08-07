@@ -63,7 +63,7 @@ public class AdminServiceImpl implements AdminService{
         Mono<Void> saveAction = entityRetriever.getAndUpdateLocalMemberById(admin)
                 .zipWith(entityRetriever.getAndUpdateLocalMemberById(target))
                 .flatMap(function((adminLocalMember, targetLocalMember) -> Mono.fromRunnable(() -> repository.save(AdminAction.builder()
-                        .guildId(admin.getGuildId())
+                        .guildId(admin.getGuildId().asLong())
                         .type(AdminActionType.mute)
                         .admin(adminLocalMember)
                         .target(targetLocalMember)
@@ -151,7 +151,7 @@ public class AdminServiceImpl implements AdminService{
 
         return Mono.zip(getOrCreateAdmin, getOrCreateTarget, getOrCreateAdminConfig)
                 .map(function((adminLocalMember, targetLocalMember, adminConfig) -> repository.save(AdminAction.builder()
-                        .guildId(admin.getGuildId())
+                        .guildId(admin.getGuildId().asLong())
                         .type(AdminActionType.warn)
                         .admin(adminLocalMember)
                         .target(targetLocalMember)

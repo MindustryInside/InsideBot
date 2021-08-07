@@ -1,6 +1,5 @@
 package inside.data.service;
 
-import inside.Settings;
 import inside.data.entity.base.BaseEntity;
 import inside.data.repository.base.BaseRepository;
 import reactor.core.publisher.Mono;
@@ -10,8 +9,8 @@ public abstract class BaseLongObjEntityService<V extends BaseEntity, R extends B
         extends BaseEntityService<Long, V, R>
         implements LongObjEntityService<V>{
 
-    protected BaseLongObjEntityService(R repository, Settings settings){
-        super(repository, settings);
+    protected BaseLongObjEntityService(R repository, boolean cache){
+        super(repository, cache);
     }
 
     @Override

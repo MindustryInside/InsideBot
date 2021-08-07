@@ -11,7 +11,7 @@ import reactor.util.annotation.Nullable;
 public class AuditConfigService extends BaseLongObjEntityService<AuditConfig, AuditConfigRepository>{
 
     protected AuditConfigService(AuditConfigRepository repository, Settings settings){
-        super(repository, settings);
+        super(repository, settings.getCache().isAuditConfig());
     }
 
     @Nullable

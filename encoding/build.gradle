@@ -1,3 +1,0 @@
-dependencies{
-    api "org.immutables:encode:$immutables_version"
-}

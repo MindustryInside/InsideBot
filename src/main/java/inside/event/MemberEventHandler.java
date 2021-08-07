@@ -19,6 +19,7 @@ import reactor.util.context.Context;
 
 import java.time.*;
 import java.util.*;
+import java.util.function.Predicate;
 
 import static inside.audit.Attribute.*;
 import static inside.audit.AuditActionType.*;
@@ -142,7 +143,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                         KEY_TIMEZONE, guildConfig.timeZone()));
 
         return initContext.flatMap(context -> event.getMember()
-                .filter(DiscordUtil::isNotBot)
+                .filter(Predicate.not(DiscordUtil::isBot))
                 .flatMap(member -> entityRetriever.getAndUpdateLocalMemberById(member)
                         .switchIfEmpty(entityRetriever.createLocalMember(member))
                         .flatMap(localMember -> {

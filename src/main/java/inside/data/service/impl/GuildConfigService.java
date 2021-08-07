@@ -11,7 +11,7 @@ import reactor.util.annotation.Nullable;
 public class GuildConfigService extends BaseLongObjEntityService<GuildConfig, GuildConfigRepository>{
 
     protected GuildConfigService(GuildConfigRepository repository, Settings settings){
-        super(repository, settings);
+        super(repository, settings.getCache().isGuildConfig());
     }
 
     @Nullable

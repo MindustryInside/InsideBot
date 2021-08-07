@@ -11,7 +11,7 @@ import reactor.util.annotation.Nullable;
 public class AdminConfigService extends BaseLongObjEntityService<AdminConfig, AdminConfigRepository>{
 
     protected AdminConfigService(AdminConfigRepository repository, Settings settings){
-        super(repository, settings);
+        super(repository, settings.getCache().isAdminConfig());
     }
 
     @Nullable

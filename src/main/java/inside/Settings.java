@@ -18,6 +18,8 @@ public class Settings{
 
     private final Audit audit = new Audit();
 
+    private final Cache cache = new Cache();
+
     public String getToken(){
         return token;
     }
@@ -36,6 +38,10 @@ public class Settings{
 
     public Audit getAudit(){
         return audit;
+    }
+
+    public Cache getCache(){
+        return cache;
     }
 
     public static class Discord{
@@ -224,6 +230,99 @@ public class Settings{
 
         public void setMemberKeep(Duration memberKeep){
             this.memberKeep = memberKeep;
+        }
+    }
+
+    public static class Cache{
+
+        private boolean activityConfig = true;
+
+        private boolean adminConfig = true;
+
+        private boolean auditConfig = true;
+
+        private boolean emojiDispenser = true;
+
+        private boolean guildConfig = true;
+
+        private boolean localMember = true;
+
+        private boolean starboard = true;
+
+        private boolean starboardConfig = true;
+
+        private boolean messageInfo = false;
+
+        public boolean isActivityConfig(){
+            return activityConfig;
+        }
+
+        public void setActivityConfig(boolean activityConfig){
+            this.activityConfig = activityConfig;
+        }
+
+        public boolean isAdminConfig(){
+            return adminConfig;
+        }
+
+        public void setAdminConfig(boolean adminConfig){
+            this.adminConfig = adminConfig;
+        }
+
+        public boolean isAuditConfig(){
+            return auditConfig;
+        }
+
+        public void setAuditConfig(boolean auditConfig){
+            this.auditConfig = auditConfig;
+        }
+
+        public boolean isEmojiDispenser(){
+            return emojiDispenser;
+        }
+
+        public void setEmojiDispenser(boolean emojiDispenser){
+            this.emojiDispenser = emojiDispenser;
+        }
+
+        public boolean isGuildConfig(){
+            return guildConfig;
+        }
+
+        public void setGuildConfig(boolean guildConfig){
+            this.guildConfig = guildConfig;
+        }
+
+        public boolean isLocalMember(){
+            return localMember;
+        }
+
+        public void setLocalMember(boolean localMember){
+            this.localMember = localMember;
+        }
+
+        public boolean isStarboard(){
+            return starboard;
+        }
+
+        public void setStarboard(boolean starboard){
+            this.starboard = starboard;
+        }
+
+        public boolean isStarboardConfig(){
+            return starboardConfig;
+        }
+
+        public void setStarboardConfig(boolean starboardConfig){
+            this.starboardConfig = starboardConfig;
+        }
+
+        public boolean isMessageInfo(){
+            return messageInfo;
+        }
+
+        public void setMessageInfo(boolean messageInfo){
+            this.messageInfo = messageInfo;
         }
     }
 }

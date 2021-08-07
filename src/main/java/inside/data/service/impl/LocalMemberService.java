@@ -16,8 +16,11 @@ import java.time.Instant;
 @Service
 public class LocalMemberService extends BaseEntityService<LongLongTuple2, LocalMember, LocalMemberRepository>{
 
+    private final Settings settings;
+
     protected LocalMemberService(LocalMemberRepository repository, Settings settings){
-        super(repository, settings);
+        super(repository, settings.getCache().isLocalMember());
+        this.settings = settings;
     }
 
     @Nullable

@@ -112,7 +112,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                 .ofType(GuildMessageChannel.class);
 
         Mono<Member> author = updatedMessage.flatMap(Message::getAuthorAsMember)
-                .filter(DiscordUtil::isNotBot);
+                .filter(Predicate.not(DiscordUtil::isBot));
 
         return initContext.flatMap(context -> Mono.zip(updatedMessage, messageChannel, author)
                 .flatMap(function((message, channel, member) -> {

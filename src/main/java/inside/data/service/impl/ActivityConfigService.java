@@ -11,7 +11,7 @@ import reactor.util.annotation.Nullable;
 public class ActivityConfigService extends BaseLongObjEntityService<ActivityConfig, ActivityConfigRepository>{
 
     protected ActivityConfigService(ActivityConfigRepository repository, Settings settings){
-        super(repository, settings);
+        super(repository, settings.getCache().isActivityConfig());
     }
 
     @Nullable

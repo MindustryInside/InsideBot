@@ -18,10 +18,6 @@ public abstract class DiscordUtil{
         return user == null || user.isBot();
     }
 
-    public static boolean isNotBot(@Nullable User user){
-        return !isBot(user);
-    }
-
     public static String getEmojiString(ReactionEmoji emoji){
         Objects.requireNonNull(emoji, "emoji");
         return emoji.asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)

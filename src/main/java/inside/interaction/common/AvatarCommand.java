@@ -4,7 +4,6 @@ import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.rest.util.ApplicationCommandOptionType;
 import inside.interaction.*;
-import inside.util.DiscordUtil;
 import reactor.core.publisher.Mono;
 
 @InteractionDiscordCommand(name = "avatar", description = "Get user avatar.")
@@ -27,6 +26,6 @@ public class AvatarCommand extends BaseInteractionCommand{
                 .orElse(Mono.just(env.event().getInteraction().getUser()))
                 .flatMap(user -> messageService.info(env.event(), embed -> embed.image(user.getAvatarUrl() + "?size=512")
                         .description(messageService.format(env.context(), "command.avatar.text", user.getUsername(),
-                                DiscordUtil.getUserMention(user.getId())))));
+                                user.getMention()))));
     }
 }
