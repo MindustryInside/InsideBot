@@ -50,7 +50,7 @@ public abstract class BaseEntityService<K, V extends GuildEntity, R extends Base
         return Mono.fromRunnable(() -> {
             repository.save(entity);
             if(cache){
-                entityCacheManager.evict(getEntityType(), entity.id());
+                entityCacheManager.evict(getEntityType(), extractId(entity));
             }
         });
     }
