@@ -10,7 +10,7 @@ public class CaffeineEntityCacheManager implements EntityCacheManager{
 
     private final Function<Caffeine<?, ?>, Caffeine<?, ?>> provider;
     // name->cache<id->obj>
-    private final Cache<String, Cache<Long, ?>> caches;
+    private final Cache<String, Cache<?, ?>> caches;
 
     public CaffeineEntityCacheManager(Function<Caffeine<?, ?>, Caffeine<?, ?>> provider){
         this.provider = Objects.requireNonNull(provider, "provider");
