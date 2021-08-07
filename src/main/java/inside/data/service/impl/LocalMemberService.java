@@ -31,6 +31,11 @@ public class LocalMemberService extends BaseEntityService<LongLongTuple2, LocalM
         return repository.findByUserIdAndGuildId(userId, guildId);
     }
 
+    @Override
+    protected Object extractId(LocalMember entity){
+        return LongLongTuple2.of(entity.userId().asLong(), entity.guildId().asLong());
+    }
+
     public Mono<Void> deleteAllByGuildId(long guildId){
         return Mono.fromRunnable(() -> repository.deleteAllByGuildId(guildId));
     }

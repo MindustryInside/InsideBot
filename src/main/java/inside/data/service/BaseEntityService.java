@@ -1,7 +1,7 @@
 package inside.data.service;
 
 import inside.data.cache.EntityCacheManager;
-import inside.data.entity.base.BaseEntity;
+import inside.data.entity.base.GuildEntity;
 import inside.data.repository.base.BaseRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.ClassTypeInformation;
@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.*;
 import reactor.util.annotation.Nullable;
 
-public abstract class BaseEntityService<K, V extends BaseEntity, R extends BaseRepository<V>> implements EntityService<K, V>{
+public abstract class BaseEntityService<K, V extends GuildEntity, R extends BaseRepository<V>> implements EntityService<K, V>{
 
     protected final R repository;
 
@@ -73,6 +73,10 @@ public abstract class BaseEntityService<K, V extends BaseEntity, R extends BaseR
                 .getRequiredSuperTypeInformation(EntityService.class)
                 .getTypeArguments()
                 .get(1).getType();
+    }
+
+    protected Object extractId(V entity){
+        return entity.guildId();
     }
 
     protected void cleanUp(){

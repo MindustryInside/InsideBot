@@ -24,6 +24,11 @@ public class EmojiDispenserService extends BaseEntityService<LongLongTuple2, Emo
         return repository.findByMessageIdAndRoleId(messageId, roleId);
     }
 
+    @Override
+    protected Object extractId(EmojiDispenser entity){
+        return LongLongTuple2.of(entity.messageId().asLong(), entity.roleId().asLong());
+    }
+
     public Mono<Long> countAllByGuildId(long guildId){
         return Mono.fromSupplier(() -> repository.countAllByGuildId(guildId));
     }

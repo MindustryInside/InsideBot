@@ -1,13 +1,17 @@
 package inside.data.service;
 
-import inside.data.entity.base.BaseEntity;
+import inside.data.entity.base.GuildEntity;
 import inside.data.repository.base.BaseRepository;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.Nullable;
 
-public abstract class BaseLongObjEntityService<V extends BaseEntity, R extends BaseRepository<V>>
+public abstract class BaseLongObjEntityService<V extends GuildEntity, R extends BaseRepository<V>>
         extends BaseEntityService<Long, V, R>
         implements LongObjEntityService<V>{
+
+    protected BaseLongObjEntityService(R repository){
+        this(repository, false);
+    }
 
     protected BaseLongObjEntityService(R repository, boolean cache){
         super(repository, cache);

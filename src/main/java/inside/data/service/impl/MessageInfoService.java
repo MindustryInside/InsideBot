@@ -19,7 +19,7 @@ public class MessageInfoService extends BaseLongObjEntityService<MessageInfo, Me
     private final Settings settings;
 
     protected MessageInfoService(MessageInfoRepository repository, Settings settings){
-        super(repository, settings.getCache().isMessageInfo());
+        super(repository);
         this.settings = settings;
     }
 

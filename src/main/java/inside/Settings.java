@@ -251,8 +251,6 @@ public class Settings{
 
         private boolean starboardConfig = true;
 
-        private boolean messageInfo = false;
-
         public boolean isActivityConfig(){
             return activityConfig;
         }
@@ -315,14 +313,6 @@ public class Settings{
 
         public void setStarboardConfig(boolean starboardConfig){
             this.starboardConfig = starboardConfig;
-        }
-
-        public boolean isMessageInfo(){
-            return messageInfo;
-        }
-
-        public void setMessageInfo(boolean messageInfo){
-            this.messageInfo = messageInfo;
         }
     }
 }
