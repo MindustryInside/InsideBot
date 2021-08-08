@@ -25,6 +25,7 @@ public class LocalMemberService extends BaseEntityService<LongLongTuple2, LocalM
 
     @Nullable
     @Override
+    @Transactional(readOnly = true)
     protected LocalMember find0(LongLongTuple2 id){
         long userId = id.getT1();
         long guildId = id.getT2();
@@ -36,6 +37,7 @@ public class LocalMemberService extends BaseEntityService<LongLongTuple2, LocalM
         return LongLongTuple2.of(entity.userId().asLong(), entity.guildId().asLong());
     }
 
+    @Transactional
     public Mono<Void> deleteAllByGuildId(long guildId){
         return Mono.fromRunnable(() -> repository.deleteAllByGuildId(guildId));
     }

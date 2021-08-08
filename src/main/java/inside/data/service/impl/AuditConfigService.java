@@ -5,6 +5,7 @@ import inside.data.entity.AuditConfig;
 import inside.data.repository.AuditConfigRepository;
 import inside.data.service.BaseLongObjEntityService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.util.annotation.Nullable;
 
 @Service
@@ -16,6 +17,7 @@ public class AuditConfigService extends BaseLongObjEntityService<AuditConfig, Au
 
     @Nullable
     @Override
+    @Transactional(readOnly = true)
     protected AuditConfig find0(long id){
         return repository.findByGuildId(id);
     }

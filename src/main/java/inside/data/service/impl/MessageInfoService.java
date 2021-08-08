@@ -25,10 +25,12 @@ public class MessageInfoService extends BaseLongObjEntityService<MessageInfo, Me
 
     @Nullable
     @Override
+    @Transactional(readOnly = true)
     protected MessageInfo find0(long id){
         return repository.findByMessageId(id);
     }
 
+    @Transactional
     public Mono<Void> deleteAllByGuildId(long guildId){
         return Mono.fromRunnable(() -> repository.deleteAllByGuildId(guildId));
     }

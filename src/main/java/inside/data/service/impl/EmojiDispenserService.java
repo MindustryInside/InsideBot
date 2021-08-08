@@ -6,6 +6,7 @@ import inside.data.entity.EmojiDispenser;
 import inside.data.repository.EmojiDispenserRepository;
 import inside.data.service.BaseEntityService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.*;
 import reactor.util.annotation.Nullable;
 
@@ -18,6 +19,7 @@ public class EmojiDispenserService extends BaseEntityService<LongLongTuple2, Emo
 
     @Nullable
     @Override
+    @Transactional(readOnly = true)
     protected EmojiDispenser find0(LongLongTuple2 id){
         long messageId = id.getT1();
         long roleId = id.getT2();
@@ -29,18 +31,22 @@ public class EmojiDispenserService extends BaseEntityService<LongLongTuple2, Emo
         return LongLongTuple2.of(entity.messageId().asLong(), entity.roleId().asLong());
     }
 
+    @Transactional(readOnly = true)
     public Mono<Long> countAllByGuildId(long guildId){
         return Mono.fromSupplier(() -> repository.countAllByGuildId(guildId));
     }
 
+    @Transactional(readOnly = true)
     public Flux<EmojiDispenser> getAllByMessageId(long messageId){
         return Flux.defer(() -> Flux.fromIterable(repository.findAllByMessageId(messageId)));
     }
 
+    @Transactional(readOnly = true)
     public Flux<EmojiDispenser> getAllByGuildId(long guildId){
-        return Flux.defer(() -> Flux.fromIterable(repository.getAllByGuildId(guildId)));
+        return Flux.defer(() -> Flux.fromIterable(repository.findAllByGuildId(guildId)));
     }
 
+    @Transactional
     public Mono<Void> deleteAllByGuildId(long guildId){
         return Mono.fromRunnable(() -> repository.deleteAllByGuildId(guildId));
     }

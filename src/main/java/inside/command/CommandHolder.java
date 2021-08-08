@@ -66,7 +66,7 @@ public final class CommandHolder{
 
             for(int i = 0; i < params.length; i++){
                 String param = psplit[i].trim();
-                Preconditions.requireState(Strings.isNotEmpty(param), "Malformed param '" + param + "'");
+                Preconditions.requireState(!Strings.isEmpty(param), "Malformed param '" + param + "'");
 
                 char l = param.charAt(0), r = param.charAt(param.length() - 1);
                 boolean optional, variadic = false;

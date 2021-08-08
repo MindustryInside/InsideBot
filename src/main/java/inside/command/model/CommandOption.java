@@ -4,6 +4,7 @@ import inside.util.Strings;
 import reactor.util.annotation.Nullable;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class CommandOption{
@@ -29,7 +30,7 @@ public class CommandOption{
     }
 
     public Optional<OptionValue> getValue(){
-        return Optional.ofNullable(value).filter(Strings::isNotEmpty).map(OptionValue::new);
+        return Optional.ofNullable(value).filter(Predicate.not(Strings::isEmpty)).map(OptionValue::new);
     }
 
     public List<OptionValue> getChoices(){

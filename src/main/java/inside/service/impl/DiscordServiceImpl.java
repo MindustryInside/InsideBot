@@ -1,11 +1,15 @@
 package inside.service.impl;
 
-import discord4j.common.LogUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import discord4j.common.*;
 import discord4j.common.util.Snowflake;
 import discord4j.core.*;
 import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.shard.MemberRequestFilter;
+import discord4j.discordjson.possible.PossibleModule;
 import discord4j.gateway.intent.*;
 import discord4j.rest.http.client.ClientException;
 import discord4j.rest.request.*;
@@ -58,6 +62,10 @@ public class DiscordServiceImpl implements DiscordService{
                 .onClientResponse(ResponseFunction.emptyIfNotFound())
                 .onClientResponse(ResponseFunction.emptyOnErrorStatus(RouteMatcher.route(Routes.REACTION_CREATE), 400))
                 .setDefaultAllowedMentions(AllowedMentions.suppressAll())
+                .setJacksonResources(JacksonResources.createFromObjectMapper(new ObjectMapper())
+                        .withMapperFunction(mapper -> mapper.registerModule(new JavaTimeModule())
+                                .registerModule(new ParameterNamesModule())
+                                .registerModule(new PossibleModule())))
                 .build()
                 .gateway()
                 .setMemberRequestFilter(MemberRequestFilter.all())
@@ -141,9 +149,8 @@ public class DiscordServiceImpl implements DiscordService{
                     }
                     return Mono.empty();
                 }))))
-                .onErrorResume(t -> t instanceof ClientException, t -> {
-                    ClientException c = (ClientException)t;
-                    DiscordWebRequest req = c.getRequest().getDiscordRequest();
+                .onErrorResume(ClientException.class, t -> {
+                    DiscordWebRequest req = t.getRequest().getDiscordRequest();
                     String major = RouteUtils.getMajorParam(req.getRoute().getUriTemplate(), req.getCompleteUri());
                     if(major == null){ // the exception will always start with 'guilds/{guild.id}'
                         return Mono.error(t);

@@ -36,7 +36,7 @@ public abstract class BaseEntityService<K, V extends GuildEntity, R extends Base
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public Flux<V> getAll(){
         return Flux.defer(() -> Flux.fromIterable(repository.findAll()));
     }

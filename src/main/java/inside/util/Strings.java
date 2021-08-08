@@ -9,12 +9,7 @@ public abstract class Strings{
     }
 
     public static boolean isEmpty(@Nullable CharSequence cs){
-        return cs == null || cs.length() == 0 ||
-                cs instanceof String s && s.isBlank();
-    }
-
-    public static boolean isNotEmpty(@Nullable CharSequence cs){
-        return !isEmpty(cs);
+        return cs == null || cs.isEmpty() || cs instanceof String s && s.isBlank();
     }
 
     public static int parseInt(String s){

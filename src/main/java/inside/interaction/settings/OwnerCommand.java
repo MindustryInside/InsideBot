@@ -2,6 +2,7 @@ package inside.interaction.settings;
 
 import discord4j.discordjson.json.ApplicationCommandOptionData;
 import inside.interaction.*;
+import reactor.bool.BooleanUtils;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
@@ -30,6 +31,15 @@ public abstract class OwnerCommand extends SettingsCommand implements Interactio
     public Mono<Void> execute(InteractionCommandEnvironment env){
         String commandName = env.event().getOptions().get(0).getName();
         return Mono.justOrEmpty(getSubCommand(commandName)).flatMap(subcmd -> subcmd.execute(env));
+    }
+
+    @Override
+    public Mono<Boolean> filter(InteractionCommandEnvironment env){
+        String commandName = env.event().getOptions().get(0).getName();
+        Mono<Boolean> isSubCommandFilter = Mono.justOrEmpty(getSubCommand(commandName))
+                .flatMap(subcmd -> subcmd.filter(env));
+
+        return BooleanUtils.and(super.filter(env), isSubCommandFilter);
     }
 
     @Override

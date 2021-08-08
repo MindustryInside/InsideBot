@@ -19,7 +19,7 @@ public abstract class BaseLongObjEntityService<V extends GuildEntity, R extends 
 
     @Override
     public Mono<V> find(long id){
-        return Mono.defer(() -> Mono.justOrEmpty(find0(id)));
+        return Mono.fromSupplier(() -> find0(id));
     }
 
     @Nullable

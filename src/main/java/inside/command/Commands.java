@@ -335,9 +335,9 @@ public class Commands{
             ));
 
             return httpClient.get().get().uri("https://translate.google.com/translate_a/t" + paramstr)
-                    .responseSingle((res, buf) -> buf.asString()
-                            .flatMap(byteBuf -> Mono.fromCallable(() ->
-                                    JacksonUtil.mapper().readTree(byteBuf))))
+                    .responseSingle((res, buf) -> buf.asString().flatMap(byteBuf -> Mono.fromCallable(() ->
+                            env.getClient().rest().getCoreResources().getJacksonResources()
+                                    .getObjectMapper().readTree(byteBuf))))
                     .map(node -> Optional.ofNullable(node.get("sentences"))
                             .map(arr -> arr.get(0))
                             .map(single -> single.get("trans").asText())

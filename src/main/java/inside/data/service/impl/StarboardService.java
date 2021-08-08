@@ -6,6 +6,7 @@ import inside.data.entity.Starboard;
 import inside.data.repository.StarboardRepository;
 import inside.data.service.BaseEntityService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.Nullable;
 
@@ -18,6 +19,7 @@ public class StarboardService extends BaseEntityService<LongLongTuple2, Starboar
 
     @Nullable
     @Override
+    @Transactional(readOnly = true)
     protected Starboard find0(LongLongTuple2 id){
         long guildId = id.getT1();
         long sourceMessageId = id.getT2();
@@ -29,6 +31,7 @@ public class StarboardService extends BaseEntityService<LongLongTuple2, Starboar
         return LongLongTuple2.of(entity.guildId().asLong(), entity.sourceMessageId().asLong());
     }
 
+    @Transactional
     public Mono<Void> deleteAllByGuildId(long guildId){
         return Mono.fromRunnable(() -> repository.deleteAllByGuildId(guildId));
     }

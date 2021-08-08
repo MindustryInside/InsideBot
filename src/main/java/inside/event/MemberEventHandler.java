@@ -199,6 +199,9 @@ public class MemberEventHandler extends ReactiveEventAdapter{
 
     @Override
     public Publisher<?> onGuildDelete(GuildDeleteEvent event){ // remove all content associated with this guild id
+        if(event.isUnavailable()){ // guild currently disabled
+            return Mono.empty();
+        }
         Snowflake guildId = event.getGuildId();
         return entityRetriever.deleteAllStarboardsInGuild(guildId)
                 .and(entityRetriever.deleteAllEmojiDispenserInGuild(guildId))
