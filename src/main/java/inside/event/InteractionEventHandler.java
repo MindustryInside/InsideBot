@@ -80,6 +80,7 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
                             InteractionApplicationCommandCallbackSpec.builder()
                                     .addEmbed(EmbedCreateSpec.builder()
                                             .fields(fields)
+                                            .title(messageService.get(context, "command.admin.warnings.title"))
                                             .color(settings.getDefaults().getNormalColor())
                                             .footer(String.format("Страница %s/%d", page + 1,
                                                     Mathf.ceilPositive(count / (float)Commands.WarningsCommand.PER_PAGE)), null)

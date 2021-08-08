@@ -26,6 +26,8 @@ public interface MessageService{
 
     String getEnum(ContextView ctx, Enum<?> type);
 
+    boolean hasEnum(ContextView ctx, Enum<?> type);
+
     String format(ContextView ctx, String key, Object... args);
 
     Optional<Locale> getLocale(String str);

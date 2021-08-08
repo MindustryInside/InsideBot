@@ -101,6 +101,17 @@ public class MessageServiceImpl implements MessageService{
     }
 
     @Override
+    public boolean hasEnum(ContextView ctx, Enum<?> type){
+        try{
+            String code = String.format("%s.%s", type.getClass().getCanonicalName(), type.name());
+            context.getMessage(code, null, ctx.get(KEY_LOCALE));
+            return true;
+        }catch(NoSuchMessageException e){
+            return false;
+        }
+    }
+
+    @Override
     public String format(ContextView ctx, String key, Object... args){
         try{
             return context.getMessage(key, args, ctx.get(KEY_LOCALE));

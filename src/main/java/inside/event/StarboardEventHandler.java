@@ -114,7 +114,12 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                         var authorUser = source.getAuthor().orElseThrow(IllegalStateException::new);
                                         embedSpec.author(authorUser.getUsername(), null, authorUser.getAvatarUrl());
 
-                                        embedSpec.description(source.getContent());
+                                        String content = source.getContent();
+                                        if(Strings.isEmpty(content)){
+                                            content = messageService.hasEnum(context, source.getType())
+                                                    ? messageService.getEnum(context, source.getType())
+                                                    : messageService.get(context, "message.placeholder");
+                                        }
                                         embedSpec.footer(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
                                                 .withLocale(context.get(KEY_LOCALE))
                                                 .withZone(context.get(KEY_TIMEZONE))
@@ -136,7 +141,9 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                         }
 
                                         source.getAttachments().stream()
-                                                .filter(att -> att.getContentType().map(str -> str.startsWith("image")).orElse(false))
+                                                .filter(att -> att.getContentType()
+                                                        .map(str -> str.startsWith("image"))
+                                                        .orElse(false))
                                                 .map(Attachment::getUrl)
                                                 .findFirst().ifPresent(embedSpec::image);
                                     }else{
@@ -169,7 +176,14 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                             .withZone(context.get(KEY_TIMEZONE))
                                             .format(Instant.now()), null);
                                     embedSpec.author(user.getUsername(), null, user.getAvatarUrl());
-                                    embedSpec.description(source.getContent());
+
+                                    String content = source.getContent();
+                                    if(Strings.isEmpty(content)){
+                                        content = messageService.hasEnum(context, source.getType())
+                                                ? messageService.getEnum(context, source.getType())
+                                                : messageService.get(context, "message.placeholder");
+                                    }
+                                    embedSpec.description(content);
                                     embedSpec.color(lerp(offsetColor, targetColor, Mathf.round(count / 6f, lerpStep)));
                                     embedSpec.addField(messageService.get(context, "starboard.source"),
                                             messageService.format(context, "starboard.jump",
@@ -237,7 +251,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                         return Mono.empty();
                     }
 
-                    Mono<Integer> emojiCount =  event.getMessage()
+                    Mono<Integer> emojiCount = event.getMessage()
                             .flatMapMany(message -> Flux.fromIterable(message.getReactions()))
                             .filter(reaction -> emojis.contains(reaction.getEmoji()))
                             .map(Reaction::getCount)

@@ -1396,6 +1396,7 @@ public class Commands{
                             (tuple, count) -> Tuples.of(tuple.getT1(), tuple.getT2(), count))
                     .flatMap(function((target, fields, count) -> messageService.text(env, spec -> spec.addEmbed(EmbedCreateSpec.builder()
                                     .fields(fields)
+                                    .title(messageService.get(env.context(), "command.admin.warnings.title"))
                                     .color(settings.getDefaults().getNormalColor())
                                     .footer(String.format("Страница 1/%d", Mathf.ceilPositive(count / (float)PER_PAGE)), null)
                                     .build())
