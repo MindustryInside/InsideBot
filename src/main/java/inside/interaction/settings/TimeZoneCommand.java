@@ -16,7 +16,7 @@ import static reactor.function.TupleUtils.function;
 @InteractionDiscordCommand(name = "timezone", description = "Configure bot time zone.")
 public class TimeZoneCommand extends SettingsCommand{
 
-    public TimeZoneCommand(){
+    protected TimeZoneCommand(){
 
         addOption(builder -> builder.name("value")
                 .description("New time zone.")

@@ -17,7 +17,6 @@ import reactor.util.function.*;
 import java.time.Duration;
 import java.util.*;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static inside.util.ContextUtil.*;
@@ -25,7 +24,6 @@ import static reactor.function.TupleUtils.*;
 
 @Deprecated(forRemoval = true)
 public class SettingsCommand1 extends OwnerCommand{
-    private static final Pattern unicode = Pattern.compile("[^\\p{L}\\p{N}\\p{P}\\p{Z}]", Pattern.UNICODE_CHARACTER_CLASS);
 
     private SettingsCommand1(){
         super(null);
@@ -48,160 +46,7 @@ public class SettingsCommand1 extends OwnerCommand{
         Function<Duration, String> formatDuration = duration ->
                 DurationFormat.wordBased(env.context().get(KEY_LOCALE)).format(duration);
 
-        Mono<Void> handleStarboard = Mono.justOrEmpty(env.event().getOption("starboard"))
-                .zipWith(entityRetriever.getStarboardConfigById(guildId)
-                        .switchIfEmpty(entityRetriever.createStarboardConfig(guildId)))
-                .flatMap(function((group, starboardConfig) -> {
-                    Function<List<EmojiData>, String> formatEmojis = emojis -> {
-                        StringBuilder builder = new StringBuilder();
-                        int lastnceil = 0;
-                        for(EmojiData data : emojis){
-                            builder.append(lastnceil).append("..").append(lastnceil + 5);
-                            builder.append(" - ");
-                            builder.append(DiscordUtil.getEmojiString(data));
-                            builder.append("\n");
-                            lastnceil += 5;
-                        }
-                        return builder.toString();
-                    };
-
-                    Mono<Void> emojisCommand = Mono.justOrEmpty(group.getOption("emojis"))
-                            .flatMap(opt -> Mono.justOrEmpty(opt.getOption("type")
-                                            .flatMap(ApplicationCommandInteractionOption::getValue))
-                                    .map(ApplicationCommandInteractionOptionValue::asString)
-                                    .filter(str -> !str.equals("help"))
-                                    .switchIfEmpty(messageService.text(env.event(), "command.settings.emojis.current",
-                                                    formatEmojis.apply(starboardConfig.emojis()))
-                                            .then(Mono.empty()))
-                                    .zipWith(Mono.justOrEmpty(opt.getOption("value"))
-                                            .switchIfEmpty(messageService.text(env.event(), "command.settings.emojis.current",
-                                                            formatEmojis.apply(starboardConfig.emojis()))
-                                                    .then(Mono.empty()))
-                                            .flatMap(subopt -> Mono.justOrEmpty(subopt.getValue()))
-                                            .map(ApplicationCommandInteractionOptionValue::asString)))
-                            .flatMap(function((choice, enums) -> Mono.defer(() -> {
-                                List<EmojiData> emojis = starboardConfig.emojis();
-                                if(choice.equals("clear")){
-                                    emojis.clear();
-                                    return messageService.text(env.event(), "command.settings.emojis.clear");
-                                }
-
-                                boolean add = choice.equals("add");
-
-                                if(enums.matches("^(#\\d+)$") && !add){ // index mode
-                                    String str = enums.substring(1);
-                                    if(!MessageUtil.canParseInt(str)){
-                                        return messageService.err(env.event(), "command.settings.emojis.overflow-index")
-                                                .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
-                                    }
-
-                                    int idx = Strings.parseInt(str) - 1; // Counting the index from 1
-                                    if(idx < 0 || idx >= emojis.size()){
-                                        return messageService.err(env.event(), "command.settings.emojis.index-out-of-bounds")
-                                                .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
-                                    }
-
-                                    EmojiData value = emojis.remove(idx);
-                                    return messageService.text(env.event(), "command.settings.removed",
-                                            DiscordUtil.getEmojiString(value));
-                                }
-
-                                String[] text = enums.split("(\\s+)?,(\\s+)?");
-                                return Flux.fromArray(text).flatMap(str -> env.getClient().getGuildEmojis(guildId)
-                                                .filter(emoji -> emoji.asFormat().equals(str) || emoji.getName().equals(str) ||
-                                                        emoji.getId().asString().equals(str))
-                                                .map(GuildEmoji::getData)
-                                                .switchIfEmpty(Mono.just(str)
-                                                        .filter(s -> unicode.matcher(s).find())
-                                                        .map(s -> EmojiData.builder()
-                                                                .name(s)
-                                                                .build())))
-                                        .collectList()
-                                        .flatMap(list -> {
-                                            var tmp = new ArrayList<>(emojis);
-                                            if(add){
-                                                tmp.addAll(list);
-                                                if(tmp.size() > 20){
-                                                    return messageService.err(env.event(), "command.settings.emojis.limit")
-                                                            .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
-                                                }
-
-                                                emojis.addAll(list);
-                                            }else{
-                                                tmp.removeAll(list);
-                                                if(tmp.size() < 1){
-                                                    return messageService.err(env.event(), "command.settings.emojis.no-emojis")
-                                                            .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
-                                                }
-
-                                                emojis.removeAll(list);
-                                            }
-
-                                            if(add){
-                                                return messageService.text(env.event(), "command.settings.added",
-                                                        formatCollection(list, DiscordUtil::getEmojiString));
-                                            }
-                                            return messageService.text(env.event(), "command.settings.removed",
-                                                    formatCollection(list, DiscordUtil::getEmojiString));
-                                        });
-                            }).and(entityRetriever.save(starboardConfig))));
-
-                    Mono<Void> lowerStarBarrierCommand = Mono.justOrEmpty(group.getOption("lower-star-barrier"))
-                            .switchIfEmpty(emojisCommand.then(Mono.empty()))
-                            .flatMap(command -> Mono.justOrEmpty(command.getOption("value")))
-                            .switchIfEmpty(messageService.text(env.event(), "command.settings.lower-star-barrier.current",
-                                    starboardConfig.lowerStarBarrier()).then(Mono.empty()))
-                            .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
-                                    .map(ApplicationCommandInteractionOptionValue::asLong))
-                            .filter(l -> l > 0)
-                            .switchIfEmpty(messageService.text(env.event(), "command.settings.negative-number")
-                                    .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true)).then(Mono.empty()))
-                            .flatMap(l -> {
-                                int i = (int)(long)l;
-                                if(i != l){
-                                    return messageService.err(env.event(), "command.settings.overflow-number")
-                                            .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
-                                }
-
-                                starboardConfig.lowerStarBarrier(i);
-                                return messageService.text(env.event(), "command.settings.lower-star-barrier.update", i)
-                                        .and(entityRetriever.save(starboardConfig));
-                            });
-
-                    Mono<Void> channelCommand = Mono.justOrEmpty(group.getOption("channel"))
-                            .switchIfEmpty(lowerStarBarrierCommand.then(Mono.empty()))
-                            .flatMap(command -> Mono.justOrEmpty(command.getOption("value")))
-                            .switchIfEmpty(messageService.text(env.event(), "command.settings.starboard-channel.current",
-                                            starboardConfig.starboardChannelId().map(DiscordUtil::getChannelMention)
-                                                    .orElse(messageService.get(env.context(), "command.settings.absent")))
-                                    .then(Mono.empty()))
-                            .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
-                                    .flatMap(ApplicationCommandInteractionOptionValue::asChannel))
-                            .map(Channel::getId)
-                            .flatMap(channelId -> {
-                                starboardConfig.starboardChannelId(channelId);
-                                return messageService.text(env.event(), "command.settings.starboard-channel.update",
-                                                DiscordUtil.getChannelMention(channelId))
-                                        .and(entityRetriever.save(starboardConfig));
-                            });
-
-                    return Mono.justOrEmpty(group.getOption("enable"))
-                            .switchIfEmpty(channelCommand.then(Mono.empty()))
-                            .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")
-                                    .flatMap(ApplicationCommandInteractionOption::getValue)))
-                            .map(ApplicationCommandInteractionOptionValue::asBoolean)
-                            .switchIfEmpty(messageService.text(env.event(), "command.settings.starboard-enable.update",
-                                    formatBool.apply(starboardConfig.isEnabled())).then(Mono.empty()))
-                            .flatMap(bool -> {
-                                starboardConfig.setEnabled(bool);
-                                return messageService.text(env.event(), "command.settings.starboard-enable.update",
-                                                formatBool.apply(bool))
-                                        .and(entityRetriever.save(starboardConfig));
-                            });
-                }));
-
         Mono<Void> handleActivities = Mono.justOrEmpty(env.event().getOption("activities"))
-                .switchIfEmpty(handleStarboard.then(Mono.empty()))
                 .zipWith(entityRetriever.getActivityConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createActiveUserConfig(guildId)))
                 .flatMap(function((group, activityConfig) -> {
@@ -578,73 +423,6 @@ public class SettingsCommand1 extends OwnerCommand{
                                         .name("value")
                                         .description("Period value")
                                         .type(ApplicationCommandOptionType.STRING.getValue())
-                                        .build())
-                                .build())
-                        .build())
-                .addOption(ApplicationCommandOptionData.builder()
-                        .name("starboard")
-                        .description("Starboard settings")
-                        .type(ApplicationCommandOptionType.SUB_COMMAND_GROUP.getValue())
-                        .addOption(ApplicationCommandOptionData.builder()
-                                .name("enable")
-                                .description("Enable starboard")
-                                .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
-                                .addOption(ApplicationCommandOptionData.builder()
-                                        .name("value")
-                                        .description("Boolean value")
-                                        .type(ApplicationCommandOptionType.BOOLEAN.getValue())
-                                        .build())
-                                .build())
-                        .addOption(ApplicationCommandOptionData.builder()
-                                .name("lower-star-barrier")
-                                .description("Set star barrier")
-                                .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
-                                .addOption(ApplicationCommandOptionData.builder()
-                                        .name("value")
-                                        .description("Integer value")
-                                        .type(ApplicationCommandOptionType.INTEGER.getValue())
-                                        .build())
-                                .build())
-                        .addOption(ApplicationCommandOptionData.builder()
-                                .name("emojis")
-                                .description("Configure starboard emojis")
-                                .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
-                                .addOption(ApplicationCommandOptionData.builder()
-                                        .name("type")
-                                        .description("Action type")
-                                        .type(ApplicationCommandOptionType.STRING.getValue())
-                                        .required(true)
-                                        .addChoice(ApplicationCommandOptionChoiceData.builder()
-                                                .name("Get a help")
-                                                .value("help")
-                                                .build())
-                                        .addChoice(ApplicationCommandOptionChoiceData.builder()
-                                                .name("Add emoji(s)")
-                                                .value("add")
-                                                .build())
-                                        .addChoice(ApplicationCommandOptionChoiceData.builder()
-                                                .name("Remove emoji(s)")
-                                                .value("remove")
-                                                .build())
-                                        .addChoice(ApplicationCommandOptionChoiceData.builder()
-                                                .name("Remove all emojis")
-                                                .value("clear")
-                                                .build())
-                                        .build())
-                                .addOption(ApplicationCommandOptionData.builder()
-                                        .name("value")
-                                        .description("Target emoji(s)")
-                                        .type(ApplicationCommandOptionType.STRING.getValue())
-                                        .build())
-                                .build())
-                        .addOption(ApplicationCommandOptionData.builder()
-                                .name("channel")
-                                .description("Configure starboard channel")
-                                .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
-                                .addOption(ApplicationCommandOptionData.builder()
-                                        .name("value")
-                                        .description("Starboard channel")
-                                        .type(ApplicationCommandOptionType.CHANNEL.getValue())
                                         .build())
                                 .build())
                         .build())

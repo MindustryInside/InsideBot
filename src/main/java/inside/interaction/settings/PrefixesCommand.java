@@ -4,7 +4,6 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.*;
 import discord4j.rest.util.ApplicationCommandOptionType;
 import inside.interaction.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import reactor.core.publisher.Mono;
 
@@ -15,7 +14,7 @@ import static reactor.function.TupleUtils.function;
 @InteractionDiscordCommand(name = "prefixes", description = "Configure bot prefixes.")
 public class PrefixesCommand extends OwnerCommand{
 
-    protected PrefixesCommand(@Autowired(required = false) List<InteractionOwnerAwareCommand<PrefixesCommand>> subcommands){
+    protected PrefixesCommand(@Aware List<InteractionOwnerAwareCommand<PrefixesCommand>> subcommands){
         super(subcommands);
     }
 
@@ -23,7 +22,7 @@ public class PrefixesCommand extends OwnerCommand{
             type = ApplicationCommandOptionType.SUB_COMMAND)
     public static class PrefixesCommandHelp extends OwnerAwareCommand<PrefixesCommand>{
 
-        protected PrefixesCommandHelp(@Lazy PrefixesCommand owner){
+        protected PrefixesCommandHelp(@Aware PrefixesCommand owner){
             super(owner);
         }
 

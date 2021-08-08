@@ -8,8 +8,6 @@ import discord4j.rest.util.ApplicationCommandOptionType;
 import inside.data.entity.EmojiDispenser;
 import inside.interaction.*;
 import inside.util.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -18,7 +16,7 @@ import java.util.stream.Collectors;
 @InteractionDiscordCommand(name = "reaction-roles", description = "Configure reaction roles.")
 public class ReactionRolesCommand extends OwnerCommand{
 
-    protected ReactionRolesCommand(@Autowired(required = false) List<? extends InteractionOwnerAwareCommand<ReactionRolesCommand>> subcommands){
+    protected ReactionRolesCommand(@Aware List<? extends InteractionOwnerAwareCommand<ReactionRolesCommand>> subcommands){
         super(subcommands);
     }
 
@@ -37,7 +35,7 @@ public class ReactionRolesCommand extends OwnerCommand{
             type = ApplicationCommandOptionType.SUB_COMMAND)
     public static class ReactionRolesCommandHelp extends OwnerAwareCommand<ReactionRolesCommand>{
 
-        protected ReactionRolesCommandHelp(@Lazy ReactionRolesCommand owner){
+        protected ReactionRolesCommandHelp(@Aware ReactionRolesCommand owner){
             super(owner);
         }
 
@@ -61,7 +59,7 @@ public class ReactionRolesCommand extends OwnerCommand{
 
         private static final int MAX_REACTION_ROLE_COUNT = 20;
 
-        protected ReactionRolesCommandAdd(@Lazy ReactionRolesCommand owner){
+        protected ReactionRolesCommandAdd(@Aware ReactionRolesCommand owner){
             super(owner);
 
             addOption(builder -> builder
@@ -130,7 +128,7 @@ public class ReactionRolesCommand extends OwnerCommand{
             type = ApplicationCommandOptionType.SUB_COMMAND)
     public static class ReactionRolesCommandRemove extends OwnerAwareCommand<ReactionRolesCommand>{
 
-        protected ReactionRolesCommandRemove(@Lazy ReactionRolesCommand owner){
+        protected ReactionRolesCommandRemove(@Aware ReactionRolesCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("message-id")
@@ -177,7 +175,7 @@ public class ReactionRolesCommand extends OwnerCommand{
             type = ApplicationCommandOptionType.SUB_COMMAND)
     public static class ReactionRolesCommandClear extends OwnerAwareCommand<ReactionRolesCommand>{
 
-        protected ReactionRolesCommandClear(@Lazy ReactionRolesCommand owner){
+        protected ReactionRolesCommandClear(@Aware ReactionRolesCommand owner){
             super(owner);
         }
 
