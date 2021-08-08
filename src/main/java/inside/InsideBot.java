@@ -14,8 +14,8 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import java.util.function.Function;
 
-@EntityScan("inside")
-@EnableJpaRepositories("inside")
+@EntityScan("inside.data.entity")
+@EnableJpaRepositories("inside.data.repository")
 @ConfigurationPropertiesScan("inside")
 @EnableScheduling
 @EnableTransactionManagement
