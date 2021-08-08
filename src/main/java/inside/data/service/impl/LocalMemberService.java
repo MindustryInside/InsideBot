@@ -34,7 +34,7 @@ public class LocalMemberService extends BaseEntityService<LongLongTuple2, LocalM
 
     @Override
     protected Object extractId(LocalMember entity){
-        return LongLongTuple2.of(entity.userId().asLong(), entity.guildId().asLong());
+        return LongLongTuple2.of(entity.getUserId().asLong(), entity.getGuildId().asLong());
     }
 
     @Transactional

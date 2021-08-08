@@ -22,22 +22,22 @@ public class AuditConfig extends ConfigEntity{
     @Column(columnDefinition = "json")
     private Set<AuditActionType> types;
 
-    public Optional<Snowflake> logChannelId(){
+    public Optional<Snowflake> getLogChannelId(){
         return Optional.ofNullable(logChannelId).map(Snowflake::of);
     }
 
-    public void logChannelId(Snowflake logChannelId){
+    public void setLogChannelId(Snowflake logChannelId){
         this.logChannelId = Objects.requireNonNull(logChannelId, "logChannelId").asString();
     }
 
-    public Set<AuditActionType> types(){
+    public Set<AuditActionType> getTypes(){
         if(types == null){
             types = new HashSet<>();
         }
         return types;
     }
 
-    public void types(Set<AuditActionType> types){
+    public void setTypes(Set<AuditActionType> types){
         this.types = Objects.requireNonNull(types, "types");
     }
 

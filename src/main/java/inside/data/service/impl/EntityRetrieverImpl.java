@@ -233,7 +233,7 @@ public class EntityRetrieverImpl implements EntityRetriever{
     public Mono<GuildConfig> createGuildConfig(Snowflake guildId){
         return Mono.defer(() -> {
             GuildConfig guildConfig = new GuildConfig();
-            guildConfig.guildId(guildId);
+            guildConfig.setGuildId(guildId);
             guildConfig.prefixes(settings.getDefaults().getPrefixes());
             guildConfig.locale(messageService.getDefaultLocale());
             guildConfig.timeZone(settings.getDefaults().getTimeZone());
@@ -245,11 +245,11 @@ public class EntityRetrieverImpl implements EntityRetriever{
     public Mono<AdminConfig> createAdminConfig(Snowflake guildId){
         return Mono.defer(() -> {
             AdminConfig adminConfig = new AdminConfig();
-            adminConfig.guildId(guildId);
-            adminConfig.maxWarnCount(settings.getDefaults().getMaxWarnings());
-            adminConfig.muteBaseDelay(settings.getDefaults().getMuteEvade());
-            adminConfig.warnExpireDelay(settings.getDefaults().getWarnExpire());
-            adminConfig.thresholdAction(settings.getDefaults().getThresholdAction());
+            adminConfig.setGuildId(guildId);
+            adminConfig.setMaxWarnCount(settings.getDefaults().getMaxWarnings());
+            adminConfig.setMuteBaseDelay(settings.getDefaults().getMuteEvade());
+            adminConfig.setWarnExpireDelay(settings.getDefaults().getWarnExpire());
+            adminConfig.setThresholdAction(settings.getDefaults().getThresholdAction());
             return save(adminConfig).thenReturn(adminConfig);
         });
     }
@@ -258,7 +258,7 @@ public class EntityRetrieverImpl implements EntityRetriever{
     public Mono<AuditConfig> createAuditConfig(Snowflake guildId){
         return Mono.defer(() -> {
             AuditConfig auditConfig = new AuditConfig();
-            auditConfig.guildId(guildId);
+            auditConfig.setGuildId(guildId);
             return save(auditConfig).thenReturn(auditConfig);
         });
     }
@@ -268,10 +268,10 @@ public class EntityRetrieverImpl implements EntityRetriever{
         return Mono.defer(() -> {
             LocalMember localMember = new LocalMember();
             localMember.userId(member.getId());
-            localMember.guildId(member.getGuildId());
+            localMember.setGuildId(member.getGuildId());
             localMember.effectiveName(member.getDisplayName());
             Activity activity = new Activity();
-            activity.guildId(member.getGuildId());
+            activity.setGuildId(member.getGuildId());
             localMember.activity(activity); // TODO: lazy initializing?
             return save(localMember).thenReturn(localMember);
         });
@@ -281,11 +281,11 @@ public class EntityRetrieverImpl implements EntityRetriever{
     public Mono<MessageInfo> createMessageInfo(Message message){
         return Mono.defer(() -> {
             MessageInfo messageInfo = new MessageInfo();
-            messageInfo.messageId(message.getId());
-            messageInfo.userId(message.getAuthor().map(User::getId).orElseThrow(IllegalStateException::new)); // only users, not webhooks
-            messageInfo.guildId(message.getGuildId().orElseThrow(IllegalStateException::new)); // only guilds
-            messageInfo.timestamp(message.getTimestamp());
-            messageInfo.content(messageService.encrypt(MessageUtil.effectiveContent(message), message.getId(), message.getChannelId()));
+            messageInfo.setMessageId(message.getId());
+            messageInfo.setUserId(message.getAuthor().map(User::getId).orElseThrow(IllegalStateException::new)); // only users, not webhooks
+            messageInfo.setGuildId(message.getGuildId().orElseThrow(IllegalStateException::new)); // only guilds
+            messageInfo.setTimestamp(message.getTimestamp());
+            messageInfo.setContent(messageService.encrypt(MessageUtil.effectiveContent(message), message.getId(), message.getChannelId()));
             return save(messageInfo).thenReturn(messageInfo);
         });
     }
@@ -294,9 +294,9 @@ public class EntityRetrieverImpl implements EntityRetriever{
     public Mono<StarboardConfig> createStarboardConfig(Snowflake guildId){
         return Mono.defer(() -> {
             StarboardConfig starboardConfig = new StarboardConfig();
-            starboardConfig.guildId(guildId);
-            starboardConfig.lowerStarBarrier(settings.getDefaults().getStarboardLowerStarBarrier());
-            starboardConfig.emojis(defaultStarsEmojis);
+            starboardConfig.setGuildId(guildId);
+            starboardConfig.setLowerStarBarrier(settings.getDefaults().getStarboardLowerStarBarrier());
+            starboardConfig.setEmojis(defaultStarsEmojis);
             return save(starboardConfig).thenReturn(starboardConfig);
         });
     }
@@ -305,9 +305,9 @@ public class EntityRetrieverImpl implements EntityRetriever{
     public Mono<ActivityConfig> createActiveUserConfig(Snowflake guildId){
         return Mono.defer(() -> {
             ActivityConfig activityConfig = new ActivityConfig();
-            activityConfig.guildId(guildId);
-            activityConfig.keepCountingDuration(settings.getDefaults().getActiveUserKeepCountingDuration());
-            activityConfig.messageBarrier(settings.getDefaults().getActiveUserMessageBarrier());
+            activityConfig.setGuildId(guildId);
+            activityConfig.setKeepCountingDuration(settings.getDefaults().getActiveUserKeepCountingDuration());
+            activityConfig.setMessageBarrier(settings.getDefaults().getActiveUserMessageBarrier());
             return save(activityConfig).thenReturn(activityConfig);
         });
     }
@@ -316,9 +316,9 @@ public class EntityRetrieverImpl implements EntityRetriever{
     public Mono<Starboard> createStarboard(Snowflake guildId, Snowflake sourceMessageId, Snowflake targetMessageId){
         return Mono.defer(() -> {
             Starboard starboard = new Starboard();
-            starboard.guildId(guildId);
-            starboard.sourceMessageId(sourceMessageId);
-            starboard.targetMessageId(targetMessageId);
+            starboard.setGuildId(guildId);
+            starboard.setSourceMessageId(sourceMessageId);
+            starboard.setTargetMessageId(targetMessageId);
             return save(starboard).thenReturn(starboard);
         });
     }
@@ -327,10 +327,10 @@ public class EntityRetrieverImpl implements EntityRetriever{
     public Mono<EmojiDispenser> createEmojiDispenser(Snowflake guildId, Snowflake messageId, Snowflake roleId, EmojiData emojiData){
         return Mono.defer(() -> {
             EmojiDispenser emojiDispenser = new EmojiDispenser();
-            emojiDispenser.guildId(guildId);
-            emojiDispenser.messageId(messageId);
-            emojiDispenser.roleId(roleId);
-            emojiDispenser.emoji(emojiData);
+            emojiDispenser.setGuildId(guildId);
+            emojiDispenser.setMessageId(messageId);
+            emojiDispenser.setRoleId(roleId);
+            emojiDispenser.setEmoji(emojiData);
             return save(emojiDispenser).thenReturn(emojiDispenser);
         });
     }

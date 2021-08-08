@@ -120,13 +120,13 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                     Mono<MessageInfo> messageInfo = entityRetriever.getMessageInfoById(event.getMessageId())
                             .switchIfEmpty(Mono.fromSupplier(() -> { // create if not stored
                                 MessageInfo info = new MessageInfo();
-                                info.messageId(event.getMessageId());
-                                info.userId(member.getId());
-                                info.guildId(guildId);
-                                info.content(messageService.encrypt(event.getOld()
+                                info.setMessageId(event.getMessageId());
+                                info.setUserId(member.getId());
+                                info.setGuildId(guildId);
+                                info.setContent(messageService.encrypt(event.getOld()
                                         .map(MessageUtil::effectiveContent)
                                         .orElse(""), message.getId(), message.getChannelId()));
-                                info.timestamp(event.getMessageId().getTimestamp());
+                                info.setTimestamp(event.getMessageId().getTimestamp());
                                 return info;
                             }));
 
@@ -142,8 +142,8 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                     });
 
                     return messageInfo.flatMap(info -> {
-                        String oldContent = messageService.decrypt(info.content(), message.getId(), message.getChannelId());
-                        info.content(messageService.encrypt(newContent, message.getId(), message.getChannelId()));
+                        String oldContent = messageService.decrypt(info.getContent(), message.getId(), message.getChannelId());
+                        info.setContent(messageService.encrypt(newContent, message.getId(), message.getChannelId()));
 
                         if(newContent.equals(oldContent)){ // message was pinned
                             return Mono.empty();
@@ -192,7 +192,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
         return initContext.flatMap(context -> Mono.zip(event.getChannel().ofType(TextChannel.class), messageInfo)
                 .flatMap(function((channel, info) -> {
-                    String decrypted = messageService.decrypt(info.content(), message.getId(), message.getChannelId());
+                    String decrypted = messageService.decrypt(info.getContent(), message.getId(), message.getChannelId());
                     AuditActionBuilder builder = auditService.newBuilder(guildId, MESSAGE_DELETE)
                             .withChannel(channel)
                             .withAttribute(OLD_CONTENT, decrypted);
@@ -212,7 +212,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                             .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now(Clock.systemUTC()).minusMillis(TIMEOUT_MILLIS)) ||
                                     entry.getOption(OptionKey.COUNT).map(i -> i > 1).orElse(false) &&
                                             entry.getId().getTimestamp().isAfter(Instant.now(Clock.systemUTC()).minus(5, ChronoUnit.MINUTES)))
-                            .filter(entry -> entry.getTargetId().map(id -> id.equals(info.userId())).orElse(false) &&
+                            .filter(entry -> entry.getTargetId().map(id -> id.equals(info.getUserId())).orElse(false) &&
                                     entry.getOption(OptionKey.CHANNEL_ID).map(id -> id.equals(message.getChannelId())).orElse(false))
                             .next()
                             .flatMap(entry -> Mono.justOrEmpty(entry.getResponsibleUser()));

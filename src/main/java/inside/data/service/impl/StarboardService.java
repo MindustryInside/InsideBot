@@ -28,7 +28,7 @@ public class StarboardService extends BaseEntityService<LongLongTuple2, Starboar
 
     @Override
     protected Object extractId(Starboard entity){
-        return LongLongTuple2.of(entity.guildId().asLong(), entity.sourceMessageId().asLong());
+        return LongLongTuple2.of(entity.getGuildId().asLong(), entity.getSourceMessageId().asLong());
     }
 
     @Transactional

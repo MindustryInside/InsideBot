@@ -27,8 +27,8 @@ public class ReactionRolesCommand extends OwnerCommand{
 
     private static String format(EmojiDispenser e){
         return String.format("%s -> %s (%s)\n",
-                e.messageId().asString(), DiscordUtil.getRoleMention(e.roleId()),
-                DiscordUtil.getEmojiString(e.emoji()));
+                e.getMessageId().asString(), DiscordUtil.getRoleMention(e.getRoleId()),
+                DiscordUtil.getEmojiString(e.getEmoji()));
     }
 
     @InteractionDiscordCommand(name = "help", description = "Get a help.",

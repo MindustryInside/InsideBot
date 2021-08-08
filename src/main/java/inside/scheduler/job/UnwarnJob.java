@@ -22,7 +22,7 @@ public class UnwarnJob implements Job{
     public static JobDetail createDetails(AdminAction action){
         return JobBuilder.newJob(UnwarnJob.class)
                 .withIdentity(GROUP + "-" + UUID.randomUUID(), GROUP)
-                .usingJobData(ATT_ID, Snowflake.asString(action.id()))
+                .usingJobData(ATT_ID, Snowflake.asString(action.getId()))
                 .build();
     }
 

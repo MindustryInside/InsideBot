@@ -19,19 +19,19 @@ public class Starboard extends GuildEntity{
     @Column(name = "target_message_id")
     private long targetMessageId;
 
-    public Snowflake sourceMessageId(){
+    public Snowflake getSourceMessageId(){
         return Snowflake.of(sourceMessageId);
     }
 
-    public void sourceMessageId(Snowflake sourceMessageId){
+    public void setSourceMessageId(Snowflake sourceMessageId){
         this.sourceMessageId = Objects.requireNonNull(sourceMessageId, "sourceMessageId").asLong();
     }
 
-    public Snowflake targetMessageId(){
+    public Snowflake getTargetMessageId(){
         return Snowflake.of(targetMessageId);
     }
 
-    public void targetMessageId(Snowflake targetMessageId){
+    public void setTargetMessageId(Snowflake targetMessageId){
         this.targetMessageId = Objects.requireNonNull(targetMessageId, "targetMessageId").asLong();
     }
 

@@ -1102,7 +1102,7 @@ public class Commands{
 
             return entityRetriever.getAdminConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createAdminConfig(guildId))
-                    .filter(adminConfig -> adminConfig.muteRoleID().isPresent())
+                    .filter(adminConfig -> adminConfig.getMuteRoleID().isPresent())
                     .switchIfEmpty(messageService.err(env, "command.disabled.mute").then(Mono.never()))
                     .flatMap(ignored -> Mono.justOrEmpty(targetId)).flatMap(id -> env.getClient().getMemberById(guildId, id))
                     .switchIfEmpty(messageService.err(env, "command.incorrect-name").then(Mono.never()))
@@ -1142,7 +1142,7 @@ public class Commands{
 
             return entityRetriever.getAdminConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createAdminConfig(guildId))
-                    .filter(adminConfig -> adminConfig.muteRoleID().isPresent())
+                    .filter(adminConfig -> adminConfig.getMuteRoleID().isPresent())
                     .switchIfEmpty(messageService.err(env, "command.disabled.mute").then(Mono.never()))
                     .flatMap(ignored -> Mono.justOrEmpty(targetId))
                     .flatMap(id -> env.getClient().getMemberById(guildId, id))
@@ -1280,8 +1280,8 @@ public class Commands{
                             Mono<AdminConfig> config = entityRetriever.getAdminConfigById(guildId)
                                     .switchIfEmpty(entityRetriever.createAdminConfig(guildId));
 
-                            Mono<Void> thresholdCheck = config.filter(adminConfig -> count >= adminConfig.maxWarnCount())
-                                    .flatMap(adminConfig -> switch(adminConfig.thresholdAction()){
+                            Mono<Void> thresholdCheck = config.filter(adminConfig -> count >= adminConfig.getMaxWarnCount())
+                                    .flatMap(adminConfig -> switch(adminConfig.getThresholdAction()){
                                         case ban -> author.getGuild().flatMap(guild ->
                                                 guild.ban(member.getId(), BanQuerySpec.builder()
                                                         .deleteMessageDays(0)
@@ -1289,7 +1289,7 @@ public class Commands{
                                         case kick -> author.kick();
                                         case mute -> author.getGuild().flatMap(Guild::getOwner)
                                                 .flatMap(owner -> adminService.mute(owner, author,
-                                                        Instant.now().plus(adminConfig.muteBaseDelay()), null));
+                                                        Instant.now().plus(adminConfig.getMuteBaseDelay()), null));
                                         default -> Mono.empty();
                                     });
 
@@ -1386,9 +1386,9 @@ public class Commands{
                             .take(PER_PAGE, true).index()
                             .map(function((idx, warn) ->
                                     EmbedCreateFields.Field.of(String.format("%2s. %s", idx + 1,
-                                            TimestampFormat.LONG_DATE_TIME.format(warn.timestamp())), String.format("%s%n%s",
-                                            messageService.format(env.context(), "common.admin", warn.admin().effectiveName()),
-                                            messageService.format(env.context(), "common.reason", warn.reason()
+                                            TimestampFormat.LONG_DATE_TIME.format(warn.getTimestamp())), String.format("%s%n%s",
+                                            messageService.format(env.context(), "common.admin", warn.getAdmin().effectiveName()),
+                                            messageService.format(env.context(), "common.reason", warn.getReason()
                                                     .orElse(messageService.get(env.context(), "common.not-defined")))),
                                     true)))
                             .collectList())

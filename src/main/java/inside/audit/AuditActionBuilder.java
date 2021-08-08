@@ -20,10 +20,11 @@ public abstract class AuditActionBuilder{
     protected List<Tuple2<String, InputStream>> attachments;
 
     protected AuditActionBuilder(Snowflake guildId, AuditActionType type){
-        action = new AuditAction(guildId);
-        action.timestamp(Instant.now());
-        action.type(type);
-        action.attributes(new HashMap<>(7));
+        action = new AuditAction();
+        action.setGuildId(guildId);
+        action.setTimestamp(Instant.now());
+        action.setType(type);
+        action.setAttributes(new HashMap<>(7));
     }
 
     public static NamedReference getReference(Member member){
@@ -38,7 +39,7 @@ public abstract class AuditActionBuilder{
 
     public static NamedReference getReference(LocalMember member){
         Objects.requireNonNull(member, "member");
-        return new NamedReference(member.userId(), member.effectiveName());
+        return new NamedReference(member.getUserId(), member.effectiveName());
     }
 
     public static NamedReference getReference(GuildChannel channel){
@@ -47,42 +48,42 @@ public abstract class AuditActionBuilder{
     }
 
     public AuditActionBuilder withUser(Member user){
-        action.user(getReference(user));
+        action.setUser(getReference(user));
         return this;
     }
 
     public AuditActionBuilder withUser(User user){
-        action.user(getReference(user));
+        action.setUser(getReference(user));
         return this;
     }
 
     public AuditActionBuilder withUser(LocalMember user){
-        action.user(getReference(user));
+        action.setUser(getReference(user));
         return this;
     }
 
     public AuditActionBuilder withTargetUser(Member user){
-        action.target(getReference(user));
+        action.setTarget(getReference(user));
         return this;
     }
 
     public AuditActionBuilder withTargetUser(User user){
-        action.target(getReference(user));
+        action.setTarget(getReference(user));
         return this;
     }
 
     public AuditActionBuilder withTargetUser(LocalMember user){
-        action.target(getReference(user));
+        action.setTarget(getReference(user));
         return this;
     }
 
     public AuditActionBuilder withChannel(GuildChannel channel){
-        action.channel(getReference(channel));
+        action.setChannel(getReference(channel));
         return this;
     }
 
     public <T> AuditActionBuilder withAttribute(Attribute<T> key, @Nullable T value){
-        action.attributes().put(key.name, value);
+        action.getAttributes().put(key.name, value);
         return this;
     }
 

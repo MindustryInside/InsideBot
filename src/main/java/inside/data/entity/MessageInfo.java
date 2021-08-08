@@ -26,35 +26,35 @@ public class MessageInfo extends GuildEntity{
     @Column
     private Instant timestamp;
 
-    public Snowflake messageId(){
+    public Snowflake getMessageId(){
         return Snowflake.of(messageId);
     }
 
-    public void messageId(Snowflake messageId){
+    public void setMessageId(Snowflake messageId){
         this.messageId = Objects.requireNonNull(messageId, "messageId").asLong();
     }
 
-    public Snowflake userId(){
+    public Snowflake getUserId(){
         return Snowflake.of(userId);
     }
 
-    public void userId(Snowflake userId){
+    public void setUserId(Snowflake userId){
         this.userId = Objects.requireNonNull(userId, "userId").asLong();
     }
 
-    public String content(){
+    public String getContent(){
         return content;
     }
 
-    public void content(String content){
+    public void setContent(String content){
         this.content = Objects.requireNonNull(content, "content");
     }
 
-    public Instant timestamp(){
+    public Instant getTimestamp(){
         return timestamp;
     }
 
-    public void timestamp(Instant timestamp){
+    public void setTimestamp(Instant timestamp){
         this.timestamp = Objects.requireNonNull(timestamp, "timestamp");
     }
 

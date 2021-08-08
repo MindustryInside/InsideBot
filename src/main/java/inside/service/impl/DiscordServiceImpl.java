@@ -129,11 +129,11 @@ public class DiscordServiceImpl implements DiscordService{
     private void activeUsers(){
         entityRetriever.getAllLocalMembers()
                 .flatMap(localMember -> Mono.zip(Mono.just(localMember),
-                        gateway.getMemberById(localMember.guildId(), localMember.userId()),
-                        entityRetriever.getActivityConfigById(localMember.guildId())))
+                        gateway.getMemberById(localMember.getGuildId(), localMember.getUserId()),
+                        entityRetriever.getActivityConfigById(localMember.getGuildId())))
                 .filter(predicate((localMember, member, activeUserConfig) -> activeUserConfig.isEnabled()))
                 .flatMap(function((localMember, member, activeUserConfig) -> Mono.defer(() -> {
-                    Snowflake roleId = activeUserConfig.roleId().orElse(null);
+                    Snowflake roleId = activeUserConfig.getRoleId().orElse(null);
                     if(roleId == null){
                         return Mono.empty();
                     }

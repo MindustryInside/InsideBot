@@ -47,15 +47,15 @@ public class AuditServiceImpl implements AuditService{
     @Override
     @Transactional
     public Mono<Void> save(AuditAction action, List<Tuple2<String, InputStream>> attachments){
-        AuditProvider forwardProvider = providers.get(action.type());
+        AuditProvider forwardProvider = providers.get(action.getType());
         if(forwardProvider != null){
             if(settings.getDiscord().isAuditLogSaving()){
                 repository.save(action);
             }
-            return entityRetriever.getAuditConfigById(action.guildId())
+            return entityRetriever.getAuditConfigById(action.getGuildId())
                     .flatMap(config -> forwardProvider.send(config, action, attachments));
         }
-        return Mono.error(new NoSuchElementException("Missed audit provider for type: " + action.type()));
+        return Mono.error(new NoSuchElementException("Missed audit provider for type: " + action.getType()));
     }
 
     @Override

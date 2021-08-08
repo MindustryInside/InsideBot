@@ -57,13 +57,13 @@ public class MemberEventHandler extends ReactiveEventAdapter{
 
         Mono<Void> warn = Mono.deferContextual(ctx -> member.getGuild().flatMap(Guild::getOwner)
                 .filterWhen(ignored -> adminConfig.flatMap(config -> adminService.warnings(member).count()
-                        .map(c -> c >= config.maxWarnCount())))
+                        .map(c -> c >= config.getMaxWarnCount())))
                 .flatMap(owner -> adminService.warn(owner, member, messageService.get(ctx, "audit.member.warn.evade"))));
 
         Mono<?> muteEvade = Mono.deferContextual(ctx -> member.getGuild().flatMap(Guild::getOwner)
                 .filterWhen(ignored -> adminService.isMuted(member))
                 .flatMap(owner -> adminConfig.flatMap(config -> adminService.mute(owner, member,
-                                Instant.now().plus(config.muteBaseDelay()),
+                                Instant.now().plus(config.getMuteBaseDelay()),
                                 messageService.get(ctx, "audit.member.mute.evade"))
                         .thenReturn(owner)))
                 .switchIfEmpty(warn.then(Mono.empty())));

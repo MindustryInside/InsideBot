@@ -39,39 +39,39 @@ public class AdminConfig extends GuildEntity{
     private Set<Id> adminRoleIds;
 
     @Nullable
-    public Duration warnExpireDelay(){
+    public Duration getWarnExpireDelay(){
         return warnExpireDelay;
     }
 
-    public void warnExpireDelay(@Nullable Duration warnExpireDelay){
+    public void setWarnExpireDelay(@Nullable Duration warnExpireDelay){
         this.warnExpireDelay = warnExpireDelay;
     }
 
-    public Duration muteBaseDelay(){
+    public Duration getMuteBaseDelay(){
         return muteBaseDelay;
     }
 
-    public void muteBaseDelay(Duration muteBaseDelay){
+    public void setMuteBaseDelay(Duration muteBaseDelay){
         this.muteBaseDelay = muteBaseDelay;
     }
 
-    public long maxWarnCount(){
+    public long getMaxWarnCount(){
         return maxWarnCount;
     }
 
-    public void maxWarnCount(long maxWarnCount){
+    public void setMaxWarnCount(long maxWarnCount){
         this.maxWarnCount = maxWarnCount;
     }
 
-    public Optional<Snowflake> muteRoleID(){
+    public Optional<Snowflake> getMuteRoleID(){
         return Optional.ofNullable(muteRoleId).map(Snowflake::of);
     }
 
-    public void muteRoleId(Snowflake muteRoleId){
+    public void setMuteRoleId(Snowflake muteRoleId){
         this.muteRoleId = Objects.requireNonNull(muteRoleId, "muteRoleId").asString();
     }
 
-    public Set<Snowflake> adminRoleIds(){
+    public Set<Snowflake> getAdminRoleIds(){
         if(adminRoleIds == null){
             adminRoleIds = new HashSet<>();
         }
@@ -80,18 +80,18 @@ public class AdminConfig extends GuildEntity{
                 .collect(Collectors.toSet());
     }
 
-    public void adminRoleIds(Set<Snowflake> adminRoleIDs){
+    public void setAdminRoleIds(Set<Snowflake> adminRoleIDs){
         Objects.requireNonNull(adminRoleIDs, "adminRoleIDs");
         adminRoleIds = adminRoleIDs.stream()
                 .map(id -> Id.of(id.asLong()))
                 .collect(Collectors.toSet());
     }
 
-    public AdminActionType thresholdAction(){
+    public AdminActionType getThresholdAction(){
         return thresholdAction;
     }
 
-    public void thresholdAction(AdminActionType thresholdAction){
+    public void setThresholdAction(AdminActionType thresholdAction){
         this.thresholdAction = Objects.requireNonNull(thresholdAction, "thresholdAction");
     }
 

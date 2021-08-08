@@ -25,7 +25,7 @@ public abstract class BaseEntity implements Serializable{
     @GeneratedValue(generator = "snowflake")
     protected long id;
 
-    public long id(){
+    public long getId(){
         return id;
     }
 

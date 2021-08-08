@@ -25,27 +25,27 @@ public class EmojiDispenser extends GuildEntity{
     @Column(columnDefinition = "json")
     private EmojiData emoji;
 
-    public Snowflake messageId(){
+    public Snowflake getMessageId(){
         return Snowflake.of(messageId);
     }
 
-    public void messageId(Snowflake messageId){
+    public void setMessageId(Snowflake messageId){
         this.messageId = Objects.requireNonNull(messageId, "messageId").asLong();
     }
 
-    public Snowflake roleId(){
+    public Snowflake getRoleId(){
         return Snowflake.of(roleId);
     }
 
-    public void roleId(Snowflake roleId){
+    public void setRoleId(Snowflake roleId){
         this.roleId = Objects.requireNonNull(roleId, "roleId").asLong();
     }
 
-    public EmojiData emoji(){
+    public EmojiData getEmoji(){
         return emoji;
     }
 
-    public void emoji(EmojiData emoji){
+    public void setEmoji(EmojiData emoji){
         this.emoji = Objects.requireNonNull(emoji, "emoji");
     }
 
@@ -58,4 +58,3 @@ public class EmojiDispenser extends GuildEntity{
                 "} " + super.toString();
     }
 }
-

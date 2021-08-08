@@ -42,27 +42,27 @@ public class ActivityConfig extends ConfigEntity{
                 activity.messageCount() >= messageBarrier;
     }
 
-    public Duration keepCountingDuration(){
+    public Duration getKeepCountingDuration(){
         return keepCountingDuration;
     }
 
-    public void keepCountingDuration(Duration keepCountingDuration){
+    public void setKeepCountingDuration(Duration keepCountingDuration){
         this.keepCountingDuration = Objects.requireNonNull(keepCountingDuration, "keepCountingDuration");
     }
 
-    public int messageBarrier(){
+    public int getMessageBarrier(){
         return messageBarrier;
     }
 
-    public void messageBarrier(int messageBarrier){
+    public void setMessageBarrier(int messageBarrier){
         this.messageBarrier = messageBarrier;
     }
 
-    public Optional<Snowflake> roleId(){
+    public Optional<Snowflake> getRoleId(){
         return Optional.ofNullable(roleId).map(Snowflake::of);
     }
 
-    public void roleId(Snowflake roleId){
+    public void setRoleId(Snowflake roleId){
         this.roleId = Objects.requireNonNull(roleId, "roleId").asString();
     }
 

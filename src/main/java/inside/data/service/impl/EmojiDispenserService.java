@@ -28,7 +28,7 @@ public class EmojiDispenserService extends BaseEntityService<LongLongTuple2, Emo
 
     @Override
     protected Object extractId(EmojiDispenser entity){
-        return LongLongTuple2.of(entity.messageId().asLong(), entity.roleId().asLong());
+        return LongLongTuple2.of(entity.getMessageId().asLong(), entity.getRoleId().asLong());
     }
 
     @Transactional(readOnly = true)

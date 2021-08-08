@@ -61,27 +61,27 @@ public class AdminAction extends GuildEntity{
         return new AdminActionBuilder();
     }
 
-    public AdminActionType type(){
+    public AdminActionType getType(){
         return type;
     }
 
-    public LocalMember admin(){
+    public LocalMember getAdmin(){
         return admin;
     }
 
-    public LocalMember target(){
+    public LocalMember getTarget(){
         return target;
     }
 
-    public Optional<String> reason(){
+    public Optional<String> getReason(){
         return Optional.ofNullable(reason);
     }
 
-    public Instant timestamp(){
+    public Instant getTimestamp(){
         return timestamp;
     }
 
-    public Optional<Instant> endTimestamp(){
+    public Optional<Instant> getEndTimestamp(){
         return Optional.ofNullable(endTimestamp);
     }
 

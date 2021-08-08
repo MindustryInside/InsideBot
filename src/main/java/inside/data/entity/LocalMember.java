@@ -22,7 +22,7 @@ public class LocalMember extends GuildEntity{
     @OneToOne(cascade = CascadeType.ALL)
     private Activity activity;
 
-    public Snowflake userId(){
+    public Snowflake getUserId(){
         return Snowflake.of(userId);
     }
 

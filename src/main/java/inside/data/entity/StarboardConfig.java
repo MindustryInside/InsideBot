@@ -25,27 +25,27 @@ public class StarboardConfig extends ConfigEntity{
     @Column(columnDefinition = "json")
     private List<EmojiData> emojis;
 
-    public int lowerStarBarrier(){
+    public int getLowerStarBarrier(){
         return lowerStarBarrier;
     }
 
-    public void lowerStarBarrier(int lowerStarBarrier){
+    public void setLowerStarBarrier(int lowerStarBarrier){
         this.lowerStarBarrier = lowerStarBarrier;
     }
 
-    public Optional<Snowflake> starboardChannelId(){
+    public Optional<Snowflake> getStarboardChannelId(){
         return Optional.ofNullable(starboardChannelId).map(Snowflake::of);
     }
 
-    public void starboardChannelId(Snowflake starboardChannelId){
+    public void setStarboardChannelId(Snowflake starboardChannelId){
         this.starboardChannelId = Objects.requireNonNull(starboardChannelId, "starboardChannelId").asString();
     }
 
-    public List<EmojiData> emojis(){
+    public List<EmojiData> getEmojis(){
         return emojis;
     }
 
-    public void emojis(List<EmojiData> emojis){
+    public void setEmojis(List<EmojiData> emojis){
         this.emojis = Objects.requireNonNull(emojis, "emojis");
     }
 

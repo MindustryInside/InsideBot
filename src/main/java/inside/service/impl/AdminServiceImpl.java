@@ -80,7 +80,7 @@ public class AdminServiceImpl implements AdminService{
                 .save();
 
         Mono<Void> addRole = entityRetriever.getAdminConfigById(admin.getGuildId())
-                .flatMap(adminConfig -> Mono.justOrEmpty(adminConfig.muteRoleID()))
+                .flatMap(adminConfig -> Mono.justOrEmpty(adminConfig.getMuteRoleID()))
                 .flatMap(target::addRole);
 
         Mono<Void> scheduleUnmute = Mono.deferContextual(ctx -> Mono.fromRunnable(() -> Try.run(() ->
@@ -114,7 +114,7 @@ public class AdminServiceImpl implements AdminService{
 
         Mono<Void> removeRole = entityRetriever.getAdminConfigById(target.getGuildId())
                 .switchIfEmpty(entityRetriever.createAdminConfig(target.getGuildId()))
-                .flatMap(adminConfig -> Mono.justOrEmpty(adminConfig.muteRoleID()))
+                .flatMap(adminConfig -> Mono.justOrEmpty(adminConfig.getMuteRoleID()))
                 .flatMap(target::removeRole);
 
         return Mono.when(createIfAbsent, removeRole, log, remove);
@@ -157,13 +157,13 @@ public class AdminServiceImpl implements AdminService{
                         .target(targetLocalMember)
                         .reason(reason)
                         .timestamp(Instant.now())
-                        .endTimestamp(Optional.ofNullable(adminConfig.warnExpireDelay())
+                        .endTimestamp(Optional.ofNullable(adminConfig.getWarnExpireDelay())
                                 .map(duration -> Instant.now().plus(duration))
                                 .orElse(null))
                         .build())))
-                .filter(action -> action.endTimestamp().isPresent())
+                .filter(action -> action.getEndTimestamp().isPresent())
                 .map(action -> Try.run(() -> schedulerFactoryBean.getScheduler().scheduleJob(UnwarnJob.createDetails(action), TriggerBuilder.newTrigger()
-                        .startAt(action.endTimestamp()
+                        .startAt(action.getEndTimestamp()
                                 .map(Date::from)
                                 .orElseThrow(IllegalStateException::new))
                         .withSchedule(SimpleScheduleBuilder.simpleSchedule())
@@ -200,7 +200,7 @@ public class AdminServiceImpl implements AdminService{
     @Override
     public Mono<Boolean> isAdmin(Member member){
         Mono<Set<Snowflake>> roles = entityRetriever.getAdminConfigById(member.getGuildId())
-                .map(AdminConfig::adminRoleIds);
+                .map(AdminConfig::getAdminRoleIds);
 
         Mono<Boolean> isPermissed = member.getRoles().map(Role::getId)
                 .filterWhen(id -> roles.map(list -> list.contains(id)))

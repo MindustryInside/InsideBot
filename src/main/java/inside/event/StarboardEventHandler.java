@@ -56,8 +56,8 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
         return Mono.zip(initContext, starboardConfig)
                 .flatMap(function((context, config) -> {
-                    Snowflake channelId = config.starboardChannelId().orElse(null);
-                    List<ReactionEmoji> emojis = config.emojis().stream()
+                    Snowflake channelId = config.getStarboardChannelId().orElse(null);
+                    List<ReactionEmoji> emojis = config.getEmojis().stream()
                             .map(ReactionEmoji::of)
                             .collect(Collectors.toList());
 
@@ -71,7 +71,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                             .filter(reaction -> emojis.contains(reaction.getEmoji()))
                             .map(Reaction::getCount)
                             .as(MathFlux::max)
-                            .filter(l -> l >= config.lowerStarBarrier());
+                            .filter(l -> l >= config.getLowerStarBarrier());
 
                     Mono<GuildMessageChannel> starboardChannel = event.getClient().getChannelById(channelId)
                             .cast(GuildMessageChannel.class);
@@ -98,7 +98,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                         .timeout(Duration.ofSeconds(6), Mono.empty());
 
                                 Mono<Message> targetMessage = entityRetriever.getStarboardBySourceId(guildId, event.getMessageId())
-                                        .flatMap(board -> channel.getMessageById(board.targetMessageId()))
+                                        .flatMap(board -> channel.getMessageById(board.getTargetMessageId()))
                                         .switchIfEmpty(findIfAbsent);
 
                                 List<String> formatted = emojis.stream()
@@ -238,8 +238,8 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
         return Mono.zip(initContext, starboardConfig)
                 .flatMap(function((context, config) -> {
-                    Snowflake channelId = config.starboardChannelId().orElse(null);
-                    List<ReactionEmoji> emojis = config.emojis().stream()
+                    Snowflake channelId = config.getStarboardChannelId().orElse(null);
+                    List<ReactionEmoji> emojis = config.getEmojis().stream()
                             .map(ReactionEmoji::of)
                             .collect(Collectors.toList());
 
@@ -278,11 +278,11 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                         .timeout(Duration.ofSeconds(6), Mono.empty());
 
                                 Mono<Message> targetMessage = entityRetriever.getStarboardBySourceId(guildId, event.getMessageId())
-                                        .flatMap(board -> channel.getMessageById(board.targetMessageId()))
+                                        .flatMap(board -> channel.getMessageById(board.getTargetMessageId()))
                                         .switchIfEmpty(findIfAbsent);
 
                                 return targetMessage.flatMap(target -> {
-                                    if(count < config.lowerStarBarrier()){
+                                    if(count < config.getLowerStarBarrier()){
                                         return target.delete().and(entityRetriever.deleteStarboardById(guildId, event.getMessageId()));
                                     }
 
@@ -336,14 +336,14 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
         Mono<Starboard> starboard = entityRetriever.getStarboardBySourceId(guildId, event.getMessageId());
 
         return starboardConfig.flatMap(config -> {
-            Snowflake channelId = config.starboardChannelId().orElse(null);
+            Snowflake channelId = config.getStarboardChannelId().orElse(null);
             if(!config.isEnabled() || channelId == null){
                 return Mono.empty();
             }
 
             return starboard.flatMap(board -> event.getGuild().flatMap(guild -> guild.getChannelById(channelId))
                     .cast(GuildMessageChannel.class)
-                    .flatMap(channel -> channel.getMessageById(board.targetMessageId()))
+                    .flatMap(channel -> channel.getMessageById(board.getTargetMessageId()))
                     .flatMap(Message::delete)
                     .then(entityRetriever.delete(board)));
         });

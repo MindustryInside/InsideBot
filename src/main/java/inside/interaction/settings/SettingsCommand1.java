@@ -55,7 +55,7 @@ public class SettingsCommand1 extends OwnerCommand{
                                     .flatMap(ApplicationCommandInteractionOption::getValue)))
                             .map(ApplicationCommandInteractionOptionValue::asString)
                             .switchIfEmpty(messageService.text(env.event(), "command.settings.keep-counting-duration.current",
-                                    formatDuration.apply(activityConfig.keepCountingDuration())).then(Mono.empty()))
+                                    formatDuration.apply(activityConfig.getKeepCountingDuration())).then(Mono.empty()))
                             .flatMap(str -> {
                                 Duration duration = Try.ofCallable(() -> MessageUtil.parseDuration(str)).orElse(null);
                                 if(duration == null){
@@ -63,7 +63,7 @@ public class SettingsCommand1 extends OwnerCommand{
                                             .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
                                 }
 
-                                activityConfig.keepCountingDuration(duration);
+                                activityConfig.setKeepCountingDuration(duration);
                                 return messageService.text(env.event(), "command.settings.keep-counting-duration.update",
                                                 formatDuration.apply(duration))
                                         .and(entityRetriever.save(activityConfig));
@@ -73,7 +73,7 @@ public class SettingsCommand1 extends OwnerCommand{
                             .switchIfEmpty(keepCountingDurationCommand.then(Mono.empty()))
                             .flatMap(command -> Mono.justOrEmpty(command.getOption("value")))
                             .switchIfEmpty(messageService.text(env.event(), "command.settings.message-barrier.current",
-                                    activityConfig.messageBarrier()).then(Mono.empty()))
+                                    activityConfig.getMessageBarrier()).then(Mono.empty()))
                             .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
                                     .map(ApplicationCommandInteractionOptionValue::asLong))
                             .filter(l -> l > 0)
@@ -86,7 +86,7 @@ public class SettingsCommand1 extends OwnerCommand{
                                             .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
                                 }
 
-                                activityConfig.messageBarrier(i);
+                                activityConfig.setMessageBarrier(i);
                                 return messageService.text(env.event(), "command.settings.message-barrier.update", i)
                                         .and(entityRetriever.save(activityConfig));
                             });
@@ -95,14 +95,14 @@ public class SettingsCommand1 extends OwnerCommand{
                             .switchIfEmpty(messageBarrierCommand.then(Mono.empty()))
                             .flatMap(command -> Mono.justOrEmpty(command.getOption("value")))
                             .switchIfEmpty(messageService.text(env.event(), "command.settings.active-user-role.current",
-                                            activityConfig.roleId().map(DiscordUtil::getRoleMention)
+                                            activityConfig.getRoleId().map(DiscordUtil::getRoleMention)
                                                     .orElse(messageService.get(env.context(), "command.settings.absent")))
                                     .then(Mono.empty()))
                             .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
                                     .flatMap(ApplicationCommandInteractionOptionValue::asRole))
                             .map(Role::getId)
                             .flatMap(roleId -> {
-                                activityConfig.roleId(roleId);
+                                activityConfig.setRoleId(roleId);
                                 return messageService.text(env.event(), "command.settings.active-user-role.update",
                                                 DiscordUtil.getRoleMention(roleId))
                                         .and(entityRetriever.save(activityConfig));
@@ -132,17 +132,17 @@ public class SettingsCommand1 extends OwnerCommand{
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asString))
                             .switchIfEmpty(messageService.text(env.event(), "command.settings.threshold-action.current",
-                                    String.format("%s (`%s`)", messageService.getEnum(env.context(), adminConfig.thresholdAction()),
-                                            adminConfig.thresholdAction())).then(Mono.empty()))
+                                    String.format("%s (`%s`)", messageService.getEnum(env.context(), adminConfig.getThresholdAction()),
+                                            adminConfig.getThresholdAction())).then(Mono.empty()))
                             .flatMap(str -> {
                                 AdminActionType action = Try.ofCallable(() ->
                                         AdminActionType.valueOf(str)).toOptional().orElse(null);
                                 Objects.requireNonNull(action, "action"); // impossible
-                                adminConfig.thresholdAction(action);
+                                adminConfig.setThresholdAction(action);
 
                                 return messageService.text(env.event(), "command.settings.threshold-action.update",
-                                                String.format("%s (`%s`)", messageService.getEnum(env.context(), adminConfig.thresholdAction()),
-                                                        adminConfig.thresholdAction()))
+                                                String.format("%s (`%s`)", messageService.getEnum(env.context(), adminConfig.getThresholdAction()),
+                                                        adminConfig.getThresholdAction()))
                                         .and(entityRetriever.save(adminConfig));
                             });
 
@@ -150,11 +150,11 @@ public class SettingsCommand1 extends OwnerCommand{
                             .switchIfEmpty(warnThresholdActionCommand.then(Mono.empty()))
                             .flatMap(command -> Mono.justOrEmpty(command.getOption("value")))
                             .switchIfEmpty(messageService.text(env.event(), "command.settings.warnings.current",
-                                    adminConfig.maxWarnCount()).then(Mono.empty()))
+                                    adminConfig.getMaxWarnCount()).then(Mono.empty()))
                             .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
                                     .map(ApplicationCommandInteractionOptionValue::asLong))
                             .flatMap(number -> {
-                                adminConfig.maxWarnCount(number);
+                                adminConfig.setMaxWarnCount(number);
                                 return messageService.text(env.event(), "command.settings.warnings.update", number)
                                         .and(entityRetriever.save(adminConfig));
                             });
@@ -163,14 +163,14 @@ public class SettingsCommand1 extends OwnerCommand{
                             .switchIfEmpty(warningsCommand.then(Mono.empty()))
                             .flatMap(command -> Mono.justOrEmpty(command.getOption("value")))
                             .switchIfEmpty(messageService.text(env.event(), "command.settings.mute-role.current",
-                                            adminConfig.muteRoleID().map(DiscordUtil::getRoleMention)
+                                            adminConfig.getMuteRoleID().map(DiscordUtil::getRoleMention)
                                                     .orElseGet(() -> messageService.get(env.context(), "command.settings.absent")))
                                     .then(Mono.empty()))
                             .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
                                     .flatMap(ApplicationCommandInteractionOptionValue::asRole))
                             .map(Role::getId)
                             .flatMap(roleId -> {
-                                adminConfig.muteRoleId(roleId);
+                                adminConfig.setMuteRoleId(roleId);
                                 return messageService.text(env.event(), "command.settings.mute-role.update",
                                                 DiscordUtil.getRoleMention(roleId))
                                         .and(entityRetriever.save(adminConfig));
@@ -183,7 +183,7 @@ public class SettingsCommand1 extends OwnerCommand{
                                     .map(ApplicationCommandInteractionOptionValue::asString)
                                     .filter(str -> !str.equals("help"))
                                     .switchIfEmpty(messageService.text(env.event(), "command.settings.admin-roles.current",
-                                                    Optional.of(formatCollection(adminConfig.adminRoleIds(), DiscordUtil::getRoleMention))
+                                                    Optional.of(formatCollection(adminConfig.getAdminRoleIds(), DiscordUtil::getRoleMention))
                                                             .filter(s -> !s.isBlank())
                                                             .orElseGet(() -> messageService.get(env.context(), "command.settings.absents")))
                                             .then(Mono.empty()))
@@ -191,7 +191,7 @@ public class SettingsCommand1 extends OwnerCommand{
                                             .flatMap(subopt -> Mono.justOrEmpty(subopt.getValue()))
                                             .map(ApplicationCommandInteractionOptionValue::asString)))
                             .flatMap(function((choice, enums) -> Mono.defer(() -> {
-                                Set<Snowflake> roleIds = adminConfig.adminRoleIds();
+                                Set<Snowflake> roleIds = adminConfig.getAdminRoleIds();
                                 if(choice.equals("clear")){
                                     roleIds.clear();
                                     return messageService.text(env.event(), "command.settings.admin-roles.clear");
@@ -218,7 +218,7 @@ public class SettingsCommand1 extends OwnerCommand{
                                         .then();
 
                                 return fetch.then(Mono.defer(() -> {
-                                    adminConfig.adminRoleIds(roleIds);
+                                    adminConfig.setAdminRoleIds(roleIds);
                                     if(add){
                                         return messageService.text(env.event(), "command.settings.added",
                                                 formatCollection(roleIds, DiscordUtil::getRoleMention));
@@ -234,7 +234,7 @@ public class SettingsCommand1 extends OwnerCommand{
                                     .flatMap(ApplicationCommandInteractionOption::getValue)))
                             .map(ApplicationCommandInteractionOptionValue::asString)
                             .switchIfEmpty(messageService.text(env.event(), "command.settings.warn-duration.current",
-                                    formatDuration.apply(adminConfig.warnExpireDelay())).then(Mono.empty()))
+                                    formatDuration.apply(adminConfig.getWarnExpireDelay())).then(Mono.empty()))
                             .flatMap(str -> {
                                 Duration duration = Try.ofCallable(() -> MessageUtil.parseDuration(str)).orElse(null);
                                 if(duration == null){
@@ -242,7 +242,7 @@ public class SettingsCommand1 extends OwnerCommand{
                                             .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
                                 }
 
-                                adminConfig.warnExpireDelay(duration);
+                                adminConfig.setWarnExpireDelay(duration);
                                 return messageService.text(env.event(), "command.settings.warn-duration.update",
                                                 formatDuration.apply(duration))
                                         .and(entityRetriever.save(adminConfig));
@@ -254,7 +254,7 @@ public class SettingsCommand1 extends OwnerCommand{
                                     .flatMap(ApplicationCommandInteractionOption::getValue)))
                             .map(ApplicationCommandInteractionOptionValue::asString)
                             .switchIfEmpty(messageService.text(env.event(), "command.settings.base-duration.current",
-                                    formatDuration.apply(adminConfig.muteBaseDelay())).then(Mono.empty()))
+                                    formatDuration.apply(adminConfig.getMuteBaseDelay())).then(Mono.empty()))
                             .flatMap(str -> {
                                 Duration duration = Try.ofCallable(() -> MessageUtil.parseDuration(str)).orElse(null);
                                 if(duration == null){
@@ -262,7 +262,7 @@ public class SettingsCommand1 extends OwnerCommand{
                                             .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
                                 }
 
-                                adminConfig.muteBaseDelay(duration);
+                                adminConfig.setMuteBaseDelay(duration);
                                 return messageService.text(env.event(), "command.settings.base-duration.update",
                                                 formatDuration.apply(duration))
                                         .and(entityRetriever.save(adminConfig));
@@ -277,14 +277,14 @@ public class SettingsCommand1 extends OwnerCommand{
                     Mono<Void> channelCommand = Mono.justOrEmpty(group.getOption("channel")
                                     .flatMap(command -> command.getOption("value")))
                             .switchIfEmpty(messageService.text(env.event(), "command.settings.log-channel.current",
-                                            auditConfig.logChannelId().map(DiscordUtil::getChannelMention)
+                                            auditConfig.getLogChannelId().map(DiscordUtil::getChannelMention)
                                                     .orElse(messageService.get(env.context(), "command.settings.absent")))
                                     .then(Mono.empty()))
                             .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
                                     .flatMap(ApplicationCommandInteractionOptionValue::asChannel))
                             .map(Channel::getId)
                             .flatMap(channelId -> {
-                                auditConfig.logChannelId(channelId);
+                                auditConfig.setLogChannelId(channelId);
                                 return messageService.text(env.event(), "command.settings.log-channel.update",
                                                 DiscordUtil.getChannelMention(channelId))
                                         .and(entityRetriever.save(auditConfig));
@@ -313,13 +313,13 @@ public class SettingsCommand1 extends OwnerCommand{
                                     }).then(Mono.empty()))
                                     .zipWith(Mono.justOrEmpty(opt.getOption("value"))
                                             .switchIfEmpty(messageService.text(env.event(), "command.settings.actions.current",
-                                                            formatCollection(auditConfig.types(), type ->
+                                                            formatCollection(auditConfig.getTypes(), type ->
                                                                     messageService.getEnum(env.context(), type)))
                                                     .then(Mono.empty()))
                                             .flatMap(subopt -> Mono.justOrEmpty(subopt.getValue()))
                                             .map(ApplicationCommandInteractionOptionValue::asString)))
                             .flatMap(function((choice, enums) -> Mono.defer(() -> {
-                                Set<AuditActionType> flags = auditConfig.types();
+                                Set<AuditActionType> flags = auditConfig.getTypes();
                                 if(choice.equals("clear")){
                                     flags.clear();
                                     return messageService.text(env.event(), "command.settings.actions.clear");

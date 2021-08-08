@@ -24,6 +24,10 @@ public class GuildConfig extends GuildEntity{ // or ConfigEntity?
     @Column(name = "time_zone")
     private ZoneId timeZone;
 
+    public ZoneId getTimeZone(){
+        return timeZone;
+    }
+
     public static String formatPrefix(String prefix){
         Objects.requireNonNull(prefix, "prefix");
         if(prefix.chars().filter(Character::isLetter).count() >= 2 || prefix.length() > 4){

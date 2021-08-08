@@ -83,7 +83,7 @@ public class StarboardCommand extends OwnerCommand{
                             .flatMap(ApplicationCommandInteractionOption::getValue)
                             .map(ApplicationCommandInteractionOptionValue::asLong))
                             .switchIfEmpty(messageService.text(env.event(), "command.settings.barrier.current",
-                                    starboardConfig.lowerStarBarrier()).then(Mono.never()))
+                                    starboardConfig.getLowerStarBarrier()).then(Mono.never()))
                             .filter(l -> l > 0)
                             .switchIfEmpty(messageService.text(env.event(), "command.settings.negative-number")
                                     .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true)).then(Mono.never()))
@@ -94,7 +94,7 @@ public class StarboardCommand extends OwnerCommand{
                                             .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
                                 }
 
-                                starboardConfig.lowerStarBarrier(i);
+                                starboardConfig.setLowerStarBarrier(i);
                                 return messageService.text(env.event(), "command.settings.barrier.update", i)
                                         .and(entityRetriever.save(starboardConfig));
                             }));
@@ -141,7 +141,7 @@ public class StarboardCommand extends OwnerCommand{
                 return entityRetriever.getStarboardConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createStarboardConfig(guildId))
                         .flatMap(starboardConfig -> messageService.text(env.event(), "command.settings.emojis.current",
-                                formatEmojis.apply(starboardConfig.emojis())));
+                                formatEmojis.apply(starboardConfig.getEmojis())));
             }
         }
 
@@ -183,7 +183,7 @@ public class StarboardCommand extends OwnerCommand{
                                                             .build())))
                                     .collectList()
                                     .flatMap(list -> {
-                                        List<EmojiData> emojis = starboardConfig.emojis();
+                                        List<EmojiData> emojis = starboardConfig.getEmojis();
 
                                         if(list.size() + emojis.size() > 20){
                                             return messageService.err(env.event(), "command.settings.emojis.limit")
@@ -228,7 +228,7 @@ public class StarboardCommand extends OwnerCommand{
                                     .map(ApplicationCommandInteractionOptionValue::asString)
                                     .orElseThrow(IllegalStateException::new);
 
-                            List<EmojiData> emojis = starboardConfig.emojis();
+                            List<EmojiData> emojis = starboardConfig.getEmojis();
 
                             if(indexModePattern.matcher(value).matches()){ // index mode
                                 String str = value.substring(1);
@@ -294,7 +294,7 @@ public class StarboardCommand extends OwnerCommand{
                 return entityRetriever.getStarboardConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createStarboardConfig(guildId))
                         .flatMap(starboardConfig -> {
-                            List<EmojiData> emojis = starboardConfig.emojis();
+                            List<EmojiData> emojis = starboardConfig.getEmojis();
                             emojis.clear();
                             return messageService.text(env.event(), "command.settings.emojis.clear")
                                     .and(entityRetriever.save(starboardConfig));
@@ -326,11 +326,11 @@ public class StarboardCommand extends OwnerCommand{
                             .flatMap(ApplicationCommandInteractionOption::getValue)
                             .map(ApplicationCommandInteractionOptionValue::asSnowflake))
                             .switchIfEmpty(messageService.text(env.event(), "command.settings.starboard-channel.current",
-                                            starboardConfig.starboardChannelId().map(DiscordUtil::getChannelMention)
+                                            starboardConfig.getStarboardChannelId().map(DiscordUtil::getChannelMention)
                                                     .orElse(messageService.get(env.context(), "command.settings.absent")))
                                     .then(Mono.never()))
                             .flatMap(channelId -> {
-                                starboardConfig.starboardChannelId(channelId);
+                                starboardConfig.setStarboardChannelId(channelId);
                                 return messageService.text(env.event(), "command.settings.starboard-channel.update",
                                                 DiscordUtil.getChannelMention(channelId))
                                         .and(entityRetriever.save(starboardConfig));

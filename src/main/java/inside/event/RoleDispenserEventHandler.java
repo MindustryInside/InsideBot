@@ -24,9 +24,9 @@ public class RoleDispenserEventHandler extends ReactiveEventAdapter{
         }
 
         return entityRetriever.getEmojiDispensersById(event.getMessageId())
-                .filter(emojiDispenser -> event.getEmoji().equals(ReactionEmoji.of(emojiDispenser.emoji())))
+                .filter(emojiDispenser -> event.getEmoji().equals(ReactionEmoji.of(emojiDispenser.getEmoji())))
                 .flatMap(emojiDispenser -> event.getUser().flatMap(user -> user.asMember(guildId))
-                        .flatMap(member -> member.addRole(emojiDispenser.roleId())));
+                        .flatMap(member -> member.addRole(emojiDispenser.getRoleId())));
     }
 
     @Override
@@ -37,8 +37,8 @@ public class RoleDispenserEventHandler extends ReactiveEventAdapter{
         }
 
         return entityRetriever.getEmojiDispensersById(event.getMessageId())
-                .filter(emojiDispenser -> event.getEmoji().equals(ReactionEmoji.of(emojiDispenser.emoji())))
+                .filter(emojiDispenser -> event.getEmoji().equals(ReactionEmoji.of(emojiDispenser.getEmoji())))
                 .flatMap(emojiDispenser -> event.getUser().flatMap(user -> user.asMember(guildId))
-                        .flatMap(member -> member.removeRole(emojiDispenser.roleId())));
+                        .flatMap(member -> member.removeRole(emojiDispenser.getRoleId())));
     }
 }

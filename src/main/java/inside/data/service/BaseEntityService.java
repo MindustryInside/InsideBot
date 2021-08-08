@@ -76,7 +76,7 @@ public abstract class BaseEntityService<K, V extends GuildEntity, R extends Base
     }
 
     protected Object extractId(V entity){
-        return entity.guildId();
+        return entity.getGuildId();
     }
 
     protected void cleanUp(){

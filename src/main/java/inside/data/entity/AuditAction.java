@@ -1,6 +1,5 @@
 package inside.data.entity;
 
-import discord4j.common.util.Snowflake;
 import inside.audit.*;
 import inside.data.entity.base.*;
 import org.hibernate.annotations.Type;
@@ -51,59 +50,52 @@ public class AuditAction extends GuildEntity{
     @Column(columnDefinition = "json")
     private Map<String, Object> attributes;
 
-    public AuditAction(){
-    }
-
-    public AuditAction(Snowflake guildId){
-        this.guildId = Objects.requireNonNull(guildId, "guildId").asLong();
-    }
-
-    public Instant timestamp(){
+    public Instant getTimestamp(){
         return timestamp;
     }
 
-    public void timestamp(Instant timestamp){
+    public void setTimestamp(Instant timestamp){
         this.timestamp = Objects.requireNonNull(timestamp, "timestamp");
     }
 
-    public AuditActionType type(){
+    public AuditActionType getType(){
         return type;
     }
 
-    public void type(AuditActionType type){
+    public void setType(AuditActionType type){
         this.type = Objects.requireNonNull(type, "type");
     }
 
-    public NamedReference user(){
+    public NamedReference getUser(){
         return user;
     }
 
-    public void user(NamedReference user){
+    public void setUser(NamedReference user){
         this.user = Objects.requireNonNull(user, "user");
     }
 
     @Nullable
-    public NamedReference target(){
+    public NamedReference getTarget(){
         return target;
     }
 
-    public void target(@Nullable NamedReference target){
+    public void setTarget(@Nullable NamedReference target){
         this.target = target;
     }
 
-    public NamedReference channel(){
+    public NamedReference getChannel(){
         return channel;
     }
 
-    public void channel(NamedReference channel){
+    public void setChannel(NamedReference channel){
         this.channel = Objects.requireNonNull(channel, "channel");
     }
 
-    public Map<String, Object> attributes(){
+    public Map<String, Object> getAttributes(){
         return attributes;
     }
 
-    public void attributes(Map<String, Object> attributes){
+    public void setAttributes(Map<String, Object> attributes){
         this.attributes = Objects.requireNonNull(attributes, "attributes");
     }
 

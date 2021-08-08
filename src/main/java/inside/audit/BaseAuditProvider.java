@@ -31,23 +31,23 @@ public abstract class BaseAuditProvider implements AuditProvider{
 
     @Override
     public Mono<Void> send(AuditConfig config, AuditAction action, List<Tuple2<String, InputStream>> attachments){
-        return Mono.deferContextual(ctx -> Mono.justOrEmpty(config.logChannelId())
+        return Mono.deferContextual(ctx -> Mono.justOrEmpty(config.getLogChannelId())
                 .flatMap(discordService::getTextChannelById)
-                .filter(ignored -> config.isEnabled(action.type()))
+                .filter(ignored -> config.isEnabled(action.getType()))
                 .filterWhen(channel -> channel.getEffectivePermissions(discordService.gateway().getSelfId())
                         .map(set -> set.contains(Permission.SEND_MESSAGES))
                         .filterWhen(bool -> bool ? Mono.just(true) : discordService.gateway()
-                                .getGuildById(action.guildId())
+                                .getGuildById(action.getGuildId())
                                 .flatMap(Guild::getOwner)
                                 .flatMap(User::getPrivateChannel)
                                 .flatMap(dm -> dm.createMessage(messageService.format(ctx, "audit.permission-denied",
-                                        DiscordUtil.getChannelMention(config.logChannelId()
+                                        DiscordUtil.getChannelMention(config.getLogChannelId()
                                                 .orElseThrow(IllegalStateException::new))))) // asserted above
                                 .thenReturn(false)))
                 .flatMap(channel -> {
                     var messageSpec = MessageCreateSpec.builder();
                     var embedSpec = EmbedCreateSpec.builder()
-                            .color(action.type().color);
+                            .color(action.getType().color);
 
                     build(action, ctx, messageSpec, embedSpec);
 
@@ -62,7 +62,7 @@ public abstract class BaseAuditProvider implements AuditProvider{
         embed.footer(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
                 .withLocale(context.get(KEY_LOCALE))
                 .withZone(context.get(KEY_TIMEZONE))
-                .format(action.timestamp()), null);
+                .format(action.getTimestamp()), null);
     }
 
     protected String getChannelReference(ContextView context, NamedReference reference){
