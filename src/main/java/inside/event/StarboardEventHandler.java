@@ -115,11 +115,10 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                         embedSpec.author(authorUser.getUsername(), null, authorUser.getAvatarUrl());
 
                                         String content = source.getContent();
-                                        if(Strings.isEmpty(content)){
-                                            content = messageService.hasEnum(context, source.getType())
-                                                    ? messageService.getEnum(context, source.getType())
-                                                    : messageService.get(context, "message.placeholder");
+                                        if(Strings.isEmpty(content) && messageService.hasEnum(context, source.getType())){
+                                            content = messageService.getEnum(context, source.getType());
                                         }
+                                        embedSpec.description(content);
                                         embedSpec.footer(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
                                                 .withLocale(context.get(KEY_LOCALE))
                                                 .withZone(context.get(KEY_TIMEZONE))
@@ -178,10 +177,8 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                     embedSpec.author(user.getUsername(), null, user.getAvatarUrl());
 
                                     String content = source.getContent();
-                                    if(Strings.isEmpty(content)){
-                                        content = messageService.hasEnum(context, source.getType())
-                                                ? messageService.getEnum(context, source.getType())
-                                                : messageService.get(context, "message.placeholder");
+                                    if(Strings.isEmpty(content) && messageService.hasEnum(context, source.getType())){
+                                        content = messageService.getEnum(context, source.getType());
                                     }
                                     embedSpec.description(content);
                                     embedSpec.color(lerp(offsetColor, targetColor, Mathf.round(count / 6f, lerpStep)));
