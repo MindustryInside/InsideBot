@@ -215,7 +215,7 @@ public class DurationFormatBuilder{
     }
 
     private DurationFormatBuilder appendSuffix(PeriodFieldAffix suffix){
-        DurationPrinter originalPrinter = printers.size() > 0 ? printers.get(printers.size() - 1) : null;
+        DurationPrinter originalPrinter = !printers.isEmpty() ? printers.get(printers.size() - 1) : null;
         if(!(originalPrinter instanceof FieldFormatter f)){
             throw new IllegalStateException("No field to apply suffix to");
         }

@@ -72,7 +72,7 @@ public class AuditProviders{
 
             embed.author(formatName(target), null, url);
 
-            if(oldContent.length() > 0){
+            if(!oldContent.isEmpty()){
                 embed.addField(messageService.get(context, "audit.message.deleted-content.title"),
                         MessageUtil.substringTo(oldContent, Embed.Field.MAX_VALUE_LENGTH), true);
             }

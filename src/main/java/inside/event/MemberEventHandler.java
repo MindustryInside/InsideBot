@@ -3,7 +3,7 @@ package inside.event;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.guild.*;
-import discord4j.core.object.audit.ActionType;
+import discord4j.core.object.audit.*;
 import discord4j.core.object.entity.*;
 import discord4j.core.spec.AuditLogQuerySpec;
 import inside.audit.AuditService;
@@ -14,7 +14,7 @@ import inside.util.DiscordUtil;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.*;
+import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 
 import java.time.*;
@@ -94,9 +94,9 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                 .flatMapMany(guild -> guild.getAuditLog(AuditLogQuerySpec.builder()
                         .actionType(ActionType.MEMBER_KICK)
                         .build()))
-                .flatMap(part -> Flux.fromIterable(part.getEntries()))
+                .flatMapIterable(AuditLogPart::getEntries)
                 .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now(Clock.systemUTC()).minusMillis(TIMEOUT_MILLIS)) &&
-                        entry.getTargetId().map(target -> target.equals(user.getId())).orElse(false))
+                        entry.getTargetId().map(targetId -> targetId.equals(user.getId())).orElse(false))
                 .next()
                 .flatMap(entry -> Mono.justOrEmpty(entry.getResponsibleUser())
                         .flatMap(admin -> auditService.newBuilder(guildId, MEMBER_KICK)
@@ -113,9 +113,9 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                 .flatMapMany(guild -> guild.getAuditLog(AuditLogQuerySpec.builder()
                         .actionType(ActionType.MEMBER_BAN_ADD)
                         .build()))
-                .flatMap(part -> Flux.fromIterable(part.getEntries()))
+                .flatMapIterable(AuditLogPart::getEntries)
                 .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now(Clock.systemUTC()).minusMillis(TIMEOUT_MILLIS)) &&
-                        entry.getTargetId().map(target -> target.equals(user.getId())).orElse(false))
+                        entry.getTargetId().map(targetId -> targetId.equals(user.getId())).orElse(false))
                 .next()
                 .flatMap(entry -> Mono.justOrEmpty(entry.getResponsibleUser())
                         .flatMap(admin -> auditService.newBuilder(guildId, MEMBER_BAN)

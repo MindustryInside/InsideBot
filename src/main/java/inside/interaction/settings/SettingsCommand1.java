@@ -46,84 +46,7 @@ public class SettingsCommand1 extends OwnerCommand{
         Function<Duration, String> formatDuration = duration ->
                 DurationFormat.wordBased(env.context().get(KEY_LOCALE)).format(duration);
 
-        Mono<Void> handleActivities = Mono.justOrEmpty(env.event().getOption("activities"))
-                .zipWith(entityRetriever.getActivityConfigById(guildId)
-                        .switchIfEmpty(entityRetriever.createActiveUserConfig(guildId)))
-                .flatMap(function((group, activityConfig) -> {
-                    Mono<Void> keepCountingDurationCommand = Mono.justOrEmpty(group.getOption("duration"))
-                            .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")
-                                    .flatMap(ApplicationCommandInteractionOption::getValue)))
-                            .map(ApplicationCommandInteractionOptionValue::asString)
-                            .switchIfEmpty(messageService.text(env.event(), "command.settings.keep-counting-duration.current",
-                                    formatDuration.apply(activityConfig.getKeepCountingDuration())).then(Mono.empty()))
-                            .flatMap(str -> {
-                                Duration duration = Try.ofCallable(() -> MessageUtil.parseDuration(str)).orElse(null);
-                                if(duration == null){
-                                    return messageService.err(env.event(), "command.settings.incorrect-duration")
-                                            .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
-                                }
-
-                                activityConfig.setKeepCountingDuration(duration);
-                                return messageService.text(env.event(), "command.settings.keep-counting-duration.update",
-                                                formatDuration.apply(duration))
-                                        .and(entityRetriever.save(activityConfig));
-                            });
-
-                    Mono<Void> messageBarrierCommand = Mono.justOrEmpty(group.getOption("message-barrier"))
-                            .switchIfEmpty(keepCountingDurationCommand.then(Mono.empty()))
-                            .flatMap(command -> Mono.justOrEmpty(command.getOption("value")))
-                            .switchIfEmpty(messageService.text(env.event(), "command.settings.message-barrier.current",
-                                    activityConfig.getMessageBarrier()).then(Mono.empty()))
-                            .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
-                                    .map(ApplicationCommandInteractionOptionValue::asLong))
-                            .filter(l -> l > 0)
-                            .switchIfEmpty(messageService.text(env.event(), "command.settings.negative-number")
-                                    .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true)).then(Mono.empty()))
-                            .flatMap(l -> {
-                                int i = (int)(long)l;
-                                if(i != l){
-                                    return messageService.err(env.event(), "command.settings.overflow-number")
-                                            .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
-                                }
-
-                                activityConfig.setMessageBarrier(i);
-                                return messageService.text(env.event(), "command.settings.message-barrier.update", i)
-                                        .and(entityRetriever.save(activityConfig));
-                            });
-
-                    Mono<Void> activeUserRoleCommand = Mono.justOrEmpty(group.getOption("active-user-role"))
-                            .switchIfEmpty(messageBarrierCommand.then(Mono.empty()))
-                            .flatMap(command -> Mono.justOrEmpty(command.getOption("value")))
-                            .switchIfEmpty(messageService.text(env.event(), "command.settings.active-user-role.current",
-                                            activityConfig.getRoleId().map(DiscordUtil::getRoleMention)
-                                                    .orElse(messageService.get(env.context(), "command.settings.absent")))
-                                    .then(Mono.empty()))
-                            .flatMap(opt -> Mono.justOrEmpty(opt.getValue())
-                                    .flatMap(ApplicationCommandInteractionOptionValue::asRole))
-                            .map(Role::getId)
-                            .flatMap(roleId -> {
-                                activityConfig.setRoleId(roleId);
-                                return messageService.text(env.event(), "command.settings.active-user-role.update",
-                                                DiscordUtil.getRoleMention(roleId))
-                                        .and(entityRetriever.save(activityConfig));
-                            });
-
-                    return Mono.justOrEmpty(group.getOption("enable"))
-                            .switchIfEmpty(activeUserRoleCommand.then(Mono.empty()))
-                            .flatMap(opt -> Mono.justOrEmpty(opt.getOption("value")
-                                    .flatMap(ApplicationCommandInteractionOption::getValue)))
-                            .map(ApplicationCommandInteractionOptionValue::asBoolean)
-                            .switchIfEmpty(messageService.text(env.event(), "command.settings.activities-enable.update",
-                                    formatBool.apply(activityConfig.isEnabled())).then(Mono.empty()))
-                            .flatMap(bool -> {
-                                activityConfig.setEnabled(bool);
-                                return messageService.text(env.event(), "command.settings.activities-enable.update", formatBool.apply(bool))
-                                        .and(entityRetriever.save(activityConfig));
-                            });
-                }));
-
         Mono<Void> handleAdmin = Mono.justOrEmpty(env.event().getOption("admin"))
-                .switchIfEmpty(handleActivities.then(Mono.empty()))
                 .zipWith(entityRetriever.getAdminConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createAdminConfig(guildId)))
                 .flatMap(function((group, adminConfig) -> {
@@ -381,51 +304,6 @@ public class SettingsCommand1 extends OwnerCommand{
         return ApplicationCommandRequest.builder()
                 .name("settings")
                 .description("Configure guild settings.")
-                .addOption(ApplicationCommandOptionData.builder()
-                        .name("activities")
-                        .description("Activity features settings")
-                        .type(ApplicationCommandOptionType.SUB_COMMAND_GROUP.getValue())
-                        .addOption(ApplicationCommandOptionData.builder()
-                                .name("enable")
-                                .description("Enable activity features")
-                                .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
-                                .addOption(ApplicationCommandOptionData.builder()
-                                        .name("value")
-                                        .description("Boolean value")
-                                        .type(ApplicationCommandOptionType.BOOLEAN.getValue())
-                                        .build())
-                                .build())
-                        .addOption(ApplicationCommandOptionData.builder()
-                                .name("active-user-role")
-                                .description("Configure active user role")
-                                .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
-                                .addOption(ApplicationCommandOptionData.builder()
-                                        .name("value")
-                                        .description("Active user role")
-                                        .type(ApplicationCommandOptionType.ROLE.getValue())
-                                        .build())
-                                .build())
-                        .addOption(ApplicationCommandOptionData.builder()
-                                .name("message-barrier")
-                                .description("Configure message barrier")
-                                .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
-                                .addOption(ApplicationCommandOptionData.builder()
-                                        .name("value")
-                                        .description("Minimal message count for reward activity")
-                                        .type(ApplicationCommandOptionType.INTEGER.getValue())
-                                        .build())
-                                .build())
-                        .addOption(ApplicationCommandOptionData.builder()
-                                .name("keep-counting-duration")
-                                .description("Configure keep counting duration")
-                                .type(ApplicationCommandOptionType.SUB_COMMAND.getValue())
-                                .addOption(ApplicationCommandOptionData.builder()
-                                        .name("value")
-                                        .description("Period value")
-                                        .type(ApplicationCommandOptionType.STRING.getValue())
-                                        .build())
-                                .build())
-                        .build())
                 .addOption(ApplicationCommandOptionData.builder()
                         .name("audit")
                         .description("Audit log settings")
