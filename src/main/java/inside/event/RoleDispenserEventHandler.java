@@ -25,7 +25,7 @@ public class RoleDispenserEventHandler extends ReactiveEventAdapter{
 
         return entityRetriever.getEmojiDispensersById(event.getMessageId())
                 .filter(emojiDispenser -> event.getEmoji().equals(ReactionEmoji.of(emojiDispenser.getEmoji())))
-                .flatMap(emojiDispenser -> event.getUser().flatMap(user -> user.asMember(guildId))
+                .flatMap(emojiDispenser -> Mono.justOrEmpty(event.getMember())
                         .flatMap(member -> member.addRole(emojiDispenser.getRoleId())));
     }
 

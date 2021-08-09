@@ -945,6 +945,9 @@ public class Commands{
     @DiscordCommand(key = "prefix", params = "command.settings.prefix.params", description = "command.settings.prefix.description",
             category = CommandCategory.owner)
     public static class PrefixCommand extends OwnerCommand{
+
+        private static final Pattern modePattern = Pattern.compile("^(add|remove|clear)$", Pattern.CASE_INSENSITIVE);
+
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
             Member member = env.getAuthorAsMember();
@@ -952,7 +955,7 @@ public class Commands{
             String mode = interaction.getOption(0)
                     .flatMap(CommandOption::getChoice)
                     .map(OptionValue::asString)
-                    .filter(s -> s.matches("(?i)^(add|remove|clear)$"))
+                    .filter(s -> modePattern.matcher(s).matches())
                     .orElse(null);
 
             String value = interaction.getOption(1)

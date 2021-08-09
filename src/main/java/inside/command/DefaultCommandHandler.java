@@ -91,7 +91,9 @@ public class DefaultCommandHandler implements CommandHandler{
                             return prefix.map(GuildConfig::formatPrefix)
                                     .flatMap(str -> messageService.errTitled(environment, "command.response.many-arguments.title",
                                             argsres, str, cmdkey, messageService.get(environment.context(), info.paramText())));
-                        }else if(argstr.isEmpty()){
+                        }
+
+                        if(argstr.isEmpty()){
                             break;
                         }
 
@@ -114,14 +116,14 @@ public class DefaultCommandHandler implements CommandHandler{
                             }
                             result.add(new CommandOption(info.params()[index], argstr));
                             break;
-                        }else{
-                            String arg = argstr.substring(0, next);
-                            argstr = argstr.substring(arg.length() + 1);
-                            if(arg.isBlank()){
-                                continue;
-                            }
-                            result.add(new CommandOption(info.params()[index], arg));
                         }
+
+                        String arg = argstr.substring(0, next);
+                        argstr = argstr.substring(arg.length() + 1);
+                        if(arg.isBlank()){
+                            continue;
+                        }
+                        result.add(new CommandOption(info.params()[index], arg));
 
                         index++;
                     }

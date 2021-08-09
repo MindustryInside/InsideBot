@@ -221,7 +221,6 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     public Mono<Void> text(InteractionCreateEvent event, String text, Object... args){
-        //TODO: doesn't return placeholder
         return Mono.deferContextual(ctx -> event.reply(InteractionApplicationCommandCallbackSpec.builder()
                 .allowedMentions(AllowedMentions.suppressAll())
                 .ephemeral(ctx.<Boolean>getOrEmpty(KEY_EPHEMERAL).map(Possible::of).orElse(Possible.absent()))
