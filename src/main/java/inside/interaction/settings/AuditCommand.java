@@ -103,9 +103,9 @@ public class AuditCommand extends OwnerCommand{
 
         @InteractionDiscordCommand(name = "help", description = "Get a help.",
                 type = ApplicationCommandOptionType.SUB_COMMAND)
-        public static class AuditCommandActionsHelp extends OwnerAwareCommand<AuditCommand>{
+        public static class AuditCommandActionsHelp extends OwnerAwareCommand<AuditCommandActions>{
 
-            protected AuditCommandActionsHelp(@Aware AuditCommand owner){
+            protected AuditCommandActionsHelp(@Aware AuditCommandActions owner){
                 super(owner);
             }
 
@@ -125,9 +125,9 @@ public class AuditCommand extends OwnerCommand{
 
         @InteractionDiscordCommand(name = "add", description = "Add audit action(s).",
                 type = ApplicationCommandOptionType.SUB_COMMAND)
-        public static class AuditCommandActionsAdd extends OwnerAwareCommand<AuditCommand>{
+        public static class AuditCommandActionsAdd extends OwnerAwareCommand<AuditCommandActions>{
 
-            protected AuditCommandActionsAdd(@Aware AuditCommand owner){
+            protected AuditCommandActionsAdd(@Aware AuditCommandActions owner){
                 super(owner);
 
                 addOption(builder -> builder.name("value")
@@ -173,9 +173,9 @@ public class AuditCommand extends OwnerCommand{
 
         @InteractionDiscordCommand(name = "remove", description = "Remove audit action(s).",
                 type = ApplicationCommandOptionType.SUB_COMMAND)
-        public static class AuditCommandActionsRemove extends OwnerAwareCommand<AuditCommand>{
+        public static class AuditCommandActionsRemove extends OwnerAwareCommand<AuditCommandActions>{
 
-            protected AuditCommandActionsRemove(@Aware AuditCommand owner){
+            protected AuditCommandActionsRemove(@Aware AuditCommandActions owner){
                 super(owner);
 
                 addOption(builder -> builder.name("value")
@@ -221,9 +221,9 @@ public class AuditCommand extends OwnerCommand{
 
         @InteractionDiscordCommand(name = "clear", description = "Remove all audit actions.",
                 type = ApplicationCommandOptionType.SUB_COMMAND)
-        public static class AuditCommandActionsClear extends OwnerAwareCommand<AuditCommand>{
+        public static class AuditCommandActionsClear extends OwnerAwareCommand<AuditCommandActions>{
 
-            protected AuditCommandActionsClear(@Aware AuditCommand owner){
+            protected AuditCommandActionsClear(@Aware AuditCommandActions owner){
                 super(owner);
             }
 
