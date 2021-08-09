@@ -18,7 +18,7 @@ import static reactor.function.TupleUtils.*;
 @InteractionDiscordCommand(name = "audit", description = "Audit log settings.")
 public class AuditCommand extends OwnerCommand{
 
-    protected AuditCommand(List<? extends InteractionOwnerAwareCommand<AuditCommand>> subcommands){
+    protected AuditCommand(@Aware List<? extends InteractionOwnerAwareCommand<AuditCommand>> subcommands){
         super(subcommands);
     }
 
