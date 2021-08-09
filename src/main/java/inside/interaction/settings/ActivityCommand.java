@@ -21,7 +21,7 @@ public class ActivityCommand extends OwnerCommand{
         super(subcommands);
     }
 
-    @InteractionDiscordCommand(name = "", description = "",
+    @InteractionDiscordCommand(name = "enable", description = "Enable activity system.",
             type = ApplicationCommandOptionType.SUB_COMMAND)
     public static class ActivityCommandEnable extends OwnerAwareCommand<ActivityCommand>{
 

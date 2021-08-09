@@ -188,11 +188,6 @@ public class AdminCommand extends OwnerCommand{
             addOption(builder -> builder.name("value")
                     .description("Action type")
                     .type(ApplicationCommandOptionType.STRING.getValue())
-                    .required(true)
-                    .addChoice(ApplicationCommandOptionChoiceData.builder()
-                            .name("current")
-                            .value("current")
-                            .build())
                     .addChoice(ApplicationCommandOptionChoiceData.builder()
                             .name("ban")
                             .value("ban")
@@ -217,12 +212,10 @@ public class AdminCommand extends OwnerCommand{
                     .flatMap(adminConfig -> Mono.justOrEmpty(env.getOption("value")
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asString))
+                            .switchIfEmpty(messageService.text(env.event(), "command.settings.threshold-action.current",
+                                    String.format("%s (`%s`)", messageService.getEnum(env.context(), adminConfig.getThresholdAction()),
+                                            adminConfig.getThresholdAction())).then(Mono.never()))
                             .flatMap(str -> {
-                                if(str.equals("current")){
-                                    return messageService.text(env.event(), "command.settings.threshold-action.current",
-                                            String.format("%s (`%s`)", messageService.getEnum(env.context(), adminConfig.getThresholdAction()),
-                                                    adminConfig.getThresholdAction()));
-                                }
 
                                 AdminActionType action = Try.ofCallable(() -> AdminActionType.valueOf(str))
                                         .toOptional().orElseThrow(IllegalStateException::new);
