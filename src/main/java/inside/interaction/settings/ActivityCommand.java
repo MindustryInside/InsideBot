@@ -17,7 +17,7 @@ import static inside.util.ContextUtil.*;
 @InteractionDiscordCommand(name = "activity", description = "Activity features settings.")
 public class ActivityCommand extends OwnerCommand{
 
-    protected ActivityCommand(@Aware List<? extends InteractionOwnerAwareCommand<?>> subcommands){
+    protected ActivityCommand(@Aware List<? extends InteractionOwnerAwareCommand<ActivityCommand>> subcommands){
         super(subcommands);
     }
 

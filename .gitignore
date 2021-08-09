@@ -14,3 +14,4 @@ build/
 logs/
 src/legacy/
 deploy
+tmp/
