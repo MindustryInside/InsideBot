@@ -22,6 +22,7 @@ import inside.service.AdminService;
 import inside.util.*;
 import inside.util.codec.Base64Coder;
 import inside.util.io.ReusableByteInputStream;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import org.quartz.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
@@ -942,6 +943,8 @@ public class Commands{
 
     @DiscordCommand(key = "weather", params = "command.weather.params", description = "command.weather.description")
     public static class WeatherCommand extends Command{
+        private static final float mmHg = 133.322f;
+        private static final float hPa = 100;
 
         private final Lazy<HttpClient> httpClient = Lazy.of(ReactorResources.DEFAULT_HTTP_CLIENT);
 
@@ -963,14 +966,26 @@ public class Commands{
                     .map(OptionValue::asString)
                     .orElseThrow(IllegalStateException::new);
 
-            String paramstr = params(Map.of("q", city, "lang", env.context().get(KEY_LOCALE).toString(),
-                    "appid", settings.getDiscord().getOpenweatherApiKey()));
+            String paramstr = params(Map.of(
+                    "q", city,
+                    "units", "metric",
+                    "lang", env.context().get(KEY_LOCALE).toString(),
+                    "appid", settings.getDiscord().getOpenweatherApiKey()
+            ));
 
             return httpClient.get().get().uri("api.openweathermap.org/data/2.5/weather" + paramstr)
-                    .responseSingle((res, buf) -> buf.asString().flatMap(byteBuf -> Mono.fromCallable(() ->
+                    .responseSingle((res, buf) -> res.status() == HttpResponseStatus.NOT_FOUND
+                            ? messageService.err(env, "command.weather.not-found").then(Mono.never())
+                            : buf.asString())
+                    .flatMap(str -> Mono.fromCallable(() ->
                             env.getClient().rest().getCoreResources().getJacksonResources()
-                                    .getObjectMapper().readValue(byteBuf, CurrentWeatherData.class))))
-                    .flatMap(value -> messageService.text(env, value.toString()))
+                                    .getObjectMapper().readValue(str, CurrentWeatherData.class)))
+                    .flatMap(data -> messageService.info(env, spec -> spec.description(messageService.format(env.context(),
+                            "command.weather.format", data.weather().get(0).description(),
+                            data.main().temperature(), data.main().temperatureMin(), data.main().temperatureMax(),
+                            data.main().pressure() * hPa / mmHg, data.main().humidity(),
+                            data.visibility(), data.clouds().all(), data.wind().speed(),
+                            TimestampFormat.LONG_DATE_TIME.format(Instant.ofEpochSecond(data.dateTime()))))))
                     .contextWrite(ctx -> ctx.put(KEY_REPLY, true));
         }
     }
