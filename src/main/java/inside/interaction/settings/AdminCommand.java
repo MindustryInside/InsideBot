@@ -171,7 +171,7 @@ public class AdminCommand extends OwnerCommand{
                                 }
 
                                 adminConfig.setWarnExpireDelay(duration);
-                                return messageService.text(env.event(), "command.settings.base-duration.update",
+                                return messageService.text(env.event(), "command.settings.warn-duration.update",
                                                 formatDuration.apply(duration))
                                         .and(entityRetriever.save(adminConfig));
                             }));

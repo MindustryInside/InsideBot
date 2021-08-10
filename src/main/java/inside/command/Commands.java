@@ -131,6 +131,7 @@ public class Commands{
                             .hasElements())
                     .map(e -> String.format("• %s (`%s`)%n", messageService.getEnum(env.context(), e.getKey()), e.getKey()))
                     .collect(Collectors.joining())
+                    .map(s -> s.concat("\n").concat(messageService.get(env.context(), "command.help.disclaimer.get-list")))
                     .flatMap(categoriesStr -> messageService.info(env, spec ->
                             spec.title(messageService.get(env.context(), "command.help"))
                                     .description(categoriesStr)));
