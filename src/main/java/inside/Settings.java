@@ -54,6 +54,8 @@ public class Settings{
 
         private Duration errorEmbedTtl = Duration.ofSeconds(7);
 
+        private String openweatherApiKey;
+
         public int getMaxClearedCount(){
             return maxClearedCount;
         }
@@ -84,6 +86,14 @@ public class Settings{
 
         public void setErrorEmbedTtl(Duration errorEmbedTtl){
             this.errorEmbedTtl = errorEmbedTtl;
+        }
+
+        public String getOpenweatherApiKey(){
+            return openweatherApiKey;
+        }
+
+        public void setOpenweatherApiKey(String openweatherApiKey){
+            this.openweatherApiKey = openweatherApiKey;
         }
     }
 
