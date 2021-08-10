@@ -1,0 +1,44 @@
+{
+  "coord": {
+    "lon": -98.5,
+    "lat": 39.76
+  },
+  "weather": [
+    {
+      "id": 800,
+      "main": "Clear",
+      "description": "clear sky",
+      "icon": "01n"
+    }
+  ],
+  "base": "stations",
+  "main": {
+    "temp": 302.47,
+    "feels_like": 301.81,
+    "temp_min": 302.47,
+    "temp_max": 302.47,
+    "pressure": 1006,
+    "humidity": 37,
+    "sea_level": 1006,
+    "grnd_level": 947
+  },
+  "visibility": 10000,
+  "wind": {
+    "speed": 5.21,
+    "deg": 148,
+    "gust": 14.03
+  },
+  "clouds": {
+    "all": 0
+  },
+  "dt": 1628569397,
+  "sys": {
+    "country": "US",
+    "sunrise": 1628509243,
+    "sunset": 1628559497
+  },
+  "timezone": -18000,
+  "id": 6252001,
+  "name": "United States of America",
+  "cod": 200
+}

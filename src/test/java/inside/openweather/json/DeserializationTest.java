@@ -37,13 +37,19 @@ public class DeserializationTest{
     }
 
     @Test
-    public void currentWeatherFields() throws IOException{
-        CurrentWeatherData currentWeather = read("/openweather/CurrentWeather.json", CurrentWeatherData.class);
+    public void currentWeatherCountryFields() throws IOException{
+        CurrentWeatherData currentWeather = read("/openweather/CurrentWeatherCountry.json", CurrentWeatherData.class);
         log.info("{}", currentWeather);
     }
 
     @Test
-    public void currentWeatherEquals() throws IOException{
+    public void currentWeatherCityFields() throws IOException{
+        CurrentWeatherData currentWeather = read("/openweather/CurrentWeatherCity.json", CurrentWeatherData.class);
+        log.info("{}", currentWeather);
+    }
+
+    @Test
+    public void currentWeatherCityEquals() throws IOException{
         CurrentWeatherData expected = CurrentWeatherData.builder()
                 .coordinate(CoordinateData.of(-0.1257f, 51.5085f))
                 .addWeather(WeatherData.builder()
@@ -82,7 +88,7 @@ public class DeserializationTest{
                 .code(200)
                 .build();
 
-        CurrentWeatherData currentWeather = read("/openweather/CurrentWeather.json", CurrentWeatherData.class);
+        CurrentWeatherData currentWeather = read("/openweather/CurrentWeatherCity.json", CurrentWeatherData.class);
         assertEquals(expected, currentWeather);
     }
 }

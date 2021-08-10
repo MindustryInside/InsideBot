@@ -1,6 +1,7 @@
 package inside.openweather.json;
 
 import com.fasterxml.jackson.databind.annotation.*;
+import discord4j.discordjson.possible.Possible;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -12,9 +13,9 @@ public interface SystemData{
         return ImmutableSystemData.builder();
     }
 
-    int type();
+    Possible<Integer> type();
 
-    int id();
+    Possible<Integer> id();
 
     String country();
 
