@@ -4,7 +4,7 @@ import inside.util.codec.*;
 
 import javax.crypto.*;
 import javax.crypto.spec.*;
-import java.security.SecureRandom;
+import java.security.*;
 
 class AesEncryptor{
     private static final String AES_CBC_ALGORITHM = "AES/CBC/PKCS5Padding";
@@ -19,7 +19,7 @@ class AesEncryptor{
                 new PBEKeySpec(password.toCharArray(), Hex.decode(salt), 1024, 256)));
     }
 
-    public AesEncryptor(SecretKey secretKey){
+    public AesEncryptor(Key secretKey){
         this.secretKey = new SecretKeySpec(secretKey.getEncoded(), "AES");
         encryptor = CipherUtils.newCipher(AES_CBC_ALGORITHM);
         decryptor = CipherUtils.newCipher(AES_CBC_ALGORITHM);

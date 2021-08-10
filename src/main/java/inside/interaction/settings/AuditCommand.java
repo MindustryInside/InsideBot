@@ -131,7 +131,7 @@ public class AuditCommand extends OwnerCommand{
                 super(owner);
 
                 addOption(builder -> builder.name("value")
-                        .description("Target audit action type.")
+                        .description("Audit action type.")
                         .required(true)
                         .type(ApplicationCommandOptionType.STRING.getValue()));
             }

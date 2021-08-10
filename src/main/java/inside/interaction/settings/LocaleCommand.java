@@ -38,7 +38,7 @@ public class LocaleCommand extends SettingsCommand{
                     Locale locale = messageService.getLocale(value).orElse(null);
                     if(locale == null){
                         String all = messageService.getSupportedLocales().values().stream()
-                                .map(locale1 -> "%s (`%s`)".formatted(locale1.getDisplayName(), locale1.toString()))
+                                .map(locale1 -> String.format("%s (`%s`)", locale1.getDisplayName(), locale1))
                                 .collect(Collectors.joining(", "));
 
                         return messageService.text(env.event(), "command.settings.locale.all", all)

@@ -294,8 +294,7 @@ public class StarboardCommand extends OwnerCommand{
                 return entityRetriever.getStarboardConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createStarboardConfig(guildId))
                         .flatMap(starboardConfig -> {
-                            List<EmojiData> emojis = starboardConfig.getEmojis();
-                            emojis.clear();
+                            starboardConfig.getEmojis().clear();
                             return messageService.text(env.event(), "command.settings.emojis.clear")
                                     .and(entityRetriever.save(starboardConfig));
                         });
