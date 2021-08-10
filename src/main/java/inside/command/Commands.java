@@ -16,6 +16,7 @@ import inside.Settings;
 import inside.audit.*;
 import inside.command.model.*;
 import inside.data.entity.*;
+import inside.openweather.json.CurrentWeatherData;
 import inside.scheduler.job.RemindJob;
 import inside.service.AdminService;
 import inside.util.*;
@@ -939,6 +940,41 @@ public class Commands{
         }
     }
 
+    @DiscordCommand(key = "weather", params = "command.weather.params", description = "command.weather.description")
+    public static class WeatherCommand extends Command{
+
+        private final Lazy<HttpClient> httpClient = Lazy.of(ReactorResources.DEFAULT_HTTP_CLIENT);
+
+        @Autowired
+        private Settings settings;
+
+        // I hope this not for long
+        private static String params(Map<String, Object> map){
+            return map.entrySet().stream()
+                    .map(entry -> URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8) + "=" +
+                            URLEncoder.encode(Objects.toString(entry.getValue()), StandardCharsets.UTF_8))
+                    .collect(Collectors.joining("&", "?", ""));
+        }
+
+        @Override
+        public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+            String city = interaction.getOption(0)
+                    .flatMap(CommandOption::getValue)
+                    .map(OptionValue::asString)
+                    .orElseThrow(IllegalStateException::new);
+
+            String paramstr = params(Map.of("q", city, "lang", env.context().get(KEY_LOCALE).toString(),
+                    "appid", settings.getDiscord().getOpenweatherApiKey()));
+
+            return httpClient.get().get().uri("api.openweathermap.org/data/2.5/weather" + paramstr)
+                    .responseSingle((res, buf) -> buf.asString().flatMap(byteBuf -> Mono.fromCallable(() ->
+                            env.getClient().rest().getCoreResources().getJacksonResources()
+                                    .getObjectMapper().readValue(byteBuf, CurrentWeatherData.class))))
+                    .flatMap(value -> messageService.text(env, value.toString()))
+                    .contextWrite(ctx -> ctx.put(KEY_REPLY, true));
+        }
+    }
+
     //endregion
     //region settings
 
@@ -1389,11 +1425,11 @@ public class Commands{
                             .take(PER_PAGE, true).index()
                             .map(function((idx, warn) ->
                                     EmbedCreateFields.Field.of(String.format("%2s. %s", idx + 1,
-                                            TimestampFormat.LONG_DATE_TIME.format(warn.getTimestamp())), String.format("%s%n%s",
-                                            messageService.format(env.context(), "common.admin", warn.getAdmin().effectiveName()),
-                                            messageService.format(env.context(), "common.reason", warn.getReason()
-                                                    .orElse(messageService.get(env.context(), "common.not-defined")))),
-                                    true)))
+                                                    TimestampFormat.LONG_DATE_TIME.format(warn.getTimestamp())), String.format("%s%n%s",
+                                                    messageService.format(env.context(), "common.admin", warn.getAdmin().effectiveName()),
+                                                    messageService.format(env.context(), "common.reason", warn.getReason()
+                                                            .orElse(messageService.get(env.context(), "common.not-defined")))),
+                                            true)))
                             .collectList())
                     .zipWhen(tuple -> adminService.warnings(tuple.getT1()).count(),
                             (tuple, count) -> Tuples.of(tuple.getT1(), tuple.getT2(), count))
@@ -1404,11 +1440,11 @@ public class Commands{
                                     .footer(String.format("Страница 1/%d", Mathf.ceilPositive(count / (float)PER_PAGE)), null)
                                     .build())
                             .addComponent(ActionRow.of(
-                                    Button.primary("inside-warnings-"  + authorId.asString() +
-                                            "-" + target.getId().asString() + "-prev-0",
+                                    Button.primary("inside-warnings-" + authorId.asString() +
+                                                    "-" + target.getId().asString() + "-prev-0",
                                             messageService.get(env.context(), "common.prev-page")).disabled(),
-                                    Button.primary("inside-warnings-"  + authorId.asString() +
-                                            "-" + target.getId().asString() + "-next-1",
+                                    Button.primary("inside-warnings-" + authorId.asString() +
+                                                    "-" + target.getId().asString() + "-next-1",
                                             messageService.get(env.context(), "common.prev-page")).disabled(count <= PER_PAGE))))));
         }
     }
