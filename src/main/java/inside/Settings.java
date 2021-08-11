@@ -261,6 +261,8 @@ public class Settings{
 
         private boolean starboardConfig = true;
 
+        private boolean welcomeMessage = true;
+
         public boolean isActivityConfig(){
             return activityConfig;
         }
@@ -323,6 +325,14 @@ public class Settings{
 
         public void setStarboardConfig(boolean starboardConfig){
             this.starboardConfig = starboardConfig;
+        }
+
+        public boolean isWelcomeMessage(){
+            return welcomeMessage;
+        }
+
+        public void setWelcomeMessage(boolean welcomeMessage){
+            this.welcomeMessage = welcomeMessage;
         }
     }
 }

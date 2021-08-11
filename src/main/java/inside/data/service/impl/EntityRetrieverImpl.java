@@ -230,6 +230,16 @@ public class EntityRetrieverImpl implements EntityRetriever{
     }
 
     @Override
+    public Mono<WelcomeMessage> getWelcomeMessageById(Snowflake guildId){
+        return storeHolder.getWelcomeMessageService().find(guildId.asLong());
+    }
+
+    @Override
+    public Mono<Void> save(WelcomeMessage welcomeMessage){
+        return storeHolder.getWelcomeMessageService().save(welcomeMessage);
+    }
+
+    @Override
     public Mono<GuildConfig> createGuildConfig(Snowflake guildId){
         return Mono.defer(() -> {
             GuildConfig guildConfig = new GuildConfig();
@@ -332,6 +342,17 @@ public class EntityRetrieverImpl implements EntityRetriever{
             emojiDispenser.setRoleId(roleId);
             emojiDispenser.setEmoji(emojiData);
             return save(emojiDispenser).thenReturn(emojiDispenser);
+        });
+    }
+
+    @Override
+    public Mono<WelcomeMessage> createWelcomeMessage(Snowflake guildId, Snowflake channelId, String message){
+        return Mono.defer(() -> {
+            WelcomeMessage welcomeMessage = new WelcomeMessage();
+            welcomeMessage.setGuildId(guildId);
+            welcomeMessage.setChannelId(channelId);
+            welcomeMessage.setMessage(message);
+            return save(welcomeMessage).thenReturn(welcomeMessage);
         });
     }
 }

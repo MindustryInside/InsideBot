@@ -5,16 +5,20 @@ import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.guild.*;
 import discord4j.core.object.audit.*;
 import discord4j.core.object.entity.*;
+import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
 import discord4j.core.spec.AuditLogQuerySpec;
 import inside.audit.AuditService;
 import inside.data.entity.AdminConfig;
 import inside.data.service.EntityRetriever;
+import inside.data.service.impl.WelcomeMessageService;
+import inside.resolver.MessageTemplate;
 import inside.service.*;
 import inside.util.DiscordUtil;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import reactor.function.TupleUtils;
 import reactor.util.context.Context;
 
 import java.time.*;
@@ -42,6 +46,9 @@ public class MemberEventHandler extends ReactiveEventAdapter{
     @Autowired
     private MessageService messageService;
 
+    @Autowired
+    private WelcomeMessageService welcomeMessageService;
+
     @Override
     public Publisher<?> onMemberJoin(MemberJoinEvent event){
         Member member = event.getMember();
@@ -60,19 +67,32 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                         .map(c -> c >= config.getMaxWarnCount())))
                 .flatMap(owner -> adminService.warn(owner, member, messageService.get(ctx, "audit.member.warn.evade"))));
 
-        Mono<?> muteEvade = Mono.deferContextual(ctx -> member.getGuild().flatMap(Guild::getOwner)
+        Mono<Void> muteEvade = Mono.deferContextual(ctx -> member.getGuild().flatMap(Guild::getOwner)
                 .filterWhen(ignored -> adminService.isMuted(member))
                 .flatMap(owner -> adminConfig.flatMap(config -> adminService.mute(owner, member,
                                 Instant.now().plus(config.getMuteBaseDelay()),
                                 messageService.get(ctx, "audit.member.mute.evade"))
                         .thenReturn(owner)))
-                .switchIfEmpty(warn.then(Mono.empty())));
+                .switchIfEmpty(warn.then(Mono.empty())))
+                .then();
 
-        return initContext.flatMap(context -> auditService.newBuilder(event.getGuildId(), MEMBER_JOIN)
+        Mono<Void> log = auditService.newBuilder(event.getGuildId(), MEMBER_JOIN)
                 .withUser(member)
-                .save()
-                .and(muteEvade)
-                .contextWrite(context));
+                .save();
+
+        //because incorrectly defines a reference to a method
+        //noinspection Convert2MethodRef
+        Mono<Void> welcomeMessage = entityRetriever.getWelcomeMessageById(guildId)
+                .flatMap(welcomeMessage1 -> event.getClient().getChannelById(welcomeMessage1.getChannelId())
+                        .cast(TopLevelGuildMessageChannel.class)
+                        .zipWith(welcomeMessageService.compile(MessageTemplate.builder()
+                                .member(member)
+                                .template(welcomeMessage1)
+                                .build()))
+                        .flatMap(TupleUtils.function((channel, spec) -> channel.createMessage(spec))))
+                .then();
+
+        return initContext.flatMap(context -> Mono.when(log, muteEvade, welcomeMessage).contextWrite(context));
     }
 
     @Override

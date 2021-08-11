@@ -100,6 +100,12 @@ public interface EntityRetriever{
 
     Mono<Void> deleteAllEmojiDispenserInGuild(Snowflake guildId);
 
+    // welcome message
+
+    Mono<WelcomeMessage> getWelcomeMessageById(Snowflake guildId);
+
+    Mono<Void> save(WelcomeMessage welcomeMessage);
+
     // factory methods
 
     Mono<GuildConfig> createGuildConfig(Snowflake guildId);
@@ -119,4 +125,6 @@ public interface EntityRetriever{
     Mono<Starboard> createStarboard(Snowflake guildId, Snowflake sourceMessageId, Snowflake targetMessageId);
 
     Mono<EmojiDispenser> createEmojiDispenser(Snowflake guildId, Snowflake messageId, Snowflake roleId, EmojiData emojiData);
+
+    Mono<WelcomeMessage> createWelcomeMessage(Snowflake guildId, Snowflake channelId, String message);
 }

@@ -20,9 +20,11 @@ public final class StoreHolder{
 
     private final StarboardService starboardService;
 
-    private final ActivityConfigService activityConfig;
+    private final ActivityConfigService activityConfigService;
 
     private final EmojiDispenserService emojiDispenserService;
+
+    private final WelcomeMessageService welcomeMessageService;
 
     public StoreHolder(@Autowired GuildConfigService guildConfigService,
                        @Autowired AdminConfigService adminConfigService,
@@ -31,8 +33,9 @@ public final class StoreHolder{
                        @Autowired MessageInfoService messageInfoService,
                        @Autowired StarboardConfigService starboardConfigService,
                        @Autowired StarboardService starboardService,
-                       @Autowired ActivityConfigService activityConfig,
-                       @Autowired EmojiDispenserService emojiDispenserService){
+                       @Autowired ActivityConfigService activityConfigService,
+                       @Autowired EmojiDispenserService emojiDispenserService,
+                       @Autowired WelcomeMessageService welcomeMessageService){
         this.guildConfigService = guildConfigService;
         this.adminConfigService = adminConfigService;
         this.localMemberService = localMemberService;
@@ -40,8 +43,9 @@ public final class StoreHolder{
         this.messageInfoService = messageInfoService;
         this.starboardConfigService = starboardConfigService;
         this.starboardService = starboardService;
-        this.activityConfig = activityConfig;
+        this.activityConfigService = activityConfigService;
         this.emojiDispenserService = emojiDispenserService;
+        this.welcomeMessageService = welcomeMessageService;
     }
 
     public GuildConfigService getGuildConfigService(){
@@ -73,10 +77,14 @@ public final class StoreHolder{
     }
 
     public ActivityConfigService getActivityConfigService(){
-        return activityConfig;
+        return activityConfigService;
     }
 
     public EmojiDispenserService getEmojiDispenserService(){
         return emojiDispenserService;
+    }
+
+    public WelcomeMessageService getWelcomeMessageService(){
+        return welcomeMessageService;
     }
 }
