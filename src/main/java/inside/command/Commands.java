@@ -944,6 +944,7 @@ public class Commands{
 
     @DiscordCommand(key = "weather", params = "command.weather.params", description = "command.weather.description")
     public static class WeatherCommand extends Command{
+
         private static final float mmHg = 133.322f;
         private static final float hPa = 100;
 
@@ -983,7 +984,8 @@ public class Commands{
                                     .getObjectMapper().readValue(str, CurrentWeatherData.class)))
                     .flatMap(data -> messageService.info(env, spec -> spec.description(messageService.format(env.context(),
                             "command.weather.format", data.weather().get(0).description(),
-                            data.main().temperature(), data.main().temperatureMin(), data.main().temperatureMax(),
+                            data.main().temperature(), data.main().feelsLike(),
+                            data.main().temperatureMin(), data.main().temperatureMax(),
                             data.main().pressure() * hPa / mmHg, data.main().humidity(),
                             data.visibility(), data.clouds().all(), data.wind().speed(),
                             TimestampFormat.LONG_DATE_TIME.format(Instant.ofEpochSecond(data.dateTime()))))))
