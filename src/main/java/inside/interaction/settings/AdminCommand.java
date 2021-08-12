@@ -186,7 +186,7 @@ public class AdminCommand extends OwnerCommand{
             super(owner);
 
             addOption(builder -> builder.name("value")
-                    .description("Action type")
+                    .description("Action type.")
                     .type(ApplicationCommandOptionType.STRING.getValue())
                     .addChoice(ApplicationCommandOptionChoiceData.builder()
                             .name("ban")
