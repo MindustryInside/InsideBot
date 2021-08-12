@@ -1,5 +1,6 @@
 package inside.data.entity;
 
+import discord4j.core.object.audit.AuditLogEntry;
 import inside.data.entity.base.GuildEntity;
 import org.hibernate.annotations.*;
 import org.immutables.builder.Builder;
@@ -31,7 +32,7 @@ public class AdminAction extends GuildEntity{
     @JoinColumn(name = "target_id")
     private LocalMember target;
 
-    @Column(length = 512)
+    @Column(length = AuditLogEntry.MAX_REASON_LENGTH)
     private String reason;
 
     @Column

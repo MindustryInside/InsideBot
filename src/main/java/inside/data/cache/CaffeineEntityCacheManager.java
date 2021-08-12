@@ -30,18 +30,12 @@ public class CaffeineEntityCacheManager implements EntityCacheManager{
     @Override
     public <T extends BaseEntity, K> T get(Class<T> clazz, K id, Function<? super K, ? extends T> supplier){
         Cache<K, T> cache = getCache(clazz.getName());
-        if(cache == null){
-            return null;
-        }
-
         return cache.get(id, supplier);
     }
 
     @Override
     public <T extends BaseEntity, K> void evict(Class<T> clazz, K id){
         Cache<K, T> cache = getCache(clazz.getName());
-        if(cache != null){
-            cache.invalidate(id);
-        }
+        cache.invalidate(id);
     }
 }

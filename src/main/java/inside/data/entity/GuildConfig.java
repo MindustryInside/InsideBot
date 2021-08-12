@@ -10,7 +10,7 @@ import java.util.*;
 
 @Entity
 @Table(name = "guild_config")
-public class GuildConfig extends GuildEntity{ // or ConfigEntity?
+public class GuildConfig extends GuildEntity{
     @Serial
     private static final long serialVersionUID = 2454633035779855973L;
 
