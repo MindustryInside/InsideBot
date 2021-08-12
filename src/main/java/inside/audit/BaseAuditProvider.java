@@ -30,7 +30,7 @@ public abstract class BaseAuditProvider implements AuditProvider{
     protected DiscordService discordService;
 
     @Override
-    public Mono<Void> send(AuditConfig config, AuditAction action, List<Tuple2<String, InputStream>> attachments){
+    public Mono<Void> send(AuditConfig config, AuditAction action, List<? extends Tuple2<String, InputStream>> attachments){
         return Mono.deferContextual(ctx -> Mono.justOrEmpty(config.getLogChannelId())
                 .flatMap(discordService::getTextChannelById)
                 .filter(ignored -> config.isEnabled(action.getType()))
@@ -41,8 +41,7 @@ public abstract class BaseAuditProvider implements AuditProvider{
                                 .flatMap(Guild::getOwner)
                                 .flatMap(User::getPrivateChannel)
                                 .flatMap(dm -> dm.createMessage(messageService.format(ctx, "audit.permission-denied",
-                                        DiscordUtil.getChannelMention(config.getLogChannelId()
-                                                .orElseThrow(IllegalStateException::new))))) // asserted above
+                                        DiscordUtil.getChannelMention(channel.getId()))))
                                 .thenReturn(false)))
                 .flatMap(channel -> {
                     var messageSpec = MessageCreateSpec.builder();

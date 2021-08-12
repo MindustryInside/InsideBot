@@ -138,7 +138,7 @@ public class DefaultCommandHandler implements CommandHandler{
 
                     Predicate<Throwable> missingAccess = t -> t.getMessage() != null &&
                             (t.getMessage().contains("Missing Access") ||
-                                    t.getMessage().contains("Missing Permissions"));
+                            t.getMessage().contains("Missing Permissions"));
 
                     Function<Throwable, Mono<Void>> fallback = t -> Flux.fromIterable(info.permissions())
                             .filterWhen(permission -> environment.getReplyChannel().cast(GuildMessageChannel.class)
@@ -165,6 +165,8 @@ public class DefaultCommandHandler implements CommandHandler{
                 })));
     }
 
+
+    // Finds a last space index
     private int findSpace(String text){
         for(int i = 0; i < text.length(); i++){
             char c = text.charAt(i);

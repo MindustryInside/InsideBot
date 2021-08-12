@@ -46,7 +46,7 @@ public class AuditServiceImpl implements AuditService{
 
     @Override
     @Transactional
-    public Mono<Void> save(AuditAction action, List<Tuple2<String, InputStream>> attachments){
+    public Mono<Void> save(AuditAction action, List<? extends Tuple2<String, InputStream>> attachments){
         AuditProvider forwardProvider = providers.get(action.getType());
         if(forwardProvider != null){
             if(settings.getDiscord().isAuditLogSaving()){

@@ -9,5 +9,5 @@ import java.util.List;
 
 public interface AuditProvider{
 
-    Mono<Void> send(AuditConfig config, AuditAction action, List<Tuple2<String, InputStream>> attachments);
+    Mono<Void> send(AuditConfig config, AuditAction action, List<? extends Tuple2<String, InputStream>> attachments);
 }
