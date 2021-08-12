@@ -13,20 +13,20 @@ public class TextLayoutCommand extends BaseInteractionCommand{
     public TextLayoutCommand(){
 
         addOption(builder -> builder.name("type")
-                .description("Text layout type")
+                .description("Text layout type.")
                 .type(ApplicationCommandOptionType.STRING.getValue())
                 .required(true)
                 .addChoice(ApplicationCommandOptionChoiceData.builder()
-                        .name("English layout")
+                        .name("English layout.")
                         .value("en")
                         .build())
                 .addChoice(ApplicationCommandOptionChoiceData.builder()
-                        .name("Russian layout")
+                        .name("Russian layout.")
                         .value("ru")
                         .build()));
 
         addOption(builder -> builder.name("text")
-                .description("Target text")
+                .description("Text.")
                 .type(ApplicationCommandOptionType.STRING.getValue())
                 .required(true));
     }

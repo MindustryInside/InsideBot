@@ -9,26 +9,26 @@ import reactor.core.publisher.Mono;
 
 import java.util.function.Predicate;
 
-@InteractionDiscordCommand(name = "1337", description = "Translate key into leet speak.")
+@InteractionDiscordCommand(name = "1337", description = "Translate text into leet speak.")
 public class LeetSpeakCommand extends BaseInteractionCommand{
 
     public LeetSpeakCommand(){
 
         addOption(builder -> builder.name("type")
-                .description("Leet speak type")
+                .description("Leet speak type.")
                 .type(ApplicationCommandOptionType.STRING.getValue())
                 .required(true)
                 .addChoice(ApplicationCommandOptionChoiceData.builder()
-                        .name("English leet")
+                        .name("English leet.")
                         .value("en")
                         .build())
                 .addChoice(ApplicationCommandOptionChoiceData.builder()
-                        .name("Russian leet")
+                        .name("Russian leet.")
                         .value("ru")
                         .build()));
 
         addOption(builder -> builder.name("text")
-                .description("Target text")
+                .description("Text.")
                 .type(ApplicationCommandOptionType.STRING.getValue())
                 .required(true));
     }

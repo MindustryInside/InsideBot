@@ -14,9 +14,9 @@ public class TransliterationCommand extends BaseInteractionCommand{
     public TransliterationCommand(){
 
         addOption(builder -> builder.name("text")
-                .description("Translation text")
-                .type(ApplicationCommandOptionType.STRING.getValue())
-                .required(true));
+                .description("Translation text.")
+                .required(true)
+                .type(ApplicationCommandOptionType.STRING.getValue()));
     }
 
     @Override
