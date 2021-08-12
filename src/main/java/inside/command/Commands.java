@@ -1,5 +1,6 @@
 package inside.command;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.udojava.evalex.*;
 import discord4j.common.ReactorResources;
 import discord4j.common.util.*;
@@ -253,66 +254,32 @@ public class Commands{
 
     @DiscordCommand(key = {"translate", "tr"}, params = "command.translate.params", description = "command.translate.description")
     public static class TranslateCommand extends Command{
-        public static final String[] languages = {
-                "Afrikaans (`af`)", "Albanian (`sq`)", "Amharic (`am`)",
-                "Arabic (`ar`)", "Armenian (`hy`)", "Automatic (`auto`)",
-                "Azerbaijani (`az`)", "Basque (`eu`)", "Belarusian (`be`)",
-                "Bengali (`bn`)", "Bosnian (`bs`)", "Bulgarian (`bg`)",
-                "Catalan (`ca`)", "Cebuano (`ceb`)", "Chichewa (`ny`)",
-                "Chinese Simplified (`zh-cn`)", "Chinese Traditional (`zh-tw`)", "Corsican (`co`)",
-                "Croatian (`hr`)", "Czech (`cs`)", "Danish (`da`)",
-                "Dutch (`nl`)", "English (`en`)", "Esperanto (`eo`)",
-                "Estonian (`et`)", "Filipino (`tl`)", "Finnish (`fi`)",
-                "French (`fr`)", "Frisian (`fy`)", "Galician (`gl`)",
-                "Georgian (`ka`)", "German (`de`)", "Greek (`el`)",
-                "Gujarati (`gu`)", "Haitian Creole (`ht`)", "Hausa (`ha`)",
-                "Hawaiian (`haw`)", "Hebrew (`iw`)", "Hindi (`hi`)",
-                "Hmong (`hmn`)", "Hungarian (`hu`)", "Icelandic (is)",
-                "Igbo (`ig`)", "Indonesian (`id`)", "Irish (ga)",
-                "Italian (`it`)", "Japanese (`ja`)", "Javanese (jw)",
-                "Kannada (`kn`)", "Kazakh (`kk`)", "Khmer (km)",
-                "Korean (`ko`)", "Kurdish (Kurmanji) (`ku`)", "Kyrgyz (`ky`)",
-                "Lao (`lo`)", "Latin (`la`)", "Latvian (`lv`)",
-                "Lithuanian (`lt`)", "Luxembourgish (`lb`)", "Macedonian (`mk`)",
-                "Malagasy (`mg`)", "Malay (`ms`)", "Malayalam (`ml`)",
-                "Maltese (`mt`)", "Maori (`mi`)", "Marathi (`mr`)",
-                "Mongolian (`mn`)", "Myanmar (Burmese) (`my`)", "Nepali (`ne`)",
-                "Norwegian (`no`)", "Pashto (`ps`)", "Persian (`fa`)",
-                "Polish (`pl`)", "Portuguese (`pt`)", "Punjabi (`ma`)",
-                "Romanian (`ro`)", "Russian (`ru`)", "Samoan (`sm`)",
-                "Scots Gaelic (`gd`)", "Serbian (`sr`)", "Sesotho (`st`)",
-                "Shona (`sn`)", "Sindhi (`sd`)", "Sinhala (`si`)",
-                "Slovak (`sk`)", "Slovenian (`sl`)", "Somali (`so`)",
-                "Spanish (`es`)", "Sundanese (`su`)", "Swahili (`sw`)",
-                "Swedish (`sv`)", "Tajik (`tg`)", "Tamil (`ta`)",
-                "Telugu (`te`)", "Thai (`th`)", "Turkish (`tr`)",
-                "Ukrainian (`uk`)", "Urdu (`ur`)", "Uzbek (`uz`)",
-                "Vietnamese (`vi`)", "Welsh (`cy`)", "Xhosa (`xh`)",
-                "Yiddish (`yi`)", "Yoruba (`yo`)", "Zulu (`zu`)"
-        };
-        private static final Lazy<String> cachedLanguages = Lazy.of(() -> {
-            StringBuilder builder = new StringBuilder();
-            for(int i = 0; i < languages.length; i++){
-                builder.append(languages[i]);
-                if(i != languages.length - 1){
-                    builder.append(", ");
-                }
-                if(i % 5 == 0){
-                    builder.append('\n');
-                }
-            }
-            builder.trimToSize();
-            return builder.toString();
-        });
-        private final Lazy<HttpClient> httpClient = Lazy.of(ReactorResources.DEFAULT_HTTP_CLIENT);
+        private static final String languages = """
+                Afrikaans (af),
+                Albanian (sq), Amharic (am), Arabic (ar), Armenian (hy), Automatic (auto),
+                Azerbaijani (az), Basque (eu), Belarusian (be), Bengali (bn), Bosnian (bs),
+                Bulgarian (bg), Catalan (ca), Cebuano (ceb), Chichewa (ny), Chinese Simplified (zh-cn),
+                Chinese Traditional (zh-tw), Corsican (co), Croatian (hr), Czech (cs), Danish (da),
+                Dutch (nl), English (en), Esperanto (eo), Estonian (et), Filipino (tl),
+                Finnish (fi), French (fr), Frisian (fy), Galician (gl), Georgian (ka),
+                German (de), Greek (el), Gujarati (gu), Haitian Creole (ht), Hausa (ha),
+                Hawaiian (haw), Hebrew (iw), Hindi (hi), Hmong (hmn), Hungarian (hu),
+                Icelandic (is), Igbo (ig), Indonesian (id), Irish (ga), Italian (it),
+                Japanese (ja), Javanese (jw), Kannada (kn), Kazakh (kk), Khmer (km),
+                Korean (ko), Kurdish (Kurmanji) (ku), Kyrgyz (ky), Lao (lo), Latin (la),
+                Latvian (lv), Lithuanian (lt), Luxembourgish (lb), Macedonian (mk), Malagasy (mg),
+                Malay (ms), Malayalam (ml), Maltese (mt), Maori (mi), Marathi (mr),
+                Mongolian (mn), Myanmar (Burmese) (my), Nepali (ne), Norwegian (no), Pashto (ps),
+                Persian (fa), Polish (pl), Portuguese (pt), Punjabi (ma), Romanian (ro),
+                Russian (ru), Samoan (sm), Scots Gaelic (gd), Serbian (sr), Sesotho (st),
+                Shona (sn), Sindhi (sd), Sinhala (si), Slovak (sk), Slovenian (sl),
+                Somali (so), Spanish (es), Sundanese (su), Swahili (sw), Swedish (sv),
+                Tajik (tg), Tamil (ta), Telugu (te), Thai (th), Turkish (tr),
+                Ukrainian (uk), Urdu (ur), Uzbek (uz), Vietnamese (vi), Welsh (cy),
+                Xhosa (xh), Yiddish (yi), Yoruba (yo), Zulu (zu)
+                """;
 
-        // I hope this not for long
-        private static String params(Map<String, Object> map){
-            return map.entrySet().stream()
-                    .map(entry -> URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8) + "=" +
-                            URLEncoder.encode(Objects.toString(entry.getValue()), StandardCharsets.UTF_8))
-                    .collect(Collectors.joining("&", "?", ""));
-        }
+        private final Lazy<HttpClient> httpClient = Lazy.of(ReactorResources.DEFAULT_HTTP_CLIENT);
 
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -341,10 +308,11 @@ public class Commands{
                     .responseSingle((res, buf) -> buf.asString().flatMap(byteBuf -> Mono.fromCallable(() ->
                             env.getClient().rest().getCoreResources().getJacksonResources()
                                     .getObjectMapper().readTree(byteBuf))))
-                    .map(node -> Optional.ofNullable(node.get("sentences"))
+                    .flatMap(node -> Mono.justOrEmpty(Optional.ofNullable(node.get("sentences"))
                             .map(arr -> arr.get(0))
-                            .map(single -> single.get("trans").asText())
-                            .orElseGet(() -> messageService.get(env.context(), "message.placeholder")))
+                            .map(single -> single.get("trans"))
+                            .map(JsonNode::asText)))
+                    .switchIfEmpty(messageService.err(env, "command.translate.incorrect-language").then(Mono.never()))
                     .flatMap(str -> messageService.text(env, str))
                     .contextWrite(ctx -> ctx.put(KEY_REPLY, true));
         }
@@ -355,7 +323,7 @@ public class Commands{
                     .map(GuildConfig::prefixes)
                     .flatMap(prefix -> messageService.infoTitled(env, "command.help.title", "command.translate.help",
                             GuildConfig.formatPrefix(prefix.get(0)),
-                            cachedLanguages.get()));
+                            languages));
         }
     }
 
@@ -451,7 +419,7 @@ public class Commands{
 
             StringBuilder result = new StringBuilder();
             for(int i = 0; i < len; ){
-                String c = text.substring(i, i <= len - 2 ? i + 2 : i + 1);
+                String c = text.substring(i, i + (i <= len - 2 ? 2 : 1));
                 String leeted = get.apply(c);
                 if(Strings.isEmpty(leeted)){
                     leeted = get.apply(c.charAt(0) + "");
@@ -540,7 +508,7 @@ public class Commands{
 
             StringBuilder result = new StringBuilder();
             for(int i = 0; i < len; ){
-                String c = text.substring(i, i <= len - 2 ? i + 2 : i + 1);
+                String c = text.substring(i, i + (i <= len - 2 ? 2 : 1));
                 String translited = get.apply(c);
                 if(Strings.isEmpty(translited)){
                     translited = get.apply(c.charAt(0) + "");
@@ -633,12 +601,14 @@ public class Commands{
 
     @DiscordCommand(key = {"math", "calc"}, params = "command.math.params", description = "command.math.description")
     public static class MathCommand extends Command{
+
         private static final LazyOperator divideAlias = new AbstractOperator(":", Expression.OPERATOR_PRECEDENCE_MULTIPLICATIVE, true){
             @Override
             public BigDecimal eval(BigDecimal v1, BigDecimal v2){
                 return v1.divide(v2, MathContext.DECIMAL32);
             }
         };
+
         private static final LazyFunction factorialFunction = new AbstractLazyFunction("FACT", 1){
             @Override
             public Expression.LazyNumber lazyEval(List<Expression.LazyNumber> lazyParams){
@@ -657,6 +627,7 @@ public class Commands{
                 });
             }
         };
+
         private static final LazyFunction levenshteinDstFunction = new AbstractLazyFunction("LEVEN", 2){
             @Override
             public Expression.LazyNumber lazyEval(List<Expression.LazyNumber> lazyParams){
@@ -952,14 +923,6 @@ public class Commands{
 
         @Autowired
         private Settings settings;
-
-        // I hope this not for long
-        private static String params(Map<String, Object> map){
-            return map.entrySet().stream()
-                    .map(entry -> URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8) + "=" +
-                            URLEncoder.encode(Objects.toString(entry.getValue()), StandardCharsets.UTF_8))
-                    .collect(Collectors.joining("&", "?", ""));
-        }
 
         @Override
         public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -1532,6 +1495,14 @@ public class Commands{
                     .flatMap(target -> messageService.text(env, "command.admin.unwarnall", target.getUsername())
                             .then(adminService.unwarnAll(guildId, target.getId())));
         }
+    }
+
+    // I hope this not for long
+    private static String params(Map<String, Object> map){
+        return map.entrySet().stream()
+                .map(entry -> URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8) + "=" +
+                        URLEncoder.encode(Objects.toString(entry.getValue()), StandardCharsets.UTF_8))
+                .collect(Collectors.joining("&", "?", ""));
     }
 
     //endregion
