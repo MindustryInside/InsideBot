@@ -153,7 +153,7 @@ public class StarboardCommand extends OwnerCommand{
                 super(owner);
 
                 addOption(builder -> builder.name("value")
-                        .description("Target emoji(s).")
+                        .description("New emoji(s).")
                         .required(true)
                         .type(ApplicationCommandOptionType.STRING.getValue()));
             }
@@ -210,7 +210,7 @@ public class StarboardCommand extends OwnerCommand{
                 super(owner);
 
                 addOption(builder -> builder.name("value")
-                        .description("Target emoji(s).")
+                        .description("Emoji(s).")
                         .required(true)
                         .type(ApplicationCommandOptionType.STRING.getValue()));
             }

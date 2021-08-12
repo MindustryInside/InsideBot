@@ -131,7 +131,7 @@ public class AuditCommand extends OwnerCommand{
                 super(owner);
 
                 addOption(builder -> builder.name("value")
-                        .description("Audit action type.")
+                        .description("New audit action.")
                         .required(true)
                         .type(ApplicationCommandOptionType.STRING.getValue()));
             }
@@ -179,7 +179,7 @@ public class AuditCommand extends OwnerCommand{
                 super(owner);
 
                 addOption(builder -> builder.name("value")
-                        .description("Target audit action type.")
+                        .description("Audit action.")
                         .required(true)
                         .type(ApplicationCommandOptionType.STRING.getValue()));
             }

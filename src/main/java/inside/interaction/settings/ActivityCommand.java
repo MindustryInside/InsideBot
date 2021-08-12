@@ -65,7 +65,7 @@ public class ActivityCommand extends OwnerCommand{
             super(owner);
 
             addOption(builder -> builder.name("value")
-                    .description("Active user role.")
+                    .description("New active user role.")
                     .type(ApplicationCommandOptionType.ROLE.getValue()));
         }
 
@@ -100,7 +100,7 @@ public class ActivityCommand extends OwnerCommand{
             super(owner);
 
             addOption(builder -> builder.name("value")
-                    .description("Minimal message count for reward activity.")
+                    .description("New minimal message count for reward activity.")
                     .type(ApplicationCommandOptionType.INTEGER.getValue()));
         }
 
@@ -141,7 +141,7 @@ public class ActivityCommand extends OwnerCommand{
             super(owner);
 
             addOption(builder -> builder.name("value")
-                    .description("Period value.")
+                    .description("New period.")
                     .type(ApplicationCommandOptionType.STRING.getValue()));
         }
 

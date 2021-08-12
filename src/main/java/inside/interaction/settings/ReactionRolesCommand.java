@@ -45,7 +45,7 @@ public class ReactionRolesCommand extends OwnerCommand{
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
 
             return entityRetriever.getAllEmojiDispenserInGuild(guildId)
-                    //TODO: "empty" check
+                    .switchIfEmpty(messageService.err(env.event(), "command.settings.reaction-roles.absents").then(Mono.never()))
                     .map(ReactionRolesCommand::format)
                     .collect(Collectors.joining())
                     .flatMap(str -> messageService.text(env.event(),
@@ -63,18 +63,18 @@ public class ReactionRolesCommand extends OwnerCommand{
             super(owner);
 
             addOption(builder -> builder
-                    .name("emoji")
-                    .description("Target emoji.")
+                    .name("emoji.")
+                    .description("Unicode or custom emoji.")
                     .required(true)
                     .type(ApplicationCommandOptionType.STRING.getValue()));
 
             addOption(builder -> builder.name("message-id")
-                    .description("Target message id.")
+                    .description("Listening message ID.")
                     .required(true)
                     .type(ApplicationCommandOptionType.STRING.getValue()));
 
             addOption(builder -> builder.name("role")
-                    .description("Target role.")
+                    .description("Dispensed role.")
                     .required(true)
                     .type(ApplicationCommandOptionType.ROLE.getValue()));
         }
@@ -132,12 +132,12 @@ public class ReactionRolesCommand extends OwnerCommand{
             super(owner);
 
             addOption(builder -> builder.name("message-id")
-                    .description("Target message id.")
+                    .description("Listening message ID.")
                     .required(true)
                     .type(ApplicationCommandOptionType.STRING.getValue()));
 
             addOption(builder -> builder.name("role")
-                    .description("Target role.")
+                    .description("Dispensed role.")
                     .required(true)
                     .type(ApplicationCommandOptionType.ROLE.getValue()));
         }

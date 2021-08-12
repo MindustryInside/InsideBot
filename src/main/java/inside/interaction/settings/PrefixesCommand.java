@@ -45,7 +45,7 @@ public class PrefixesCommand extends OwnerCommand{
             super(owner);
 
             addOption(builder -> builder.name("value")
-                    .description("Target prefix(s)")
+                    .description("New prefix(s).")
                     .required(true)
                     .type(ApplicationCommandOptionType.STRING.getValue()));
         }
@@ -81,7 +81,7 @@ public class PrefixesCommand extends OwnerCommand{
             super(owner);
 
             addOption(builder -> builder.name("value")
-                    .description("Target prefix(s)")
+                    .description("Prefix(s).")
                     .required(true)
                     .type(ApplicationCommandOptionType.STRING.getValue()));
         }

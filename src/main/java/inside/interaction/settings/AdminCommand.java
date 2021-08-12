@@ -269,7 +269,7 @@ public class AdminCommand extends OwnerCommand{
                 super(owner);
 
                 addOption(builder -> builder.name("value")
-                        .description("Target admin role.")
+                        .description("New admin role.")
                         .required(true)
                         .type(ApplicationCommandOptionType.STRING.getValue()));
             }
@@ -310,7 +310,7 @@ public class AdminCommand extends OwnerCommand{
                 super(owner);
 
                 addOption(builder -> builder.name("value")
-                        .description("Target admin role.")
+                        .description("Role.")
                         .required(true)
                         .type(ApplicationCommandOptionType.STRING.getValue()));
             }
