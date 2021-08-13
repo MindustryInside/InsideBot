@@ -3,6 +3,7 @@ package inside.resolver;
 import inside.service.MessageService;
 import inside.util.Lazy;
 import org.springframework.util.PropertyPlaceholderHelper;
+import reactor.util.annotation.Nullable;
 import reactor.util.context.ContextView;
 
 import java.util.*;
@@ -26,6 +27,7 @@ public abstract class BasePlaceholderResolver implements PropertyPlaceholderHelp
         return accessors.get();
     }
 
+    @Nullable
     @Override
     public String resolvePlaceholder(String placeholderName){
         Supplier<?> accessor = getAccessors().get(placeholderName);

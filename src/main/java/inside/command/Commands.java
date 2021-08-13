@@ -951,7 +951,8 @@ public class Commands{
                             data.main().temperatureMin(), data.main().temperatureMax(),
                             data.main().pressure() * hPa / mmHg, data.main().humidity(),
                             data.visibility(), data.clouds().all(), data.wind().speed(),
-                            TimestampFormat.LONG_DATE_TIME.format(Instant.ofEpochSecond(data.dateTime()))))))
+                            TimestampFormat.LONG_DATE_TIME.format(Instant.ofEpochSecond(data.dateTime()))))
+                            .title(data.name())))
                     .contextWrite(ctx -> ctx.put(KEY_REPLY, true));
         }
     }
