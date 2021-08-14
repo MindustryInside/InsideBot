@@ -229,7 +229,7 @@ public class AdminCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "admin-roles", description = "Configure bot locale.",
+    @InteractionDiscordCommand(name = "admin-roles", description = "Configure admin roles list.",
             type = ApplicationCommandOptionType.SUB_COMMAND_GROUP)
     public static class AdminCommandAdminRoles extends SubGroupOwnerCommand<AdminCommand>{
 
@@ -237,11 +237,11 @@ public class AdminCommand extends OwnerCommand{
             super(owner, subcommands);
         }
 
-        @InteractionDiscordCommand(name = "help", description = "Get a help.",
+        @InteractionDiscordCommand(name = "list", description = "Display current admin roles list.",
                 type = ApplicationCommandOptionType.SUB_COMMAND)
-        public static class AdminCommandAdminRolesHelp extends OwnerAwareCommand<AdminCommandAdminRoles>{
+        public static class AdminCommandAdminRolesList extends OwnerAwareCommand<AdminCommandAdminRoles>{
 
-            protected AdminCommandAdminRolesHelp(@Aware AdminCommandAdminRoles owner){
+            protected AdminCommandAdminRolesList(@Aware AdminCommandAdminRoles owner){
                 super(owner);
             }
 

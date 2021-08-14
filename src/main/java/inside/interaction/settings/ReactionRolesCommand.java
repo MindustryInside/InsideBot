@@ -31,11 +31,11 @@ public class ReactionRolesCommand extends OwnerCommand{
                 DiscordUtil.getEmojiString(e.getEmoji()));
     }
 
-    @InteractionDiscordCommand(name = "help", description = "Get a help.",
+    @InteractionDiscordCommand(name = "list", description = "Display current reaction roles.",
             type = ApplicationCommandOptionType.SUB_COMMAND)
-    public static class ReactionRolesCommandHelp extends OwnerAwareCommand<ReactionRolesCommand>{
+    public static class ReactionRolesCommandList extends OwnerAwareCommand<ReactionRolesCommand>{
 
-        protected ReactionRolesCommandHelp(@Aware ReactionRolesCommand owner){
+        protected ReactionRolesCommandList(@Aware ReactionRolesCommand owner){
             super(owner);
         }
 

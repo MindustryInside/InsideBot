@@ -93,7 +93,7 @@ public class AuditCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "actions", description = "Configure bot locale.",
+    @InteractionDiscordCommand(name = "actions", description = "Configure audit actions.",
             type = ApplicationCommandOptionType.SUB_COMMAND_GROUP)
     public static class AuditCommandActions extends SubGroupOwnerCommand<AuditCommand>{
 
@@ -101,11 +101,11 @@ public class AuditCommand extends OwnerCommand{
             super(owner, subcommands);
         }
 
-        @InteractionDiscordCommand(name = "help", description = "Get a help.",
+        @InteractionDiscordCommand(name = "list", description = "Display current audit actions.",
                 type = ApplicationCommandOptionType.SUB_COMMAND)
-        public static class AuditCommandActionsHelp extends OwnerAwareCommand<AuditCommandActions>{
+        public static class AuditCommandActionsList extends OwnerAwareCommand<AuditCommandActions>{
 
-            protected AuditCommandActionsHelp(@Aware AuditCommandActions owner){
+            protected AuditCommandActionsList(@Aware AuditCommandActions owner){
                 super(owner);
             }
 

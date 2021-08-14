@@ -58,8 +58,8 @@ public abstract class BaseInteractionCommand implements InteractionCommand{
                 "Subcommands mustn't define command request.");
 
         return ApplicationCommandRequest.builder()
-                .name(metadata.name())
-                .description(metadata.description())
+                .name(getName())
+                .description(getDescription())
                 .options(getOptions())
                 .build();
     }

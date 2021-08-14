@@ -68,12 +68,12 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                 .flatMap(owner -> adminService.warn(owner, member, messageService.get(ctx, "audit.member.warn.evade"))));
 
         Mono<Void> muteEvade = Mono.deferContextual(ctx -> member.getGuild().flatMap(Guild::getOwner)
-                .filterWhen(ignored -> adminService.isMuted(member))
-                .flatMap(owner -> adminConfig.flatMap(config -> adminService.mute(owner, member,
-                                Instant.now().plus(config.getMuteBaseDelay()),
-                                messageService.get(ctx, "audit.member.mute.evade"))
-                        .thenReturn(owner)))
-                .switchIfEmpty(warn.then(Mono.empty())))
+                        .filterWhen(ignored -> adminService.isMuted(member))
+                        .flatMap(owner -> adminConfig.flatMap(config -> adminService.mute(owner, member,
+                                        Instant.now().plus(config.getMuteBaseDelay()),
+                                        messageService.get(ctx, "audit.member.mute.evade"))
+                                .thenReturn(owner)))
+                        .switchIfEmpty(warn.then(Mono.empty())))
                 .then();
 
         Mono<Void> log = auditService.newBuilder(event.getGuildId(), MEMBER_JOIN)
@@ -188,7 +188,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                                 List<Snowflake> difference = new ArrayList<>(added
                                         ? event.getCurrentRoleIds()
                                         : oldRoleIds);
-                                difference.removeIf(added ? oldRoleIds::contains : event.getCurrentRoleIds()::contains);
+                                difference.removeIf((added ? oldRoleIds : event.getCurrentRoleIds())::contains);
 
                                 return auditService.newBuilder(guildId, added ? MEMBER_ROLE_ADD : MEMBER_ROLE_REMOVE)
                                         .withUser(member)

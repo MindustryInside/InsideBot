@@ -18,11 +18,11 @@ public class PrefixesCommand extends OwnerCommand{
         super(subcommands);
     }
 
-    @InteractionDiscordCommand(name = "help", description = "Get a help.",
+    @InteractionDiscordCommand(name = "list", description = "Display current prefixes.",
             type = ApplicationCommandOptionType.SUB_COMMAND)
-    public static class PrefixesCommandHelp extends OwnerAwareCommand<PrefixesCommand>{
+    public static class PrefixesCommandList extends OwnerAwareCommand<PrefixesCommand>{
 
-        protected PrefixesCommandHelp(@Aware PrefixesCommand owner){
+        protected PrefixesCommandList(@Aware PrefixesCommand owner){
             super(owner);
         }
 
