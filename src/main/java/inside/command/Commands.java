@@ -752,7 +752,7 @@ public class Commands{
             Mono<MessageChannel> channel = env.getReplyChannel();
             Member author = env.getAuthorAsMember();
 
-            String text = interaction.getOption("poll key")
+            String text = interaction.getOption("poll text")
                     .flatMap(CommandOption::getValue)
                     .map(OptionValue::asString)
                     .orElseThrow(IllegalStateException::new);
