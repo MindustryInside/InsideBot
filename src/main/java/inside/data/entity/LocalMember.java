@@ -1,11 +1,14 @@
 package inside.data.entity;
 
 import discord4j.common.util.Snowflake;
+import discord4j.discordjson.Id;
 import inside.data.entity.base.GuildEntity;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import java.io.Serial;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "local_member")
@@ -22,28 +25,48 @@ public class LocalMember extends GuildEntity{
     @OneToOne(cascade = CascadeType.ALL)
     private Activity activity;
 
+    @Type(type = "json")
+    @Column(name = "last_role_ids", columnDefinition = "json")
+    private Set<Id> lastRoleIds;
+
     public Snowflake getUserId(){
         return Snowflake.of(userId);
     }
 
-    public void userId(Snowflake userId){
+    public void setUserId(Snowflake userId){
         this.userId = Objects.requireNonNull(userId, "userId").asLong();
     }
 
-    public String effectiveName(){
+    public String getEffectiveName(){
         return effectiveName;
     }
 
-    public void effectiveName(String effectiveName){
+    public void setEffectiveName(String effectiveName){
         this.effectiveName = Objects.requireNonNull(effectiveName, "effectiveName");
     }
 
-    public Activity activity(){
+    public Activity getActivity(){
         return activity;
     }
 
-    public void activity(Activity activity){
+    public void setActivity(Activity activity){
         this.activity = Objects.requireNonNull(activity, "activity");
+    }
+
+    public Set<Snowflake> getLastRoleIds(){
+        if(lastRoleIds == null){
+            lastRoleIds = new HashSet<>();
+        }
+        return lastRoleIds.stream()
+                .map(Snowflake::of)
+                .collect(Collectors.toSet());
+    }
+
+    public void setLastRoleIds(Set<Snowflake> lastRoleIds){
+        Objects.requireNonNull(lastRoleIds, "lastRoleIds");
+        this.lastRoleIds = lastRoleIds.stream()
+                .map(id -> Id.of(id.asLong()))
+                .collect(Collectors.toSet());
     }
 
     @Override
@@ -52,6 +75,7 @@ public class LocalMember extends GuildEntity{
                 "userId=" + userId +
                 ", effectiveName='" + effectiveName + '\'' +
                 ", activity=" + activity +
+                ", lastRoleIds=" + lastRoleIds +
                 "} " + super.toString();
     }
 }

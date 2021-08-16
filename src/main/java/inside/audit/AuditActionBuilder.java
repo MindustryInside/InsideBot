@@ -39,7 +39,7 @@ public abstract class AuditActionBuilder{
 
     public static NamedReference getReference(LocalMember member){
         Objects.requireNonNull(member, "member");
-        return new NamedReference(member.getUserId(), member.effectiveName());
+        return new NamedReference(member.getUserId(), member.getEffectiveName());
     }
 
     public static NamedReference getReference(GuildChannel channel){

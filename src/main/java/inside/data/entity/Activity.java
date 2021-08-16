@@ -26,20 +26,20 @@ public class Activity extends GuildEntity{
         messageCount += 1;
     }
 
-    public int messageCount(){
+    public int getMessageCount(){
         return messageCount;
     }
 
-    public void messageCount(int messageCount){
+    public void setMessageCount(int messageCount){
         this.messageCount = messageCount;
     }
 
     @Nullable
-    public Instant lastSentMessage(){
+    public Instant getLastSentMessage(){
         return lastSentMessage;
     }
 
-    public void lastSentMessage(Instant lastSentMessage){
+    public void setLastSentMessage(Instant lastSentMessage){
         this.lastSentMessage = Objects.requireNonNull(lastSentMessage, "lastSentMessage");
     }
 

@@ -70,7 +70,7 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
                     .map(TupleUtils.function((idx, warn) ->
                             EmbedCreateFields.Field.of(String.format("%2s. %s", idx + 1,
                                             TimestampFormat.LONG_DATE_TIME.format(warn.getTimestamp())), String.format("%s%n%s",
-                                            messageService.format(context, "common.admin", warn.getAdmin().effectiveName()),
+                                            messageService.format(context, "common.admin", warn.getAdmin().getEffectiveName()),
                                             messageService.format(context, "common.reason", warn.getReason()
                                                     .orElse(messageService.get(context, "common.not-defined")))),
                                     true)))

@@ -6,7 +6,9 @@ import discord4j.core.event.domain.guild.*;
 import discord4j.core.object.audit.*;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
-import discord4j.core.spec.AuditLogQuerySpec;
+import discord4j.core.retriever.EntityRetrievalStrategy;
+import discord4j.core.spec.*;
+import discord4j.rest.util.Permission;
 import inside.audit.AuditService;
 import inside.data.entity.AdminConfig;
 import inside.data.service.EntityRetriever;
@@ -17,7 +19,7 @@ import inside.util.DiscordUtil;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
 import reactor.util.context.Context;
 
@@ -92,7 +94,25 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                         .flatMap(TupleUtils.function((channel, spec) -> channel.createMessage(spec))))
                 .then();
 
-        return initContext.flatMap(context -> Mono.when(log, muteEvade, welcomeMessage).contextWrite(context));
+        Mono<Void> returnRoles = Mono.deferContextual(ctx -> entityRetriever.getLocalMemberById(member.getId(), member.getGuildId())
+                .zipWith(event.getClient().withRetrievalStrategy(EntityRetrievalStrategy.REST)
+                        .getSelfMember(member.getGuildId()))
+                .filterWhen(TupleUtils.function((localMember, self) -> self.getBasePermissions()
+                        .map(set -> set.contains(Permission.MANAGE_ROLES))))
+                .filter(TupleUtils.predicate((localMember, self) -> !member.isBot()))
+                .flatMapMany(TupleUtils.function((localMember, self) -> self.getHighestRole().zipWith(self.getGuild())
+                        .flatMapMany(TupleUtils.function((highest, guild) -> Flux.fromIterable(localMember.getLastRoleIds())
+                                .flatMap(guild::getRoleById)
+                                .filter(role -> highest.getRawPosition() > role.getRawPosition())
+                                .map(Role::getId)))))
+                        .collectList()
+                .flatMap(roleIds -> member.edit(GuildMemberEditSpec.builder()
+                                .roles(roleIds)
+                                .reason(messageService.get(ctx, "common.auto-roles"))
+                        .build())))
+                .then();
+
+        return initContext.flatMap(context -> Mono.when(log, muteEvade, welcomeMessage, returnRoles).contextWrite(context));
     }
 
     @Override
@@ -164,7 +184,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
 
         return initContext.flatMap(context -> event.getMember()
                 .filter(Predicate.not(DiscordUtil::isBot))
-                .flatMap(member -> entityRetriever.getAndUpdateLocalMemberById(member)
+                .flatMap(member -> entityRetriever.getLocalMemberById(member.getId(), guildId)
                         .switchIfEmpty(entityRetriever.createLocalMember(member))
                         .flatMap(localMember -> {
                             Mono<Void> logAvatarUpdate = Mono.defer(() -> {
@@ -184,6 +204,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                                     return logAvatarUpdate;
                                 }
 
+                                localMember.setLastRoleIds(event.getCurrentRoleIds());
                                 boolean added = oldRoleIds.size() < event.getCurrentRoleIds().size();
                                 List<Snowflake> difference = new ArrayList<>(added
                                         ? event.getCurrentRoleIds()
@@ -197,7 +218,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                                         .save();
                             });
 
-                            String effectiveName = event.getCurrentNickname().orElse(member.getUsername());
+                            String effectiveName = event.getCurrentNickname().orElseGet(member::getUsername);
 
                             Mono<Void> logNicknameUpdate = Mono.defer(() -> {
                                 if(effectiveName.equals(old.getDisplayName())){
@@ -212,8 +233,9 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                                         .save();
                             });
 
-                            localMember.effectiveName(effectiveName);
-                            return Mono.when(entityRetriever.save(localMember), logRoleUpdate, logNicknameUpdate);
+                            localMember.setEffectiveName(effectiveName);
+                            return Mono.when(logRoleUpdate, logNicknameUpdate)
+                                    .then(entityRetriever.save(localMember));
                         })).contextWrite(context));
     }
 

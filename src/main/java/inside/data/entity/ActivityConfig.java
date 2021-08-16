@@ -26,9 +26,9 @@ public class ActivityConfig extends ConfigEntity{
     @Transient
     public boolean resetIfAfter(Activity activity){
         Objects.requireNonNull(activity, "activity");
-        Instant last = activity.lastSentMessage();
+        Instant last = activity.getLastSentMessage();
         if(last != null && last.isBefore(Instant.now().minus(keepCountingDuration))){
-            activity.messageCount(0);
+            activity.setMessageCount(0);
             return true;
         }
         return false;
@@ -37,9 +37,9 @@ public class ActivityConfig extends ConfigEntity{
     @Transient
     public boolean isActive(Activity activity){
         Objects.requireNonNull(activity, "activity");
-        Instant last = activity.lastSentMessage();
+        Instant last = activity.getLastSentMessage();
         return last != null && last.isAfter(Instant.now().minus(keepCountingDuration)) &&
-                activity.messageCount() >= messageBarrier;
+                activity.getMessageCount() >= messageBarrier;
     }
 
     public Duration getKeepCountingDuration(){

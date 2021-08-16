@@ -11,7 +11,7 @@ import discord4j.core.spec.AuditLogQuerySpec;
 import inside.audit.*;
 import inside.command.CommandHandler;
 import inside.command.model.CommandEnvironment;
-import inside.data.entity.*;
+import inside.data.entity.MessageInfo;
 import inside.data.service.EntityRetriever;
 import inside.service.MessageService;
 import inside.util.*;
@@ -62,14 +62,13 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
         Snowflake guildId = member.getGuildId();
 
-        Mono<LocalMember> localMember = entityRetriever.getAndUpdateLocalMemberById(member)
-                .switchIfEmpty(entityRetriever.createLocalMember(member));
-
-        Mono<Void> updateActivity = localMember.flatMap(localMember0 -> {
-            localMember0.activity().lastSentMessage(message.getTimestamp());
-            localMember0.activity().incrementMessageCount();
-            return entityRetriever.save(localMember0);
-        });
+        Mono<Void> updateActivity = entityRetriever.getAndUpdateLocalMemberById(member)
+                .switchIfEmpty(entityRetriever.createLocalMember(member))
+                .flatMap(localMember0 -> {
+                    localMember0.getActivity().setLastSentMessage(message.getTimestamp());
+                    localMember0.getActivity().incrementMessageCount();
+                    return entityRetriever.save(localMember0);
+                });
 
         Mono<Void> safeMessageInfo = entityRetriever.getAuditConfigById(guildId).flatMap(auditConfig -> {
             if(auditConfig.isEnabled(MESSAGE_CREATE)){

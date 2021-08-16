@@ -140,13 +140,13 @@ public class DiscordServiceImpl implements DiscordService{
                         return Mono.empty();
                     }
 
-                    Activity activity = localMember.activity();
+                    Activity activity = localMember.getActivity();
                     if(activeUserConfig.isActive(activity)){
                         return member.addRole(roleId);
                     }
                     return member.removeRole(roleId);
                 }).and(Mono.defer(() -> {
-                    if(activeUserConfig.resetIfAfter(localMember.activity())){
+                    if(activeUserConfig.resetIfAfter(localMember.getActivity())){
                         return entityRetriever.save(localMember);
                     }
                     return Mono.empty();

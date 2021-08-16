@@ -95,13 +95,20 @@ public class EntityRetrieverImpl implements EntityRetriever{
     @Override
     public Mono<LocalMember> getAndUpdateLocalMemberById(Member member){
         return getLocalMemberById(member.getId(), member.getGuildId())
-                .flatMap(localMember -> Mono.defer(() -> {
-                    if(!localMember.effectiveName().equals(member.getDisplayName())){
-                        localMember.effectiveName(member.getDisplayName());
-                        return save(localMember);
+                .flatMap(localMember -> {
+                    boolean needSave = false;
+                    var roleIds = member.getRoleIds();
+                    if(!localMember.getLastRoleIds().equals(roleIds)){
+                        localMember.setLastRoleIds(roleIds);
+                        needSave = true;
                     }
-                    return Mono.empty();
-                }).thenReturn(localMember));
+                    var displayName = member.getDisplayName();
+                    if(!localMember.getEffectiveName().equals(displayName)){
+                        localMember.setEffectiveName(displayName);
+                        needSave = true;
+                    }
+                    return needSave ? save(localMember).thenReturn(localMember) : Mono.just(localMember);
+                });
     }
 
     @Override
@@ -277,12 +284,12 @@ public class EntityRetrieverImpl implements EntityRetriever{
     public Mono<LocalMember> createLocalMember(Member member){
         return Mono.defer(() -> {
             LocalMember localMember = new LocalMember();
-            localMember.userId(member.getId());
+            localMember.setUserId(member.getId());
             localMember.setGuildId(member.getGuildId());
-            localMember.effectiveName(member.getDisplayName());
+            localMember.setEffectiveName(member.getDisplayName());
             Activity activity = new Activity();
             activity.setGuildId(member.getGuildId());
-            localMember.activity(activity); // TODO: lazy initializing?
+            localMember.setActivity(activity); // TODO: lazy initializing?
             return save(localMember).thenReturn(localMember);
         });
     }
