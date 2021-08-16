@@ -21,7 +21,7 @@ public abstract class Command{
         return Mono.empty();
     }
 
-    public Mono<Void> help(CommandEnvironment env){
+    public Mono<Void> help(CommandEnvironment env, String prefix){
         return messageService.text(env, "command.help.default");
     }
 

@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
-import reactor.util.function.Tuple2;
+import reactor.util.function.*;
 
 import java.util.*;
 import java.util.function.*;
@@ -55,14 +55,16 @@ public class DefaultCommandHandler implements CommandHandler{
                 .map(s -> s.startsWith(DiscordUtil.getMemberMention(selfId)) ? DiscordUtil.getMemberMention(selfId) :
                         DiscordUtil.getUserMention(selfId));
 
-        Mono<Tuple2<String, String>> text = prefix.switchIfEmpty(mention)
-                .map(s -> message.substring(s.length()).trim())
-                .zipWhen(s -> Mono.just(s.contains(" ") ? s.substring(0, s.indexOf(" ")) : s)
-                        .map(String::toLowerCase)
-                        .filter(Predicate.not(String::isBlank)))
+        var computedText = prefix.switchIfEmpty(mention).zipWhen(prx -> Mono.just(prx)
+                                .filter(message::startsWith)
+                                .map(str -> message.substring(str.length()).trim())
+                                .zipWhen(str -> Mono.just(str.contains(" ") ? str.substring(0, str.indexOf(" ")) : str)
+                                        .map(String::toLowerCase)
+                                        .filter(Predicate.not(String::isBlank))),
+                        (prx, text) -> Tuples.of(prx, text.getT1(), text.getT2()))
                 .cache();
 
-        Mono<Void> suggestion = text.map(Tuple2::getT1).flatMap(commandName -> commandHolder.getCommandInfoMap().values().stream()
+        Mono<Void> suggestion = computedText.map(Tuple2::getT1).flatMap(commandName -> commandHolder.getCommandInfoMap().values().stream()
                 .flatMap(commandInfo -> Arrays.stream(commandInfo.key()))
                 .min(Comparator.comparingInt(s -> Strings.levenshtein(s, commandName)))
                 .map(s -> messageService.err(environment, "command.response.found-closest", s))
@@ -70,7 +72,7 @@ public class DefaultCommandHandler implements CommandHandler{
                         messageService.err(environment, "command.response.unknown", str)))
                 .doFirst(() -> messageService.awaitEdit(environment.getMessage().getId())));
 
-        return text.flatMap(TupleUtils.function((commandstr, cmdkey) -> Mono.justOrEmpty(commandHolder.getCommand(cmdkey))
+        return computedText.flatMap(TupleUtils.function((prx, commandstr, cmdkey) -> Mono.justOrEmpty(commandHolder.getCommand(cmdkey))
                 .switchIfEmpty(suggestion.then(Mono.empty()))
                 .flatMap(command -> {
                     CommandInfo info = commandHolder.getCommandInfoMap().get(command);
@@ -82,15 +84,15 @@ public class DefaultCommandHandler implements CommandHandler{
                             "command.response.incorrect-arguments";
 
                     if(argstr.matches("^(?i)(help|\\?)$")){
-                        return command.filter(environment).flatMap(bool -> bool ? command.help(environment) : Mono.empty());
+                        return command.filter(environment).flatMap(bool -> bool ? command.help(environment, prx) : Mono.empty());
                     }
 
                     while(true){
                         if(index >= info.params().length && !argstr.isEmpty()){
                             messageService.awaitEdit(environment.getMessage().getId());
-                            return prefix.map(GuildConfig::formatPrefix)
-                                    .flatMap(str -> messageService.errTitled(environment, "command.response.many-arguments.title",
-                                            argsres, str, cmdkey, messageService.get(environment.context(), info.paramText())));
+                            return messageService.errTitled(environment, "command.response.many-arguments.title",
+                                    argsres, GuildConfig.formatPrefix(prx), cmdkey,
+                                    messageService.get(environment.context(), info.paramText()));
                         }
 
                         if(argstr.isEmpty()){
@@ -110,9 +112,9 @@ public class DefaultCommandHandler implements CommandHandler{
                         if(next == -1){
                             if(!satisfied){
                                 messageService.awaitEdit(environment.getMessage().getId());
-                                return prefix.map(GuildConfig::formatPrefix)
-                                        .flatMap(str -> messageService.errTitled(environment, "command.response.few-arguments.title",
-                                                argsres, str, cmdkey, messageService.get(environment.context(), info.paramText())));
+                                return messageService.errTitled(environment, "command.response.few-arguments.title",
+                                        argsres, GuildConfig.formatPrefix(prx),
+                                        cmdkey, messageService.get(environment.context(), info.paramText()));
                             }
                             result.add(new CommandOption(info.params()[index], argstr));
                             break;
@@ -131,9 +133,9 @@ public class DefaultCommandHandler implements CommandHandler{
                     if(!satisfied && info.params().length > 0 && !info.params()[0].optional() &&
                             environment.getMessage().getMessageReference().isEmpty()){
                         messageService.awaitEdit(environment.getMessage().getId());
-                        return prefix.map(GuildConfig::formatPrefix)
-                                .flatMap(str -> messageService.errTitled(environment, "command.response.few-arguments.title",
-                                        argsres, str, cmdkey, messageService.get(environment.context(), info.paramText())));
+                        return messageService.errTitled(environment, "command.response.few-arguments.title",
+                                argsres, GuildConfig.formatPrefix(prx), cmdkey,
+                                messageService.get(environment.context(), info.paramText()));
                     }
 
                     Predicate<Throwable> missingAccess = t -> t.getMessage() != null &&

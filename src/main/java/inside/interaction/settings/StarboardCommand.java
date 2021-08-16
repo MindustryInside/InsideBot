@@ -112,7 +112,7 @@ public class StarboardCommand extends OwnerCommand{
             super(owner, subcommands);
         }
 
-        @InteractionDiscordCommand(name = "help", description = "Get a help.",
+        @InteractionDiscordCommand(name = "list", description = "Display current emoji list.",
                 type = ApplicationCommandOptionType.SUB_COMMAND)
         public static class StarboardCommandEmojisHelp extends OwnerAwareCommand<StarboardCommandEmojis>{
 

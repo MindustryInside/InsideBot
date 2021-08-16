@@ -244,11 +244,9 @@ public class Commands{
         }
 
         @Override
-        public Mono<Void> help(CommandEnvironment env){
-            return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
-                    .map(GuildConfig::prefixes)
-                    .flatMap(prefix -> messageService.infoTitled(env, "command.help.title", "command.base64.help",
-                            GuildConfig.formatPrefix(prefix.get(0))));
+        public Mono<Void> help(CommandEnvironment env, String prefix){
+            return messageService.infoTitled(env, "command.help.title", "command.base64.help",
+                    GuildConfig.formatPrefix(prefix));
         }
     }
 
@@ -318,12 +316,9 @@ public class Commands{
         }
 
         @Override
-        public Mono<Void> help(CommandEnvironment env){
-            return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
-                    .map(GuildConfig::prefixes)
-                    .flatMap(prefix -> messageService.infoTitled(env, "command.help.title", "command.translate.help",
-                            GuildConfig.formatPrefix(prefix.get(0)),
-                            languages));
+        public Mono<Void> help(CommandEnvironment env, String prefix){
+            return messageService.infoTitled(env, "command.help.title", "command.translate.help",
+                    GuildConfig.formatPrefix(prefix), languages);
         }
     }
 
@@ -591,11 +586,9 @@ public class Commands{
         }
 
         @Override
-        public Mono<Void> help(CommandEnvironment env){
-            return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
-                    .map(GuildConfig::prefixes)
-                    .flatMap(prefix -> messageService.infoTitled(env, "command.help.title", "command.avatar.help",
-                            GuildConfig.formatPrefix(prefix.get(0))));
+        public Mono<Void> help(CommandEnvironment env, String prefix){
+            return messageService.infoTitled(env, "command.help.title", "command.avatar.help",
+                    GuildConfig.formatPrefix(prefix));
         }
     }
 
@@ -685,11 +678,9 @@ public class Commands{
         }
 
         @Override
-        public Mono<Void> help(CommandEnvironment env){
-            return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
-                    .map(GuildConfig::prefixes)
-                    .flatMap(prefix -> messageService.infoTitled(env, "command.help.title", "command.math.help",
-                            GuildConfig.formatPrefix(prefix.get(0))));
+        public Mono<Void> help(CommandEnvironment env, String prefix){
+            return messageService.infoTitled(env, "command.help.title", "command.math.help",
+                    GuildConfig.formatPrefix(prefix));
         }
     }
 
@@ -802,11 +793,9 @@ public class Commands{
         }
 
         @Override
-        public Mono<Void> help(CommandEnvironment env){
-            return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
-                    .map(GuildConfig::prefixes)
-                    .flatMap(prefix -> messageService.infoTitled(env, "command.help.title", "command.poll.help",
-                            GuildConfig.formatPrefix(prefix.get(0))));
+        public Mono<Void> help(CommandEnvironment env, String prefix){
+            return messageService.infoTitled(env, "command.help.title", "command.poll.help",
+                    GuildConfig.formatPrefix(prefix));
         }
     }
 
@@ -833,11 +822,9 @@ public class Commands{
         }
 
         @Override
-        public Mono<Void> help(CommandEnvironment env){
-            return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
-                    .map(GuildConfig::prefixes)
-                    .flatMap(prefix -> messageService.infoTitled(env, "command.help.title", "command.qpoll.help",
-                            GuildConfig.formatPrefix(prefix.get(0))));
+        public Mono<Void> help(CommandEnvironment env, String prefix){
+            return messageService.infoTitled(env, "command.help.title", "command.qpoll.help",
+                    GuildConfig.formatPrefix(prefix));
         }
     }
 
@@ -1251,11 +1238,9 @@ public class Commands{
         }
 
         @Override
-        public Mono<Void> help(CommandEnvironment env){
-            return entityRetriever.getGuildConfigById(env.getAuthorAsMember().getGuildId())
-                    .map(GuildConfig::prefixes)
-                    .flatMap(prefix -> messageService.infoTitled(env, "command.help.title", "command.admin.delete.help",
-                            GuildConfig.formatPrefix(prefix.get(0))));
+        public Mono<Void> help(CommandEnvironment env, String prefix){
+            return messageService.infoTitled(env, "command.help.title", "command.admin.delete.help",
+                    GuildConfig.formatPrefix(prefix));
         }
     }
 
