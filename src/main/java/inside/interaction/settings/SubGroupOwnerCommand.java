@@ -32,13 +32,13 @@ public class SubGroupOwnerCommand<T extends InteractionOwnerCommand>
 
     @Override
     public Mono<Void> execute(InteractionCommandEnvironment env){
-        String commandName = env.event().getOptions().get(0).getName();
+        String commandName = env.event().getOptions().get(0).getOptions().get(0).getName();
         return Mono.justOrEmpty(getSubCommand(commandName)).flatMap(subcmd -> subcmd.execute(env));
     }
 
     @Override
     public Mono<Boolean> filter(InteractionCommandEnvironment env){
-        String commandName = env.event().getOptions().get(0).getName();
+        String commandName = env.event().getOptions().get(0).getOptions().get(0).getName();
         Mono<Boolean> isSubCommandFilter = Mono.justOrEmpty(getSubCommand(commandName))
                 .flatMap(subcmd -> subcmd.filter(env));
 
