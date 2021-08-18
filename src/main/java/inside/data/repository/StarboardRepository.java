@@ -8,4 +8,6 @@ import org.springframework.stereotype.Repository;
 public interface StarboardRepository extends GuildRepository<Starboard>{
 
     Starboard findByGuildIdAndSourceMessageId(long guildId, long sourceMessageId);
+
+    void deleteByGuildIdAndSourceMessageId(long guildId, long sourceMessageId);
 }

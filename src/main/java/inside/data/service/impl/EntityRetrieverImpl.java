@@ -173,7 +173,7 @@ public class EntityRetrieverImpl implements EntityRetriever{
 
     @Override
     public Mono<Void> deleteStarboardById(Snowflake guildId, Snowflake sourceMessageId){
-        return getStarboardBySourceId(guildId, sourceMessageId).flatMap(this::delete);
+        return storeHolder.getStarboardService().deleteById(guildId.asLong(), sourceMessageId.asLong());
     }
 
     @Override
