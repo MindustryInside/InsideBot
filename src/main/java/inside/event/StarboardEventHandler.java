@@ -249,7 +249,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                     }
 
                     Mono<Integer> emojiCount = event.getMessage()
-                            .flatMapMany(message -> Flux.fromIterable(message.getReactions()))
+                            .flatMapIterable(Message::getReactions)
                             .filter(reaction -> emojis.contains(reaction.getEmoji()))
                             .map(Reaction::getCount)
                             .as(MathFlux::max)

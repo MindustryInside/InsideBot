@@ -31,28 +31,28 @@ public class NamedReference{
         this.name = Objects.requireNonNull(name, "name");
     }
 
-    public String id(){
+    public String getId(){
         return id;
     }
 
-    public void id(String id){
+    public void setId(String id){
         this.id = Objects.requireNonNull(id, "id");
     }
 
-    public String name(){
+    public String getName(){
         return name;
     }
 
-    public void name(String name){
+    public void setName(String name){
         this.name = Objects.requireNonNull(name, "name");
     }
 
     @Nullable
-    public String discriminator(){
+    public String getDiscriminator(){
         return discriminator;
     }
 
-    public void discriminator(String discriminator){
+    public void setDiscriminator(String discriminator){
         this.discriminator = Objects.requireNonNull(discriminator, "discriminator");
     }
 

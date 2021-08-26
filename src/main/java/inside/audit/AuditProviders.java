@@ -39,7 +39,7 @@ public class AuditProviders{
             embed.author(formatName(action.getUser()), null, url);
             embed.description(messageService.format(context, "audit.message.edit.description",
                     action.getGuildId().asString(),
-                    action.getChannel().id(),
+                    action.getChannel().getId(),
                     messageId.asString()));
 
             if(!oldContent.isEmpty()){
@@ -303,7 +303,7 @@ public class AuditProviders{
 
             embed.description(messageService.format(context, "audit.reaction.add.description",
                     getUserReference(context, action.getUser()), DiscordUtil.getEmojiString(emoji),
-                    action.getGuildId().asString(), action.getChannel().id(), messageId.asString()));
+                    action.getGuildId().asString(), action.getChannel().getId(), messageId.asString()));
 
             addTimestamp(context, action, embed);
         }
@@ -321,7 +321,7 @@ public class AuditProviders{
 
             embed.description(messageService.format(context, "audit.reaction.remove.description",
                     DiscordUtil.getEmojiString(emoji), getUserReference(context, action.getUser()),
-                    action.getGuildId().asString(), action.getChannel().id(), messageId.asString()));
+                    action.getGuildId().asString(), action.getChannel().getId(), messageId.asString()));
 
             addTimestamp(context, action, embed);
         }
@@ -337,7 +337,7 @@ public class AuditProviders{
             }
 
             embed.description(messageService.format(context, "audit.reaction.remove-all.description",
-                    action.getGuildId().asString(), action.getChannel().id(), messageId.asString()));
+                    action.getGuildId().asString(), action.getChannel().getId(), messageId.asString()));
 
             addTimestamp(context, action, embed);
         }

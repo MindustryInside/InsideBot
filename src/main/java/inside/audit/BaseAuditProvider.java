@@ -77,8 +77,8 @@ public abstract class BaseAuditProvider implements AuditProvider{
     }
 
     protected String formatName(NamedReference reference){
-        String name = reference.name();
-        String discriminator = reference.discriminator();
+        String name = reference.getName();
+        String discriminator = reference.getDiscriminator();
         if(discriminator != null){
             return String.format("%s#%s", name, discriminator);
         }
@@ -87,7 +87,7 @@ public abstract class BaseAuditProvider implements AuditProvider{
 
     private String getReferenceContent(ContextView context, NamedReference reference, boolean channel){
         return messageService.format(context, "audit.reference", formatName(reference),
-                (channel ? "<#" : "<@") + reference.id() + ">");
+                (channel ? "<#" : "<@") + reference.getId() + ">");
     }
 
     protected abstract void build(AuditAction action, ContextView context,
