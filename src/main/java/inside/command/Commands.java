@@ -61,6 +61,7 @@ public class Commands{
     }
 
     public static abstract class AdminCommand extends Command{
+        @org.springframework.context.annotation.Lazy
         @Autowired
         protected AdminService adminService;
 
