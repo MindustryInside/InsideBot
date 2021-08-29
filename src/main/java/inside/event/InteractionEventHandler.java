@@ -14,6 +14,7 @@ import inside.service.*;
 import inside.util.Mathf;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import reactor.function.TupleUtils;
@@ -36,6 +37,7 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
     @Autowired
     private DiscordService discordService;
 
+    @Lazy
     @Autowired
     private AdminService adminService;
 
