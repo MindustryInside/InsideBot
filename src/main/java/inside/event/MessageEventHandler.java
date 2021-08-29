@@ -18,6 +18,7 @@ import inside.util.*;
 import inside.util.io.ReusableByteInputStream;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.*;
 import reactor.util.context.Context;
@@ -45,6 +46,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
     @Autowired
     private MessageService messageService;
 
+    @Lazy
     @Autowired
     private AuditService auditService;
 

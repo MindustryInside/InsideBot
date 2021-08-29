@@ -8,6 +8,7 @@ import inside.audit.*;
 import inside.data.service.EntityRetriever;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
@@ -21,6 +22,7 @@ public class ReactionEventHandler extends ReactiveEventAdapter{
     @Autowired
     private EntityRetriever entityRetriever;
 
+    @Lazy
     @Autowired
     private AuditService auditService;
 

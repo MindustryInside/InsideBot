@@ -40,6 +40,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
     @Autowired
     private EntityRetriever entityRetriever;
 
+    @Lazy
     @Autowired
     private AuditService auditService;
 

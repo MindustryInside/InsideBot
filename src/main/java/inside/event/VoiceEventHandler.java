@@ -9,6 +9,7 @@ import inside.audit.*;
 import inside.data.service.EntityRetriever;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
@@ -19,6 +20,7 @@ import static reactor.function.TupleUtils.function;
 
 @Component
 public class VoiceEventHandler extends ReactiveEventAdapter{
+    @Lazy
     @Autowired
     private AuditService auditService;
 
