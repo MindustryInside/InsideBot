@@ -8,7 +8,7 @@ public interface UnsafePredicate<T>{
     static <T> UnsafePredicate<T> isEqual(Object targetRef){
         return null == targetRef
                 ? Objects::isNull
-                : object -> targetRef.equals(object);
+                : targetRef::equals;
     }
 
     @SuppressWarnings("unchecked")

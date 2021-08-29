@@ -18,6 +18,7 @@ import inside.service.*;
 import inside.util.DiscordUtil;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
@@ -42,6 +43,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
     @Autowired
     private AuditService auditService;
 
+    @Lazy
     @Autowired
     private AdminService adminService;
 
