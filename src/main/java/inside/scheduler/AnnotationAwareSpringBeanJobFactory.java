@@ -3,10 +3,9 @@ package inside.scheduler;
 import org.quartz.spi.TriggerFiredBundle;
 import org.springframework.beans.BeansException;
 import org.springframework.context.*;
+import org.springframework.scheduling.quartz.SpringBeanJobFactory;
 
-// job factory with annotation wiring
-public class SpringBeanJobFactory extends org.springframework.scheduling.quartz.SpringBeanJobFactory
-        implements ApplicationContextAware{
+public class AnnotationAwareSpringBeanJobFactory extends SpringBeanJobFactory implements ApplicationContextAware{
 
     private ApplicationContext context;
 

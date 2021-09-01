@@ -3,7 +3,7 @@ package inside.scheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.quartz.SchedulerFactoryBeanCustomizer;
 import org.springframework.context.annotation.*;
-import org.springframework.scheduling.quartz.SchedulerFactoryBean;
+import org.springframework.scheduling.quartz.*;
 
 import javax.sql.DataSource;
 
@@ -15,7 +15,7 @@ public class QuartzConfiguration implements SchedulerFactoryBeanCustomizer{
 
     @Bean
     public SpringBeanJobFactory jobFactory(){
-        return new SpringBeanJobFactory();
+        return new AnnotationAwareSpringBeanJobFactory();
     }
 
     @Override
