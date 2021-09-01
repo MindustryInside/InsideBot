@@ -23,7 +23,7 @@ import inside.service.AdminService;
 import inside.util.*;
 import inside.util.codec.Base64Coder;
 import inside.util.io.ReusableByteInputStream;
-import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.*;
 import org.quartz.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
@@ -297,13 +297,13 @@ public class Commands{
                     .map(OptionValue::asString)
                     .orElseThrow(IllegalStateException::new);
 
-            String paramstr = params(Map.of(
+            Map<String, Object> query = Map.of(
                     "client", "dict-chrome-ex",
                     "dt", "t", "ie", "UTF-8", "oe", "UTF-8",
                     "q", text, "tl", to, "sl", from
-            ));
+            );
 
-            return httpClient.get().get().uri("https://translate.google.com/translate_a/t" + paramstr)
+            return httpClient.get().get().uri(expandQuery("https://translate.google.com/translate_a/t", query))
                     .responseSingle((res, buf) -> buf.asString().flatMap(byteBuf -> Mono.fromCallable(() ->
                             env.getClient().rest().getCoreResources().getJacksonResources()
                                     .getObjectMapper().readTree(byteBuf))))
@@ -919,14 +919,14 @@ public class Commands{
                     .map(OptionValue::asString)
                     .orElseThrow(IllegalStateException::new);
 
-            String paramstr = params(Map.of(
+            Map<String, Object> query = Map.of(
                     "q", city,
                     "units", "metric",
                     "lang", env.context().get(KEY_LOCALE).toString(),
                     "appid", settings.getDiscord().getOpenweatherApiKey()
-            ));
+            );
 
-            return httpClient.get().get().uri("api.openweathermap.org/data/2.5/weather" + paramstr)
+            return httpClient.get().get().uri(expandQuery("api.openweathermap.org/data/2.5/weather", query))
                     .responseSingle((res, buf) -> res.status() == HttpResponseStatus.NOT_FOUND
                             ? messageService.err(env, "command.weather.not-found").then(Mono.never())
                             : buf.asString())
@@ -1484,12 +1484,10 @@ public class Commands{
         }
     }
 
-    // I hope this not for long
-    private static String params(Map<String, Object> map){
-        return map.entrySet().stream()
-                .map(entry -> URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8) + "=" +
-                        URLEncoder.encode(Objects.toString(entry.getValue()), StandardCharsets.UTF_8))
-                .collect(Collectors.joining("&", "?", ""));
+    private static String expandQuery(String uri, Map<String, Object> values){
+        QueryStringEncoder encoder = new QueryStringEncoder(uri);
+        values.forEach((key, value) -> encoder.addParam(key, String.valueOf(value)));
+        return encoder.toString();
     }
 
     //endregion
