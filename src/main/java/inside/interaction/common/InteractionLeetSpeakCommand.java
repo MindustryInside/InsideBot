@@ -3,25 +3,27 @@ package inside.interaction.common;
 import discord4j.core.object.command.*;
 import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import discord4j.rest.util.ApplicationCommandOptionType;
-import inside.command.Commands;
+import inside.command.common.LeetSpeakCommand;
 import inside.interaction.*;
 import reactor.core.publisher.Mono;
 
-@InteractionDiscordCommand(name = "r", description = "Change text layout.")
-public class TextLayoutCommand extends BaseInteractionCommand{
+import java.util.function.Predicate;
 
-    public TextLayoutCommand(){
+@InteractionDiscordCommand(name = "1337", description = "Translate text into leet speak.")
+public class InteractionLeetSpeakCommand extends BaseInteractionCommand{
+
+    public InteractionLeetSpeakCommand(){
 
         addOption(builder -> builder.name("type")
-                .description("Text layout type.")
+                .description("Leet speak type.")
                 .type(ApplicationCommandOptionType.STRING.getValue())
                 .required(true)
                 .addChoice(ApplicationCommandOptionChoiceData.builder()
-                        .name("English layout.")
+                        .name("English leet.")
                         .value("en")
                         .build())
                 .addChoice(ApplicationCommandOptionChoiceData.builder()
-                        .name("Russian layout.")
+                        .name("Russian leet.")
                         .value("ru")
                         .build()));
 
@@ -42,9 +44,8 @@ public class TextLayoutCommand extends BaseInteractionCommand{
         String text = env.event().getOption("text")
                 .flatMap(ApplicationCommandInteractionOption::getValue)
                 .map(ApplicationCommandInteractionOptionValue::asString)
-                .map(str -> russian
-                        ? Commands.TextLayoutCommand.text2eng(str)
-                        : Commands.TextLayoutCommand.text2rus(str))
+                .map(str -> LeetSpeakCommand.leeted(str, russian))
+                .filter(Predicate.not(String::isBlank))
                 .orElseGet(() -> messageService.get(env.context(), "message.placeholder"));
 
         return env.event().reply(text);

@@ -2,16 +2,15 @@ package inside.interaction.common;
 
 import discord4j.core.object.command.*;
 import discord4j.rest.util.ApplicationCommandOptionType;
-import inside.command.Commands;
 import inside.interaction.*;
 import reactor.core.publisher.Mono;
 
 import java.util.function.Predicate;
 
 @InteractionDiscordCommand(name = "tr", description = "Translating key into transliteration.")
-public class TransliterationCommand extends BaseInteractionCommand{
+public class InteractionTransliterationCommand extends BaseInteractionCommand{
 
-    public TransliterationCommand(){
+    public InteractionTransliterationCommand(){
 
         addOption(builder -> builder.name("text")
                 .description("Translation text.")
@@ -24,7 +23,7 @@ public class TransliterationCommand extends BaseInteractionCommand{
         String text = env.event().getOption("text")
                 .flatMap(ApplicationCommandInteractionOption::getValue)
                 .map(ApplicationCommandInteractionOptionValue::asString)
-                .map(Commands.TransliterationCommand::translit)
+                .map(inside.command.common.TransliterationCommand::translit)
                 .filter(Predicate.not(String::isBlank))
                 .orElseGet(() -> messageService.get(env.context(), "message.placeholder"));
 

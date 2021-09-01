@@ -7,7 +7,7 @@ import discord4j.core.object.component.*;
 import discord4j.core.object.entity.Member;
 import discord4j.core.spec.*;
 import inside.Settings;
-import inside.command.Commands;
+import inside.command.admin.WarningsCommand;
 import inside.data.service.EntityRetriever;
 import inside.interaction.InteractionCommandEnvironment;
 import inside.service.*;
@@ -60,7 +60,7 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
                 return event.acknowledgeEphemeral();
             }
 
-            int skipValues = page * Commands.WarningsCommand.PER_PAGE;
+            int skipValues = page * WarningsCommand.PER_PAGE;
 
             Mono<Context> initContext = entityRetriever.getGuildConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
@@ -68,7 +68,7 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
                             KEY_TIMEZONE, guildConfig.timeZone()));
 
             return initContext.flatMap(context -> adminService.warnings(guildId, targetId)
-                    .index().skip(skipValues).take(Commands.WarningsCommand.PER_PAGE, true)
+                    .index().skip(skipValues).take(WarningsCommand.PER_PAGE, true)
                     .map(TupleUtils.function((idx, warn) ->
                             EmbedCreateFields.Field.of(String.format("%2s. %s", idx + 1,
                                             TimestampFormat.LONG_DATE_TIME.format(warn.getTimestamp())), String.format("%s%n%s",
@@ -85,7 +85,7 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
                                             .title(messageService.get(context, "command.admin.warnings.title"))
                                             .color(settings.getDefaults().getNormalColor())
                                             .footer(String.format("Страница %s/%d", page + 1,
-                                                    Mathf.ceilPositive(count / (float)Commands.WarningsCommand.PER_PAGE)), null)
+                                                    Mathf.ceilPositive(count / (float)WarningsCommand.PER_PAGE)), null)
                                             .build())
                                     .addComponent(ActionRow.of(
                                             Button.primary("inside-warnings-" + authorId.asString() +
@@ -95,7 +95,7 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
                                             Button.primary("inside-warnings-" + authorId.asString() +
                                                     "-" + targetId.asString() +
                                                     "-next-" + (page + 1), messageService.get(context, "common.next-page"))
-                                                    .disabled(count <= skipValues + Commands.WarningsCommand.PER_PAGE)))
+                                                    .disabled(count <= skipValues + WarningsCommand.PER_PAGE)))
                                     .build())))
                     .contextWrite(context));
         }

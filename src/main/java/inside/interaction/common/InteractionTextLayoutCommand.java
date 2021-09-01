@@ -3,27 +3,24 @@ package inside.interaction.common;
 import discord4j.core.object.command.*;
 import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import discord4j.rest.util.ApplicationCommandOptionType;
-import inside.command.Commands;
 import inside.interaction.*;
 import reactor.core.publisher.Mono;
 
-import java.util.function.Predicate;
+@InteractionDiscordCommand(name = "r", description = "Change text layout.")
+public class InteractionTextLayoutCommand extends BaseInteractionCommand{
 
-@InteractionDiscordCommand(name = "1337", description = "Translate text into leet speak.")
-public class LeetSpeakCommand extends BaseInteractionCommand{
-
-    public LeetSpeakCommand(){
+    public InteractionTextLayoutCommand(){
 
         addOption(builder -> builder.name("type")
-                .description("Leet speak type.")
+                .description("Text layout type.")
                 .type(ApplicationCommandOptionType.STRING.getValue())
                 .required(true)
                 .addChoice(ApplicationCommandOptionChoiceData.builder()
-                        .name("English leet.")
+                        .name("English layout.")
                         .value("en")
                         .build())
                 .addChoice(ApplicationCommandOptionChoiceData.builder()
-                        .name("Russian leet.")
+                        .name("Russian layout.")
                         .value("ru")
                         .build()));
 
@@ -44,8 +41,9 @@ public class LeetSpeakCommand extends BaseInteractionCommand{
         String text = env.event().getOption("text")
                 .flatMap(ApplicationCommandInteractionOption::getValue)
                 .map(ApplicationCommandInteractionOptionValue::asString)
-                .map(str -> Commands.LeetSpeakCommand.leeted(str, russian))
-                .filter(Predicate.not(String::isBlank))
+                .map(str -> russian
+                        ? inside.command.common.TextLayoutCommand.text2eng(str)
+                        : inside.command.common.TextLayoutCommand.text2rus(str))
                 .orElseGet(() -> messageService.get(env.context(), "message.placeholder"));
 
         return env.event().reply(text);
