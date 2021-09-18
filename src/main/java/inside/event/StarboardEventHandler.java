@@ -106,7 +106,8 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                         .collect(Collectors.toList());
 
                                 Mono<Message> updateOld = targetMessage.flatMap(target -> {
-                                    var old = Try.ofCallable(() -> target.getEmbeds().get(0)).orElse(null); // IOOB
+                                    List<Embed> embeds = target.getEmbeds();
+                                    Embed old = !embeds.isEmpty() ? embeds.get(0) : null;
                                     var embedSpec = EmbedCreateSpec.builder();
 
                                     if(old == null){ // someone remove embed
@@ -186,7 +187,9 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                             messageService.format(context, "starboard.jump",
                                             guildId.asString(), source.getChannelId().asString(), source.getId().asString()), false);
                                     Set<Attachment> files = source.getAttachments().stream()
-                                            .filter(att -> !att.getContentType().map(str -> str.startsWith("image")).orElse(false))
+                                            .filter(att -> !att.getContentType()
+                                                    .map(str -> str.startsWith("image"))
+                                                    .orElse(false))
                                             .collect(Collectors.toSet());
 
                                     if(!files.isEmpty()){
@@ -283,12 +286,26 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
                                 return targetMessage.flatMap(target -> {
                                     if(count < config.getLowerStarBarrier()){
-                                        return target.delete().and(entityRetriever.deleteStarboardById(guildId, event.getMessageId()));
+                                        // TODO: re-fetch config
+                                        return Mono.delay(Duration.ofSeconds(5))
+                                                .then(event.getClient().getMessageById(
+                                                        source.getChannelId(), source.getId()))
+                                                .flatMapIterable(Message::getReactions)
+                                                .filter(reaction -> emojis.contains(reaction.getEmoji()))
+                                                .map(Reaction::getCount)
+                                                .as(MathFlux::max)
+                                                .defaultIfEmpty(0)
+                                                .filter(i -> i < config.getLowerStarBarrier())
+                                                .flatMap(i -> target.delete()
+                                                        .and(entityRetriever.deleteStarboardById(
+                                                                guildId, event.getMessageId())));
                                     }
 
-                                    var old = Try.ofCallable(() -> target.getEmbeds().get(0)).orElse(null); // IOOB
+                                    List<Embed> embeds = target.getEmbeds();
+                                    Embed old = !embeds.isEmpty() ? embeds.get(0) : null;
                                     var embedSpec = EmbedCreateSpec.builder();
 
+                                    // it's possible to implement it, but first I should put the embed creation code in a separate method
                                     if(old == null){ // someone remove embed
 
                                         //TODO: implement
