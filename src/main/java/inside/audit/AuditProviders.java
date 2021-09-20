@@ -60,7 +60,7 @@ public class AuditProviders{
                     .ifPresent(messageIdString -> embed.addField(
                             messageService.get(context, "audit.message.referenced.title"),
                             messageService.format(context, "audit.message.edit.description",
-                                    guildIdString, channelIdString, messageIdString), true));
+                                    guildIdString, channelIdString, messageIdString), false));
 
             embed.addField(messageService.get(context, "audit.message.channel"),
                     getChannelReference(context, action.getChannel()), false);
@@ -96,7 +96,7 @@ public class AuditProviders{
                     .ifPresent(messageIdString -> embed.addField(
                             messageService.get(context, "audit.message.referenced.title"),
                             messageService.format(context, "audit.message.edit.description",
-                                    guildIdString, channelIdString, messageIdString), true));
+                                    guildIdString, channelIdString, messageIdString), false));
 
             embed.addField(messageService.get(context, "audit.message.channel"),
                     getChannelReference(context, action.getChannel()), false);
