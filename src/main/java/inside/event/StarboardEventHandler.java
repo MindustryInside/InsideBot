@@ -129,6 +129,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                 Mono<Message> createNew = Mono.defer(() -> {
                                     var embedSpec = EmbedCreateSpec.builder();
                                     computeEmbed(context, source, embedSpec);
+                                    embedSpec.color(lerp(offsetColor, targetColor, Mathf.round(count / 6f, lerpStep)));
 
                                     return channel.createMessage(MessageCreateSpec.builder()
                                                     .content(messageService.format(
@@ -239,13 +240,19 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
     private void computeEmbed(Context context, Message source, EmbedCreateSpec.Builder embedSpec){
         var authorUser = source.getAuthor().orElseThrow(IllegalStateException::new);
-        embedSpec.author(authorUser.getUsername(), null, authorUser.getAvatarUrl());
+        embedSpec.author(authorUser.getTag(), null, authorUser.getAvatarUrl());
 
         String content = source.getContent();
         if(Strings.isEmpty(content) && messageService.hasEnum(context, source.getType())){
             content = messageService.getEnum(context, source.getType());
         }
         embedSpec.description(content);
+        Snowflake guildId = source.getGuildId().orElseThrow(IllegalStateException::new);
+        embedSpec.addField(messageService.get(context, "starboard.source"),
+                messageService.format(context, "starboard.jump",
+                        guildId.asString(), source.getChannelId().asString(),
+                        source.getId().asString()), false);
+
         embedSpec.footer(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
                 .withLocale(context.get(KEY_LOCALE))
                 .withZone(context.get(KEY_TIMEZONE))
