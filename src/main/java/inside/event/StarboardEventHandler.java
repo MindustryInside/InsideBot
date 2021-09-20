@@ -112,50 +112,10 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
                                     if(old == null){ // someone remove embed
 
-                                        var authorUser = source.getAuthor().orElseThrow(IllegalStateException::new);
-                                        embedSpec.author(authorUser.getUsername(), null, authorUser.getAvatarUrl());
-
-                                        String content = source.getContent();
-                                        if(Strings.isEmpty(content) && messageService.hasEnum(context, source.getType())){
-                                            content = messageService.getEnum(context, source.getType());
-                                        }
-                                        embedSpec.description(content);
-                                        embedSpec.footer(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
-                                                .withLocale(context.get(KEY_LOCALE))
-                                                .withZone(context.get(KEY_TIMEZONE))
-                                                .format(Instant.now()), null);
-
-                                        Set<Attachment> files = source.getAttachments().stream()
-                                                .filter(att -> !att.getContentType()
-                                                        .map(str -> str.startsWith("image"))
-                                                        .orElse(false))
-                                                .collect(Collectors.toSet());
-
-                                        if(!files.isEmpty()){
-                                            String key = files.size() == 1
-                                                    ? "starboard.attachment"
-                                                    : "starboard.attachments";
-                                            embedSpec.addField(messageService.get(context, key), files.stream()
-                                                    .map(att -> String.format("[%s](%s)%n", att.getFilename(), att.getUrl()))
-                                                    .collect(Collectors.joining()), false);
-                                        }
-
-                                        source.getAttachments().stream()
-                                                .filter(att -> att.getContentType()
-                                                        .map(str -> str.startsWith("image"))
-                                                        .orElse(false))
-                                                .map(Attachment::getUrl)
-                                                .findFirst().ifPresent(embedSpec::image);
+                                        computeEmbed(context, source, embedSpec);
                                     }else{
 
-                                        old.getDescription().ifPresent(embedSpec::description);
-                                        var embedAuthor = old.getAuthor().orElseThrow(IllegalStateException::new);
-                                        embedSpec.author(embedAuthor.getName().orElseThrow(IllegalStateException::new), null,
-                                                embedAuthor.getIconUrl().orElseThrow(IllegalStateException::new));
-                                        embedSpec.fields(old.getFields().stream()
-                                                .map(field -> EmbedCreateFields.Field.of(field.getName(), field.getValue(), field.isInline()))
-                                                .collect(Collectors.toList()));
-                                        old.getImage().map(Embed.Image::getUrl).ifPresent(embedSpec::image);
+                                        updateEmbed(old, embedSpec);
                                     }
 
                                     embedSpec.color(lerp(offsetColor, targetColor, Mathf.round(count / 6f, lerpStep)));
@@ -170,41 +130,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
                                 Mono<Message> createNew = Mono.defer(() -> {
                                     var embedSpec = EmbedCreateSpec.builder();
-
-                                    embedSpec.footer(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
-                                            .withLocale(context.get(KEY_LOCALE))
-                                            .withZone(context.get(KEY_TIMEZONE))
-                                            .format(Instant.now()), null);
-                                    embedSpec.author(user.getUsername(), null, user.getAvatarUrl());
-
-                                    String content = source.getContent();
-                                    if(Strings.isEmpty(content) && messageService.hasEnum(context, source.getType())){
-                                        content = messageService.getEnum(context, source.getType());
-                                    }
-                                    embedSpec.description(content);
-                                    embedSpec.color(lerp(offsetColor, targetColor, Mathf.round(count / 6f, lerpStep)));
-                                    embedSpec.addField(messageService.get(context, "starboard.source"),
-                                            messageService.format(context, "starboard.jump",
-                                            guildId.asString(), source.getChannelId().asString(), source.getId().asString()), false);
-                                    Set<Attachment> files = source.getAttachments().stream()
-                                            .filter(att -> !att.getContentType()
-                                                    .map(str -> str.startsWith("image"))
-                                                    .orElse(false))
-                                            .collect(Collectors.toSet());
-
-                                    if(!files.isEmpty()){
-                                        String key = files.size() == 1
-                                                ? "starboard.attachment"
-                                                : "starboard.attachments";
-                                        embedSpec.addField(messageService.get(context, key), files.stream()
-                                                .map(att -> String.format("[%s](%s)%n", att.getFilename(), att.getUrl()))
-                                                .collect(Collectors.joining()), false);
-                                    }
-
-                                    source.getAttachments().stream()
-                                            .filter(att -> att.getContentType().map(str -> str.startsWith("image")).orElse(false))
-                                            .map(Attachment::getUrl)
-                                            .findFirst().ifPresent(embedSpec::image);
+                                    computeEmbed(context, source, embedSpec);
 
                                     return channel.createMessage(MessageCreateSpec.builder()
                                                     .content(messageService.format(
@@ -285,41 +211,14 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                         .switchIfEmpty(findIfAbsent);
 
                                 return targetMessage.flatMap(target -> {
-                                    if(count < config.getLowerStarBarrier()){
-                                        // TODO: re-fetch config
-                                        return Mono.delay(Duration.ofSeconds(5))
-                                                .then(event.getClient().getMessageById(
-                                                        source.getChannelId(), source.getId()))
-                                                .flatMapIterable(Message::getReactions)
-                                                .filter(reaction -> emojis.contains(reaction.getEmoji()))
-                                                .map(Reaction::getCount)
-                                                .as(MathFlux::max)
-                                                .defaultIfEmpty(0)
-                                                .filter(i -> i < config.getLowerStarBarrier())
-                                                .flatMap(i -> target.delete()
-                                                        .and(entityRetriever.deleteStarboardById(
-                                                                guildId, event.getMessageId())));
-                                    }
-
                                     List<Embed> embeds = target.getEmbeds();
                                     Embed old = !embeds.isEmpty() ? embeds.get(0) : null;
                                     var embedSpec = EmbedCreateSpec.builder();
 
-                                    // it's possible to implement it, but first I should put the embed creation code in a separate method
                                     if(old == null){ // someone remove embed
-
-                                        //TODO: implement
-                                        return Mono.empty();
+                                        computeEmbed(context, source, embedSpec);
                                     }else{
-
-                                        old.getDescription().ifPresent(embedSpec::description);
-                                        var embedAuthor = old.getAuthor().orElseThrow(IllegalStateException::new);
-                                        embedSpec.author(embedAuthor.getName().orElseThrow(IllegalStateException::new), null,
-                                                embedAuthor.getIconUrl().orElseThrow(IllegalStateException::new));
-                                        embedSpec.fields(old.getFields().stream()
-                                                .map(field -> EmbedCreateFields.Field.of(field.getName(), field.getValue(), field.isInline()))
-                                                .collect(Collectors.toList()));
-                                        old.getImage().map(Embed.Image::getUrl).ifPresent(embedSpec::image);
+                                        updateEmbed(old, embedSpec);
                                     }
 
                                     embedSpec.color(lerp(offsetColor, targetColor, Mathf.round(count / 6f, lerpStep)));
@@ -339,6 +238,54 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                             }))
                             .contextWrite(context);
                 }));
+    }
+
+    private void computeEmbed(Context context, Message source, EmbedCreateSpec.Builder embedSpec){
+        var authorUser = source.getAuthor().orElseThrow(IllegalStateException::new);
+        embedSpec.author(authorUser.getUsername(), null, authorUser.getAvatarUrl());
+
+        String content = source.getContent();
+        if(Strings.isEmpty(content) && messageService.hasEnum(context, source.getType())){
+            content = messageService.getEnum(context, source.getType());
+        }
+        embedSpec.description(content);
+        embedSpec.footer(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
+                .withLocale(context.get(KEY_LOCALE))
+                .withZone(context.get(KEY_TIMEZONE))
+                .format(Instant.now()), null);
+
+        Set<Attachment> files = source.getAttachments().stream()
+                .filter(att -> !att.getContentType()
+                        .map(str -> str.startsWith("image"))
+                        .orElse(false))
+                .collect(Collectors.toSet());
+
+        if(!files.isEmpty()){
+            String key = files.size() == 1
+                    ? "starboard.attachment"
+                    : "starboard.attachments";
+            embedSpec.addField(messageService.get(context, key), files.stream()
+                    .map(att -> String.format("[%s](%s)%n", att.getFilename(), att.getUrl()))
+                    .collect(Collectors.joining()), false);
+        }
+
+        source.getAttachments().stream()
+                .filter(att -> att.getContentType()
+                        .map(str -> str.startsWith("image"))
+                        .orElse(false))
+                .map(Attachment::getUrl)
+                .findFirst().ifPresent(embedSpec::image);
+    }
+
+    private void updateEmbed(Embed old, EmbedCreateSpec.Builder embedSpec){
+        old.getDescription().ifPresent(embedSpec::description);
+        var embedAuthor = old.getAuthor().orElseThrow(IllegalStateException::new);
+        embedSpec.author(embedAuthor.getName().orElseThrow(IllegalStateException::new), null,
+                embedAuthor.getIconUrl().orElseThrow(IllegalStateException::new));
+        embedSpec.fields(old.getFields().stream()
+                .map(field -> EmbedCreateFields.Field.of(field.getName(), field.getValue(), field.isInline()))
+                .collect(Collectors.toList()));
+        old.getImage().map(Embed.Image::getUrl).ifPresent(embedSpec::image);
     }
 
     @Override
@@ -372,7 +319,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                 entityRetriever.deleteStarboardById(guildId, event.getMessageId()));
     }
 
-    private Color lerp(Color source, Color target, float t){
+    private static Color lerp(Color source, Color target, float t){
         float r = source.getRed() / 255f;
         r += t * (target.getRed() / 255f - r);
 
@@ -386,7 +333,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
         return toIntBits(c) < toIntBits(target) ? target : c;
     }
 
-    private int toIntBits(Color c){
+    private static int toIntBits(Color c){
         return (int)(255f * c.getBlue()) << 16 | (int)(255f * c.getGreen()) << 8 | (int)(255f * c.getRed());
     }
 }
