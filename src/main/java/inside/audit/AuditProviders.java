@@ -57,6 +57,7 @@ public class AuditProviders{
 
             message.getMessageReference()
                     .flatMap(MessageReference::getMessageId)
+                    .map(Snowflake::asString)
                     .ifPresent(messageIdString -> embed.addField(
                             messageService.get(context, "audit.message.referenced.title"),
                             messageService.format(context, "audit.message.edit.description",
@@ -93,6 +94,7 @@ public class AuditProviders{
 
             message.getMessageReference()
                     .flatMap(MessageReference::getMessageId)
+                    .map(Snowflake::asString)
                     .ifPresent(messageIdString -> embed.addField(
                             messageService.get(context, "audit.message.referenced.title"),
                             messageService.format(context, "audit.message.edit.description",
