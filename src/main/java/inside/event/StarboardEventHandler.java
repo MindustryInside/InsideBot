@@ -5,7 +5,7 @@ import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.message.*;
 import discord4j.core.object.Embed;
 import discord4j.core.object.entity.*;
-import discord4j.core.object.entity.channel.GuildMessageChannel;
+import discord4j.core.object.entity.channel.*;
 import discord4j.core.object.reaction.*;
 import discord4j.core.spec.*;
 import discord4j.rest.util.*;
@@ -74,8 +74,8 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                             .as(MathFlux::max)
                             .filter(l -> l >= config.getLowerStarBarrier());
 
-                    Mono<GuildMessageChannel> starboardChannel = event.getClient().getChannelById(channelId)
-                            .cast(GuildMessageChannel.class);
+                    Mono<TopLevelGuildMessageChannel> starboardChannel = event.getClient().getChannelById(channelId)
+                            .cast(TopLevelGuildMessageChannel.class);
 
                     Mono<Message> sourceMessage = event.getMessage();
 
@@ -111,7 +111,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                     var embedSpec = EmbedCreateSpec.builder();
 
                                     if(old == null){ // someone remove embed
-                                        computeEmbed(context, source, embedSpec);
+                                        computeEmbed(context, source, guildId, embedSpec);
                                     }else{
                                         updateEmbed(old, embedSpec);
                                     }
@@ -128,7 +128,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
                                 Mono<Message> createNew = Mono.defer(() -> {
                                     var embedSpec = EmbedCreateSpec.builder();
-                                    computeEmbed(context, source, embedSpec);
+                                    computeEmbed(context, source, guildId, embedSpec);
                                     embedSpec.color(lerp(offsetColor, targetColor, Mathf.round(count / 6f, lerpStep)));
 
                                     return channel.createMessage(MessageCreateSpec.builder()
@@ -183,8 +183,8 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                             .as(MathFlux::max)
                             .defaultIfEmpty(0);
 
-                    Mono<GuildMessageChannel> starboardChannel = event.getClient().getChannelById(channelId)
-                            .cast(GuildMessageChannel.class);
+                    Mono<TopLevelGuildMessageChannel> starboardChannel = event.getClient().getChannelById(channelId)
+                            .cast(TopLevelGuildMessageChannel.class);
 
                     Mono<Message> sourceMessage = event.getMessage();
 
@@ -214,7 +214,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                     var embedSpec = EmbedCreateSpec.builder();
 
                                     if(old == null){ // someone remove embed
-                                        computeEmbed(context, source, embedSpec);
+                                        computeEmbed(context, source, guildId, embedSpec);
                                     }else{
                                         updateEmbed(old, embedSpec);
                                     }
@@ -238,7 +238,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                 }));
     }
 
-    private void computeEmbed(Context context, Message source, EmbedCreateSpec.Builder embedSpec){
+    private void computeEmbed(Context context, Message source, Snowflake guildId, EmbedCreateSpec.Builder embedSpec){
         var authorUser = source.getAuthor().orElseThrow(IllegalStateException::new);
         embedSpec.author(authorUser.getTag(), null, authorUser.getAvatarUrl());
 
@@ -247,7 +247,6 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
             content = messageService.getEnum(context, source.getType());
         }
         embedSpec.description(content);
-        Snowflake guildId = source.getGuildId().orElseThrow(IllegalStateException::new);
         embedSpec.addField(messageService.get(context, "starboard.source"),
                 messageService.format(context, "starboard.jump",
                         guildId.asString(), source.getChannelId().asString(),
@@ -310,7 +309,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
             }
 
             return starboard.flatMap(board -> event.getGuild().flatMap(guild -> guild.getChannelById(channelId))
-                    .cast(GuildMessageChannel.class)
+                    .cast(TopLevelGuildMessageChannel.class)
                     .flatMap(channel -> channel.getMessageById(board.getTargetMessageId()))
                     .flatMap(Message::delete)
                     .then(entityRetriever.delete(board)));
