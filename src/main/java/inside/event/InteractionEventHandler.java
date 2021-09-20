@@ -48,59 +48,62 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
             return Mono.empty();
         }
 
-        if(id.startsWith("inside-warnings")){
-            String[] parts = id.split("-");
-            Snowflake authorId = Snowflake.of(parts[2]);
-            Snowflake targetId = Snowflake.of(parts[3]);
-            int page = Integer.parseInt(parts[5]);
+        Snowflake guildId = event.getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
 
-            Snowflake guildId = event.getInteraction().getGuildId().orElse(null);
-            Member target = event.getInteraction().getMember().orElse(null);
-            if(guildId == null || target == null || !target.getId().equals(authorId)){
-                return event.acknowledgeEphemeral();
+        Mono<Context> initContext = entityRetriever.getGuildConfigById(guildId)
+                .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
+                .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
+                        KEY_TIMEZONE, guildConfig.timeZone()));
+
+        return initContext.flatMap(ctx -> Mono.defer(() -> {
+            if(id.startsWith("inside-warnings")){
+                String[] parts = id.split("-");
+                Snowflake authorId = Snowflake.of(parts[2]);
+                Snowflake targetId = Snowflake.of(parts[3]);
+                int page = Integer.parseInt(parts[5]);
+
+                Member target = event.getInteraction().getMember().orElse(null);
+                if(target == null || !target.getId().equals(authorId)){
+                    return messageService.err(event, messageService.get(ctx, "message.foreign-interaction"));
+                }
+
+                int skipValues = page * WarningsCommand.PER_PAGE;
+
+                return adminService.warnings(guildId, targetId)
+                        .index().skip(skipValues).take(WarningsCommand.PER_PAGE, true)
+                        .map(TupleUtils.function((idx, warn) ->
+                                EmbedCreateFields.Field.of(String.format("%2s. %s", idx + 1,
+                                                TimestampFormat.LONG_DATE_TIME.format(warn.getTimestamp())), String.format("%s%n%s",
+                                                messageService.format(ctx, "common.admin", warn.getAdmin().getEffectiveName()),
+                                                messageService.format(ctx, "common.reason", warn.getReason()
+                                                        .orElse(messageService.get(ctx, "common.not-defined")))),
+                                        true)))
+                        .collectList()
+                        .zipWith(adminService.warnings(guildId, targetId).count())
+                        .flatMap(TupleUtils.function((fields, count) -> event.edit(
+                                InteractionApplicationCommandCallbackSpec.builder()
+                                        .addEmbed(EmbedCreateSpec.builder()
+                                                .fields(fields)
+                                                .title(messageService.get(ctx, "command.admin.warnings.title"))
+                                                .color(settings.getDefaults().getNormalColor())
+                                                .footer(messageService.format(ctx, "command.admin.warnings.page", page + 1,
+                                                        Mathf.ceilPositive(count / (float)WarningsCommand.PER_PAGE)), null)
+                                                .build())
+                                        .addComponent(ActionRow.of(
+                                                Button.primary("inside-warnings-" + authorId.asString() +
+                                                        "-" + targetId.asString() +
+                                                        "-prev-" + (page - 1), messageService.get(ctx, "common.prev-page"))
+                                                        .disabled(page - 1 < 0),
+                                                Button.primary("inside-warnings-" + authorId.asString() +
+                                                         "-" + targetId.asString() +
+                                                         "-next-" + (page + 1), messageService.get(ctx, "common.next-page"))
+                                                        .disabled(count <= skipValues + WarningsCommand.PER_PAGE)))
+                                        .build())));
             }
 
-            int skipValues = page * WarningsCommand.PER_PAGE;
-
-            Mono<Context> initContext = entityRetriever.getGuildConfigById(guildId)
-                    .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
-                    .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
-                            KEY_TIMEZONE, guildConfig.timeZone()));
-
-            return initContext.flatMap(context -> adminService.warnings(guildId, targetId)
-                    .index().skip(skipValues).take(WarningsCommand.PER_PAGE, true)
-                    .map(TupleUtils.function((idx, warn) ->
-                            EmbedCreateFields.Field.of(String.format("%2s. %s", idx + 1,
-                                            TimestampFormat.LONG_DATE_TIME.format(warn.getTimestamp())), String.format("%s%n%s",
-                                            messageService.format(context, "common.admin", warn.getAdmin().getEffectiveName()),
-                                            messageService.format(context, "common.reason", warn.getReason()
-                                                    .orElse(messageService.get(context, "common.not-defined")))),
-                                    true)))
-                    .collectList()
-                    .zipWith(adminService.warnings(guildId, targetId).count())
-                    .flatMap(TupleUtils.function((fields, count) -> event.edit(
-                            InteractionApplicationCommandCallbackSpec.builder()
-                                    .addEmbed(EmbedCreateSpec.builder()
-                                            .fields(fields)
-                                            .title(messageService.get(context, "command.admin.warnings.title"))
-                                            .color(settings.getDefaults().getNormalColor())
-                                            .footer(String.format("Страница %s/%d", page + 1,
-                                                    Mathf.ceilPositive(count / (float)WarningsCommand.PER_PAGE)), null)
-                                            .build())
-                                    .addComponent(ActionRow.of(
-                                            Button.primary("inside-warnings-" + authorId.asString() +
-                                                    "-" + targetId.asString() +
-                                                    "-prev-" + (page - 1), messageService.get(context, "common.prev-page"))
-                                                    .disabled(page - 1 < 0),
-                                            Button.primary("inside-warnings-" + authorId.asString() +
-                                                    "-" + targetId.asString() +
-                                                    "-next-" + (page + 1), messageService.get(context, "common.next-page"))
-                                                    .disabled(count <= skipValues + WarningsCommand.PER_PAGE)))
-                                    .build())))
-                    .contextWrite(context));
-        }
-
-        return Mono.empty();
+            return Mono.empty();
+        })
+        .contextWrite(ctx));
     }
 
     @Override

@@ -153,6 +153,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                         AuditActionBuilder builder = auditService.newBuilder(guildId, MESSAGE_EDIT)
                                 .withChannel(channel)
                                 .withUser(member)
+                                .withAttribute(MESSAGE, message)
                                 .withAttribute(OLD_CONTENT, oldContent)
                                 .withAttribute(NEW_CONTENT, newContent)
                                 .withAttribute(AVATAR_URL, member.getAvatarUrl())
@@ -220,6 +221,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
 
                     return responsibleUser.defaultIfEmpty(author).map(user -> builder.withUser(user)
                                     .withTargetUser(author)
+                                    .withAttribute(MESSAGE, message)
                                     .withAttribute(AVATAR_URL, author.getAvatarUrl()))
                             .flatMap(AuditActionBuilder::save)
                             .and(entityRetriever.delete(info));

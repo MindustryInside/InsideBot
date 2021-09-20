@@ -1,7 +1,8 @@
 package inside.audit;
 
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.Embed;
+import discord4j.core.object.*;
+import discord4j.core.object.entity.Message;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.*;
 import inside.data.entity.AuditAction;
@@ -32,15 +33,17 @@ public class AuditProviders{
             String oldContent = action.getAttribute(OLD_CONTENT);
             String newContent = action.getAttribute(NEW_CONTENT);
             String url = action.getAttribute(AVATAR_URL);
-            if(messageId == null || oldContent == null || newContent == null || url == null){
+            Message message = action.getAttribute(MESSAGE);
+            if(messageId == null || oldContent == null || newContent == null || url == null || message == null){
                 return;
             }
 
+            String guildIdString = action.getGuildId().asString();
+            String channelIdString = action.getChannel().getId();
+
             embed.author(formatName(action.getUser()), null, url);
             embed.description(messageService.format(context, "audit.message.edit.description",
-                    action.getGuildId().asString(),
-                    action.getChannel().getId(),
-                    messageId.asString()));
+                    guildIdString, channelIdString, messageId.asString()));
 
             if(!oldContent.isEmpty()){
                 embed.addField(messageService.get(context, "audit.message.old-content.title"),
@@ -51,6 +54,13 @@ public class AuditProviders{
                 embed.addField(messageService.get(context, "audit.message.new-content.title"),
                         MessageUtil.substringTo(newContent, Embed.Field.MAX_VALUE_LENGTH), true);
             }
+
+            message.getMessageReference()
+                    .flatMap(MessageReference::getMessageId)
+                    .ifPresent(messageIdString -> embed.addField(
+                            messageService.get(context, "audit.message.referenced.title"),
+                            messageService.format(context, "audit.message.edit.description",
+                                    guildIdString, channelIdString, messageIdString), true));
 
             embed.addField(messageService.get(context, "audit.message.channel"),
                     getChannelReference(context, action.getChannel()), false);
@@ -66,9 +76,13 @@ public class AuditProviders{
             String oldContent = action.getAttribute(OLD_CONTENT);
             String url = action.getAttribute(AVATAR_URL);
             NamedReference target = action.getTarget();
-            if(oldContent == null || url == null || target == null){
+            Message message = action.getAttribute(MESSAGE);
+            if(oldContent == null || url == null || target == null || message == null){
                 return;
             }
+
+            String guildIdString = action.getGuildId().asString();
+            String channelIdString = action.getChannel().getId();
 
             embed.author(formatName(target), null, url);
 
@@ -76,6 +90,13 @@ public class AuditProviders{
                 embed.addField(messageService.get(context, "audit.message.deleted-content.title"),
                         MessageUtil.substringTo(oldContent, Embed.Field.MAX_VALUE_LENGTH), true);
             }
+
+            message.getMessageReference()
+                    .flatMap(MessageReference::getMessageId)
+                    .ifPresent(messageIdString -> embed.addField(
+                            messageService.get(context, "audit.message.referenced.title"),
+                            messageService.format(context, "audit.message.edit.description",
+                                    guildIdString, channelIdString, messageIdString), true));
 
             embed.addField(messageService.get(context, "audit.message.channel"),
                     getChannelReference(context, action.getChannel()), false);

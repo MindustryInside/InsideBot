@@ -70,10 +70,15 @@ public class DeleteCommand extends AdminCommand{
             result.append(" >");
             String content = MessageUtil.effectiveContent(message);
             if(!content.isBlank()){
-                result.append(" ").append(content);
+                result.append(" ");
+                if(content.contains("\n")){
+                    result.append("\n");
+                }
+                result.append(content);
             }
             if(!message.getEmbeds().isEmpty()){
-                result.append(" (... ").append(message.getEmbeds().size()).append(" embed(s))");
+                int size = message.getEmbeds().size();
+                result.append(" (... ").append(size).append(" embed").append(size > 1 ? "s" : "").append(")");
             }
             result.append("\n");
         };
