@@ -30,6 +30,7 @@ import static reactor.function.TupleUtils.function;
 
 @Component
 public class StarboardEventHandler extends ReactiveEventAdapter{
+    private static final Duration fetchTimeout = Duration.ofSeconds(5);
     private static final Color offsetColor = Color.of(0xffefc0), targetColor = Color.of(0xdaa520);
     private static final float lerpStep = 1.0E-05f;
 
@@ -88,14 +89,13 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
                                 Mono<Message> findIfAbsent = channel.getLastMessageId()
                                         .map(channel::getMessagesBefore).orElse(Flux.empty())
-                                        .take(Duration.ofSeconds(4))
                                         .filter(m -> m.getEmbeds().size() == 1 && m.getEmbeds().get(0).getFields().size() >= 1)
                                         .filter(m -> m.getEmbeds().get(0).getFields().get(0)
                                                 .getValue().endsWith(source.getId().asString() + ")")) // match md link
                                         .next()
                                         .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId())
                                                 .thenReturn(target))
-                                        .timeout(Duration.ofSeconds(6), Mono.empty());
+                                        .timeout(fetchTimeout, Mono.empty());
 
                                 Mono<Message> targetMessage = entityRetriever.getStarboardBySourceId(guildId, event.getMessageId())
                                         .flatMap(board -> channel.getMessageById(board.getTargetMessageId()))
@@ -111,10 +111,8 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                     var embedSpec = EmbedCreateSpec.builder();
 
                                     if(old == null){ // someone remove embed
-
                                         computeEmbed(context, source, embedSpec);
                                     }else{
-
                                         updateEmbed(old, embedSpec);
                                     }
 
@@ -197,14 +195,13 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
                                 Mono<Message> findIfAbsent = channel.getLastMessageId()
                                         .map(channel::getMessagesBefore).orElse(Flux.empty())
-                                        .take(Duration.ofSeconds(4))
                                         .filter(m -> m.getEmbeds().size() == 1 && m.getEmbeds().get(0).getFields().size() >= 1)
                                         .filter(m -> m.getEmbeds().get(0).getFields().get(0)
                                                 .getValue().endsWith(source.getId().asString() + ")")) // match md link
                                         .next()
                                         .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId())
                                                 .thenReturn(target))
-                                        .timeout(Duration.ofSeconds(6), Mono.empty());
+                                        .timeout(fetchTimeout, Mono.empty());
 
                                 Mono<Message> targetMessage = entityRetriever.getStarboardBySourceId(guildId, event.getMessageId())
                                         .flatMap(board -> channel.getMessageById(board.getTargetMessageId()))
