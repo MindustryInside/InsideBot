@@ -42,7 +42,7 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
     private AdminService adminService;
 
     @Override
-    public Publisher<?> onButtonInteract(ButtonInteractEvent event){
+    public Publisher<?> onButtonInteraction(ButtonInteractionEvent event){
         String id = event.getCustomId();
         if(!id.startsWith("inside")){
             return Mono.empty();
@@ -104,7 +104,7 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
     }
 
     @Override
-    public Publisher<?> onSlashCommand(SlashCommandEvent event){
+    public Publisher<?> onApplicationCommandInteraction(ApplicationCommandInteractionEvent event){
         Mono<Context> initContext = Mono.justOrEmpty(event.getInteraction().getGuildId())
                 .flatMap(guildId -> entityRetriever.getGuildConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createGuildConfig(guildId)))

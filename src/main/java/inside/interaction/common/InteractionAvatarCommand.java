@@ -19,7 +19,7 @@ public class InteractionAvatarCommand extends BaseInteractionCommand{
 
     @Override
     public Mono<Void> execute(InteractionCommandEnvironment env){
-        return env.event().getOption("target")
+        return env.getOption("target")
                 .flatMap(ApplicationCommandInteractionOption::getValue)
                 .map(opt -> env.getClient().withRetrievalStrategy(EntityRetrievalStrategy.REST)
                         .getUserById(opt.asSnowflake()))

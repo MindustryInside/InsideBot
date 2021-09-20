@@ -1,19 +1,19 @@
 plugins{
-    id 'org.springframework.boot' version '2.5.2'
+    id 'org.springframework.boot' version '2.5.4'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'com.github.ben-manes.versions' version '0.38.0'
     id 'java-library'
 }
 
 ext{
-    caffeine_version = '3.0.3'
+    caffeine_version = '3.0.4'
     evalex_version = '2.6'
 
     immutables_version = '2.8.8'
-    jackson_version = '2.12.4'
-    d4j_json_version = "1.6.6"
+    jackson_version = '2.12.5'
+    d4j_json_version = '1.6.8'
 
-    junit_version = '5.7.2'
+    junit_version = '5.8.0'
 }
 
 allprojects{

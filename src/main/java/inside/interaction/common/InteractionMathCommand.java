@@ -24,7 +24,7 @@ public class InteractionMathCommand extends BaseInteractionCommand{
 
     @Override
     public Mono<Void> execute(InteractionCommandEnvironment env){
-        String expression = env.event().getOption("expression")
+        String expression = env.getOption("expression")
                 .flatMap(ApplicationCommandInteractionOption::getValue)
                 .map(ApplicationCommandInteractionOptionValue::asString)
                 .orElseThrow(IllegalStateException::new);

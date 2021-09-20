@@ -1,8 +1,8 @@
 package inside.interaction;
 
 import discord4j.core.GatewayDiscordClient;
-import discord4j.core.event.domain.interaction.SlashCommandEvent;
-import discord4j.core.object.command.ApplicationCommandInteractionOption;
+import discord4j.core.event.domain.interaction.ApplicationCommandInteractionEvent;
+import discord4j.core.object.command.*;
 import discord4j.core.object.entity.channel.MessageChannel;
 import org.immutables.builder.Builder;
 import reactor.core.publisher.Mono;
@@ -11,16 +11,19 @@ import reactor.util.context.ContextView;
 import java.util.*;
 
 public class InteractionCommandEnvironment{
-    private final SlashCommandEvent event;
+    private final ApplicationCommandInteractionEvent event;
     private final ContextView context;
     private final List<ApplicationCommandInteractionOption> options;
 
     @Builder.Constructor
-    protected InteractionCommandEnvironment(SlashCommandEvent event, ContextView context){
+    protected InteractionCommandEnvironment(ApplicationCommandInteractionEvent event, ContextView context){
         this.event = event;
         this.context = context;
         options = new ArrayList<>();
-        flattenOptions(event.getOptions(), options);
+        ApplicationCommandInteraction commandInteraction = event.getInteraction().getCommandInteraction()
+                .orElseThrow(IllegalStateException::new);
+
+        flattenOptions(commandInteraction.getOptions(), options);
     }
 
     private static void flattenOptions(Iterable<? extends ApplicationCommandInteractionOption> options,
@@ -35,7 +38,7 @@ public class InteractionCommandEnvironment{
         return new InteractionCommandEnvironmentBuilder();
     }
 
-    public SlashCommandEvent event(){
+    public ApplicationCommandInteractionEvent event(){
         return event;
     }
 

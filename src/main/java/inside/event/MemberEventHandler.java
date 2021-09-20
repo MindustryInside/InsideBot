@@ -138,7 +138,9 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                         .actionType(ActionType.MEMBER_KICK)
                         .build()))
                 .flatMapIterable(AuditLogPart::getEntries)
-                .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now(Clock.systemUTC()).minusMillis(TIMEOUT_MILLIS)) &&
+                .filter(entry -> entry.getId().getTimestamp()
+                        .isAfter(Instant.now(Clock.systemUTC())
+                                .minusMillis(TIMEOUT_MILLIS)) &&
                         entry.getTargetId().map(targetId -> targetId.equals(user.getId())).orElse(false))
                 .next()
                 .flatMap(entry -> Mono.justOrEmpty(entry.getResponsibleUser())
@@ -157,7 +159,9 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                         .actionType(ActionType.MEMBER_BAN_ADD)
                         .build()))
                 .flatMapIterable(AuditLogPart::getEntries)
-                .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now(Clock.systemUTC()).minusMillis(TIMEOUT_MILLIS)) &&
+                .filter(entry -> entry.getId().getTimestamp()
+                        .isAfter(Instant.now(Clock.systemUTC())
+                        .minusMillis(TIMEOUT_MILLIS)) &&
                         entry.getTargetId().map(targetId -> targetId.equals(user.getId())).orElse(false))
                 .next()
                 .flatMap(entry -> Mono.justOrEmpty(entry.getResponsibleUser())
@@ -209,9 +213,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
 
                                 localMember.setLastRoleIds(event.getCurrentRoleIds());
                                 boolean added = oldRoleIds.size() < event.getCurrentRoleIds().size();
-                                List<Snowflake> difference = new ArrayList<>(added
-                                        ? event.getCurrentRoleIds()
-                                        : oldRoleIds);
+                                List<Snowflake> difference = new ArrayList<>(added ? event.getCurrentRoleIds() : oldRoleIds);
                                 difference.removeIf((added ? oldRoleIds : event.getCurrentRoleIds())::contains);
 
                                 return auditService.newBuilder(guildId, added ? MEMBER_ROLE_ADD : MEMBER_ROLE_REMOVE)

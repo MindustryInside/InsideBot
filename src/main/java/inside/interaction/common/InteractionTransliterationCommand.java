@@ -20,7 +20,7 @@ public class InteractionTransliterationCommand extends BaseInteractionCommand{
 
     @Override
     public Mono<Void> execute(InteractionCommandEnvironment env){
-        String text = env.event().getOption("text")
+        String text = env.getOption("text")
                 .flatMap(ApplicationCommandInteractionOption::getValue)
                 .map(ApplicationCommandInteractionOptionValue::asString)
                 .map(inside.command.common.TransliterationCommand::translit)

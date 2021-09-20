@@ -35,13 +35,13 @@ public class InteractionLeetSpeakCommand extends BaseInteractionCommand{
 
     @Override
     public Mono<Void> execute(InteractionCommandEnvironment env){
-        boolean russian = env.event().getOption("type")
+        boolean russian = env.getOption("type")
                 .flatMap(ApplicationCommandInteractionOption::getValue)
                 .map(ApplicationCommandInteractionOptionValue::asString)
                 .map("ru"::equals)
                 .orElse(false);
 
-        String text = env.event().getOption("text")
+        String text = env.getOption("text")
                 .flatMap(ApplicationCommandInteractionOption::getValue)
                 .map(ApplicationCommandInteractionOptionValue::asString)
                 .map(str -> LeetSpeakCommand.leeted(str, russian))
