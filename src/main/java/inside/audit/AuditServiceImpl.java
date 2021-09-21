@@ -68,10 +68,9 @@ public class AuditServiceImpl implements AuditService{
         };
     }
 
-    @Override
     @Scheduled(cron = "0 0 */4 * * *")
     @Transactional
-    public void cleanUp(){
+    protected void cleanUp(){
         repository.deleteAllByTimestampBefore(Instant.now().minus(settings.getAudit().getHistoryKeep()));
     }
 }

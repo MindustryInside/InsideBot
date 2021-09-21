@@ -13,6 +13,4 @@ public interface AuditService{
     Mono<Void> save(AuditAction action, List<? extends Tuple2<String, InputStream>> attachments);
 
     AuditActionBuilder newBuilder(Snowflake guildId, AuditActionType type);
-
-    void cleanUp();
 }
