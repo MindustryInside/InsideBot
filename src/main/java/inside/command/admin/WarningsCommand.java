@@ -63,14 +63,17 @@ public class WarningsCommand extends AdminCommand{
                                 .fields(fields)
                                 .title(messageService.get(env.context(), "command.admin.warnings.title"))
                                 .color(settings.getDefaults().getNormalColor())
-                                .footer(String.format("Страница 1/%d", Mathf.ceilPositive(count / (float)PER_PAGE)), null)
+                                .footer(messageService.format(env.context(), "command.admin.warnings.page",
+                                        Mathf.ceilPositive(count / (float)PER_PAGE)), null)
                                 .build())
                         .addComponent(ActionRow.of(
                                 Button.primary("inside-warnings-" + authorId.asString() +
                                         "-" + target.getId().asString() + "-prev-0",
-                                        messageService.get(env.context(), "common.prev-page")).disabled(),
+                                        messageService.get(env.context(), "common.prev-page"))
+                                        .disabled(),
                                 Button.primary("inside-warnings-" + authorId.asString() +
                                         "-" + target.getId().asString() + "-next-1",
-                                        messageService.get(env.context(), "common.prev-page")).disabled(count <= PER_PAGE))))));
+                                        messageService.get(env.context(), "common.prev-page"))
+                                        .disabled(count <= PER_PAGE))))));
     }
 }

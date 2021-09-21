@@ -308,7 +308,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                 return Mono.empty();
             }
 
-            return starboard.flatMap(board -> event.getGuild().flatMap(guild -> guild.getChannelById(channelId))
+            return starboard.flatMap(board -> event.getClient().getChannelById(channelId)
                     .cast(TopLevelGuildMessageChannel.class)
                     .flatMap(channel -> channel.getMessageById(board.getTargetMessageId()))
                     .flatMap(Message::delete)
