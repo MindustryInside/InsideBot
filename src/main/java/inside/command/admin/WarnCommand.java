@@ -59,16 +59,19 @@ public class WarnCommand extends AdminCommand{
                         Mono<AdminConfig> config = entityRetriever.getAdminConfigById(guildId)
                                 .switchIfEmpty(entityRetriever.createAdminConfig(guildId));
 
+                        String autoReason = messageService.format(env.context(), "message.admin.auto-reason", count);
+
                         Mono<Void> thresholdCheck = config.filter(adminConfig -> count >= adminConfig.getMaxWarnCount())
                                 .flatMap(adminConfig -> switch(adminConfig.getThresholdAction()){
                                     case ban -> author.getGuild().flatMap(guild ->
                                             guild.ban(member.getId(), BanQuerySpec.builder()
                                                     .deleteMessageDays(0)
+                                                    .reason(autoReason)
                                                     .build()));
                                     case kick -> author.kick();
                                     case mute -> author.getGuild().flatMap(Guild::getOwner)
                                             .flatMap(owner -> adminService.mute(owner, author,
-                                                    Instant.now().plus(adminConfig.getMuteBaseDelay()), null));
+                                                    Instant.now().plus(adminConfig.getMuteBaseDelay()), autoReason));
                                     default -> Mono.empty();
                                 });
 
