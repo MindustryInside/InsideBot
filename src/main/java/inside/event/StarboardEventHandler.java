@@ -5,7 +5,7 @@ import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.message.*;
 import discord4j.core.object.Embed;
 import discord4j.core.object.entity.*;
-import discord4j.core.object.entity.channel.*;
+import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
 import discord4j.core.object.reaction.*;
 import discord4j.core.spec.*;
 import discord4j.rest.util.*;
@@ -26,7 +26,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static inside.util.ContextUtil.*;
-import static reactor.function.TupleUtils.function;
+import static reactor.function.TupleUtils.*;
 
 @Component
 public class StarboardEventHandler extends ReactiveEventAdapter{
@@ -72,6 +72,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                             .filter(reaction -> emojis.contains(reaction.getEmoji()))
                             .map(Reaction::getCount)
                             .as(MathFlux::max)
+                            .defaultIfEmpty(0)
                             .filter(l -> l >= config.getLowerStarBarrier());
 
                     Mono<TopLevelGuildMessageChannel> starboardChannel = event.getClient().getChannelById(channelId)
@@ -79,19 +80,14 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
                     Mono<Message> sourceMessage = event.getMessage();
 
-                    Mono<User> author = event.getMessage().map(Message::getAuthor).flatMap(Mono::justOrEmpty);
-
-                    return Mono.zip(emojiCount, starboardChannel, sourceMessage, author)
-                            .flatMap(function((count, channel, source, user) -> {
-                                if(source.getInteraction().isPresent() || source.getWebhookId().isPresent()){
-                                    return Mono.empty(); // don't handle webhooks and interactions
-                                }
+                    return Mono.zip(emojiCount, starboardChannel, sourceMessage)
+                            .filter(predicate((count, channel, source) ->
+                                    source.getInteraction().isEmpty() && source.getWebhookId().isEmpty()))
+                            .flatMap(function((count, channel, source) -> {
 
                                 Mono<Message> findIfAbsent = channel.getLastMessageId()
                                         .map(channel::getMessagesBefore).orElse(Flux.empty())
-                                        .filter(m -> m.getEmbeds().size() == 1 && m.getEmbeds().get(0).getFields().size() >= 1)
-                                        .filter(m -> m.getEmbeds().get(0).getFields().get(0)
-                                                .getValue().endsWith(source.getId().asString() + ")")) // match md link
+                                        .filter(m -> isStarboard(m, source))
                                         .next()
                                         .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId())
                                                 .thenReturn(target))
@@ -120,6 +116,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
                                     return target.edit(MessageEditSpec.builder()
                                             .addEmbed(embedSpec.build())
+                                            .allowedMentionsOrNull(AllowedMentions.suppressAll())
                                             .contentOrNull(messageService.format(context, "starboard.format",
                                                     formatted.get(Mathf.clamp((count - 1) / 5, 0, formatted.size() - 1)),
                                                     count, DiscordUtil.getChannelMention(source.getChannelId())))
@@ -189,16 +186,13 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                     Mono<Message> sourceMessage = event.getMessage();
 
                     return Mono.zip(emojiCount, starboardChannel, sourceMessage)
+                            .filter(predicate((count, channel, source) ->
+                                    source.getInteraction().isEmpty() && source.getWebhookId().isEmpty()))
                             .flatMap(function((count, channel, source) -> {
-                                if(source.getInteraction().isPresent() || source.getWebhookId().isPresent()){
-                                    return Mono.empty(); // don't handle webhooks and interactions
-                                }
 
                                 Mono<Message> findIfAbsent = channel.getLastMessageId()
                                         .map(channel::getMessagesBefore).orElse(Flux.empty())
-                                        .filter(m -> m.getEmbeds().size() == 1 && m.getEmbeds().get(0).getFields().size() >= 1)
-                                        .filter(m -> m.getEmbeds().get(0).getFields().get(0)
-                                                .getValue().endsWith(source.getId().asString() + ")")) // match md link
+                                        .filter(m -> isStarboard(m, source))
                                         .next()
                                         .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId())
                                                 .thenReturn(target))
@@ -228,6 +222,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                     Snowflake sourceChannelId = event.getChannelId();
                                     return target.edit(MessageEditSpec.builder()
                                             .addEmbed(embedSpec.build())
+                                            .allowedMentionsOrNull(AllowedMentions.suppressAll())
                                             .contentOrNull(messageService.format(context, "starboard.format",
                                                     formatted.get(Mathf.clamp((count - 1) / 5, 0, formatted.size() - 1)),
                                                     count, DiscordUtil.getChannelMention(sourceChannelId)))
@@ -314,6 +309,17 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                     .flatMap(Message::delete)
                     .then(entityRetriever.delete(board)));
         });
+    }
+
+    private boolean isStarboard(Message possibleTarget, Message source){
+        List<Embed> embeds = possibleTarget.getEmbeds();
+        if(embeds.size() != 1){
+            return false;
+        }
+
+        List<Embed.Field> fields = embeds.get(0).getFields();
+        String messageIdString = source.getId().asString();
+        return fields.size() >= 1 && fields.get(0).getValue().equals(messageIdString + ")");
     }
 
     @Override
