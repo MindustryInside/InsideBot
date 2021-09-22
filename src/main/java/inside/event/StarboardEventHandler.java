@@ -237,7 +237,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
         var authorUser = source.getAuthor().orElseThrow(IllegalStateException::new);
         embedSpec.author(authorUser.getTag(), null, authorUser.getAvatarUrl());
 
-        String content = source.getContent();
+        String content = MessageUtil.substringTo(source.getContent(), Embed.MAX_DESCRIPTION_LENGTH);
         if(Strings.isEmpty(content) && messageService.hasEnum(context, source.getType())){
             content = messageService.getEnum(context, source.getType());
         }
