@@ -246,22 +246,15 @@ public class Settings{
     public static class Cache{
 
         private boolean activityConfig = true;
-
         private boolean adminConfig = true;
-
         private boolean auditConfig = true;
-
         private boolean emojiDispenser = true;
-
         private boolean guildConfig = true;
-
         private boolean localMember = true;
-
         private boolean starboard = true;
-
         private boolean starboardConfig = true;
-
         private boolean welcomeMessage = true;
+        private boolean poll = true;
 
         public boolean isActivityConfig(){
             return activityConfig;
@@ -333,6 +326,14 @@ public class Settings{
 
         public void setWelcomeMessage(boolean welcomeMessage){
             this.welcomeMessage = welcomeMessage;
+        }
+
+        public boolean isPoll(){
+            return poll;
+        }
+
+        public void setPoll(boolean poll){
+            this.poll = poll;
         }
     }
 }

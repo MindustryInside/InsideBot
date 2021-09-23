@@ -6,6 +6,8 @@ import discord4j.discordjson.json.EmojiData;
 import inside.data.entity.*;
 import reactor.core.publisher.*;
 
+import java.util.List;
+
 public interface EntityRetriever{
 
     // guild config
@@ -106,6 +108,14 @@ public interface EntityRetriever{
 
     Mono<Void> save(WelcomeMessage welcomeMessage);
 
+    // poll
+
+    Mono<Poll> getPollById(Snowflake messageId);
+
+    Mono<Void> save(Poll poll);
+
+    Mono<Void> delete(Poll poll);
+
     // factory methods
 
     Mono<GuildConfig> createGuildConfig(Snowflake guildId);
@@ -127,4 +137,6 @@ public interface EntityRetriever{
     Mono<EmojiDispenser> createEmojiDispenser(Snowflake guildId, Snowflake messageId, Snowflake roleId, EmojiData emojiData);
 
     Mono<WelcomeMessage> createWelcomeMessage(Snowflake guildId, Snowflake channelId, String message);
+
+    Mono<Poll> createPoll(Snowflake guildId, Snowflake messageId, List<String> options);
 }

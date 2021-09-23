@@ -1,5 +1,6 @@
 package inside.data.service;
 
+import inside.data.repository.PollRepository;
 import inside.data.service.impl.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -7,35 +8,23 @@ import org.springframework.stereotype.Component;
 @Component
 public final class StoreHolder{
     private final GuildConfigService guildConfigService;
-
     private final AdminConfigService adminConfigService;
-
     private final LocalMemberService localMemberService;
-
     private final AuditConfigService auditConfigService;
-
     private final MessageInfoService messageInfoService;
-
     private final StarboardConfigService starboardConfigService;
-
     private final StarboardService starboardService;
-
     private final ActivityConfigService activityConfigService;
-
     private final EmojiDispenserService emojiDispenserService;
-
     private final WelcomeMessageService welcomeMessageService;
+    private final PollService pollService;
 
-    public StoreHolder(@Autowired GuildConfigService guildConfigService,
-                       @Autowired AdminConfigService adminConfigService,
-                       @Autowired LocalMemberService localMemberService,
-                       @Autowired AuditConfigService auditConfigService,
-                       @Autowired MessageInfoService messageInfoService,
-                       @Autowired StarboardConfigService starboardConfigService,
-                       @Autowired StarboardService starboardService,
-                       @Autowired ActivityConfigService activityConfigService,
-                       @Autowired EmojiDispenserService emojiDispenserService,
-                       @Autowired WelcomeMessageService welcomeMessageService){
+    public StoreHolder(@Autowired GuildConfigService guildConfigService, @Autowired AdminConfigService adminConfigService,
+                       @Autowired LocalMemberService localMemberService, @Autowired AuditConfigService auditConfigService,
+                       @Autowired MessageInfoService messageInfoService, @Autowired StarboardConfigService starboardConfigService,
+                       @Autowired StarboardService starboardService, @Autowired ActivityConfigService activityConfigService,
+                       @Autowired EmojiDispenserService emojiDispenserService, @Autowired WelcomeMessageService welcomeMessageService,
+                       @Autowired PollService pollService){
         this.guildConfigService = guildConfigService;
         this.adminConfigService = adminConfigService;
         this.localMemberService = localMemberService;
@@ -46,6 +35,7 @@ public final class StoreHolder{
         this.activityConfigService = activityConfigService;
         this.emojiDispenserService = emojiDispenserService;
         this.welcomeMessageService = welcomeMessageService;
+        this.pollService = pollService;
     }
 
     public GuildConfigService getGuildConfigService(){
@@ -86,5 +76,9 @@ public final class StoreHolder{
 
     public WelcomeMessageService getWelcomeMessageService(){
         return welcomeMessageService;
+    }
+
+    public PollService getPollService(){
+        return pollService;
     }
 }

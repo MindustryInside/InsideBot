@@ -247,6 +247,21 @@ public class EntityRetrieverImpl implements EntityRetriever{
     }
 
     @Override
+    public Mono<Poll> getPollById(Snowflake messageId){
+        return storeHolder.getPollService().find(messageId.asLong());
+    }
+
+    @Override
+    public Mono<Void> save(Poll poll){
+        return storeHolder.getPollService().save(poll);
+    }
+
+    @Override
+    public Mono<Void> delete(Poll poll){
+        return storeHolder.getPollService().delete(poll);
+    }
+
+    @Override
     public Mono<GuildConfig> createGuildConfig(Snowflake guildId){
         return Mono.defer(() -> {
             GuildConfig guildConfig = new GuildConfig();
@@ -360,6 +375,18 @@ public class EntityRetrieverImpl implements EntityRetriever{
             welcomeMessage.setChannelId(channelId);
             welcomeMessage.setMessage(message);
             return save(welcomeMessage).thenReturn(welcomeMessage);
+        });
+    }
+
+    @Override
+    public Mono<Poll> createPoll(Snowflake guildId, Snowflake messageId, List<String> options){
+        return Mono.defer(() -> {
+            Poll poll = new Poll();
+            poll.setGuildId(guildId);
+            poll.setMessageId(messageId);
+            poll.setOptions(options);
+            poll.setAnswered(List.of()); // on create always empty
+            return save(poll).thenReturn(poll);
         });
     }
 }

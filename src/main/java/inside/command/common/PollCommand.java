@@ -1,5 +1,6 @@
 package inside.command.common;
 
+import discord4j.core.object.component.*;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
@@ -13,29 +14,30 @@ import inside.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.*;
 
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 import java.util.stream.*;
 
 @DiscordCommand(key = "poll", params = "command.poll.params", description = "command.poll.description",
-        permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS})
+        permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS})
 public class PollCommand extends Command{
 
-    public static final ReactionEmoji[] emojis;
+    public static final Button[] buttons;
 
     static{
-        emojis = new ReactionEmoji[]{
-                ReactionEmoji.unicode("1\u20E3"),
-                ReactionEmoji.unicode("2\u20E3"),
-                ReactionEmoji.unicode("3\u20E3"),
-                ReactionEmoji.unicode("3\u20E3"),
-                ReactionEmoji.unicode("4\u20E3"),
-                ReactionEmoji.unicode("5\u20E3"),
-                ReactionEmoji.unicode("6\u20E3"),
-                ReactionEmoji.unicode("7\u20E3"),
-                ReactionEmoji.unicode("8\u20E3"),
-                ReactionEmoji.unicode("9\u20E3"),
-                ReactionEmoji.unicode("\uD83D\uDD1F")
+
+        buttons = new Button[]{
+                Button.primary("inside-poll-1", ReactionEmoji.unicode("1\u20E3")),
+                Button.primary("inside-poll-2", ReactionEmoji.unicode("2\u20E3")),
+                Button.primary("inside-poll-3", ReactionEmoji.unicode("3\u20E3")),
+                Button.primary("inside-poll-4", ReactionEmoji.unicode("4\u20E3")),
+                Button.primary("inside-poll-5", ReactionEmoji.unicode("5\u20E3")),
+                Button.primary("inside-poll-6", ReactionEmoji.unicode("6\u20E3")),
+                Button.primary("inside-poll-7", ReactionEmoji.unicode("7\u20E3")),
+                Button.primary("inside-poll-8", ReactionEmoji.unicode("8\u20E3")),
+                Button.primary("inside-poll-9", ReactionEmoji.unicode("9\u20E3")),
+                Button.primary("inside-poll-10", ReactionEmoji.unicode("\uD83D\u20E3"))
         };
     }
 
@@ -63,8 +65,8 @@ public class PollCommand extends Command{
             return messageService.err(env, "command.poll.empty-variants");
         }
 
-        if(count > emojis.length){
-            return messageService.err(env, "common.limit-number", emojis.length - 1);
+        if(count > buttons.length){
+            return messageService.err(env, "common.limit-number", buttons.length - 1);
         }
 
         return channel.flatMap(reply -> reply.createMessage(MessageCreateSpec.builder()
@@ -75,13 +77,12 @@ public class PollCommand extends Command{
                                 .description(IntStream.range(1, vars.length)
                                         .mapToObj(i -> String.format("**%d**. %s%n", i, vars[i]))
                                         .collect(Collectors.joining()))
-                                .author(author.getUsername(), null, author.getAvatarUrl())
+                                .author(author.getTag(), null, author.getAvatarUrl())
                                 .build())
+                        .addComponent(ActionRow.of(Arrays.stream(buttons, 0, count).toList()))
                         .build()))
-                .flatMap(poll -> Mono.defer(() -> Flux.fromArray(emojis)
-                        .take(count, true)
-                        .flatMap(poll::addReaction)
-                        .then(Mono.just(poll))))
+                .flatMap(message -> entityRetriever.createPoll(env.getAuthorAsMember().getGuildId(),
+                        message.getId(), Arrays.asList(vars)))
                 .then();
     }
 
