@@ -10,6 +10,7 @@ import inside.command.admin.WarningsCommand;
 import inside.service.*;
 import inside.util.Mathf;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import reactor.core.publisher.Mono;
 
 import static reactor.function.TupleUtils.function;
@@ -22,7 +23,7 @@ public class WarningsButtonListener implements ButtonListener{
     private final Settings settings;
 
     public WarningsButtonListener(@Autowired MessageService messageService,
-                                  @Autowired AdminService adminService,
+                                  @Lazy @Autowired AdminService adminService,
                                   @Autowired Settings settings){
         this.messageService = messageService;
         this.adminService = adminService;
