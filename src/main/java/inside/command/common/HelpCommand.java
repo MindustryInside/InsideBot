@@ -8,6 +8,7 @@ import inside.command.model.*;
 import inside.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.*;
+import reactor.math.MathFlux;
 
 import java.util.*;
 import java.util.stream.*;
@@ -53,11 +54,13 @@ public class HelpCommand extends Command{
                 .entrySet().stream()
                 .collect(Collectors.groupingBy(e -> e.getValue().category()));
 
-        Mono<Void> categories = Flux.fromIterable(categoryMap.entrySet())
+        var categoryFlux = Flux.fromIterable(categoryMap.entrySet())
                 .filterWhen(entry -> Flux.fromIterable(entry.getValue())
                         .filterWhen(e -> e.getKey().filter(env))
-                        .hasElements())
-                .map(e -> String.format("• %s (`%s`)%n", messageService.getEnum(env.context(), e.getKey()), e.getKey()))
+                        .hasElements());
+
+        Mono<Void> categories = categoryFlux.map(e -> String.format("• %s (`%s`)%n",
+                        messageService.getEnum(env.context(), e.getKey()), e.getKey()))
                 .collect(Collectors.joining())
                 .map(s -> s.concat("\n").concat(messageService.get(env.context(), "command.help.disclaimer.get-list")))
                 .flatMap(categoriesStr -> env.getReplyChannel().flatMap(channel -> channel.createMessage(
@@ -76,10 +79,12 @@ public class HelpCommand extends Command{
 
         Mono<Void> snowHelp = Mono.defer(() -> {
             String unwrapped = category.orElse("");
-            return categoryMap.keySet().stream()
-                    .min(Comparator.comparingInt(s -> Strings.levenshtein(s.name(), unwrapped)))
-                    .map(s -> messageService.err(env, "command.help.found-closest", s))
-                    .orElse(messageService.err(env, "command.help.unknown"));
+            return categoryFlux
+                    .map(Map.Entry::getKey)
+                    .transform(f -> MathFlux.min(f, Comparator.comparingInt(s -> Strings.levenshtein(s.name(), unwrapped))))
+                    .switchIfEmpty(messageService.err(env, "command.help.unknown").then(Mono.empty()))
+                    .flatMap(s -> messageService.err(env, "command.help.found-closest", s))
+                    .then();
         });
 
         return Mono.justOrEmpty(category)

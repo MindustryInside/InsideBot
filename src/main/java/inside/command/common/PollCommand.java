@@ -69,6 +69,17 @@ public class PollCommand extends Command{
             return messageService.err(env, "common.limit-number", buttons.length - 1);
         }
 
+        List<LayoutComponent> rows = new ArrayList<>();
+        List<ActionComponent> components = new ArrayList<>();
+        for(int i = 0, count0 = count + 1; i < count0; i++){
+            if(i != 0 && (i % 5 == 0 || i + 1 == count0)){ // action row can contain only 5 components
+                rows.add(ActionRow.of(components));
+                components.clear();
+            }else{
+                components.add(buttons[i]);
+            }
+        }
+
         return channel.flatMap(reply -> reply.createMessage(MessageCreateSpec.builder()
                         .allowedMentions(AllowedMentions.suppressAll())
                         .addEmbed(EmbedCreateSpec.builder()
@@ -79,7 +90,7 @@ public class PollCommand extends Command{
                                         .collect(Collectors.joining()))
                                 .author(author.getTag(), null, author.getAvatarUrl())
                                 .build())
-                        .addComponent(ActionRow.of(Arrays.stream(buttons, 0, count).toList()))
+                        .components(rows)
                         .build()))
                 .flatMap(message -> entityRetriever.createPoll(env.getAuthorAsMember().getGuildId(),
                         message.getId(), Arrays.asList(vars)))

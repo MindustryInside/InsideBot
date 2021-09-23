@@ -77,7 +77,7 @@ public class PollButtonListener implements ButtonListener{
 
                     embedSpec.footer(statistic.entrySet().stream()
                             .map(e -> String.format("%s: %d%% (%d)",
-                                    e.getKey(), (int)(count / 100f * e.getValue()), e.getValue()))
+                                    e.getKey(), (int)(e.getValue() * 100f / count), e.getValue()))
                             .collect(Collectors.joining("\n")), null);
 
                     return event.edit(InteractionApplicationCommandCallbackSpec.builder()
