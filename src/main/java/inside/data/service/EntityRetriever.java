@@ -116,6 +116,8 @@ public interface EntityRetriever{
 
     Mono<Void> delete(Poll poll);
 
+    Mono<Void> deleteAllPollInGuild(Snowflake guildId);
+
     // factory methods
 
     Mono<GuildConfig> createGuildConfig(Snowflake guildId);

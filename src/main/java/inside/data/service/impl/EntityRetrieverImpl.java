@@ -262,6 +262,11 @@ public class EntityRetrieverImpl implements EntityRetriever{
     }
 
     @Override
+    public Mono<Void> deleteAllPollInGuild(Snowflake guildId){
+        return storeHolder.getPollService().deleteAllByGuildId(guildId.asLong());
+    }
+
+    @Override
     public Mono<GuildConfig> createGuildConfig(Snowflake guildId){
         return Mono.defer(() -> {
             GuildConfig guildConfig = new GuildConfig();
