@@ -49,8 +49,7 @@ public class AdminCommand extends OwnerCommand{
                             .switchIfEmpty(messageService.text(env.event(), "command.settings.warnings.current",
                                     adminConfig.getMaxWarnCount()).then(Mono.never()))
                             .filter(l -> l > 0)
-                            .switchIfEmpty(messageService.text(env.event(), "command.settings.negative-number")
-                                    .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true)).then(Mono.never()))
+                            .switchIfEmpty(messageService.text(env.event(), "command.settings.negative-number").then(Mono.never()))
                             .flatMap(l -> {
                                 adminConfig.setMaxWarnCount(l);
                                 return messageService.text(env.event(), "command.settings.warnings.update", l)
@@ -89,8 +88,7 @@ public class AdminCommand extends OwnerCommand{
                             .flatMap(str -> {
                                 Duration duration = Try.ofCallable(() -> MessageUtil.parseDuration(str)).orElse(null);
                                 if(duration == null){
-                                    return messageService.err(env.event(), "command.settings.incorrect-duration")
-                                            .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
+                                    return messageService.err(env.event(), "command.settings.incorrect-duration");
                                 }
 
                                 adminConfig.setMuteBaseDelay(duration);
@@ -166,8 +164,7 @@ public class AdminCommand extends OwnerCommand{
                             .flatMap(str -> {
                                 Duration duration = Try.ofCallable(() -> MessageUtil.parseDuration(str)).orElse(null);
                                 if(duration == null){
-                                    return messageService.err(env.event(), "command.settings.incorrect-duration")
-                                            .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
+                                    return messageService.err(env.event(), "command.settings.incorrect-duration");
                                 }
 
                                 adminConfig.setWarnExpireDelay(duration);
@@ -216,7 +213,6 @@ public class AdminCommand extends OwnerCommand{
                                     String.format("%s (`%s`)", messageService.getEnum(env.context(), adminConfig.getThresholdAction()),
                                             adminConfig.getThresholdAction())).then(Mono.never()))
                             .flatMap(str -> {
-
                                 AdminActionType action = Try.ofCallable(() -> AdminActionType.valueOf(str))
                                         .toOptional().orElseThrow(IllegalStateException::new);
 

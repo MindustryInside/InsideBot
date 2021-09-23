@@ -9,8 +9,6 @@ import inside.util.MessageUtil;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import static inside.util.ContextUtil.KEY_EPHEMERAL;
-
 @InteractionDiscordCommand(name = "math", description = "Calculate math expression.")
 public class InteractionMathCommand extends BaseInteractionCommand{
 
@@ -32,8 +30,7 @@ public class InteractionMathCommand extends BaseInteractionCommand{
         return inside.command.common.MathCommand.createExpression(expression).publishOn(Schedulers.boundedElastic())
                 .onErrorResume(t -> t instanceof ArithmeticException || t instanceof Expression.ExpressionException ||
                                 t instanceof NumberFormatException,
-                        t -> messageService.errTitled(env.event(), "command.math.error.title", t.getMessage())
-                                .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true)).then(Mono.empty()))
+                        t -> messageService.errTitled(env.event(), "command.math.error.title", t.getMessage()).then(Mono.empty()))
                 .flatMap(decimal -> messageService.text(env.event(), MessageUtil.substringTo(decimal.toString(), Message.MAX_CONTENT_LENGTH)));
     }
 }

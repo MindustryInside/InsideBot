@@ -13,9 +13,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.*;
 import java.util.function.Supplier;
-import java.util.stream.*;
-
-import static inside.util.ContextUtil.KEY_EPHEMERAL;
+import java.util.stream.Collectors;
 
 @ComponentProvider("inside-poll")
 public class PollButtonListener implements ButtonListener{
@@ -35,8 +33,7 @@ public class PollButtonListener implements ButtonListener{
                 .flatMap(poll -> {
                     User user = event.getInteraction().getUser();
                     if(poll.getAnswered().stream().anyMatch(p -> p.getUserId().equals(user.getId()))) {
-                        return messageService.err(event, "command.poll.already-answered")
-                                .contextWrite(ctx0 -> ctx0.put(KEY_EPHEMERAL, true));
+                        return messageService.err(event, "command.poll.already-answered");
                     }
 
                     String[] parts = event.getCustomId().split("-");

@@ -223,7 +223,6 @@ public class MessageServiceImpl implements MessageService{
     public Mono<Void> text(InteractionCreateEvent event, String text, Object... args){
         return Mono.deferContextual(ctx -> event.reply(InteractionApplicationCommandCallbackSpec.builder()
                 .allowedMentions(AllowedMentions.suppressAll())
-                .ephemeral(ctx.<Boolean>getOrEmpty(KEY_EPHEMERAL).map(Possible::of).orElse(Possible.absent()))
                 .content(text.isBlank() ? get(ctx, "message.placeholder") : format(ctx, text, args))
                 .build()));
     }
@@ -255,7 +254,7 @@ public class MessageServiceImpl implements MessageService{
     public Mono<Void> errTitled(InteractionCreateEvent event, String title, String text, Object... args){
         return Mono.deferContextual(ctx -> event.reply(InteractionApplicationCommandCallbackSpec.builder()
                 .allowedMentions(AllowedMentions.suppressAll())
-                .ephemeral(ctx.<Boolean>getOrEmpty(KEY_EPHEMERAL).map(Possible::of).orElse(Possible.absent()))
+                .ephemeral(true)
                 .addEmbed(EmbedCreateSpec.builder()
                         .color(settings.getDefaults().getErrorColor())
                         .description(format(ctx, text, args))

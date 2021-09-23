@@ -4,7 +4,6 @@ import discord4j.core.object.entity.*;
 import discord4j.rest.util.Permission;
 import inside.interaction.InteractionCommandEnvironment;
 import inside.interaction.common.GuildCommand;
-import inside.util.ContextUtil;
 import reactor.bool.BooleanUtils;
 import reactor.core.publisher.Mono;
 
@@ -23,8 +22,7 @@ public abstract class SettingsCommand extends GuildCommand{
                 .map(role -> role.getPermissions().contains(Permission.MANAGE_GUILD));
 
         Mono<Boolean> resp = BooleanUtils.or(isOwner, isGuildManager)
-                .filterWhen(bool -> bool ? Mono.just(true) : messageService.text(env.event(), "command.owner-only")
-                        .contextWrite(ctx -> ctx.put(ContextUtil.KEY_EPHEMERAL, true)).thenReturn(false));
+                .filterWhen(bool -> bool ? Mono.just(true) : messageService.text(env.event(), "command.owner-only").thenReturn(false));
 
         return BooleanUtils.and(super.filter(env), resp);
     }

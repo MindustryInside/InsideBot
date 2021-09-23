@@ -117,13 +117,11 @@ public class ActivityCommand extends OwnerCommand{
                             .switchIfEmpty(messageService.text(env.event(), "command.settings.message-barrier.current",
                                     activityConfig.getMessageBarrier()).then(Mono.never()))
                             .filter(l -> l > 0)
-                            .switchIfEmpty(messageService.text(env.event(), "command.settings.negative-number")
-                                    .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true)).then(Mono.never()))
+                            .switchIfEmpty(messageService.text(env.event(), "command.settings.negative-number").then(Mono.never()))
                             .flatMap(l -> {
                                 int i = (int)(long)l;
                                 if(i != l){
-                                    return messageService.err(env.event(), "command.settings.overflow-number")
-                                            .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
+                                    return messageService.err(env.event(), "command.settings.overflow-number");
                                 }
 
                                 activityConfig.setMessageBarrier(i);
@@ -163,8 +161,7 @@ public class ActivityCommand extends OwnerCommand{
                             .flatMap(str -> {
                                 Duration duration = Try.ofCallable(() -> MessageUtil.parseDuration(str)).orElse(null);
                                 if(duration == null){
-                                    return messageService.err(env.event(), "command.settings.incorrect-duration")
-                                            .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
+                                    return messageService.err(env.event(), "command.settings.incorrect-duration");
                                 }
 
                                 activityConfig.setKeepCountingDuration(duration);

@@ -41,8 +41,7 @@ public class InteractionLocaleCommand extends SettingsCommand{
                                 .map(locale1 -> String.format("%s (`%s`)", locale1.getDisplayName(), locale1))
                                 .collect(Collectors.joining(", "));
 
-                        return messageService.text(env.event(), "command.settings.locale.all", all)
-                                .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
+                        return messageService.text(env.event(), "command.settings.locale.all", all);
                     }
 
                     guildConfig.locale(locale);

@@ -15,8 +15,6 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static inside.util.ContextUtil.KEY_EPHEMERAL;
-
 @InteractionDiscordCommand(name = "starboard", description = "Starboard settings.")
 public class StarboardCommand extends OwnerCommand{
 
@@ -85,13 +83,11 @@ public class StarboardCommand extends OwnerCommand{
                             .switchIfEmpty(messageService.text(env.event(), "command.settings.barrier.current",
                                     starboardConfig.getLowerStarBarrier()).then(Mono.never()))
                             .filter(l -> l > 0)
-                            .switchIfEmpty(messageService.text(env.event(), "command.settings.negative-number")
-                                    .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true)).then(Mono.never()))
+                            .switchIfEmpty(messageService.text(env.event(), "command.settings.negative-number").then(Mono.never()))
                             .flatMap(l -> {
                                 int i = (int)(long)l;
                                 if(i != l){
-                                    return messageService.err(env.event(), "command.settings.overflow-number")
-                                            .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
+                                    return messageService.err(env.event(), "command.settings.overflow-number");
                                 }
 
                                 starboardConfig.setLowerStarBarrier(i);
@@ -186,8 +182,7 @@ public class StarboardCommand extends OwnerCommand{
                                         List<EmojiData> emojis = starboardConfig.getEmojis();
 
                                         if(list.size() + emojis.size() > 20){
-                                            return messageService.err(env.event(), "command.settings.emojis.limit")
-                                                    .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
+                                            return messageService.err(env.event(), "command.settings.emojis.limit");
                                         }
 
                                         emojis.addAll(list);
@@ -233,14 +228,12 @@ public class StarboardCommand extends OwnerCommand{
                             if(indexModePattern.matcher(value).matches()){ // index mode
                                 String str = value.substring(1);
                                 if(!MessageUtil.canParseInt(str)){
-                                    return messageService.err(env.event(), "command.settings.emojis.overflow-index")
-                                            .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
+                                    return messageService.err(env.event(), "command.settings.emojis.overflow-index");
                                 }
 
                                 int idx = Strings.parseInt(str) - 1; // Counting the index from 1
                                 if(idx < 0 || idx >= emojis.size()){
-                                    return messageService.err(env.event(), "command.settings.emojis.index-out-of-bounds")
-                                            .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
+                                    return messageService.err(env.event(), "command.settings.emojis.index-out-of-bounds");
                                 }
 
                                 EmojiData data = emojis.remove(idx);
@@ -264,8 +257,7 @@ public class StarboardCommand extends OwnerCommand{
                                         tmp.removeAll(list);
 
                                         if(tmp.size() < 1){
-                                            return messageService.err(env.event(), "command.settings.emojis.no-emojis")
-                                                    .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
+                                            return messageService.err(env.event(), "command.settings.emojis.no-emojis");
                                         }
 
                                         emojis.removeAll(list);

@@ -41,8 +41,7 @@ public class TimeZoneCommand extends SettingsCommand{
                         return ZoneId.getAvailableZoneIds().stream()
                                 .min(Comparator.comparingInt(s -> Strings.levenshtein(s, value)))
                                 .map(s -> messageService.err(env.event(), "command.settings.timezone.unknown.suggest", s))
-                                .orElse(messageService.err(env.event(), "command.settings.timezone.unknown"))
-                                .contextWrite(ctx -> ctx.put(KEY_EPHEMERAL, true));
+                                .orElse(messageService.err(env.event(), "command.settings.timezone.unknown"));
                     }
 
                     guildConfig.timeZone(timeZone);
