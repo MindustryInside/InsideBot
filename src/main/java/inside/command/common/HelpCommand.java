@@ -1,5 +1,8 @@
 package inside.command.common;
 
+import discord4j.core.object.component.*;
+import discord4j.core.spec.*;
+import inside.Settings;
 import inside.command.*;
 import inside.command.model.*;
 import inside.util.*;
@@ -14,9 +17,8 @@ public class HelpCommand extends Command{
     @Autowired
     private CommandHolder commandHolder;
 
-    private final Lazy<Map<CommandCategory, List<Map.Entry<Command, CommandInfo>>>> categoriesWithCommands = Lazy.of(() ->
-            commandHolder.getCommandInfoMap().entrySet().stream()
-                    .collect(Collectors.groupingBy(e -> e.getValue().category())));
+    @Autowired
+    private Settings settings;
 
     @Override
     public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -47,21 +49,34 @@ public class HelpCommand extends Command{
                 },
                 StringBuilder::append);
 
-        Mono<Void> categories = Flux.fromIterable(categoriesWithCommands.get().entrySet())
-                .distinct(Map.Entry::getKey)
+        var categoryMap = commandHolder.getCommandInfoMap()
+                .entrySet().stream()
+                .collect(Collectors.groupingBy(e -> e.getValue().category()));
+
+        Mono<Void> categories = Flux.fromIterable(categoryMap.entrySet())
                 .filterWhen(entry -> Flux.fromIterable(entry.getValue())
                         .filterWhen(e -> e.getKey().filter(env))
                         .hasElements())
                 .map(e -> String.format("• %s (`%s`)%n", messageService.getEnum(env.context(), e.getKey()), e.getKey()))
                 .collect(Collectors.joining())
                 .map(s -> s.concat("\n").concat(messageService.get(env.context(), "command.help.disclaimer.get-list")))
-                .flatMap(categoriesStr -> messageService.info(env, spec ->
-                        spec.title(messageService.get(env.context(), "command.help"))
-                                .description(categoriesStr)));
+                .flatMap(categoriesStr -> env.getReplyChannel().flatMap(channel -> channel.createMessage(
+                        EmbedCreateSpec.builder()
+                                .title(messageService.get(env.context(), "command.help"))
+                                .description(categoriesStr)
+                                .color(settings.getDefaults().getNormalColor())
+                                .build())
+                        .withComponents(ActionRow.of(
+                                Arrays.stream(CommandCategory.all)
+                                        .map(c -> Button.primary("inside-help-"
+                                                + c.ordinal() + "-" + env.getAuthorAsMember().getId().asLong(),
+                                                messageService.getEnum(env.context(), c)))
+                                        .toList()))))
+                .then();
 
         Mono<Void> snowHelp = Mono.defer(() -> {
             String unwrapped = category.orElse("");
-            return categoriesWithCommands.get().keySet().stream()
+            return categoryMap.keySet().stream()
                     .min(Comparator.comparingInt(s -> Strings.levenshtein(s.name(), unwrapped)))
                     .map(s -> messageService.err(env, "command.help.found-closest", s))
                     .orElse(messageService.err(env, "command.help.unknown"));
@@ -70,7 +85,7 @@ public class HelpCommand extends Command{
         return Mono.justOrEmpty(category)
                 .mapNotNull(s -> Try.ofCallable(() -> CommandCategory.valueOf(s)).orElse(null))
                 .switchIfEmpty(categories.then(Mono.never()))
-                .mapNotNull(categoriesWithCommands.get()::get)
+                .mapNotNull(categoryMap::get)
                 .switchIfEmpty(snowHelp.then(Mono.never()))
                 .filterWhen(entry -> Flux.fromIterable(entry)
                         .filterWhen(e -> e.getKey().filter(env))

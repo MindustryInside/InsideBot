@@ -7,7 +7,6 @@ import discord4j.core.object.entity.Member;
 import discord4j.core.spec.*;
 import inside.Settings;
 import inside.command.admin.WarningsCommand;
-import inside.data.service.EntityRetriever;
 import inside.service.*;
 import inside.util.Mathf;
 import org.springframework.beans.factory.annotation.Autowired;
