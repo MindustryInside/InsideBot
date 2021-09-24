@@ -192,7 +192,8 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                 .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
                         KEY_TIMEZONE, guildConfig.timeZone()));
 
-        return initContext.flatMap(context -> Mono.zip(event.getChannel().ofType(TextChannel.class), messageInfo)
+        Mono<Void> logMessageDelete = initContext.flatMap(context ->
+                Mono.zip(event.getChannel().ofType(TextChannel.class), messageInfo)
                 .flatMap(function((channel, info) -> {
                     String decrypted = messageService.decrypt(info.getContent(), message.getId(), message.getChannelId());
                     AuditActionBuilder builder = auditService.newBuilder(guildId, MESSAGE_DELETE)
@@ -227,5 +228,10 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                             .and(entityRetriever.delete(info));
                 }))
                 .contextWrite(context));
+
+        Mono<Void> deletePoll = entityRetriever.getPollById(message.getId())
+                .flatMap(entityRetriever::delete);
+
+        return Mono.when(logMessageDelete, deletePoll);
     }
 }
