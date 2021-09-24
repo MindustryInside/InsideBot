@@ -4,7 +4,6 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.*;
 import discord4j.core.object.entity.GuildEmoji;
 import discord4j.discordjson.json.EmojiData;
-import discord4j.rest.util.ApplicationCommandOptionType;
 import inside.data.entity.EmojiDispenser;
 import inside.interaction.*;
 import inside.util.*;
@@ -32,7 +31,7 @@ public class ReactionRolesCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "list", description = "Display current reaction roles.",
-            type = ApplicationCommandOptionType.SUB_COMMAND)
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class ReactionRolesCommandList extends OwnerAwareCommand<ReactionRolesCommand>{
 
         protected ReactionRolesCommandList(@Aware ReactionRolesCommand owner){
@@ -54,7 +53,7 @@ public class ReactionRolesCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "add", description = "Add reaction role.",
-            type = ApplicationCommandOptionType.SUB_COMMAND)
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class ReactionRolesCommandAdd extends OwnerAwareCommand<ReactionRolesCommand>{
 
         private static final int MAX_REACTION_ROLE_COUNT = 20;
@@ -66,17 +65,17 @@ public class ReactionRolesCommand extends OwnerCommand{
                     .name("emoji")
                     .description("Unicode or custom emoji.")
                     .required(true)
-                    .type(ApplicationCommandOptionType.STRING.getValue()));
+                    .type(ApplicationCommandOption.Type.STRING.getValue()));
 
             addOption(builder -> builder.name("message-id")
                     .description("Listening message ID.")
                     .required(true)
-                    .type(ApplicationCommandOptionType.STRING.getValue()));
+                    .type(ApplicationCommandOption.Type.STRING.getValue()));
 
             addOption(builder -> builder.name("role")
                     .description("Dispensed role.")
                     .required(true)
-                    .type(ApplicationCommandOptionType.ROLE.getValue()));
+                    .type(ApplicationCommandOption.Type.ROLE.getValue()));
         }
 
         @Override
@@ -125,7 +124,7 @@ public class ReactionRolesCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "remove", description = "Remove reaction role.",
-            type = ApplicationCommandOptionType.SUB_COMMAND)
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class ReactionRolesCommandRemove extends OwnerAwareCommand<ReactionRolesCommand>{
 
         protected ReactionRolesCommandRemove(@Aware ReactionRolesCommand owner){
@@ -134,12 +133,12 @@ public class ReactionRolesCommand extends OwnerCommand{
             addOption(builder -> builder.name("message-id")
                     .description("Listening message ID.")
                     .required(true)
-                    .type(ApplicationCommandOptionType.STRING.getValue()));
+                    .type(ApplicationCommandOption.Type.STRING.getValue()));
 
             addOption(builder -> builder.name("role")
                     .description("Dispensed role.")
                     .required(true)
-                    .type(ApplicationCommandOptionType.ROLE.getValue()));
+                    .type(ApplicationCommandOption.Type.ROLE.getValue()));
         }
 
         @Override
@@ -172,7 +171,7 @@ public class ReactionRolesCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "clear", description = "Remove all reaction roles.",
-            type = ApplicationCommandOptionType.SUB_COMMAND)
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class ReactionRolesCommandClear extends OwnerAwareCommand<ReactionRolesCommand>{
 
         protected ReactionRolesCommandClear(@Aware ReactionRolesCommand owner){

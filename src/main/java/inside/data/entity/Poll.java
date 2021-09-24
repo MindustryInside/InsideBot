@@ -1,7 +1,7 @@
 package inside.data.entity;
 
 import discord4j.common.util.Snowflake;
-import inside.data.entity.base.*;
+import inside.data.entity.base.GuildEntity;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;

@@ -68,12 +68,12 @@ public class WarningsCommand extends AdminCommand{
                                 .build())
                         .addComponent(ActionRow.of(
                                 Button.primary("inside-warnings-" + authorId.asString() +
-                                        "-" + target.getId().asString() + "-prev-0",
-                                        messageService.get(env.context(), "common.prev-page"))
+                                                        "-" + target.getId().asString() + "-prev-0",
+                                                messageService.get(env.context(), "common.prev-page"))
                                         .disabled(),
                                 Button.primary("inside-warnings-" + authorId.asString() +
-                                        "-" + target.getId().asString() + "-next-1",
-                                        messageService.get(env.context(), "common.prev-page"))
+                                                        "-" + target.getId().asString() + "-next-1",
+                                                messageService.get(env.context(), "common.prev-page"))
                                         .disabled(count <= PER_PAGE))))));
     }
 }

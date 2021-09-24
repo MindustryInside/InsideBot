@@ -4,7 +4,6 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.*;
 import discord4j.core.object.entity.GuildEmoji;
 import discord4j.discordjson.json.EmojiData;
-import discord4j.rest.util.ApplicationCommandOptionType;
 import inside.interaction.*;
 import inside.util.*;
 import inside.util.func.BooleanFunction;
@@ -23,7 +22,7 @@ public class StarboardCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "enable", description = "Enable starboard.",
-            type = ApplicationCommandOptionType.SUB_COMMAND)
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class StarboardCommandEnable extends OwnerAwareCommand<StarboardCommand>{
 
         protected StarboardCommandEnable(@Aware StarboardCommand owner){
@@ -31,7 +30,7 @@ public class StarboardCommand extends OwnerCommand{
 
             addOption(builder -> builder.name("value")
                     .description("New state.")
-                    .type(ApplicationCommandOptionType.BOOLEAN.getValue()));
+                    .type(ApplicationCommandOption.Type.BOOLEAN.getValue()));
         }
 
         @Override
@@ -45,8 +44,8 @@ public class StarboardCommand extends OwnerCommand{
             return entityRetriever.getStarboardConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createStarboardConfig(guildId))
                     .flatMap(starboardConfig -> Mono.justOrEmpty(env.getOption("enable")
-                            .flatMap(ApplicationCommandInteractionOption::getValue)
-                            .map(ApplicationCommandInteractionOptionValue::asBoolean))
+                                    .flatMap(ApplicationCommandInteractionOption::getValue)
+                                    .map(ApplicationCommandInteractionOptionValue::asBoolean))
                             .switchIfEmpty(messageService.text(env.event(), "command.settings.starboard-enable.update",
                                     formatBool.apply(starboardConfig.isEnabled())).then(Mono.never()))
                             .flatMap(bool -> {
@@ -59,7 +58,7 @@ public class StarboardCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "barrier", description = "Configure the starboard barrier.",
-            type = ApplicationCommandOptionType.SUB_COMMAND)
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class StarboardCommandBarrier extends OwnerAwareCommand<StarboardCommand>{
 
         protected StarboardCommandBarrier(@Aware StarboardCommand owner){
@@ -67,7 +66,7 @@ public class StarboardCommand extends OwnerCommand{
 
             addOption(builder -> builder.name("value")
                     .description("New message barrier.")
-                    .type(ApplicationCommandOptionType.INTEGER.getValue()));
+                    .type(ApplicationCommandOption.Type.INTEGER.getValue()));
         }
 
         @Override
@@ -78,8 +77,8 @@ public class StarboardCommand extends OwnerCommand{
             return entityRetriever.getStarboardConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createStarboardConfig(guildId))
                     .flatMap(starboardConfig -> Mono.justOrEmpty(env.getOption("value")
-                            .flatMap(ApplicationCommandInteractionOption::getValue)
-                            .map(ApplicationCommandInteractionOptionValue::asLong))
+                                    .flatMap(ApplicationCommandInteractionOption::getValue)
+                                    .map(ApplicationCommandInteractionOptionValue::asLong))
                             .switchIfEmpty(messageService.text(env.event(), "command.settings.barrier.current",
                                     starboardConfig.getLowerStarBarrier()).then(Mono.never()))
                             .filter(l -> l > 0)
@@ -98,7 +97,7 @@ public class StarboardCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "emojis", description = "Configure starboard emojis.",
-            type = ApplicationCommandOptionType.SUB_COMMAND_GROUP)
+            type = ApplicationCommandOption.Type.SUB_COMMAND_GROUP)
     public static class StarboardCommandEmojis extends SubGroupOwnerCommand<StarboardCommand>{
 
         private static final Pattern unicode = Pattern.compile("[^\\p{L}\\p{N}\\p{P}\\p{Z}]", Pattern.UNICODE_CHARACTER_CLASS);
@@ -109,7 +108,7 @@ public class StarboardCommand extends OwnerCommand{
         }
 
         @InteractionDiscordCommand(name = "list", description = "Display current emoji list.",
-                type = ApplicationCommandOptionType.SUB_COMMAND)
+                type = ApplicationCommandOption.Type.SUB_COMMAND)
         public static class StarboardCommandEmojisHelp extends OwnerAwareCommand<StarboardCommandEmojis>{
 
             protected StarboardCommandEmojisHelp(@Aware StarboardCommandEmojis owner){
@@ -142,7 +141,7 @@ public class StarboardCommand extends OwnerCommand{
         }
 
         @InteractionDiscordCommand(name = "add", description = "Add emoji(s).",
-                type = ApplicationCommandOptionType.SUB_COMMAND)
+                type = ApplicationCommandOption.Type.SUB_COMMAND)
         public static class StarboardCommandEmojisAdd extends OwnerAwareCommand<StarboardCommandEmojis>{
 
             protected StarboardCommandEmojisAdd(@Aware StarboardCommandEmojis owner){
@@ -151,7 +150,7 @@ public class StarboardCommand extends OwnerCommand{
                 addOption(builder -> builder.name("value")
                         .description("New emoji(s).")
                         .required(true)
-                        .type(ApplicationCommandOptionType.STRING.getValue()));
+                        .type(ApplicationCommandOption.Type.STRING.getValue()));
             }
 
             @Override
@@ -196,7 +195,7 @@ public class StarboardCommand extends OwnerCommand{
         }
 
         @InteractionDiscordCommand(name = "remove", description = "Remove emoji(s).",
-                type = ApplicationCommandOptionType.SUB_COMMAND)
+                type = ApplicationCommandOption.Type.SUB_COMMAND)
         public static class StarboardCommandEmojisRemove extends OwnerAwareCommand<StarboardCommandEmojis>{
 
             private static final Pattern indexModePattern = Pattern.compile("^(#\\d+)$");
@@ -207,7 +206,7 @@ public class StarboardCommand extends OwnerCommand{
                 addOption(builder -> builder.name("value")
                         .description("Emoji(s).")
                         .required(true)
-                        .type(ApplicationCommandOptionType.STRING.getValue()));
+                        .type(ApplicationCommandOption.Type.STRING.getValue()));
             }
 
             @Override
@@ -271,7 +270,7 @@ public class StarboardCommand extends OwnerCommand{
         }
 
         @InteractionDiscordCommand(name = "clear", description = "Remove all emojis.",
-                type = ApplicationCommandOptionType.SUB_COMMAND)
+                type = ApplicationCommandOption.Type.SUB_COMMAND)
         public static class StarboardCommandEmojisClear extends OwnerAwareCommand<StarboardCommandEmojis>{
 
             protected StarboardCommandEmojisClear(@Aware StarboardCommandEmojis owner){
@@ -295,7 +294,7 @@ public class StarboardCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "channel", description = "Configure starboard channel.",
-            type = ApplicationCommandOptionType.SUB_COMMAND)
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class StarboardCommandChannel extends OwnerAwareCommand<StarboardCommand>{
 
         protected StarboardCommandChannel(@Aware StarboardCommand owner){
@@ -303,7 +302,7 @@ public class StarboardCommand extends OwnerCommand{
 
             addOption(builder -> builder.name("value")
                     .description("New starboard channel.")
-                    .type(ApplicationCommandOptionType.CHANNEL.getValue()));
+                    .type(ApplicationCommandOption.Type.CHANNEL.getValue()));
         }
 
         @Override
@@ -314,8 +313,8 @@ public class StarboardCommand extends OwnerCommand{
             return entityRetriever.getStarboardConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createStarboardConfig(guildId))
                     .flatMap(starboardConfig -> Mono.justOrEmpty(env.getOption("value")
-                            .flatMap(ApplicationCommandInteractionOption::getValue)
-                            .map(ApplicationCommandInteractionOptionValue::asSnowflake))
+                                    .flatMap(ApplicationCommandInteractionOption::getValue)
+                                    .map(ApplicationCommandInteractionOptionValue::asSnowflake))
                             .switchIfEmpty(messageService.text(env.event(), "command.settings.starboard-channel.current",
                                             starboardConfig.getStarboardChannelId().map(DiscordUtil::getChannelMention)
                                                     .orElse(messageService.get(env.context(), "command.settings.absent")))

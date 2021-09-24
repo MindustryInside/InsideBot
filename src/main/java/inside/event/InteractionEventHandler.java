@@ -1,24 +1,17 @@
 package inside.event;
 
-import discord4j.common.util.*;
+import discord4j.common.util.Snowflake;
 import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.interaction.*;
-import discord4j.core.object.component.*;
-import discord4j.core.object.entity.Member;
-import discord4j.core.spec.*;
 import inside.Settings;
-import inside.command.admin.WarningsCommand;
 import inside.data.service.EntityRetriever;
 import inside.interaction.InteractionCommandEnvironment;
 import inside.interaction.component.*;
 import inside.service.*;
-import inside.util.Mathf;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.*;
-import reactor.function.TupleUtils;
 import reactor.util.context.Context;
 import reactor.util.function.*;
 
@@ -45,7 +38,7 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
     private List<Tuple2<String, ButtonListener>> buttonListeners;
 
     @Autowired(required = false)
-    private void registerButtonListeners(List<ButtonListener> buttonListeners) {
+    private void registerButtonListeners(List<ButtonListener> buttonListeners){
         this.buttonListeners = buttonListeners.stream()
                 .map(l -> Tuples.of(l.getClass().getAnnotation(ComponentProvider.class).value(), l))
                 .toList();

@@ -84,7 +84,9 @@ public class DefaultCommandHandler implements CommandHandler{
                             "command.response.incorrect-arguments";
 
                     if(argstr.matches("^(?i)(help|\\?)$")){
-                        return command.filter(environment).flatMap(bool -> bool ? command.help(environment, prx) : Mono.empty());
+                        return command.filter(environment).flatMap(bool -> bool
+                                ? command.help(environment, prx)
+                                : Mono.empty());
                     }
 
                     while(true){
@@ -140,7 +142,7 @@ public class DefaultCommandHandler implements CommandHandler{
 
                     Predicate<Throwable> missingAccess = t -> t.getMessage() != null &&
                             (t.getMessage().contains("Missing Access") ||
-                            t.getMessage().contains("Missing Permissions"));
+                                    t.getMessage().contains("Missing Permissions"));
 
                     Function<Throwable, Mono<Void>> fallback = t -> Flux.fromIterable(info.permissions())
                             .filterWhen(permission -> environment.getReplyChannel().cast(GuildMessageChannel.class)

@@ -2,7 +2,6 @@ package inside.interaction.settings;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.*;
-import discord4j.rest.util.ApplicationCommandOptionType;
 import inside.interaction.*;
 import org.springframework.context.annotation.Lazy;
 import reactor.core.publisher.Mono;
@@ -19,7 +18,7 @@ public class PrefixesCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "list", description = "Display current prefixes.",
-            type = ApplicationCommandOptionType.SUB_COMMAND)
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class PrefixesCommandList extends OwnerAwareCommand<PrefixesCommand>{
 
         protected PrefixesCommandList(@Aware PrefixesCommand owner){
@@ -38,7 +37,7 @@ public class PrefixesCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "add", description = "Add prefix(s)",
-            type = ApplicationCommandOptionType.SUB_COMMAND)
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class PrefixesCommandAdd extends OwnerAwareCommand<PrefixesCommand>{
 
         protected PrefixesCommandAdd(@Lazy PrefixesCommand owner){
@@ -47,7 +46,7 @@ public class PrefixesCommand extends OwnerCommand{
             addOption(builder -> builder.name("value")
                     .description("New prefix(s).")
                     .required(true)
-                    .type(ApplicationCommandOptionType.STRING.getValue()));
+                    .type(ApplicationCommandOption.Type.STRING.getValue()));
         }
 
         @Override
@@ -67,14 +66,14 @@ public class PrefixesCommand extends OwnerCommand{
                         Collections.addAll(flags, text);
 
                         return messageService.text(env.event(), "command.settings.added",
-                                String.join(", ", text))
+                                        String.join(", ", text))
                                 .and(entityRetriever.save(guildConfig));
                     }));
         }
     }
 
     @InteractionDiscordCommand(name = "remove", description = "Remove prefix(s).",
-            type = ApplicationCommandOptionType.SUB_COMMAND)
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class PrefixesCommandRemove extends OwnerAwareCommand<PrefixesCommand>{
 
         protected PrefixesCommandRemove(@Lazy PrefixesCommand owner){
@@ -83,7 +82,7 @@ public class PrefixesCommand extends OwnerCommand{
             addOption(builder -> builder.name("value")
                     .description("Prefix(s).")
                     .required(true)
-                    .type(ApplicationCommandOptionType.STRING.getValue()));
+                    .type(ApplicationCommandOption.Type.STRING.getValue()));
         }
 
         @Override
@@ -112,7 +111,7 @@ public class PrefixesCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "clear", description = "Remove all prefixes",
-            type = ApplicationCommandOptionType.SUB_COMMAND)
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class PrefixesCommandClear extends OwnerAwareCommand<PrefixesCommand>{
 
         protected PrefixesCommandClear(@Lazy PrefixesCommand owner){

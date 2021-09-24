@@ -1,6 +1,5 @@
 package inside.data.service;
 
-import inside.data.repository.PollRepository;
 import inside.data.service.impl.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

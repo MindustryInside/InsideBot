@@ -16,7 +16,6 @@ public abstract class CommandUtils{
         return encoder.toString();
     }
 
-
     @SuppressWarnings("unchecked")
     public static <K, V> Map<K, V> mapOf(Object... values){
         Objects.requireNonNull(values, "values");

@@ -2,7 +2,7 @@ package inside.data.service.impl;
 
 import inside.Settings;
 import inside.data.entity.Poll;
-import inside.data.repository.*;
+import inside.data.repository.PollRepository;
 import inside.data.service.BaseLongObjEntityService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

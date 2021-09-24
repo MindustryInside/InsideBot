@@ -2,7 +2,6 @@ package inside.interaction.settings;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.*;
-import discord4j.rest.util.ApplicationCommandOptionType;
 import inside.interaction.*;
 import inside.util.*;
 import reactor.core.publisher.Mono;
@@ -10,7 +9,7 @@ import reactor.core.publisher.Mono;
 import java.time.ZoneId;
 import java.util.*;
 
-import static inside.util.ContextUtil.*;
+import static inside.util.ContextUtil.KEY_TIMEZONE;
 import static reactor.function.TupleUtils.function;
 
 @InteractionDiscordCommand(name = "timezone", description = "Configure bot time zone.")
@@ -20,7 +19,7 @@ public class TimeZoneCommand extends SettingsCommand{
 
         addOption(builder -> builder.name("value")
                 .description("New time zone.")
-                .type(ApplicationCommandOptionType.STRING.getValue()));
+                .type(ApplicationCommandOption.Type.STRING.getValue()));
     }
 
     @Override

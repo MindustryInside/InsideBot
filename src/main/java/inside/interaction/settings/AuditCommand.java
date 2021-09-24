@@ -2,7 +2,6 @@ package inside.interaction.settings;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.*;
-import discord4j.rest.util.ApplicationCommandOptionType;
 import inside.audit.AuditActionType;
 import inside.interaction.*;
 import inside.util.DiscordUtil;
@@ -23,7 +22,7 @@ public class AuditCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "enable", description = "Enable audit logging.",
-            type = ApplicationCommandOptionType.SUB_COMMAND)
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class AuditCommandEnable extends OwnerAwareCommand<AuditCommand>{
 
         protected AuditCommandEnable(@Aware AuditCommand owner){
@@ -31,7 +30,7 @@ public class AuditCommand extends OwnerCommand{
 
             addOption(builder -> builder.name("value")
                     .description("New state.")
-                    .type(ApplicationCommandOptionType.BOOLEAN.getValue()));
+                    .type(ApplicationCommandOption.Type.BOOLEAN.getValue()));
         }
 
         @Override
@@ -59,7 +58,7 @@ public class AuditCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "channel", description = "Configure log channel.",
-            type = ApplicationCommandOptionType.SUB_COMMAND)
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class AuditCommandChannel extends OwnerAwareCommand<AuditCommand>{
 
         protected AuditCommandChannel(@Aware AuditCommand owner){
@@ -67,7 +66,7 @@ public class AuditCommand extends OwnerCommand{
 
             addOption(builder -> builder.name("value")
                     .description("New log channel.")
-                    .type(ApplicationCommandOptionType.CHANNEL.getValue()));
+                    .type(ApplicationCommandOption.Type.CHANNEL.getValue()));
         }
 
         @Override
@@ -81,8 +80,8 @@ public class AuditCommand extends OwnerCommand{
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asSnowflake))
                             .switchIfEmpty(messageService.text(env.event(), "command.settings.log-channel.current",
-                                    auditConfig.getLogChannelId().map(DiscordUtil::getChannelMention)
-                                            .orElse(messageService.get(env.context(), "command.settings.absent")))
+                                            auditConfig.getLogChannelId().map(DiscordUtil::getChannelMention)
+                                                    .orElse(messageService.get(env.context(), "command.settings.absent")))
                                     .then(Mono.never()))
                             .flatMap(channelId -> {
                                 auditConfig.setLogChannelId(channelId);
@@ -94,7 +93,7 @@ public class AuditCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "actions", description = "Configure audit actions.",
-            type = ApplicationCommandOptionType.SUB_COMMAND_GROUP)
+            type = ApplicationCommandOption.Type.SUB_COMMAND_GROUP)
     public static class AuditCommandActions extends SubGroupOwnerCommand<AuditCommand>{
 
         protected AuditCommandActions(@Aware AuditCommand owner, @Aware List<? extends InteractionOwnerAwareCommand<AuditCommandActions>> subcommands){
@@ -102,7 +101,7 @@ public class AuditCommand extends OwnerCommand{
         }
 
         @InteractionDiscordCommand(name = "list", description = "Display current audit actions.",
-                type = ApplicationCommandOptionType.SUB_COMMAND)
+                type = ApplicationCommandOption.Type.SUB_COMMAND)
         public static class AuditCommandActionsList extends OwnerAwareCommand<AuditCommandActions>{
 
             protected AuditCommandActionsList(@Aware AuditCommandActions owner){
@@ -124,7 +123,7 @@ public class AuditCommand extends OwnerCommand{
         }
 
         @InteractionDiscordCommand(name = "add", description = "Add audit action(s).",
-                type = ApplicationCommandOptionType.SUB_COMMAND)
+                type = ApplicationCommandOption.Type.SUB_COMMAND)
         public static class AuditCommandActionsAdd extends OwnerAwareCommand<AuditCommandActions>{
 
             protected AuditCommandActionsAdd(@Aware AuditCommandActions owner){
@@ -133,7 +132,7 @@ public class AuditCommand extends OwnerCommand{
                 addOption(builder -> builder.name("value")
                         .description("New audit action.")
                         .required(true)
-                        .type(ApplicationCommandOptionType.STRING.getValue()));
+                        .type(ApplicationCommandOption.Type.STRING.getValue()));
             }
 
             @Override
@@ -144,8 +143,8 @@ public class AuditCommand extends OwnerCommand{
                 return entityRetriever.getAuditConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createAuditConfig(guildId))
                         .flatMap(auditConfig -> Mono.justOrEmpty(env.getOption("value")
-                                .flatMap(ApplicationCommandInteractionOption::getValue)
-                                .map(ApplicationCommandInteractionOptionValue::asString))
+                                        .flatMap(ApplicationCommandInteractionOption::getValue)
+                                        .map(ApplicationCommandInteractionOptionValue::asString))
                                 .flatMap(value -> {
                                     Set<AuditActionType> flags = auditConfig.getTypes();
 
@@ -172,7 +171,7 @@ public class AuditCommand extends OwnerCommand{
         }
 
         @InteractionDiscordCommand(name = "remove", description = "Remove audit action(s).",
-                type = ApplicationCommandOptionType.SUB_COMMAND)
+                type = ApplicationCommandOption.Type.SUB_COMMAND)
         public static class AuditCommandActionsRemove extends OwnerAwareCommand<AuditCommandActions>{
 
             protected AuditCommandActionsRemove(@Aware AuditCommandActions owner){
@@ -181,7 +180,7 @@ public class AuditCommand extends OwnerCommand{
                 addOption(builder -> builder.name("value")
                         .description("Audit action.")
                         .required(true)
-                        .type(ApplicationCommandOptionType.STRING.getValue()));
+                        .type(ApplicationCommandOption.Type.STRING.getValue()));
             }
 
             @Override
@@ -213,14 +212,14 @@ public class AuditCommand extends OwnerCommand{
                                             })));
 
                                     return messageService.text(env.event(), "command.settings.removed",
-                                            String.join(", ", removed))
+                                                    String.join(", ", removed))
                                             .and(entityRetriever.save(auditConfig));
                                 }));
             }
         }
 
         @InteractionDiscordCommand(name = "clear", description = "Remove all audit actions.",
-                type = ApplicationCommandOptionType.SUB_COMMAND)
+                type = ApplicationCommandOption.Type.SUB_COMMAND)
         public static class AuditCommandActionsClear extends OwnerAwareCommand<AuditCommandActions>{
 
             protected AuditCommandActionsClear(@Aware AuditCommandActions owner){

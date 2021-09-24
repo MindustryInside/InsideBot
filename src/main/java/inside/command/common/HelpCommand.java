@@ -1,7 +1,7 @@
 package inside.command.common;
 
 import discord4j.core.object.component.*;
-import discord4j.core.spec.*;
+import discord4j.core.spec.EmbedCreateSpec;
 import inside.Settings;
 import inside.command.*;
 import inside.command.model.*;
@@ -64,23 +64,22 @@ public class HelpCommand extends Command{
                 .collect(Collectors.joining())
                 .map(s -> s.concat("\n").concat(messageService.get(env.context(), "command.help.disclaimer.get-list")))
                 .flatMap(categoriesStr -> env.getReplyChannel().flatMap(channel -> channel.createMessage(
-                        EmbedCreateSpec.builder()
-                                .title(messageService.get(env.context(), "command.help"))
-                                .description(categoriesStr)
-                                .color(settings.getDefaults().getNormalColor())
-                                .build())
+                                EmbedCreateSpec.builder()
+                                        .title(messageService.get(env.context(), "command.help"))
+                                        .description(categoriesStr)
+                                        .color(settings.getDefaults().getNormalColor())
+                                        .build())
                         .withComponents(ActionRow.of(
                                 Arrays.stream(CommandCategory.all)
                                         .map(c -> Button.primary("inside-help-"
-                                                + c.ordinal() + "-" + env.getAuthorAsMember().getId().asLong(),
+                                                        + c.ordinal() + "-" + env.getAuthorAsMember().getId().asLong(),
                                                 messageService.getEnum(env.context(), c)))
                                         .toList()))))
                 .then();
 
         Mono<Void> snowHelp = Mono.defer(() -> {
             String unwrapped = category.orElse("");
-            return categoryFlux
-                    .map(Map.Entry::getKey)
+            return categoryFlux.map(Map.Entry::getKey)
                     .transform(f -> MathFlux.min(f, Comparator.comparingInt(s -> Strings.levenshtein(s.name(), unwrapped))))
                     .switchIfEmpty(messageService.err(env, "command.help.unknown").then(Mono.empty()))
                     .flatMap(s -> messageService.err(env, "command.help.found-closest", s))
@@ -88,8 +87,8 @@ public class HelpCommand extends Command{
         });
 
         return Mono.justOrEmpty(category)
-                .mapNotNull(s -> Try.ofCallable(() -> CommandCategory.valueOf(s)).orElse(null))
                 .switchIfEmpty(categories.then(Mono.never()))
+                .mapNotNull(s -> Try.ofCallable(() -> CommandCategory.valueOf(s)).orElse(null))
                 .mapNotNull(categoryMap::get)
                 .switchIfEmpty(snowHelp.then(Mono.never()))
                 .filterWhen(entry -> Flux.fromIterable(entry)

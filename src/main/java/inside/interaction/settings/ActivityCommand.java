@@ -2,7 +2,6 @@ package inside.interaction.settings;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.*;
-import discord4j.rest.util.ApplicationCommandOptionType;
 import inside.interaction.*;
 import inside.util.*;
 import inside.util.func.BooleanFunction;
@@ -12,7 +11,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.function.Function;
 
-import static inside.util.ContextUtil.*;
+import static inside.util.ContextUtil.KEY_LOCALE;
 
 @InteractionDiscordCommand(name = "activity", description = "Activity features settings.")
 public class ActivityCommand extends OwnerCommand{
@@ -22,7 +21,7 @@ public class ActivityCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "enable", description = "Enable activity system.",
-            type = ApplicationCommandOptionType.SUB_COMMAND)
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class ActivityCommandEnable extends OwnerAwareCommand<ActivityCommand>{
 
         protected ActivityCommandEnable(@Aware ActivityCommand owner){
@@ -30,7 +29,7 @@ public class ActivityCommand extends OwnerCommand{
 
             addOption(builder -> builder.name("value")
                     .description("New state.")
-                    .type(ApplicationCommandOptionType.BOOLEAN.getValue()));
+                    .type(ApplicationCommandOption.Type.BOOLEAN.getValue()));
         }
 
         @Override
@@ -44,8 +43,8 @@ public class ActivityCommand extends OwnerCommand{
             return entityRetriever.getActivityConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createActiveUserConfig(guildId))
                     .flatMap(activityConfig -> Mono.justOrEmpty(env.getOption("value")
-                            .flatMap(ApplicationCommandInteractionOption::getValue)
-                            .map(ApplicationCommandInteractionOptionValue::asBoolean))
+                                    .flatMap(ApplicationCommandInteractionOption::getValue)
+                                    .map(ApplicationCommandInteractionOptionValue::asBoolean))
                             .switchIfEmpty(messageService.text(env.event(), "command.settings.activities-enable.update",
                                     formatBool.apply(activityConfig.isEnabled())).then(Mono.never()))
                             .flatMap(bool -> {
@@ -58,7 +57,7 @@ public class ActivityCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "active-user-role", description = "Configure active user role.",
-            type = ApplicationCommandOptionType.SUB_COMMAND)
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class ActivityCommandActiveUserRole extends OwnerAwareCommand<ActivityCommand>{
 
         protected ActivityCommandActiveUserRole(@Aware ActivityCommand owner){
@@ -66,7 +65,7 @@ public class ActivityCommand extends OwnerCommand{
 
             addOption(builder -> builder.name("value")
                     .description("New active user role.")
-                    .type(ApplicationCommandOptionType.ROLE.getValue()));
+                    .type(ApplicationCommandOption.Type.ROLE.getValue()));
         }
 
         @Override
@@ -93,7 +92,7 @@ public class ActivityCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "message-barrier", description = "Configure message barrier.",
-            type = ApplicationCommandOptionType.SUB_COMMAND)
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class ActivityCommandMessageBarrier extends OwnerAwareCommand<ActivityCommand>{
 
         protected ActivityCommandMessageBarrier(@Aware ActivityCommand owner){
@@ -101,7 +100,7 @@ public class ActivityCommand extends OwnerCommand{
 
             addOption(builder -> builder.name("value")
                     .description("New minimal message count for reward activity.")
-                    .type(ApplicationCommandOptionType.INTEGER.getValue()));
+                    .type(ApplicationCommandOption.Type.INTEGER.getValue()));
         }
 
         @Override
@@ -132,7 +131,7 @@ public class ActivityCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "keep-counting-duration", description = "Configure keep counting duration.",
-            type = ApplicationCommandOptionType.SUB_COMMAND)
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class ActivityCommandKeepCountingDuration extends OwnerAwareCommand<ActivityCommand>{
 
         protected ActivityCommandKeepCountingDuration(@Aware ActivityCommand owner){
@@ -140,7 +139,7 @@ public class ActivityCommand extends OwnerCommand{
 
             addOption(builder -> builder.name("value")
                     .description("New period.")
-                    .type(ApplicationCommandOptionType.STRING.getValue()));
+                    .type(ApplicationCommandOption.Type.STRING.getValue()));
         }
 
         @Override

@@ -1,8 +1,7 @@
 package inside.interaction.common;
 
-import discord4j.core.object.command.ApplicationCommandInteractionOption;
+import discord4j.core.object.command.*;
 import discord4j.core.retriever.EntityRetrievalStrategy;
-import discord4j.rest.util.ApplicationCommandOptionType;
 import inside.interaction.*;
 import reactor.core.publisher.Mono;
 
@@ -13,7 +12,7 @@ public class InteractionAvatarCommand extends BaseInteractionCommand{
 
         addOption(builder -> builder.name("target")
                 .description("Whose avatar needs to get. By default your avatar")
-                .type(ApplicationCommandOptionType.USER.getValue())
+                .type(ApplicationCommandOption.Type.USER.getValue())
                 .required(false));
     }
 

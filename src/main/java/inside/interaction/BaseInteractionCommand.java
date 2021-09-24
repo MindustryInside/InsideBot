@@ -1,7 +1,7 @@
 package inside.interaction;
 
+import discord4j.core.object.command.ApplicationCommandOption;
 import discord4j.discordjson.json.*;
-import discord4j.rest.util.ApplicationCommandOptionType;
 import inside.data.service.EntityRetriever;
 import inside.service.MessageService;
 import inside.util.Preconditions;
@@ -43,7 +43,7 @@ public abstract class BaseInteractionCommand implements InteractionCommand{
     }
 
     @Override
-    public ApplicationCommandOptionType getType(){
+    public ApplicationCommandOption.Type getType(){
         return metadata.type();
     }
 
@@ -54,7 +54,7 @@ public abstract class BaseInteractionCommand implements InteractionCommand{
 
     @Override
     public ApplicationCommandRequest getRequest(){
-        Preconditions.requireState(getType() == ApplicationCommandOptionType.UNKNOWN,
+        Preconditions.requireState(getType() == ApplicationCommandOption.Type.UNKNOWN,
                 "Subcommands mustn't define command request.");
 
         return ApplicationCommandRequest.builder()

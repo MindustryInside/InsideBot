@@ -47,12 +47,14 @@ public class JsonSqlTypeDescriptor implements SqlTypeDescriptor{
     public <X> ValueBinder<X> getBinder(JavaTypeDescriptor<X> descriptor){
         return new BasicBinder<>(descriptor, this){
             @Override
-            protected void doBind(PreparedStatement statement, X value, int index, WrapperOptions options) throws SQLException{
+            protected void doBind(PreparedStatement statement, X value, int index, WrapperOptions options)
+                    throws SQLException{
                 statement.setObject(index, descriptor.unwrap(value, String.class, options), getSqlType());
             }
 
             @Override
-            protected void doBind(CallableStatement statement, X value, String name, WrapperOptions options) throws SQLException{
+            protected void doBind(CallableStatement statement, X value, String name, WrapperOptions options)
+                    throws SQLException{
                 statement.setObject(name, descriptor.unwrap(value, String.class, options), getSqlType());
             }
         };

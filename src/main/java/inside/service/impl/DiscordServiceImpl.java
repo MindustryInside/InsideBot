@@ -7,6 +7,7 @@ import discord4j.common.*;
 import discord4j.common.util.Snowflake;
 import discord4j.core.*;
 import discord4j.core.event.ReactiveEventAdapter;
+import discord4j.core.object.command.ApplicationCommandOption;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.shard.MemberRequestFilter;
 import discord4j.discordjson.possible.PossibleModule;
@@ -87,7 +88,7 @@ public class DiscordServiceImpl implements DiscordService{
         long applicationId = gateway.rest().getApplicationId().blockOptional().orElse(0L);
         gateway.rest().getApplicationService()
                 .bulkOverwriteGlobalApplicationCommand(applicationId, commands.stream()
-                        .filter(cmd -> cmd.getType() == ApplicationCommandOptionType.UNKNOWN)
+                        .filter(cmd -> cmd.getType() == ApplicationCommandOption.Type.UNKNOWN)
                         .map(cmd -> {
                             var req = cmd.getRequest();
                             commandMap.put(req.name(), cmd);

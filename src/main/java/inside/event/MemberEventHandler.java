@@ -98,21 +98,21 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                 .then();
 
         Mono<Void> returnRoles = Mono.deferContextual(ctx -> entityRetriever.getLocalMemberById(member.getId(), member.getGuildId())
-                .zipWith(event.getClient().withRetrievalStrategy(EntityRetrievalStrategy.REST)
-                        .getSelfMember(member.getGuildId()))
-                .filterWhen(TupleUtils.function((localMember, self) -> self.getBasePermissions()
-                        .map(set -> set.contains(Permission.MANAGE_ROLES))))
-                .filter(TupleUtils.predicate((localMember, self) -> !member.isBot()))
-                .flatMapMany(TupleUtils.function((localMember, self) -> self.getHighestRole().zipWith(self.getGuild())
-                        .flatMapMany(TupleUtils.function((highest, guild) -> Flux.fromIterable(localMember.getLastRoleIds())
-                                .flatMap(guild::getRoleById)
-                                .filter(role -> highest.getRawPosition() > role.getRawPosition())
-                                .map(Role::getId)))))
+                        .zipWith(event.getClient().withRetrievalStrategy(EntityRetrievalStrategy.REST)
+                                .getSelfMember(member.getGuildId()))
+                        .filterWhen(TupleUtils.function((localMember, self) -> self.getBasePermissions()
+                                .map(set -> set.contains(Permission.MANAGE_ROLES))))
+                        .filter(TupleUtils.predicate((localMember, self) -> !member.isBot()))
+                        .flatMapMany(TupleUtils.function((localMember, self) -> self.getHighestRole().zipWith(self.getGuild())
+                                .flatMapMany(TupleUtils.function((highest, guild) -> Flux.fromIterable(localMember.getLastRoleIds())
+                                        .flatMap(guild::getRoleById)
+                                        .filter(role -> highest.getRawPosition() > role.getRawPosition())
+                                        .map(Role::getId)))))
                         .collectList()
-                .flatMap(roleIds -> member.edit(GuildMemberEditSpec.builder()
+                        .flatMap(roleIds -> member.edit(GuildMemberEditSpec.builder()
                                 .roles(roleIds)
                                 .reason(messageService.get(ctx, "common.auto-roles"))
-                        .build())))
+                                .build())))
                 .then();
 
         return initContext.flatMap(context -> Mono.when(log, muteEvade, welcomeMessage, returnRoles).contextWrite(context));
@@ -161,7 +161,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
                 .flatMapIterable(AuditLogPart::getEntries)
                 .filter(entry -> entry.getId().getTimestamp()
                         .isAfter(Instant.now(Clock.systemUTC())
-                        .minusMillis(TIMEOUT_MILLIS)) &&
+                                .minusMillis(TIMEOUT_MILLIS)) &&
                         entry.getTargetId().map(targetId -> targetId.equals(user.getId())).orElse(false))
                 .next()
                 .flatMap(entry -> Mono.justOrEmpty(entry.getResponsibleUser())
@@ -213,7 +213,9 @@ public class MemberEventHandler extends ReactiveEventAdapter{
 
                                 localMember.setLastRoleIds(event.getCurrentRoleIds());
                                 boolean added = oldRoleIds.size() < event.getCurrentRoleIds().size();
-                                List<Snowflake> difference = new ArrayList<>(added ? event.getCurrentRoleIds() : oldRoleIds);
+                                List<Snowflake> difference = new ArrayList<>(added
+                                        ? event.getCurrentRoleIds()
+                                        : oldRoleIds);
                                 difference.removeIf((added ? oldRoleIds : event.getCurrentRoleIds())::contains);
 
                                 return auditService.newBuilder(guildId, added ? MEMBER_ROLE_ADD : MEMBER_ROLE_REMOVE)

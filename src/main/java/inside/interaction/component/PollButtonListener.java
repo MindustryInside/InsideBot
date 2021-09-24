@@ -32,7 +32,7 @@ public class PollButtonListener implements ButtonListener{
         return Mono.deferContextual(ctx -> entityRetriever.getPollById(event.getMessageId())
                 .flatMap(poll -> {
                     User user = event.getInteraction().getUser();
-                    if(poll.getAnswered().stream().anyMatch(p -> p.getUserId().equals(user.getId()))) {
+                    if(poll.getAnswered().stream().anyMatch(p -> p.getUserId().equals(user.getId()))){
                         return messageService.err(event, "command.poll.already-answered");
                     }
 
@@ -44,11 +44,11 @@ public class PollButtonListener implements ButtonListener{
                     Embed source = embeds.isEmpty() ? null : embeds.get(0);
                     var embedSpec = EmbedCreateSpec.builder();
 
-                    if (source == null) { // embed removed and we can't handle interaction, TODO: implement recreating
+                    if(source == null){ // embed removed and we can't handle interaction, TODO: implement recreating
                         return event.getInteractionResponse()
                                 .deleteInitialResponse()
                                 .and(entityRetriever.delete(poll));
-                    } else {
+                    }else{
                         embedSpec.author(source.getAuthor()
                                 .map(author -> EmbedCreateFields.Author.of(
                                         author.getName().orElseThrow(ise), null,

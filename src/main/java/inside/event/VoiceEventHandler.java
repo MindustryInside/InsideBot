@@ -53,7 +53,9 @@ public class VoiceEventHandler extends ReactiveEventAdapter{
         return initContext.flatMap(context -> Mono.justOrEmpty(event.getOld())
                 .defaultIfEmpty(event.getCurrent())
                 .flatMap(state -> Mono.zip(state.getChannel(), state.getUser()))
-                .flatMap(function((channel, user) -> auditService.newBuilder(guildId, event.isLeaveEvent() ? VOICE_LEAVE : VOICE_JOIN)
+                .flatMap(function((channel, user) -> auditService.newBuilder(guildId, event.isLeaveEvent()
+                                ? VOICE_LEAVE
+                                : VOICE_JOIN)
                         .withChannel(channel)
                         .withUser(user)
                         .save()))

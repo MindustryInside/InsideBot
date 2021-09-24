@@ -1,7 +1,7 @@
 package inside.interaction;
 
+import discord4j.core.object.command.ApplicationCommandOption;
 import discord4j.discordjson.json.*;
-import discord4j.rest.util.ApplicationCommandOptionType;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -16,7 +16,7 @@ public interface InteractionCommand{
 
     String getDescription();
 
-    ApplicationCommandOptionType getType();
+    ApplicationCommandOption.Type getType();
 
     List<ApplicationCommandOptionData> getOptions();
 

@@ -1,6 +1,6 @@
 package inside.interaction;
 
-import discord4j.rest.util.ApplicationCommandOptionType;
+import discord4j.core.object.command.ApplicationCommandOption;
 import org.springframework.stereotype.Component;
 
 import java.lang.annotation.*;
@@ -14,5 +14,5 @@ public @interface InteractionDiscordCommand{
 
     String description();
 
-    ApplicationCommandOptionType type() default ApplicationCommandOptionType.UNKNOWN;
+    ApplicationCommandOption.Type type() default ApplicationCommandOption.Type.UNKNOWN;
 }

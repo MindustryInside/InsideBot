@@ -4,7 +4,6 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.*;
 import discord4j.core.object.entity.Guild;
 import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
-import discord4j.rest.util.ApplicationCommandOptionType;
 import inside.data.entity.AdminActionType;
 import inside.interaction.*;
 import inside.util.*;
@@ -15,7 +14,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static inside.util.ContextUtil.*;
+import static inside.util.ContextUtil.KEY_LOCALE;
 
 @InteractionDiscordCommand(name = "admin", description = "Admin settings.")
 public class AdminCommand extends OwnerCommand{
@@ -25,7 +24,7 @@ public class AdminCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "warnings", description = "Configure max warnings count.",
-            type = ApplicationCommandOptionType.SUB_COMMAND)
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class AdminCommandWarnings extends OwnerAwareCommand<AdminCommand>{
 
         protected AdminCommandWarnings(@Aware AdminCommand owner){
@@ -33,7 +32,7 @@ public class AdminCommand extends OwnerCommand{
 
             addOption(builder -> builder.name("value")
                     .description("New limit.")
-                    .type(ApplicationCommandOptionType.INTEGER.getValue()));
+                    .type(ApplicationCommandOption.Type.INTEGER.getValue()));
         }
 
         @Override
@@ -59,7 +58,7 @@ public class AdminCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "duration", description = "Configure default duration.",
-            type = ApplicationCommandOptionType.SUB_COMMAND)
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class AdminCommandDuration extends OwnerAwareCommand<AdminCommand>{
 
         protected AdminCommandDuration(@Aware AdminCommand owner){
@@ -67,7 +66,7 @@ public class AdminCommand extends OwnerCommand{
 
             addOption(builder -> builder.name("value")
                     .description("New base mute duration.")
-                    .type(ApplicationCommandOptionType.STRING.getValue()));
+                    .type(ApplicationCommandOption.Type.STRING.getValue()));
         }
 
         @Override
@@ -100,7 +99,7 @@ public class AdminCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "mute-role", description = "Configure mute role.",
-            type = ApplicationCommandOptionType.SUB_COMMAND)
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class AdminCommandMuteRole extends OwnerAwareCommand<AdminCommand>{
 
         protected AdminCommandMuteRole(@Aware AdminCommand owner){
@@ -108,7 +107,7 @@ public class AdminCommand extends OwnerCommand{
 
             addOption(builder -> builder.name("value")
                     .description("New mute role.")
-                    .type(ApplicationCommandOptionType.ROLE.getValue()));
+                    .type(ApplicationCommandOption.Type.ROLE.getValue()));
         }
 
         @Override
@@ -135,7 +134,7 @@ public class AdminCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "warn-duration", description = "Configure warn expire duration.",
-            type = ApplicationCommandOptionType.SUB_COMMAND)
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class AdminCommandWarnDuration extends OwnerAwareCommand<AdminCommand>{
 
         protected AdminCommandWarnDuration(@Aware AdminCommand owner){
@@ -143,7 +142,7 @@ public class AdminCommand extends OwnerCommand{
 
             addOption(builder -> builder.name("value")
                     .description("New warn expire duration.")
-                    .type(ApplicationCommandOptionType.STRING.getValue()));
+                    .type(ApplicationCommandOption.Type.STRING.getValue()));
         }
 
         @Override
@@ -176,7 +175,7 @@ public class AdminCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "threshold-action", description = "Configure warn threshold action.",
-            type = ApplicationCommandOptionType.SUB_COMMAND)
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class AdminCommandThresholdAction extends OwnerAwareCommand<AdminCommand>{
 
         protected AdminCommandThresholdAction(@Aware AdminCommand owner){
@@ -184,7 +183,7 @@ public class AdminCommand extends OwnerCommand{
 
             addOption(builder -> builder.name("value")
                     .description("Action type.")
-                    .type(ApplicationCommandOptionType.STRING.getValue())
+                    .type(ApplicationCommandOption.Type.STRING.getValue())
                     .addChoice(ApplicationCommandOptionChoiceData.builder()
                             .name("ban")
                             .value("ban")
@@ -226,7 +225,7 @@ public class AdminCommand extends OwnerCommand{
     }
 
     @InteractionDiscordCommand(name = "admin-roles", description = "Configure admin roles list.",
-            type = ApplicationCommandOptionType.SUB_COMMAND_GROUP)
+            type = ApplicationCommandOption.Type.SUB_COMMAND_GROUP)
     public static class AdminCommandAdminRoles extends SubGroupOwnerCommand<AdminCommand>{
 
         protected AdminCommandAdminRoles(@Aware AdminCommand owner, @Aware List<? extends InteractionOwnerAwareCommand<AdminCommandAdminRoles>> subcommands){
@@ -234,7 +233,7 @@ public class AdminCommand extends OwnerCommand{
         }
 
         @InteractionDiscordCommand(name = "list", description = "Display current admin roles list.",
-                type = ApplicationCommandOptionType.SUB_COMMAND)
+                type = ApplicationCommandOption.Type.SUB_COMMAND)
         public static class AdminCommandAdminRolesList extends OwnerAwareCommand<AdminCommandAdminRoles>{
 
             protected AdminCommandAdminRolesList(@Aware AdminCommandAdminRoles owner){
@@ -258,7 +257,7 @@ public class AdminCommand extends OwnerCommand{
         }
 
         @InteractionDiscordCommand(name = "add", description = "Add admin role(s).",
-                type = ApplicationCommandOptionType.SUB_COMMAND)
+                type = ApplicationCommandOption.Type.SUB_COMMAND)
         public static class AdminCommandAdminRolesAdd extends OwnerAwareCommand<AdminCommandAdminRoles>{
 
             protected AdminCommandAdminRolesAdd(@Aware AdminCommandAdminRoles owner){
@@ -267,7 +266,7 @@ public class AdminCommand extends OwnerCommand{
                 addOption(builder -> builder.name("value")
                         .description("New admin role.")
                         .required(true)
-                        .type(ApplicationCommandOptionType.STRING.getValue()));
+                        .type(ApplicationCommandOption.Type.STRING.getValue()));
             }
 
             @Override
@@ -299,7 +298,7 @@ public class AdminCommand extends OwnerCommand{
         }
 
         @InteractionDiscordCommand(name = "remove", description = "Remove admin role(s).",
-                type = ApplicationCommandOptionType.SUB_COMMAND)
+                type = ApplicationCommandOption.Type.SUB_COMMAND)
         public static class AdminCommandAdminRolesRemove extends OwnerAwareCommand<AdminCommandAdminRoles>{
 
             protected AdminCommandAdminRolesRemove(@Aware AdminCommandAdminRoles owner){
@@ -308,7 +307,7 @@ public class AdminCommand extends OwnerCommand{
                 addOption(builder -> builder.name("value")
                         .description("Role.")
                         .required(true)
-                        .type(ApplicationCommandOptionType.STRING.getValue()));
+                        .type(ApplicationCommandOption.Type.STRING.getValue()));
             }
 
             @Override
@@ -345,7 +344,7 @@ public class AdminCommand extends OwnerCommand{
         }
 
         @InteractionDiscordCommand(name = "clear", description = "Remove all admin roles.",
-                type = ApplicationCommandOptionType.SUB_COMMAND)
+                type = ApplicationCommandOption.Type.SUB_COMMAND)
         public static class AdminCommandAdminRolesClear extends OwnerAwareCommand<AdminCommandAdminRoles>{
 
             protected AdminCommandAdminRolesClear(@Aware AdminCommandAdminRoles owner){

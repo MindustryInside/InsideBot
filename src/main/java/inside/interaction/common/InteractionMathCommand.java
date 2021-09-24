@@ -3,7 +3,6 @@ package inside.interaction.common;
 import com.udojava.evalex.Expression;
 import discord4j.core.object.command.*;
 import discord4j.core.object.entity.Message;
-import discord4j.rest.util.ApplicationCommandOptionType;
 import inside.interaction.*;
 import inside.util.MessageUtil;
 import reactor.core.publisher.Mono;
@@ -17,7 +16,7 @@ public class InteractionMathCommand extends BaseInteractionCommand{
         addOption(builder -> builder.name("expression")
                 .description("Math expression.")
                 .required(true)
-                .type(ApplicationCommandOptionType.STRING.getValue()));
+                .type(ApplicationCommandOption.Type.STRING.getValue()));
     }
 
     @Override

@@ -2,7 +2,6 @@ package inside.interaction.settings;
 
 import discord4j.core.object.command.ApplicationCommandInteraction;
 import discord4j.discordjson.json.ApplicationCommandOptionData;
-import inside.command.model.CommandInteraction;
 import inside.interaction.*;
 import reactor.bool.BooleanUtils;
 import reactor.core.publisher.Mono;

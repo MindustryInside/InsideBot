@@ -1,6 +1,6 @@
 package inside.data.type.descriptor;
 
-import inside.util.*;
+import inside.util.Try;
 import org.hibernate.annotations.common.reflection.java.JavaXMember;
 import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.*;
