@@ -10,7 +10,7 @@ import java.util.regex.*;
 
 @DiscordCommand(key = {"random", "rand", "rnd"}, params = "command.random.params", description = "command.random.description")
 public class RandomCommand extends Command{
-    private static final Pattern rangePattern = Pattern.compile("^[(\\[]([-+]?[0-9]+)[,;\\s]+([-+]?[0-9]+)[])]$");
+    private static final Pattern rangePattern = Pattern.compile("^[(\\[]([-+]?[0-9]+)[,.;\\s]+([-+]?[0-9]+)[])]$");
 
     @Override
     public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){

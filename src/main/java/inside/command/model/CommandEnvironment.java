@@ -1,6 +1,5 @@
 package inside.command.model;
 
-import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.MessageChannel;
 import org.immutables.builder.Builder;
@@ -37,9 +36,5 @@ public class CommandEnvironment{
 
     public Mono<MessageChannel> getReplyChannel(){
         return getMessage().getChannel();
-    }
-
-    public GatewayDiscordClient getClient(){
-        return getMessage().getClient();
     }
 }

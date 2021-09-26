@@ -33,7 +33,7 @@ public class WarningsCommand extends AdminCommand{
 
         Mono<Member> referencedUser = Mono.justOrEmpty(env.getMessage().getMessageReference())
                 .flatMap(ref -> Mono.justOrEmpty(ref.getMessageId()).flatMap(messageId ->
-                        env.getClient().getMessageById(ref.getChannelId(), messageId)))
+                        env.getMessage().getClient().getMessageById(ref.getChannelId(), messageId)))
                 .flatMap(Message::getAuthorAsMember);
 
         Snowflake guildId = env.getAuthorAsMember().getGuildId();
@@ -41,7 +41,7 @@ public class WarningsCommand extends AdminCommand{
         Snowflake authorId = env.getAuthorAsMember().getId();
 
         return Mono.justOrEmpty(targetId)
-                .flatMap(userId -> env.getClient().getMemberById(guildId, userId))
+                .flatMap(userId -> env.getMessage().getClient().getMemberById(guildId, userId))
                 .switchIfEmpty(referencedUser)
                 .switchIfEmpty(messageService.err(env, "command.incorrect-name").then(Mono.never()))
                 .filter(Predicate.not(User::isBot))

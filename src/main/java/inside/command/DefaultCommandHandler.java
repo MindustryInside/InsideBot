@@ -36,11 +36,11 @@ public class DefaultCommandHandler implements CommandHandler{
     }
 
     @Override
-    public Mono<Void> handleMessage(CommandEnvironment environment){
-        String message = environment.getMessage().getContent();
-        Snowflake guildId = environment.getAuthorAsMember().getGuildId();
-        Snowflake selfId = environment.getClient().getSelfId();
-        Mono<Guild> guild = environment.getMessage().getGuild();
+    public Mono<Void> handleMessage(CommandEnvironment env){
+        String message = env.getMessage().getContent();
+        Snowflake guildId = env.getAuthorAsMember().getGuildId();
+        Snowflake selfId = env.getMessage().getClient().getSelfId();
+        Mono<Guild> guild = env.getMessage().getGuild();
 
         Mono<String> prefix = entityRetriever.getGuildConfigById(guildId)
                 .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
@@ -49,7 +49,7 @@ public class DefaultCommandHandler implements CommandHandler{
                         .findFirst()));
 
         Mono<String> mention = Mono.just(message)
-                .filter(s -> environment.getMessage().getUserMentionIds().contains(selfId))
+                .filter(s -> env.getMessage().getUserMentionIds().contains(selfId))
                 .filter(s -> s.startsWith(DiscordUtil.getMemberMention(selfId)) ||
                         s.startsWith(DiscordUtil.getUserMention(selfId)))
                 .map(s -> s.startsWith(DiscordUtil.getMemberMention(selfId)) ? DiscordUtil.getMemberMention(selfId) :
@@ -67,10 +67,10 @@ public class DefaultCommandHandler implements CommandHandler{
         Mono<Void> suggestion = computedText.map(Tuple2::getT1).flatMap(commandName -> commandHolder.getCommandInfoMap().values().stream()
                 .flatMap(commandInfo -> Arrays.stream(commandInfo.key()))
                 .min(Comparator.comparingInt(s -> Strings.levenshtein(s, commandName)))
-                .map(s -> messageService.err(environment, "command.response.found-closest", s))
+                .map(s -> messageService.err(env, "command.response.found-closest", s))
                 .orElse(prefix.map(GuildConfig::formatPrefix).flatMap(str ->
-                        messageService.err(environment, "command.response.unknown", str)))
-                .doFirst(() -> messageService.awaitEdit(environment.getMessage().getId())));
+                        messageService.err(env, "command.response.unknown", str)))
+                .doFirst(() -> messageService.awaitEdit(env.getMessage().getId())));
 
         return computedText.flatMap(TupleUtils.function((prx, commandstr, cmdkey) -> Mono.justOrEmpty(commandHolder.getCommand(cmdkey))
                 .switchIfEmpty(suggestion.then(Mono.empty()))
@@ -84,17 +84,17 @@ public class DefaultCommandHandler implements CommandHandler{
                             "command.response.incorrect-arguments";
 
                     if(argstr.matches("^(?i)(help|\\?)$")){
-                        return command.filter(environment).flatMap(bool -> bool
-                                ? command.help(environment, prx)
+                        return command.filter(env).flatMap(bool -> bool
+                                ? command.help(env, prx)
                                 : Mono.empty());
                     }
 
                     while(true){
                         if(index >= info.params().length && !argstr.isEmpty()){
-                            messageService.awaitEdit(environment.getMessage().getId());
-                            return messageService.errTitled(environment, "command.response.many-arguments.title",
+                            messageService.awaitEdit(env.getMessage().getId());
+                            return messageService.errTitled(env, "command.response.many-arguments.title",
                                     argsres, GuildConfig.formatPrefix(prx), cmdkey,
-                                    messageService.get(environment.context(), info.paramText()));
+                                    messageService.get(env.context(), info.paramText()));
                         }
 
                         if(argstr.isEmpty()){
@@ -113,10 +113,10 @@ public class DefaultCommandHandler implements CommandHandler{
                         int next = findSpace(argstr);
                         if(next == -1){
                             if(!satisfied){
-                                messageService.awaitEdit(environment.getMessage().getId());
-                                return messageService.errTitled(environment, "command.response.few-arguments.title",
+                                messageService.awaitEdit(env.getMessage().getId());
+                                return messageService.errTitled(env, "command.response.few-arguments.title",
                                         argsres, GuildConfig.formatPrefix(prx),
-                                        cmdkey, messageService.get(environment.context(), info.paramText()));
+                                        cmdkey, messageService.get(env.context(), info.paramText()));
                             }
                             result.add(new CommandOption(info.params()[index], argstr));
                             break;
@@ -133,11 +133,11 @@ public class DefaultCommandHandler implements CommandHandler{
                     }
 
                     if(!satisfied && info.params().length > 0 && !info.params()[0].optional() &&
-                            environment.getMessage().getMessageReference().isEmpty()){
-                        messageService.awaitEdit(environment.getMessage().getId());
-                        return messageService.errTitled(environment, "command.response.few-arguments.title",
+                            env.getMessage().getMessageReference().isEmpty()){
+                        messageService.awaitEdit(env.getMessage().getId());
+                        return messageService.errTitled(env, "command.response.few-arguments.title",
                                 argsres, GuildConfig.formatPrefix(prx), cmdkey,
-                                messageService.get(environment.context(), info.paramText()));
+                                messageService.get(env.context(), info.paramText()));
                     }
 
                     Predicate<Throwable> missingAccess = t -> t.getMessage() != null &&
@@ -145,26 +145,26 @@ public class DefaultCommandHandler implements CommandHandler{
                                     t.getMessage().contains("Missing Permissions"));
 
                     Function<Throwable, Mono<Void>> fallback = t -> Flux.fromIterable(info.permissions())
-                            .filterWhen(permission -> environment.getReplyChannel().cast(GuildMessageChannel.class)
+                            .filterWhen(permission -> env.getReplyChannel().cast(GuildMessageChannel.class)
                                     .flatMap(targetChannel -> targetChannel.getEffectivePermissions(selfId))
                                     .map(set -> !set.contains(permission)))
-                            .map(permission -> messageService.getEnum(environment.context(), permission))
+                            .map(permission -> messageService.getEnum(env.context(), permission))
                             .map("• "::concat)
                             .collect(Collectors.joining("\n"))
                             .filter(s -> !s.isBlank())
-                            .flatMap(s -> messageService.text(environment, String.format("%s%n%n%s",
-                                            messageService.get(environment.context(), "message.error.permission-denied.title"),
-                                            messageService.format(environment.context(), "message.error.permission-denied.description", s)))
+                            .flatMap(s -> messageService.text(env, String.format("%s%n%n%s",
+                                            messageService.get(env.context(), "message.error.permission-denied.title"),
+                                            messageService.format(env.context(), "message.error.permission-denied.description", s)))
                                     .onErrorResume(missingAccess, t0 -> guild.flatMap(Guild::getOwner)
                                             .flatMap(User::getPrivateChannel)
                                             .transform(c -> messageService.info(c,
-                                                    messageService.get(environment.context(), "message.error.permission-denied.title"),
-                                                    messageService.format(environment.context(), "message.error.permission-denied.description", s)))));
+                                                    messageService.get(env.context(), "message.error.permission-denied.title"),
+                                                    messageService.format(env.context(), "message.error.permission-denied.description", s)))));
 
                     return Mono.just(command)
-                            .filterWhen(c -> c.filter(environment))
-                            .flatMap(c -> c.execute(environment, new CommandInteraction(cmdkey, result)))
-                            .doFirst(() -> messageService.removeEdit(environment.getMessage().getId()))
+                            .filterWhen(c -> c.filter(env))
+                            .flatMap(c -> c.execute(env, new CommandInteraction(cmdkey, result)))
+                            .doFirst(() -> messageService.removeEdit(env.getMessage().getId()))
                             .onErrorResume(missingAccess, fallback);
                 })));
     }

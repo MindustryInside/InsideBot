@@ -18,14 +18,14 @@ public class AvatarCommand extends Command{
 
         Mono<User> referencedUser = Mono.justOrEmpty(env.getMessage().getMessageReference())
                 .flatMap(ref -> Mono.justOrEmpty(ref.getMessageId()).flatMap(messageId ->
-                        env.getClient().withRetrievalStrategy(EntityRetrievalStrategy.REST)
+                        env.getMessage().getClient().withRetrievalStrategy(EntityRetrievalStrategy.REST)
                                 .getMessageById(ref.getChannelId(), messageId)))
                 .flatMap(message -> Mono.justOrEmpty(message.getAuthor()));
 
-        return Mono.justOrEmpty(firstOpt.map(OptionValue::asSnowflake)).flatMap(id -> env.getClient()
+        return Mono.justOrEmpty(firstOpt.map(OptionValue::asSnowflake)).flatMap(id -> env.getMessage().getClient()
                         .withRetrievalStrategy(EntityRetrievalStrategy.REST).getUserById(id))
                 .switchIfEmpty(referencedUser)
-                .switchIfEmpty(env.getClient().withRetrievalStrategy(EntityRetrievalStrategy.REST)
+                .switchIfEmpty(env.getMessage().getClient().withRetrievalStrategy(EntityRetrievalStrategy.REST)
                         .getUserById(env.getAuthorAsMember().getId())
                         .filter(ignored -> firstOpt.isEmpty()))
                 .switchIfEmpty(messageService.err(env, "command.incorrect-name").then(Mono.empty()))

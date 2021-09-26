@@ -212,9 +212,11 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                                     .build()))
                             .flatMap(part -> Flux.fromIterable(part.getEntries()))
                             .sort(Comparator.comparing(AuditLogEntry::getId).reversed())
-                            .filter(entry -> entry.getId().getTimestamp().isAfter(Instant.now(Clock.systemUTC()).minusMillis(TIMEOUT_MILLIS)) ||
+                            .filter(entry -> entry.getId().getTimestamp()
+                                    .isAfter(Instant.now(Clock.systemUTC()).minusMillis(TIMEOUT_MILLIS)) ||
                                     entry.getOption(OptionKey.COUNT).map(i -> i > 1).orElse(false) &&
-                                            entry.getId().getTimestamp().isAfter(Instant.now(Clock.systemUTC()).minus(5, ChronoUnit.MINUTES)))
+                                            entry.getId().getTimestamp().isAfter(Instant.now(Clock.systemUTC())
+                                                    .minus(5, ChronoUnit.MINUTES)))
                             .filter(entry -> entry.getTargetId().map(id -> id.equals(info.getUserId())).orElse(false) &&
                                     entry.getOption(OptionKey.CHANNEL_ID).map(id -> id.equals(message.getChannelId())).orElse(false))
                             .next()

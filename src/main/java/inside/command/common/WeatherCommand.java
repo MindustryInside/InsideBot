@@ -47,7 +47,7 @@ public class WeatherCommand extends Command{
                         ? messageService.err(env, "command.weather.not-found").then(Mono.never())
                         : buf.asString())
                 .flatMap(str -> Mono.fromCallable(() ->
-                        env.getClient().rest().getCoreResources().getJacksonResources()
+                        env.getMessage().getClient().rest().getCoreResources().getJacksonResources()
                                 .getObjectMapper().readValue(str, CurrentWeatherData.class)))
                 .flatMap(data -> messageService.info(env, spec -> spec.description(messageService.format(env.context(),
                                 "command.weather.format", data.weather().get(0).description(),

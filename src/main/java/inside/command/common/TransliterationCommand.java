@@ -11,14 +11,15 @@ import java.util.*;
 import java.util.function.UnaryOperator;
 
 import static inside.audit.BaseAuditProvider.MESSAGE_TXT;
+import static inside.command.common.CommandUtils.mapOf;
 import static inside.util.ContextUtil.KEY_REPLY;
 
 @DiscordCommand(key = "translit", params = "command.transliteration.params", description = "command.transliteration.description")
 public class TransliterationCommand extends Command{
-    public static final Map<String, String> translit;
+    public static final Map<String, String> transliteration;
 
     static{
-        translit = mapOf(
+        transliteration = mapOf(
                 "a", "а", "b", "б", "v", "в", "g", "г",
                 "d", "д", "e", "е", "yo", "ё", "zh", "ж",
                 "z", "з", "i", "и", "j", "й", "k", "к",
@@ -31,23 +32,10 @@ public class TransliterationCommand extends Command{
         );
     }
 
-    @SuppressWarnings("unchecked")
-    public static <K, V> Map<K, V> mapOf(Object... values){
-        Objects.requireNonNull(values, "values");
-        Preconditions.requireArgument((values.length & 1) == 0, "length is odd");
-        Map<K, V> map = new HashMap<>();
-
-        for(int i = 0; i < values.length / 2; ++i){
-            map.put((K)values[i * 2], (V)values[i * 2 + 1]);
-        }
-
-        return Map.copyOf(map);
-    }
-
     public static String translit(String text){
         UnaryOperator<String> get = s -> {
-            String result = Optional.ofNullable(translit.get(s.toLowerCase()))
-                    .or(translit.entrySet().stream()
+            String result = Optional.ofNullable(transliteration.get(s.toLowerCase()))
+                    .or(transliteration.entrySet().stream()
                             .filter(entry -> entry.getValue().equalsIgnoreCase(s))
                             .map(Map.Entry::getKey)::findFirst)
                     .orElse("");

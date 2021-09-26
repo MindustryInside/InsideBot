@@ -52,7 +52,7 @@ public class SoftbanCommand extends AdminCommand{
 
         Snowflake guildId = author.getGuildId();
 
-        return Mono.justOrEmpty(targetId).flatMap(id -> env.getClient().getMemberById(guildId, id))
+        return Mono.justOrEmpty(targetId).flatMap(id -> env.getMessage().getClient().getMemberById(guildId, id))
                 .switchIfEmpty(messageService.err(env, "command.incorrect-name").then(Mono.never()))
                 .filter(Predicate.not(User::isBot))
                 .switchIfEmpty(messageService.err(env, "common.bot").then(Mono.never()))

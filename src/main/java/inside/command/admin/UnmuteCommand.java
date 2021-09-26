@@ -27,7 +27,7 @@ public class UnmuteCommand extends AdminCommand{
                 .filter(adminConfig -> adminConfig.getMuteRoleID().isPresent())
                 .switchIfEmpty(messageService.err(env, "command.disabled.mute").then(Mono.never()))
                 .flatMap(ignored -> Mono.justOrEmpty(targetId))
-                .flatMap(id -> env.getClient().getMemberById(guildId, id))
+                .flatMap(id -> env.getMessage().getClient().getMemberById(guildId, id))
                 .switchIfEmpty(messageService.err(env, "command.incorrect-name").then(Mono.never()))
                 .filterWhen(adminService::isMuted)
                 .switchIfEmpty(messageService.err(env, "audit.member.unmute.is-not-muted").then(Mono.never()))
