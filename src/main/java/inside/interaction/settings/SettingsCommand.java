@@ -24,7 +24,7 @@ public abstract class SettingsCommand extends GuildCommand{
         Mono<Boolean> resp = BooleanUtils.or(isOwner, isGuildManager)
                 .filterWhen(bool -> bool
                         ? Mono.just(true)
-                        : messageService.text(env.event(), "command.owner-only").thenReturn(false));
+                        : messageService.err(env.event(), "command.owner-only").thenReturn(false));
 
         return BooleanUtils.and(super.filter(env), resp);
     }
