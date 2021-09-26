@@ -43,7 +43,7 @@ public class StarboardCommand extends OwnerCommand{
 
             return entityRetriever.getStarboardConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createStarboardConfig(guildId))
-                    .flatMap(starboardConfig -> Mono.justOrEmpty(env.getOption("enable")
+                    .flatMap(starboardConfig -> Mono.justOrEmpty(env.getOption("value")
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asBoolean))
                             .switchIfEmpty(messageService.text(env.event(), "command.settings.starboard-enable.update",

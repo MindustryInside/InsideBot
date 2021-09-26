@@ -6,7 +6,6 @@ import discord4j.core.object.entity.*;
 import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.core.spec.*;
 import discord4j.discordjson.json.gateway.RequestGuildMembers;
-import discord4j.discordjson.possible.Possible;
 import discord4j.rest.util.AllowedMentions;
 import inside.Settings;
 import inside.command.Command;
