@@ -47,4 +47,8 @@ public class SearchSelectMenuListener implements SelectMenuListener{
                     .then();
         });
     }
+
+    public Mono<Void> unregisterInteraction(Snowflake messageId){
+        return Mono.fromRunnable(() -> interactions.invalidate(messageId));
+    }
 }

@@ -4,8 +4,10 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.*;
 import discord4j.core.object.entity.*;
 import discord4j.core.retriever.EntityRetrievalStrategy;
-import discord4j.core.spec.MessageCreateSpec;
+import discord4j.core.spec.*;
 import discord4j.discordjson.json.gateway.RequestGuildMembers;
+import discord4j.rest.util.AllowedMentions;
+import inside.Settings;
 import inside.command.Command;
 import inside.command.model.*;
 import inside.data.entity.GuildConfig;
@@ -13,7 +15,7 @@ import inside.interaction.component.SearchSelectMenuListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @DiscordCommand(key = "avatar", params = "command.avatar.params", description = "command.avatar.description")
@@ -21,6 +23,9 @@ public class AvatarCommand extends Command{
 
     @Autowired
     private SearchSelectMenuListener searchSelectMenuListener;
+
+    @Autowired
+    private Settings settings;
 
     @Override
     public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
@@ -51,14 +56,26 @@ public class AvatarCommand extends Command{
                                 .content(messageService.get(env.context(), "message.choose-user"))
                                 .addComponent(ActionRow.of(SelectMenu.of(
                                         "inside-search-" + author.getId().asString(), list.stream()
-                                                .map(member -> SelectMenu.Option.of(
-                                                        member.getDisplayName(), member.getId().asString()))
+                                                .map(member -> SelectMenu.Option.of(member.getNickname()
+                                                        .map(s -> String.format("%s (%s)",
+                                                                s, member.getTag()))
+                                                        .orElseGet(member::getUsername), member.getId().asString()))
                                                 .collect(Collectors.toList()))))
                                 .build()))
                         .flatMap(message -> searchSelectMenuListener.registerInteraction(
                                 message.getId(), e -> e.getClient().getMemberById(
                                         guildId, Snowflake.of(e.getValues().get(0)))
-                                        .flatMap(target -> execute0(env, target))))
+                                        .flatMap(target -> e.edit(InteractionApplicationCommandCallbackSpec.builder()
+                                                .components(List.of())
+                                                .addEmbed(EmbedCreateSpec.builder()
+                                                        .color(settings.getDefaults().getNormalColor())
+                                                        .image(target.getAvatarUrl() + "?size=512")
+                                                        .description(messageService.format(env.context(), "command.avatar.text", target.getUsername(),
+                                                                target.getMention()))
+                                                        .build())
+                                                .allowedMentions(AllowedMentions.suppressAll())
+                                                .build()))
+                                        .then(searchSelectMenuListener.unregisterInteraction(e.getMessageId()))))
                         .then(Mono.never()));
 
         return Mono.justOrEmpty(firstOpt.map(OptionValue::asSnowflake)).flatMap(id -> env.getMessage().getClient()
@@ -69,13 +86,9 @@ public class AvatarCommand extends Command{
                         .filter(ignored -> firstOpt.isEmpty()))
                 .switchIfEmpty(searchUser)
                 .switchIfEmpty(messageService.err(env, "command.incorrect-name").then(Mono.never()))
-                .flatMap(target -> execute0(env, target));
-    }
-
-    private Mono<Void> execute0(CommandEnvironment env, User target){
-        return messageService.info(env, embed -> embed.image(target.getAvatarUrl() + "?size=512")
-                .description(messageService.format(env.context(), "command.avatar.text", target.getUsername(),
-                        target.getMention())));
+                .flatMap(target -> messageService.info(env, embed -> embed.image(target.getAvatarUrl() + "?size=512")
+                        .description(messageService.format(env.context(), "command.avatar.text", target.getUsername(),
+                                target.getMention()))));
     }
 
     @Override
