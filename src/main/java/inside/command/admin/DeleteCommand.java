@@ -24,7 +24,7 @@ import static inside.audit.BaseAuditProvider.MESSAGE_TXT;
 import static inside.service.MessageService.ok;
 import static inside.util.ContextUtil.*;
 
-@DiscordCommand(key = "delete", params = "command.admin.delete.params", description = "command.admin.delete.description",
+@DiscordCommand(key = {"delete", "clear"}, params = "command.admin.delete.params", description = "command.admin.delete.description",
         permissions = {Permission.SEND_MESSAGES, Permission.EMBED_LINKS, Permission.ADD_REACTIONS,
                        Permission.MANAGE_MESSAGES, Permission.READ_MESSAGE_HISTORY},
         category = CommandCategory.admin)

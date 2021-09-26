@@ -17,7 +17,7 @@ import java.util.function.Predicate;
 
 import static reactor.function.TupleUtils.function;
 
-@DiscordCommand(key = "warnings", params = "command.admin.warnings.params", description = "command.admin.warnings.description",
+@DiscordCommand(key = {"warnings", "warns"}, params = "command.admin.warnings.params", description = "command.admin.warnings.description",
         category = CommandCategory.admin)
 public class WarningsCommand extends AdminCommand{
     public static final int PER_PAGE = 9;

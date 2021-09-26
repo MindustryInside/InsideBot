@@ -72,7 +72,7 @@ public class HelpCommand extends Command{
                         .withComponents(ActionRow.of(
                                 Arrays.stream(CommandCategory.all)
                                         .map(c -> Button.primary("inside-help-"
-                                                        + c.ordinal() + "-" + env.getAuthorAsMember().getId().asLong(),
+                                                + c.ordinal() + "-" + env.getAuthorAsMember().getId().asLong(),
                                                 messageService.getEnum(env.context(), c)))
                                         .toList()))))
                 .then();
