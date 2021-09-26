@@ -37,11 +37,24 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
 
     private List<Tuple2<String, ButtonListener>> buttonListeners;
 
+    private List<Tuple2<String, SelectMenuListener>> selectMenuListeners;
+
     @Autowired(required = false)
     private void registerButtonListeners(List<ButtonListener> buttonListeners){
         this.buttonListeners = buttonListeners.stream()
-                .map(l -> Tuples.of(l.getClass().getAnnotation(ComponentProvider.class).value(), l))
+                .map(this::extractIdentifier)
                 .toList();
+    }
+
+    @Autowired(required = false)
+    private void registerSelectMenuListeners(List<SelectMenuListener> selectMenuListeners){
+        this.selectMenuListeners = selectMenuListeners.stream()
+                .map(this::extractIdentifier)
+                .toList();
+    }
+
+    private <T extends InteractionListener> Tuple2<String, T> extractIdentifier(T l){
+        return Tuples.of(l.getClass().getAnnotation(ComponentProvider.class).value(), l);
     }
 
     @Override
@@ -59,6 +72,27 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
                         KEY_TIMEZONE, guildConfig.timeZone()));
 
         return initContext.flatMap(ctx -> Mono.defer(() -> Flux.fromIterable(buttonListeners)
+                        .filter(predicate((s, l) -> id.startsWith(s)))
+                        .flatMap(function((s, l) -> l.handle(event)))
+                        .then())
+                .contextWrite(ctx));
+    }
+
+    @Override
+    public Publisher<?> onSelectMenuInteraction(SelectMenuInteractionEvent event){
+        String id = event.getCustomId();
+        if(!id.startsWith("inside")){
+            return Mono.empty();
+        }
+
+        Snowflake guildId = event.getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+
+        Mono<Context> initContext = entityRetriever.getGuildConfigById(guildId)
+                .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
+                .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
+                        KEY_TIMEZONE, guildConfig.timeZone()));
+
+        return initContext.flatMap(ctx -> Mono.defer(() -> Flux.fromIterable(selectMenuListeners)
                         .filter(predicate((s, l) -> id.startsWith(s)))
                         .flatMap(function((s, l) -> l.handle(event)))
                         .then())

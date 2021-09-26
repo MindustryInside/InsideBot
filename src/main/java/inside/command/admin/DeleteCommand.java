@@ -102,7 +102,7 @@ public class DeleteCommand extends AdminCommand{
                 .withAttachment(MESSAGE_TXT, ReusableByteInputStream.ofString(result.toString()))
                 .save());
 
-        return history.then(log).and(env.getMessage().addReaction(ok));
+        return history.then(log).then(env.getMessage().addReaction(ok));
     }
 
     @Override
