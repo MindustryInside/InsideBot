@@ -6,6 +6,7 @@ import discord4j.core.object.entity.*;
 import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.core.spec.*;
 import discord4j.discordjson.json.gateway.RequestGuildMembers;
+import discord4j.discordjson.possible.Possible;
 import discord4j.rest.util.AllowedMentions;
 import inside.Settings;
 import inside.command.Command;
@@ -67,6 +68,7 @@ public class AvatarCommand extends Command{
                                         guildId, Snowflake.of(e.getValues().get(0)))
                                         .flatMap(target -> e.edit(InteractionApplicationCommandCallbackSpec.builder()
                                                 .components(List.of())
+                                                .content("")
                                                 .addEmbed(EmbedCreateSpec.builder()
                                                         .color(settings.getDefaults().getNormalColor())
                                                         .image(target.getAvatarUrl() + "?size=512")
