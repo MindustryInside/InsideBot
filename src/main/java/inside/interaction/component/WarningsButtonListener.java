@@ -60,7 +60,8 @@ public class WarningsButtonListener implements ButtonListener{
                             InteractionApplicationCommandCallbackSpec.builder()
                                     .addEmbed(EmbedCreateSpec.builder()
                                             .fields(fields)
-                                            .title(messageService.get(ctx, "command.admin.warnings.title"))
+                                            .title(messageService.format(ctx, "command.admin.warnings.title",
+                                                    target.getDisplayName()))
                                             .color(settings.getDefaults().getNormalColor())
                                             .footer(messageService.format(ctx, "command.admin.warnings.page", page + 1,
                                                     Mathf.ceilPositive(count / (float)WarningsCommand.PER_PAGE)), null)

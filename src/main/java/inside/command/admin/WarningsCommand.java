@@ -61,10 +61,11 @@ public class WarningsCommand extends AdminCommand{
                         (tuple, count) -> Tuples.of(tuple.getT1(), tuple.getT2(), count))
                 .flatMap(function((target, fields, count) -> messageService.text(env, spec -> spec.addEmbed(EmbedCreateSpec.builder()
                                 .fields(fields)
-                                .title(messageService.get(env.context(), "command.admin.warnings.title"))
+                                .title(messageService.format(env.context(), "command.admin.warnings.title",
+                                        target.getDisplayName()))
                                 .color(settings.getDefaults().getNormalColor())
                                 .footer(messageService.format(env.context(), "command.admin.warnings.page",
-                                        Mathf.ceilPositive(count / (float)PER_PAGE)), null)
+                                        1, Mathf.ceilPositive(count / (float)PER_PAGE)), null)
                                 .build())
                         .addComponent(ActionRow.of(
                                 Button.primary("inside-warnings-" + authorId.asString() +
@@ -73,7 +74,7 @@ public class WarningsCommand extends AdminCommand{
                                         .disabled(),
                                 Button.primary("inside-warnings-" + authorId.asString() +
                                                         "-" + target.getId().asString() + "-next-1",
-                                                messageService.get(env.context(), "common.prev-page"))
+                                                messageService.get(env.context(), "common.next-page"))
                                         .disabled(count <= PER_PAGE))))));
     }
 }
