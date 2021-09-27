@@ -54,7 +54,7 @@ public class CommandAliasCommand extends OwnerCommand{
                     .flatMap(s -> entityRetriever.getCommandConfigById(guildId, s)
                             .switchIfEmpty(Mono.justOrEmpty(commandHolder.getCommandInfo(s))
                                     .flatMap(info -> entityRetriever.createCommandConfig(
-                                            guildId, Arrays.asList(info.key()), List.of())))
+                                            guildId, Arrays.asList(info.key()), Collections.emptyList())))
                             .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never())))
                     .flatMap(commandConfig -> Mono.justOrEmpty(env.getOption("value")
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
@@ -101,7 +101,7 @@ public class CommandAliasCommand extends OwnerCommand{
                     .flatMap(s -> entityRetriever.getCommandConfigById(guildId, s)
                             .switchIfEmpty(Mono.justOrEmpty(commandHolder.getCommandInfo(s))
                                     .flatMap(info -> entityRetriever.createCommandConfig(
-                                            guildId, Arrays.asList(info.key()), List.of())))
+                                            guildId, Arrays.asList(info.key()), Collections.emptyList())))
                             .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never())))
                     .flatMap(commandConfig -> messageService.text(env.event(),
                             commandConfig.getAliases().isEmpty()
@@ -144,7 +144,7 @@ public class CommandAliasCommand extends OwnerCommand{
                     .flatMap(s -> entityRetriever.getCommandConfigById(guildId, s)
                             .switchIfEmpty(Mono.justOrEmpty(commandHolder.getCommandInfo(s))
                                     .flatMap(info -> entityRetriever.createCommandConfig(
-                                            guildId, Arrays.asList(info.key()), List.of())))
+                                            guildId, Arrays.asList(info.key()), Collections.emptyList())))
                             .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never())))
                     .zipWith(Mono.justOrEmpty(env.getOption("value")
                             .flatMap(ApplicationCommandInteractionOption::getValue)
@@ -195,7 +195,7 @@ public class CommandAliasCommand extends OwnerCommand{
                     .flatMap(s -> entityRetriever.getCommandConfigById(guildId, s)
                             .switchIfEmpty(Mono.justOrEmpty(commandHolder.getCommandInfo(s))
                                     .flatMap(info -> entityRetriever.createCommandConfig(
-                                            guildId, Arrays.asList(info.key()), List.of())))
+                                            guildId, Arrays.asList(info.key()), Collections.emptyList())))
                             .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never())))
                     .zipWith(Mono.justOrEmpty(env.getOption("value")
                             .flatMap(ApplicationCommandInteractionOption::getValue)
@@ -243,7 +243,7 @@ public class CommandAliasCommand extends OwnerCommand{
                     .flatMap(s -> entityRetriever.getCommandConfigById(guildId, s)
                             .switchIfEmpty(Mono.justOrEmpty(commandHolder.getCommandInfo(s))
                                     .flatMap(info -> entityRetriever.createCommandConfig(
-                                            guildId, Arrays.asList(info.key()), List.of())))
+                                            guildId, Arrays.asList(info.key()), Collections.emptyList())))
                             .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never())))
                     .doOnNext(configAliases -> configAliases.getAliases().clear())
                     .flatMap(commandConfig -> messageService.text(env.event(), "command.settings.command-alias.clear")

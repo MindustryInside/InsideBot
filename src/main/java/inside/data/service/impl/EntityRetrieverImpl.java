@@ -401,7 +401,6 @@ public class EntityRetrieverImpl implements EntityRetriever{
             poll.setGuildId(guildId);
             poll.setMessageId(messageId);
             poll.setOptions(options);
-            poll.setAnswered(List.of()); // on create always empty
             return save(poll).thenReturn(poll);
         });
     }
