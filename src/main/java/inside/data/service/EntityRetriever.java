@@ -118,6 +118,12 @@ public interface EntityRetriever{
 
     Mono<Void> deleteAllPollInGuild(Snowflake guildId);
 
+    // command config
+
+    Mono<CommandConfig> getCommandConfigById(Snowflake guildId, String name);
+
+    Mono<Void> save(CommandConfig commandConfig);
+
     // factory methods
 
     Mono<GuildConfig> createGuildConfig(Snowflake guildId);
@@ -141,4 +147,6 @@ public interface EntityRetriever{
     Mono<WelcomeMessage> createWelcomeMessage(Snowflake guildId, Snowflake channelId, String message);
 
     Mono<Poll> createPoll(Snowflake guildId, Snowflake messageId, List<String> options);
+
+    Mono<CommandConfig> createCommandConfig(Snowflake guildId, String name, List<String> aliases);
 }

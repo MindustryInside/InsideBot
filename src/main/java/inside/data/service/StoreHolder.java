@@ -17,13 +17,14 @@ public final class StoreHolder{
     private final EmojiDispenserService emojiDispenserService;
     private final WelcomeMessageService welcomeMessageService;
     private final PollService pollService;
+    private final CommandConfigService commandConfigService;
 
     public StoreHolder(@Autowired GuildConfigService guildConfigService, @Autowired AdminConfigService adminConfigService,
                        @Autowired LocalMemberService localMemberService, @Autowired AuditConfigService auditConfigService,
                        @Autowired MessageInfoService messageInfoService, @Autowired StarboardConfigService starboardConfigService,
                        @Autowired StarboardService starboardService, @Autowired ActivityConfigService activityConfigService,
                        @Autowired EmojiDispenserService emojiDispenserService, @Autowired WelcomeMessageService welcomeMessageService,
-                       @Autowired PollService pollService){
+                       @Autowired PollService pollService, @Autowired CommandConfigService commandConfigService){
         this.guildConfigService = guildConfigService;
         this.adminConfigService = adminConfigService;
         this.localMemberService = localMemberService;
@@ -35,6 +36,7 @@ public final class StoreHolder{
         this.emojiDispenserService = emojiDispenserService;
         this.welcomeMessageService = welcomeMessageService;
         this.pollService = pollService;
+        this.commandConfigService = commandConfigService;
     }
 
     public GuildConfigService getGuildConfigService(){
@@ -79,5 +81,9 @@ public final class StoreHolder{
 
     public PollService getPollService(){
         return pollService;
+    }
+
+    public CommandConfigService getCommandConfigService(){
+        return commandConfigService;
     }
 }

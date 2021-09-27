@@ -255,6 +255,7 @@ public class Settings{
         private boolean starboardConfig = true;
         private boolean welcomeMessage = true;
         private boolean poll = true;
+        private boolean commandConfig = true;
 
         public boolean isActivityConfig(){
             return activityConfig;
@@ -334,6 +335,14 @@ public class Settings{
 
         public void setPoll(boolean poll){
             this.poll = poll;
+        }
+
+        public boolean isCommandConfig(){
+            return commandConfig;
+        }
+
+        public void setCommandConfig(boolean commandConfig){
+            this.commandConfig = commandConfig;
         }
     }
 }

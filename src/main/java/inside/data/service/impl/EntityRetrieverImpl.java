@@ -12,6 +12,7 @@ import inside.util.MessageUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.*;
+import reactor.util.function.Tuples;
 
 import java.util.*;
 
@@ -267,6 +268,16 @@ public class EntityRetrieverImpl implements EntityRetriever{
     }
 
     @Override
+    public Mono<CommandConfig> getCommandConfigById(Snowflake guildId, String name){
+        return storeHolder.getCommandConfigService().find(Tuples.of(guildId.asLong(), name));
+    }
+
+    @Override
+    public Mono<Void> save(CommandConfig commandConfig){
+        return storeHolder.getCommandConfigService().save(commandConfig);
+    }
+
+    @Override
     public Mono<GuildConfig> createGuildConfig(Snowflake guildId){
         return Mono.defer(() -> {
             GuildConfig guildConfig = new GuildConfig();
@@ -392,6 +403,17 @@ public class EntityRetrieverImpl implements EntityRetriever{
             poll.setOptions(options);
             poll.setAnswered(List.of()); // on create always empty
             return save(poll).thenReturn(poll);
+        });
+    }
+
+    @Override
+    public Mono<CommandConfig> createCommandConfig(Snowflake guildId, String name, List<String> aliases){
+        return Mono.defer(() -> {
+            CommandConfig commandConfig = new CommandConfig();
+            commandConfig.setGuildId(guildId);
+            commandConfig.setName(name);
+            commandConfig.setAliases(aliases);
+            return save(commandConfig).thenReturn(commandConfig);
         });
     }
 }

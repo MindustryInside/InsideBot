@@ -10,7 +10,6 @@ import java.time.Instant;
 @Repository
 public interface AuditActionRepository extends GuildRepository<AuditAction>{
 
-    @Transactional
-        // why spring?
+    @Transactional // why spring?
     void deleteAllByTimestampBefore(Instant timestamp);
 }

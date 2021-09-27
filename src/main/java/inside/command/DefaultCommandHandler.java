@@ -5,6 +5,7 @@ import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.GuildMessageChannel;
 import inside.command.model.*;
 import inside.data.entity.GuildConfig;
+import inside.data.entity.base.ConfigEntity;
 import inside.data.service.EntityRetriever;
 import inside.service.MessageService;
 import inside.util.*;
@@ -16,7 +17,7 @@ import reactor.util.function.*;
 
 import java.util.*;
 import java.util.function.*;
-import java.util.stream.Collectors;
+import java.util.stream.*;
 
 @Service
 public class DefaultCommandHandler implements CommandHandler{
@@ -64,15 +65,25 @@ public class DefaultCommandHandler implements CommandHandler{
                         (prx, text) -> Tuples.of(prx, text.getT1(), text.getT2()))
                 .cache();
 
-        Mono<Void> suggestion = computedText.map(Tuple2::getT1).flatMap(commandName -> commandHolder.getCommandInfoMap().values().stream()
-                .flatMap(commandInfo -> Arrays.stream(commandInfo.key()))
-                .min(Comparator.comparingInt(s -> Strings.levenshtein(s, commandName)))
-                .map(s -> messageService.err(env, "command.response.found-closest", s))
-                .orElse(prefix.map(GuildConfig::formatPrefix).flatMap(str ->
-                        messageService.err(env, "command.response.unknown", str)))
-                .doFirst(() -> messageService.awaitEdit(env.getMessage().getId())));
+        Mono<Void> suggestion = computedText.map(Tuple3::getT3)
+                .flatMap(s -> entityRetriever.getCommandConfigById(guildId, s)
+                        .filter(ConfigEntity::isEnabled)
+                        .flatMap(c -> Mono.justOrEmpty(commandHolder.getCommandInfo(c.getName()))
+                                .flatMap(info -> Mono.justOrEmpty(
+                                        Stream.concat(Arrays.stream(info.key()), c.getAliases().stream())
+                                        .min(Comparator.comparingInt(cmd -> Strings.levenshtein(s, cmd))))))
+                        .switchIfEmpty(Mono.justOrEmpty(commandHolder.getCommandInfoMap().values().stream()
+                                .flatMap(commandInfo -> Arrays.stream(commandInfo.key()))
+                                .min(Comparator.comparingInt(a -> Strings.levenshtein(a, s))))))
+                .switchIfEmpty(prefix.map(GuildConfig::formatPrefix).flatMap(str ->
+                        messageService.err(env, "command.response.unknown", str)).then(Mono.never()))
+                .flatMap(s -> messageService.err(env, "command.response.found-closest", s))
+                .doFirst(() -> messageService.awaitEdit(env.getMessage().getId()));
 
         return computedText.flatMap(TupleUtils.function((prx, commandstr, cmdkey) -> Mono.justOrEmpty(commandHolder.getCommand(cmdkey))
+                .switchIfEmpty(entityRetriever.getCommandConfigById(guildId, cmdkey)
+                        .filter(ConfigEntity::isEnabled)
+                        .flatMap(s -> Mono.justOrEmpty(commandHolder.getCommand(s.getName()))))
                 .switchIfEmpty(suggestion.then(Mono.empty()))
                 .flatMap(command -> {
                     CommandInfo info = commandHolder.getCommandInfoMap().get(command);
@@ -133,7 +144,7 @@ public class DefaultCommandHandler implements CommandHandler{
                     }
 
                     if(!satisfied && info.params().length > 0 && !info.params()[0].optional() &&
-                            env.getMessage().getMessageReference().isEmpty()){
+                            env.getMessage().getMessageReference().isEmpty()){ // TODO: strange check, reimplement this using _option types_
                         messageService.awaitEdit(env.getMessage().getId());
                         return messageService.errTitled(env, "command.response.few-arguments.title",
                                 argsres, GuildConfig.formatPrefix(prx), cmdkey,
