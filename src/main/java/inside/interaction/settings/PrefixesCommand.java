@@ -103,7 +103,7 @@ public class PrefixesCommand extends OwnerCommand{
                         flags.removeAll(Arrays.asList(text));
                         tmp.removeAll(flags);
 
-                        return messageService.text(env.event(), "command.settings.added",
+                        return messageService.text(env.event(), "command.settings.removed",
                                         String.join(", ", tmp))
                                 .and(entityRetriever.save(guildConfig));
                     }));
