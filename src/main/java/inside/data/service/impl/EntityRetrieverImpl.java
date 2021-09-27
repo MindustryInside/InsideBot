@@ -407,11 +407,12 @@ public class EntityRetrieverImpl implements EntityRetriever{
     }
 
     @Override
-    public Mono<CommandConfig> createCommandConfig(Snowflake guildId, String name, List<String> aliases){
+    public Mono<CommandConfig> createCommandConfig(Snowflake guildId, List<String> names, List<String> aliases){
         return Mono.defer(() -> {
             CommandConfig commandConfig = new CommandConfig();
+            commandConfig.setEnabled(true);
             commandConfig.setGuildId(guildId);
-            commandConfig.setName(name);
+            commandConfig.setNames(names);
             commandConfig.setAliases(aliases);
             return save(commandConfig).thenReturn(commandConfig);
         });

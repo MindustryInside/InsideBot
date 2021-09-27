@@ -40,7 +40,7 @@ public class PrefixesCommand extends OwnerCommand{
             type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class PrefixesCommandAdd extends OwnerAwareCommand<PrefixesCommand>{
 
-        protected PrefixesCommandAdd(@Lazy PrefixesCommand owner){
+        protected PrefixesCommandAdd(@Aware PrefixesCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("value")
@@ -76,7 +76,7 @@ public class PrefixesCommand extends OwnerCommand{
             type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class PrefixesCommandRemove extends OwnerAwareCommand<PrefixesCommand>{
 
-        protected PrefixesCommandRemove(@Lazy PrefixesCommand owner){
+        protected PrefixesCommandRemove(@Aware PrefixesCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("value")
@@ -114,7 +114,7 @@ public class PrefixesCommand extends OwnerCommand{
             type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class PrefixesCommandClear extends OwnerAwareCommand<PrefixesCommand>{
 
-        protected PrefixesCommandClear(@Lazy PrefixesCommand owner){
+        protected PrefixesCommandClear(@Aware PrefixesCommand owner){
             super(owner);
         }
 

@@ -148,5 +148,5 @@ public interface EntityRetriever{
 
     Mono<Poll> createPoll(Snowflake guildId, Snowflake messageId, List<String> options);
 
-    Mono<CommandConfig> createCommandConfig(Snowflake guildId, String name, List<String> aliases);
+    Mono<CommandConfig> createCommandConfig(Snowflake guildId, List<String> names, List<String> aliases);
 }

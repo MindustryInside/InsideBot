@@ -13,19 +13,20 @@ public class CommandConfig extends ConfigEntity{
     @Serial
     private static final long serialVersionUID = -1216238876351831957L;
 
-    @Column
-    private String name;
+    @Type(type = "json")
+    @Column(columnDefinition = "jsonb")
+    private List<String> names;
 
     @Type(type = "json")
     @Column(columnDefinition = "jsonb") // special operator
     private List<String> aliases;
 
-    public String getName(){
-        return name;
+    public List<String> getNames(){
+        return names;
     }
 
-    public void setName(String name){
-        this.name = Objects.requireNonNull(name, "name");
+    public void setNames(List<String> names){
+        this.names = Objects.requireNonNull(names, "names");
     }
 
     public List<String> getAliases(){
@@ -39,7 +40,7 @@ public class CommandConfig extends ConfigEntity{
     @Override
     public String toString(){
         return "CommandConfig{" +
-                "name='" + name + '\'' +
+                "names='" + names + '\'' +
                 ", aliases=" + aliases +
                 "} " + super.toString();
     }

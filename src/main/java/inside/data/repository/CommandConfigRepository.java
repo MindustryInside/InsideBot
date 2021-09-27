@@ -8,6 +8,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface CommandConfigRepository extends GuildRepository<CommandConfig>{
 
-    @Query(value = "select * from command_config where guild_id = :guildId and aliases >| :name", nativeQuery = true)
+    @Query(value = "select * from command_config where guild_id = :guildId and (aliases >| :name or names >| :name)", nativeQuery = true)
     CommandConfig findByAlias(long guildId, String name);
 }
