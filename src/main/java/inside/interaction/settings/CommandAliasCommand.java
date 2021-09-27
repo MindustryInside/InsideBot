@@ -5,6 +5,7 @@ import discord4j.core.object.command.*;
 import inside.command.CommandHolder;
 import inside.interaction.*;
 import inside.util.func.BooleanFunction;
+import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
@@ -14,17 +15,16 @@ import static reactor.function.TupleUtils.function;
 @InteractionDiscordCommand(name = "command-alias", description = "Configure command aliases.")
 public class CommandAliasCommand extends OwnerCommand{
 
-    protected final CommandHolder commandHolder;
-
-    protected CommandAliasCommand(@Aware List<? extends InteractionOwnerAwareCommand<CommandAliasCommand>> subcommands,
-                                  @Aware CommandHolder commandHolder){
+    protected CommandAliasCommand(@Aware List<? extends InteractionOwnerAwareCommand<CommandAliasCommand>> subcommands){
         super(subcommands);
-        this.commandHolder = commandHolder;
     }
 
     @InteractionDiscordCommand(name = "enable", description = "Enable command configuring.",
             type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class CommandAliasCommandEnable extends OwnerAwareCommand<CommandAliasCommand>{
+
+        @Autowired
+        protected CommandHolder commandHolder;
 
         protected CommandAliasCommandEnable(@Aware CommandAliasCommand owner){
             super(owner);
@@ -52,7 +52,7 @@ public class CommandAliasCommand extends OwnerCommand{
                     .map(ApplicationCommandInteractionOptionValue::asString))
                     .map(String::toLowerCase)
                     .flatMap(s -> entityRetriever.getCommandConfigById(guildId, s)
-                            .switchIfEmpty(Mono.justOrEmpty(owner.commandHolder.getCommandInfo(s))
+                            .switchIfEmpty(Mono.justOrEmpty(commandHolder.getCommandInfo(s))
                                     .flatMap(info -> entityRetriever.createCommandConfig(
                                             guildId, Arrays.asList(info.key()), List.of())))
                             .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never())))
@@ -73,6 +73,9 @@ public class CommandAliasCommand extends OwnerCommand{
     @InteractionDiscordCommand(name = "list", description = "Display current command alias list.",
             type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class CommandAliasCommandList extends OwnerAwareCommand<CommandAliasCommand>{
+
+        @Autowired
+        protected CommandHolder commandHolder;
 
         protected CommandAliasCommandList(@Aware CommandAliasCommand owner){
             super(owner);
@@ -96,7 +99,7 @@ public class CommandAliasCommand extends OwnerCommand{
             return Mono.justOrEmpty(name)
                     .map(String::toLowerCase)
                     .flatMap(s -> entityRetriever.getCommandConfigById(guildId, s)
-                            .switchIfEmpty(Mono.justOrEmpty(owner.commandHolder.getCommandInfo(s))
+                            .switchIfEmpty(Mono.justOrEmpty(commandHolder.getCommandInfo(s))
                                     .flatMap(info -> entityRetriever.createCommandConfig(
                                             guildId, Arrays.asList(info.key()), List.of())))
                             .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never())))
@@ -111,6 +114,9 @@ public class CommandAliasCommand extends OwnerCommand{
     @InteractionDiscordCommand(name = "add", description = "Add alias(s)",
             type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class CommandAliasCommandAdd extends OwnerAwareCommand<CommandAliasCommand>{
+
+        @Autowired
+        protected CommandHolder commandHolder;
 
         protected CommandAliasCommandAdd(@Aware CommandAliasCommand owner){
             super(owner);
@@ -136,7 +142,7 @@ public class CommandAliasCommand extends OwnerCommand{
                             .map(ApplicationCommandInteractionOptionValue::asString))
                     .map(String::toLowerCase)
                     .flatMap(s -> entityRetriever.getCommandConfigById(guildId, s)
-                            .switchIfEmpty(Mono.justOrEmpty(owner.commandHolder.getCommandInfo(s))
+                            .switchIfEmpty(Mono.justOrEmpty(commandHolder.getCommandInfo(s))
                                     .flatMap(info -> entityRetriever.createCommandConfig(
                                             guildId, Arrays.asList(info.key()), List.of())))
                             .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never())))
@@ -159,6 +165,9 @@ public class CommandAliasCommand extends OwnerCommand{
     @InteractionDiscordCommand(name = "remove", description = "Remove alias(s).",
             type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class CommandAliasCommandRemove extends OwnerAwareCommand<CommandAliasCommand>{
+
+        @Autowired
+        protected CommandHolder commandHolder;
 
         protected CommandAliasCommandRemove(@Aware CommandAliasCommand owner){
             super(owner);
@@ -184,7 +193,7 @@ public class CommandAliasCommand extends OwnerCommand{
                             .map(ApplicationCommandInteractionOptionValue::asString))
                     .map(String::toLowerCase)
                     .flatMap(s -> entityRetriever.getCommandConfigById(guildId, s)
-                            .switchIfEmpty(Mono.justOrEmpty(owner.commandHolder.getCommandInfo(s))
+                            .switchIfEmpty(Mono.justOrEmpty(commandHolder.getCommandInfo(s))
                                     .flatMap(info -> entityRetriever.createCommandConfig(
                                             guildId, Arrays.asList(info.key()), List.of())))
                             .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never())))
@@ -210,6 +219,9 @@ public class CommandAliasCommand extends OwnerCommand{
             type = ApplicationCommandOption.Type.SUB_COMMAND)
     public static class CommandAliasCommandClear extends OwnerAwareCommand<CommandAliasCommand>{
 
+        @Autowired
+        protected CommandHolder commandHolder;
+
         protected CommandAliasCommandClear(@Aware CommandAliasCommand owner){
             super(owner);
 
@@ -229,7 +241,7 @@ public class CommandAliasCommand extends OwnerCommand{
                             .map(ApplicationCommandInteractionOptionValue::asString))
                     .map(String::toLowerCase)
                     .flatMap(s -> entityRetriever.getCommandConfigById(guildId, s)
-                            .switchIfEmpty(Mono.justOrEmpty(owner.commandHolder.getCommandInfo(s))
+                            .switchIfEmpty(Mono.justOrEmpty(commandHolder.getCommandInfo(s))
                                     .flatMap(info -> entityRetriever.createCommandConfig(
                                             guildId, Arrays.asList(info.key()), List.of())))
                             .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never())))
