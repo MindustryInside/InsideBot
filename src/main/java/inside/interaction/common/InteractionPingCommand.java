@@ -1,23 +1,17 @@
 package inside.interaction.common;
 
-import discord4j.core.object.entity.Message;
-import discord4j.discordjson.json.WebhookMessageEditRequest;
 import inside.interaction.*;
 import reactor.core.publisher.Mono;
 
-@InteractionDiscordCommand(name = "ping", description = "Get bot ping.")
+@InteractionDiscordCommand(name = "ping1", description = "Get bot ping.")
 public class InteractionPingCommand extends BaseInteractionCommand{
     @Override
     public Mono<Void> execute(InteractionCommandEnvironment env){
         long start = System.currentTimeMillis();
-        return env.event().acknowledge().then(env.event().getInteractionResponse()
-                .createFollowupMessage(messageService.get(env.context(), "command.ping.testing"))
-                .map(data -> new Message(env.getClient(), data))
-                .flatMap(message -> env.event().getInteractionResponse()
-                        .editFollowupMessage(message.getId().asLong(), WebhookMessageEditRequest.builder()
-                                .contentOrNull(messageService.format(env.context(), "command.ping.completed",
-                                        System.currentTimeMillis() - start))
-                                .build(), true))
-                .then());
+        return env.event().createFollowup(messageService.get(env.context(), "command.ping.testing"))
+                .flatMap(message -> env.event().editFollowup(message.getId())
+                        .withContentOrNull(messageService.format(env.context(), "command.ping.completed",
+                                System.currentTimeMillis() - start)))
+                .then();
     }
 }
