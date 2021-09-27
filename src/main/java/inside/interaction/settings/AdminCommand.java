@@ -3,6 +3,7 @@ package inside.interaction.settings;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.*;
 import discord4j.core.object.entity.Guild;
+import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import inside.data.entity.AdminActionType;
 import inside.interaction.*;
@@ -284,10 +285,12 @@ public class AdminCommand extends OwnerCommand{
                                     String[] text = value.split("(\\s+)?,(\\s+)?");
 
                                     return Flux.fromArray(text)
-                                            .flatMap(str -> env.event().getInteraction().getGuild()
-                                                    .flatMapMany(Guild::getRoles)
-                                                    .filter(role -> MessageUtil.parseRoleId(str) != null &&
-                                                            role.getId().equals(MessageUtil.parseRoleId(str)))
+                                            .map(String::toLowerCase)
+                                            .flatMap(str -> env.getClient()
+                                                    .withRetrievalStrategy(EntityRetrievalStrategy.REST)
+                                                    .getGuildRoles(guildId)
+                                                    .filter(role -> role.getId().equals(MessageUtil.parseRoleId(str)) ||
+                                                            role.getName().equals(str))
                                                     .doOnNext(role -> roleIds.add(role.getId())))
                                             .then(messageService.text(env.event(), "command.settings.added", roleIds.stream()
                                                     .map(DiscordUtil::getRoleMention)
@@ -326,10 +329,12 @@ public class AdminCommand extends OwnerCommand{
                                     String[] text = value.split("(\\s+)?,(\\s+)?");
 
                                     return Flux.fromArray(text)
-                                            .flatMap(str -> env.event().getInteraction().getGuild()
-                                                    .flatMapMany(Guild::getRoles)
-                                                    .filter(role -> MessageUtil.parseRoleId(str) != null &&
-                                                            role.getId().equals(MessageUtil.parseRoleId(str)))
+                                            .map(String::toLowerCase)
+                                            .flatMap(str -> env.getClient()
+                                                    .withRetrievalStrategy(EntityRetrievalStrategy.REST)
+                                                    .getGuildRoles(guildId)
+                                                    .filter(role -> role.getId().equals(MessageUtil.parseRoleId(str)) ||
+                                                            role.getName().equals(str))
                                                     .doOnNext(role -> {
                                                         if(roleIds.remove(role.getId())){
                                                             removed.add(role.getId());
