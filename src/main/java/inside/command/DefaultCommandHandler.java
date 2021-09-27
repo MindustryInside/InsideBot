@@ -68,7 +68,7 @@ public class DefaultCommandHandler implements CommandHandler{
         Mono<Void> suggestion = computedText.map(Tuple3::getT3)
                 .flatMap(s -> entityRetriever.getCommandConfigById(guildId, s)
                         .filter(ConfigEntity::isEnabled)
-                        .flatMap(c -> Mono.justOrEmpty(commandHolder.getCommandInfo(c.getName()))
+                        .flatMap(c -> Mono.justOrEmpty(commandHolder.getCommandInfo(c.getNames().get(0)))
                                 .flatMap(info -> Mono.justOrEmpty(
                                         Stream.concat(Arrays.stream(info.key()), c.getAliases().stream())
                                         .min(Comparator.comparingInt(cmd -> Strings.levenshtein(s, cmd))))))
@@ -83,7 +83,7 @@ public class DefaultCommandHandler implements CommandHandler{
         return computedText.flatMap(TupleUtils.function((prx, commandstr, cmdkey) -> Mono.justOrEmpty(commandHolder.getCommand(cmdkey))
                 .switchIfEmpty(entityRetriever.getCommandConfigById(guildId, cmdkey)
                         .filter(ConfigEntity::isEnabled)
-                        .flatMap(s -> Mono.justOrEmpty(commandHolder.getCommand(s.getName()))))
+                        .flatMap(s -> Mono.justOrEmpty(commandHolder.getCommand(s.getNames().get(0)))))
                 .switchIfEmpty(suggestion.then(Mono.empty()))
                 .flatMap(command -> {
                     CommandInfo info = commandHolder.getCommandInfoMap().get(command);
