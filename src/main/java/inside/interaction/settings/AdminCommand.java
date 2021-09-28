@@ -290,14 +290,10 @@ public class AdminCommand extends OwnerCommand{
                                                     .getGuildRoles(guildId)
                                                     .filter(role -> role.getId().equals(MessageUtil.parseRoleId(str)) ||
                                                             role.getName().equalsIgnoreCase(str))
-                                                    .mapNotNull(role -> {
-                                                        if(roleIds.add(role.getId())){
-                                                            return role.getMention();
-                                                        }
-                                                        return null;
-                                                    }))
+                                                    .mapNotNull(role -> roleIds.add(role.getId()) ? role.getMention() : null))
                                             .collect(Collectors.joining(", "))
-                                            .flatMap(s -> messageService.text(env.event(), "command.settings.added", s))
+                                            .flatMap(s -> messageService.text(env.event(), "command.settings.added"
+                                                    + (s.isBlank() ? "-nothing" : ""), s))
                                             .then(Mono.defer(() -> {
                                                 adminConfig.setAdminRoleIds(roleIds);
                                                 return entityRetriever.save(adminConfig);
@@ -339,14 +335,10 @@ public class AdminCommand extends OwnerCommand{
                                                     .getGuildRoles(guildId)
                                                     .filter(role -> role.getId().equals(MessageUtil.parseRoleId(str)) ||
                                                             role.getName().equalsIgnoreCase(str))
-                                                    .mapNotNull(role -> {
-                                                        if(roleIds.remove(role.getId())){
-                                                            return role.getMention();
-                                                        }
-                                                        return null;
-                                                    }))
+                                                    .mapNotNull(role -> roleIds.remove(role.getId()) ? role.getMention() : null))
                                             .collect(Collectors.joining(", "))
-                                            .flatMap(s -> messageService.text(env.event(), "command.settings.removed", s))
+                                            .flatMap(s -> messageService.text(env.event(), "command.settings.removed"
+                                                    + (s.isBlank() ? "-nothing" : ""), s))
                                             .then(Mono.defer(() -> {
                                                 adminConfig.setAdminRoleIds(roleIds);
                                                 return entityRetriever.save(adminConfig);
@@ -370,11 +362,10 @@ public class AdminCommand extends OwnerCommand{
 
                 return entityRetriever.getAdminConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createAdminConfig(guildId))
-                        .flatMap(adminConfig -> {
-                            adminConfig.setAdminRoleIds(Collections.emptySet());
-                            return messageService.text(env.event(), "command.settings.admin-roles.clear")
-                                    .and(entityRetriever.save(adminConfig));
-                        });
+                        .flatMap(adminConfig -> messageService.text(env.event(),
+                                adminConfig.getAdminRoleIds().isEmpty() ? "command.settings.removed-nothing" : "command.settings.admin-roles.clear")
+                                .doFirst(() -> adminConfig.setAdminRoleIds(Collections.emptySet()))
+                                .and(entityRetriever.save(adminConfig)));
             }
         }
     }

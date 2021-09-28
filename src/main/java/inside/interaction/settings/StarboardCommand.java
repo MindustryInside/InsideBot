@@ -136,7 +136,9 @@ public class StarboardCommand extends OwnerCommand{
                 return entityRetriever.getStarboardConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createStarboardConfig(guildId))
                         .flatMap(starboardConfig -> messageService.text(env.event(), "command.settings.emojis.current",
-                                formatEmojis.apply(starboardConfig.getEmojis())));
+                                starboardConfig.getEmojis().isEmpty()
+                                        ? "command.settings.absents"
+                                        : formatEmojis.apply(starboardConfig.getEmojis())));
             }
         }
 
@@ -185,9 +187,12 @@ public class StarboardCommand extends OwnerCommand{
                                         }
 
                                         emojis.addAll(list);
-                                        return messageService.text(env.event(), "command.settings.added", list.stream()
-                                                        .map(DiscordUtil::getEmojiString)
-                                                        .collect(Collectors.joining(", ")))
+                                        String str = list.stream()
+                                                .map(DiscordUtil::getEmojiString)
+                                                .collect(Collectors.joining(", "));
+
+                                        return messageService.text(env.event(), "command.settings.added"
+                                                + (str.isBlank() ? "-nothing" : ""), str)
                                                 .and(entityRetriever.save(starboardConfig));
                                     });
                         });
@@ -260,9 +265,11 @@ public class StarboardCommand extends OwnerCommand{
                                         }
 
                                         emojis.removeAll(list);
-                                        return messageService.text(env.event(), "command.settings.removed", list.stream()
-                                                        .map(DiscordUtil::getEmojiString)
-                                                        .collect(Collectors.joining(", ")))
+                                        String str = list.stream()
+                                                .map(DiscordUtil::getEmojiString)
+                                                .collect(Collectors.joining(", "));
+                                        return messageService.text(env.event(), "command.settings.removed"
+                                                        + (str.isBlank() ? "-nothing" : ""), str)
                                                 .and(entityRetriever.save(starboardConfig));
                                     });
                         });
@@ -284,11 +291,11 @@ public class StarboardCommand extends OwnerCommand{
 
                 return entityRetriever.getStarboardConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createStarboardConfig(guildId))
-                        .flatMap(starboardConfig -> {
-                            starboardConfig.getEmojis().clear();
-                            return messageService.text(env.event(), "command.settings.emojis.clear")
-                                    .and(entityRetriever.save(starboardConfig));
-                        });
+                        .flatMap(starboardConfig -> messageService.text(env.event(), starboardConfig.getEmojis().isEmpty()
+                                        ? "command.settings.removed-nothing"
+                                        : "command.settings.emojis.clear")
+                                .doFirst(starboardConfig.getEmojis()::clear)
+                                .and(entityRetriever.save(starboardConfig)));
             }
         }
     }

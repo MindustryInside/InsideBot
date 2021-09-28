@@ -169,7 +169,8 @@ public class CommandAliasCommand extends OwnerCommand{
                         Collections.addAll(flags, text);
                         commandConfig.setAliases(flags); // because in the list may not implement add method
 
-                        return messageService.text(env.event(), "command.settings.added",
+                        return messageService.text(env.event(), "command.settings.added"
+                                        + (text.length == 0 ? "-nothing" : ""),
                                         String.join(", ", text))
                                 .and(entityRetriever.save(commandConfig));
                     }));
@@ -227,7 +228,8 @@ public class CommandAliasCommand extends OwnerCommand{
                         tmp.removeAll(flags);
                         commandConfig.setAliases(flags);
 
-                        return messageService.text(env.event(), "command.settings.removed",
+                        return messageService.text(env.event(), "command.settings.removed"
+                                + (tmp.isEmpty() ? "-nothing" : ""),
                                         String.join(", ", tmp))
                                 .and(entityRetriever.save(commandConfig));
                     }));
@@ -269,7 +271,8 @@ public class CommandAliasCommand extends OwnerCommand{
                                     .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never()))
                                     .flatMap(suggestion -> messageService.err(env.event(), "command.response.found-closest", suggestion).then(Mono.never()))))
                     .doOnNext(configAliases -> configAliases.getAliases().clear())
-                    .flatMap(commandConfig -> messageService.text(env.event(), "command.settings.command-alias.clear")
+                    .flatMap(commandConfig -> messageService.text(env.event(),
+                            commandConfig.getAliases().isEmpty() ? "command.settings.removed-nothing" : "command.settings.command-alias.clear")
                             .and(entityRetriever.save(commandConfig)));
         }
     }

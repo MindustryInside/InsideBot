@@ -32,7 +32,9 @@ public class PrefixesCommand extends OwnerCommand{
             return entityRetriever.getGuildConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
                     .flatMap(guildConfig -> messageService.text(env.event(), "command.settings.prefix.current",
-                            String.join(", ", guildConfig.prefixes())));
+                            Optional.of(String.join(", ", guildConfig.prefixes()))
+                                    .filter(s -> !s.isBlank())
+                                    .orElseGet(() -> messageService.get(env.context(), "command.settings.absents"))));
         }
     }
 
@@ -65,7 +67,8 @@ public class PrefixesCommand extends OwnerCommand{
                         String[] text = value.split("(\\s+)?,(\\s+)?");
                         Collections.addAll(flags, text);
 
-                        return messageService.text(env.event(), "command.settings.added",
+                        return messageService.text(env.event(), "command.settings.added"
+                                        + (text.length == 0 ? "-nothing" : ""),
                                         String.join(", ", text))
                                 .and(entityRetriever.save(guildConfig));
                     }));
@@ -103,7 +106,8 @@ public class PrefixesCommand extends OwnerCommand{
                         flags.removeAll(Arrays.asList(text));
                         tmp.removeAll(flags);
 
-                        return messageService.text(env.event(), "command.settings.removed",
+                        return messageService.text(env.event(), "command.settings.removed"
+                                        + (tmp.isEmpty() ? "-nothing" : ""),
                                         String.join(", ", tmp))
                                 .and(entityRetriever.save(guildConfig));
                     }));
@@ -126,7 +130,8 @@ public class PrefixesCommand extends OwnerCommand{
             return entityRetriever.getGuildConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
                     .doOnNext(guildConfig -> guildConfig.prefixes().clear())
-                    .flatMap(guildConfig -> messageService.text(env.event(), "command.settings.prefix.clear")
+                    .flatMap(guildConfig -> messageService.text(env.event(),
+                            guildConfig.prefixes().isEmpty() ? "" :"command.settings.prefix.clear")
                             .and(entityRetriever.save(guildConfig)));
         }
     }

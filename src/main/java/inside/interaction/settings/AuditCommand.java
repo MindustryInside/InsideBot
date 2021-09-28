@@ -116,9 +116,11 @@ public class AuditCommand extends OwnerCommand{
                 return entityRetriever.getAuditConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createAuditConfig(guildId))
                         .flatMap(auditConfig -> messageService.text(env.event(), "command.settings.actions.current",
-                                auditConfig.getTypes().stream()
+                                Optional.of(auditConfig.getTypes().stream()
                                         .map(type -> messageService.getEnum(env.context(), type))
-                                        .collect(Collectors.joining(", "))));
+                                        .collect(Collectors.joining(", ")))
+                                        .filter(s -> !s.isBlank())
+                                        .orElseGet(() -> messageService.get(env.context(), "command.settings.absents"))));
             }
         }
 
@@ -162,7 +164,8 @@ public class AuditCommand extends OwnerCommand{
                                                 .ifPresent(consumer((type, str) -> flags.add(type))));
                                     }
 
-                                    return messageService.text(env.event(), "command.settings.added", flags.stream()
+                                    return messageService.text(env.event(), "command.settings.added"
+                                                    + (flags.isEmpty() ? "-nothing" : ""), flags.stream()
                                                     .map(type -> messageService.getEnum(env.context(), type))
                                                     .collect(Collectors.joining(", ")))
                                             .and(entityRetriever.save(auditConfig));
@@ -211,7 +214,8 @@ public class AuditCommand extends OwnerCommand{
                                                 }
                                             })));
 
-                                    return messageService.text(env.event(), "command.settings.removed",
+                                    return messageService.text(env.event(), "command.settings.removed"
+                                                    + (removed.isEmpty() ? "-nothing" : ""),
                                                     String.join(", ", removed))
                                             .and(entityRetriever.save(auditConfig));
                                 }));
@@ -233,11 +237,10 @@ public class AuditCommand extends OwnerCommand{
 
                 return entityRetriever.getAuditConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createAuditConfig(guildId))
-                        .flatMap(auditConfig -> {
-                            auditConfig.getTypes().clear();
-                            return messageService.text(env.event(), "command.settings.actions.clear")
-                                    .and(entityRetriever.save(auditConfig));
-                        });
+                        .flatMap(auditConfig -> messageService.text(env.event(),
+                                auditConfig.getTypes().isEmpty() ? "command.settings.removed-nothing" : "command.settings.actions.clear")
+                                .doFirst(auditConfig.getTypes()::clear)
+                                .and(entityRetriever.save(auditConfig)));
             }
         }
     }

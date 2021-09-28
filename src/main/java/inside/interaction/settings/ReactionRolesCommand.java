@@ -48,7 +48,8 @@ public class ReactionRolesCommand extends OwnerCommand{
                     .map(ReactionRolesCommand::format)
                     .collect(Collectors.joining())
                     .flatMap(str -> messageService.text(env.event(),
-                            "command.settings.reaction-roles.current", str));
+                            "command.settings.reaction-roles.current",
+                            str.isBlank() ? "command.settings.absents" : str));
         }
     }
 
@@ -183,8 +184,10 @@ public class ReactionRolesCommand extends OwnerCommand{
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
 
-            return entityRetriever.deleteAllEmojiDispenserInGuild(guildId)
-                    .then(messageService.text(env.event(), "command.settings.reaction-roles.clear"));
+            return entityRetriever.getEmojiDispenserCountInGuild(guildId)
+                    .flatMap(l -> entityRetriever.deleteAllEmojiDispenserInGuild(guildId)
+                            .then(messageService.text(env.event(),
+                                    l == 0 ? "command.settings.removed-nothing" : "command.settings.reaction-roles.clear")));
         }
     }
 }
