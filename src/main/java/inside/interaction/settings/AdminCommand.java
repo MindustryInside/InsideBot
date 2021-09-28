@@ -277,7 +277,7 @@ public class AdminCommand extends OwnerCommand{
 
                 return entityRetriever.getAdminConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createAdminConfig(guildId))
-                        .flatMap(adminConfig -> Mono.justOrEmpty(env.getOption("admin-roles")
+                        .flatMap(adminConfig -> Mono.justOrEmpty(env.getOption("value")
                                         .flatMap(ApplicationCommandInteractionOption::getValue)
                                         .map(ApplicationCommandInteractionOptionValue::asString))
                                 .flatMap(value -> {
@@ -308,7 +308,7 @@ public class AdminCommand extends OwnerCommand{
                 super(owner);
 
                 addOption(builder -> builder.name("value")
-                        .description("Role.")
+                        .description("Role ID or name.")
                         .required(true)
                         .type(ApplicationCommandOption.Type.STRING.getValue()));
             }
@@ -320,7 +320,7 @@ public class AdminCommand extends OwnerCommand{
 
                 return entityRetriever.getAdminConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createAdminConfig(guildId))
-                        .flatMap(adminConfig -> Mono.justOrEmpty(env.getOption("admin-roles")
+                        .flatMap(adminConfig -> Mono.justOrEmpty(env.getOption("value")
                                         .flatMap(ApplicationCommandInteractionOption::getValue)
                                         .map(ApplicationCommandInteractionOptionValue::asString))
                                 .flatMap(value -> {
