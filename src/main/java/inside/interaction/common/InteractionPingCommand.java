@@ -3,7 +3,7 @@ package inside.interaction.common;
 import inside.interaction.*;
 import reactor.core.publisher.Mono;
 
-@InteractionDiscordCommand(name = "ping1", description = "Get bot ping.")
+@InteractionDiscordCommand(name = "ping", description = "Get bot ping.")
 public class InteractionPingCommand extends BaseInteractionCommand{
     @Override
     public Mono<Void> execute(InteractionCommandEnvironment env){

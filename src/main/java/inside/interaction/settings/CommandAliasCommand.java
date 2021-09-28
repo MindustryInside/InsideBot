@@ -60,7 +60,7 @@ public class CommandAliasCommand extends OwnerCommand{
                                             .flatMap(commandInfo -> Arrays.stream(commandInfo.key()))
                                             .min(Comparator.comparingInt(a -> Strings.levenshtein(a, s))))
                                     .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never()))
-                                    .flatMap(suggestion -> messageService.err(env.event(), "command.response.found-closest", s).then(Mono.never()))))
+                                    .flatMap(suggestion -> messageService.err(env.event(), "command.response.found-closest", suggestion).then(Mono.never()))))
                     .flatMap(commandConfig -> Mono.justOrEmpty(env.getOption("value")
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asBoolean))
@@ -111,7 +111,7 @@ public class CommandAliasCommand extends OwnerCommand{
                                             .flatMap(commandInfo -> Arrays.stream(commandInfo.key()))
                                             .min(Comparator.comparingInt(a -> Strings.levenshtein(a, s))))
                                     .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never()))
-                                    .flatMap(suggestion -> messageService.err(env.event(), "command.response.found-closest", s).then(Mono.never()))))
+                                    .flatMap(suggestion -> messageService.err(env.event(), "command.response.found-closest", suggestion).then(Mono.never()))))
                     .flatMap(commandConfig -> messageService.text(env.event(),
                             commandConfig.getAliases().isEmpty()
                                     ? "command.settings.command-alias.absent"
@@ -158,15 +158,16 @@ public class CommandAliasCommand extends OwnerCommand{
                                             .flatMap(commandInfo -> Arrays.stream(commandInfo.key()))
                                             .min(Comparator.comparingInt(a -> Strings.levenshtein(a, s))))
                                     .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never()))
-                                    .flatMap(suggestion -> messageService.err(env.event(), "command.response.found-closest", s).then(Mono.never()))))
+                                    .flatMap(suggestion -> messageService.err(env.event(), "command.response.found-closest", suggestion).then(Mono.never()))))
                     .zipWith(Mono.justOrEmpty(env.getOption("value")
                             .flatMap(ApplicationCommandInteractionOption::getValue)
                             .map(ApplicationCommandInteractionOptionValue::asString)))
                     .flatMap(function((commandConfig, value) -> {
-                        List<String> flags = commandConfig.getAliases();
+                        List<String> flags = new ArrayList<>(commandConfig.getAliases());
 
                         String[] text = value.split("(\\s+)?,(\\s+)?");
                         Collections.addAll(flags, text);
+                        commandConfig.setAliases(flags); // because in the list may not implement add method
 
                         return messageService.text(env.event(), "command.settings.added",
                                         String.join(", ", text))
@@ -213,17 +214,18 @@ public class CommandAliasCommand extends OwnerCommand{
                                             .flatMap(commandInfo -> Arrays.stream(commandInfo.key()))
                                             .min(Comparator.comparingInt(a -> Strings.levenshtein(a, s))))
                                     .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never()))
-                                    .flatMap(suggestion -> messageService.err(env.event(), "command.response.found-closest", s).then(Mono.never()))))
+                                    .flatMap(suggestion -> messageService.err(env.event(), "command.response.found-closest", suggestion).then(Mono.never()))))
                     .zipWith(Mono.justOrEmpty(env.getOption("value")
                             .flatMap(ApplicationCommandInteractionOption::getValue)
                             .map(ApplicationCommandInteractionOptionValue::asString)))
                     .flatMap(function((commandConfig, value) -> {
-                        List<String> flags = commandConfig.getAliases();
+                        List<String> flags = new ArrayList<>(commandConfig.getAliases());
                         List<String> tmp = new ArrayList<>(flags);
 
                         String[] text = value.split("(\\s+)?,(\\s+)?");
                         flags.removeAll(Arrays.asList(text));
                         tmp.removeAll(flags);
+                        commandConfig.setAliases(flags);
 
                         return messageService.text(env.event(), "command.settings.removed",
                                         String.join(", ", tmp))
@@ -265,7 +267,7 @@ public class CommandAliasCommand extends OwnerCommand{
                                             .flatMap(commandInfo -> Arrays.stream(commandInfo.key()))
                                             .min(Comparator.comparingInt(a -> Strings.levenshtein(a, s))))
                                     .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never()))
-                                    .flatMap(suggestion -> messageService.err(env.event(), "command.response.found-closest", s).then(Mono.never()))))
+                                    .flatMap(suggestion -> messageService.err(env.event(), "command.response.found-closest", suggestion).then(Mono.never()))))
                     .doOnNext(configAliases -> configAliases.getAliases().clear())
                     .flatMap(commandConfig -> messageService.text(env.event(), "command.settings.command-alias.clear")
                             .and(entityRetriever.save(commandConfig)));

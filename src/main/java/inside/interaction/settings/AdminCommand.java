@@ -281,21 +281,27 @@ public class AdminCommand extends OwnerCommand{
                                         .flatMap(ApplicationCommandInteractionOption::getValue)
                                         .map(ApplicationCommandInteractionOptionValue::asString))
                                 .flatMap(value -> {
-                                    Set<Snowflake> roleIds = adminConfig.getAdminRoleIds();
+                                    Set<Snowflake> roleIds = Collections.synchronizedSet(adminConfig.getAdminRoleIds());
                                     String[] text = value.split("(\\s+)?,(\\s+)?");
 
                                     return Flux.fromArray(text)
-                                            .map(String::toLowerCase)
                                             .flatMap(str -> env.getClient()
                                                     .withRetrievalStrategy(EntityRetrievalStrategy.REST)
                                                     .getGuildRoles(guildId)
                                                     .filter(role -> role.getId().equals(MessageUtil.parseRoleId(str)) ||
-                                                            role.getName().equals(str))
-                                                    .doOnNext(role -> roleIds.add(role.getId())))
-                                            .then(messageService.text(env.event(), "command.settings.added", roleIds.stream()
-                                                    .map(DiscordUtil::getRoleMention)
-                                                    .collect(Collectors.joining(", "))))
-                                            .and(entityRetriever.save(adminConfig));
+                                                            role.getName().equalsIgnoreCase(str))
+                                                    .mapNotNull(role -> {
+                                                        if(roleIds.add(role.getId())){
+                                                            return role.getMention();
+                                                        }
+                                                        return null;
+                                                    }))
+                                            .collect(Collectors.joining(", "))
+                                            .flatMap(s -> messageService.text(env.event(), "command.settings.added", s))
+                                            .then(Mono.defer(() -> {
+                                                adminConfig.setAdminRoleIds(roleIds);
+                                                return entityRetriever.save(adminConfig);
+                                            }));
                                 }));
             }
         }
@@ -325,25 +331,26 @@ public class AdminCommand extends OwnerCommand{
                                         .map(ApplicationCommandInteractionOptionValue::asString))
                                 .flatMap(value -> {
                                     Set<Snowflake> roleIds = adminConfig.getAdminRoleIds();
-                                    List<Snowflake> removed = new ArrayList<>();
                                     String[] text = value.split("(\\s+)?,(\\s+)?");
 
                                     return Flux.fromArray(text)
-                                            .map(String::toLowerCase)
                                             .flatMap(str -> env.getClient()
                                                     .withRetrievalStrategy(EntityRetrievalStrategy.REST)
                                                     .getGuildRoles(guildId)
                                                     .filter(role -> role.getId().equals(MessageUtil.parseRoleId(str)) ||
-                                                            role.getName().equals(str))
-                                                    .doOnNext(role -> {
+                                                            role.getName().equalsIgnoreCase(str))
+                                                    .mapNotNull(role -> {
                                                         if(roleIds.remove(role.getId())){
-                                                            removed.add(role.getId());
+                                                            return role.getMention();
                                                         }
+                                                        return null;
                                                     }))
-                                            .then(messageService.text(env.event(), "command.settings.removed", removed.stream()
-                                                    .map(DiscordUtil::getRoleMention)
-                                                    .collect(Collectors.joining(", "))))
-                                            .and(entityRetriever.save(adminConfig));
+                                            .collect(Collectors.joining(", "))
+                                            .flatMap(s -> messageService.text(env.event(), "command.settings.removed", s))
+                                            .then(Mono.defer(() -> {
+                                                adminConfig.setAdminRoleIds(roleIds);
+                                                return entityRetriever.save(adminConfig);
+                                            }));
                                 }));
             }
         }
@@ -364,7 +371,7 @@ public class AdminCommand extends OwnerCommand{
                 return entityRetriever.getAdminConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createAdminConfig(guildId))
                         .flatMap(adminConfig -> {
-                            adminConfig.getAdminRoleIds().clear();
+                            adminConfig.setAdminRoleIds(Collections.emptySet());
                             return messageService.text(env.event(), "command.settings.admin-roles.clear")
                                     .and(entityRetriever.save(adminConfig));
                         });
