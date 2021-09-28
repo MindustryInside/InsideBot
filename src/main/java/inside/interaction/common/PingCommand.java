@@ -4,7 +4,7 @@ import inside.interaction.*;
 import reactor.core.publisher.Mono;
 
 @InteractionDiscordCommand(name = "ping", description = "Get bot ping.")
-public class InteractionPingCommand extends BaseInteractionCommand{
+public class PingCommand extends BaseInteractionCommand{
     @Override
     public Mono<Void> execute(InteractionCommandEnvironment env){
         long start = System.currentTimeMillis();

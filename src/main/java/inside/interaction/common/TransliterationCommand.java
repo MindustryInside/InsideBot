@@ -7,9 +7,9 @@ import reactor.core.publisher.Mono;
 import java.util.function.Predicate;
 
 @InteractionDiscordCommand(name = "tr", description = "Translating key into transliteration.")
-public class InteractionTransliterationCommand extends BaseInteractionCommand{
+public class TransliterationCommand extends BaseInteractionCommand{
 
-    public InteractionTransliterationCommand(){
+    public TransliterationCommand(){
 
         addOption(builder -> builder.name("text")
                 .description("Translation text.")

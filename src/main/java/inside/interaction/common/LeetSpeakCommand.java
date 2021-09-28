@@ -5,21 +5,23 @@ import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import inside.interaction.*;
 import reactor.core.publisher.Mono;
 
-@InteractionDiscordCommand(name = "r", description = "Change text layout.")
-public class InteractionTextLayoutCommand extends BaseInteractionCommand{
+import java.util.function.Predicate;
 
-    public InteractionTextLayoutCommand(){
+@InteractionDiscordCommand(name = "1337", description = "Translate text into leet speak.")
+public class LeetSpeakCommand extends BaseInteractionCommand{
+
+    public LeetSpeakCommand(){
 
         addOption(builder -> builder.name("type")
-                .description("Text layout type.")
+                .description("Leet speak type.")
                 .type(ApplicationCommandOption.Type.STRING.getValue())
                 .required(true)
                 .addChoice(ApplicationCommandOptionChoiceData.builder()
-                        .name("English layout.")
+                        .name("English leet.")
                         .value("en")
                         .build())
                 .addChoice(ApplicationCommandOptionChoiceData.builder()
-                        .name("Russian layout.")
+                        .name("Russian leet.")
                         .value("ru")
                         .build()));
 
@@ -40,9 +42,8 @@ public class InteractionTextLayoutCommand extends BaseInteractionCommand{
         String text = env.getOption("text")
                 .flatMap(ApplicationCommandInteractionOption::getValue)
                 .map(ApplicationCommandInteractionOptionValue::asString)
-                .map(str -> russian
-                        ? inside.command.common.TextLayoutCommand.text2eng(str)
-                        : inside.command.common.TextLayoutCommand.text2rus(str))
+                .map(str -> inside.command.common.LeetSpeakCommand.leeted(str, russian))
+                .filter(Predicate.not(String::isBlank))
                 .orElseGet(() -> messageService.get(env.context(), "message.placeholder"));
 
         return env.event().reply(text);

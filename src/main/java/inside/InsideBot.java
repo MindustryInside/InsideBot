@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.MessageSource;
-import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.*;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -19,7 +19,7 @@ import java.util.function.Function;
 @ConfigurationPropertiesScan("inside")
 @EnableScheduling
 @EnableTransactionManagement
-@SpringBootApplication
+@SpringBootApplication(nameGenerator = FullyQualifiedAnnotationBeanNameGenerator.class)
 public class InsideBot{
 
     public static void main(String[] args){

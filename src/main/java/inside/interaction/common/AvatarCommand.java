@@ -6,9 +6,9 @@ import inside.interaction.*;
 import reactor.core.publisher.Mono;
 
 @InteractionDiscordCommand(name = "avatar", description = "Get user avatar.")
-public class InteractionAvatarCommand extends BaseInteractionCommand{
+public class AvatarCommand extends BaseInteractionCommand{
 
-    public InteractionAvatarCommand(){
+    public AvatarCommand(){
 
         addOption(builder -> builder.name("target")
                 .description("Whose avatar needs to get. By default your avatar")

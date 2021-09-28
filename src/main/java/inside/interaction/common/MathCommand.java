@@ -9,9 +9,9 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 @InteractionDiscordCommand(name = "math", description = "Calculate math expression.")
-public class InteractionMathCommand extends BaseInteractionCommand{
+public class MathCommand extends BaseInteractionCommand{
 
-    public InteractionMathCommand(){
+    public MathCommand(){
 
         addOption(builder -> builder.name("expression")
                 .description("Math expression.")

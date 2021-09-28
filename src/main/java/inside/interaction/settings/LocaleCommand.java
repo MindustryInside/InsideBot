@@ -12,9 +12,9 @@ import static inside.util.ContextUtil.KEY_LOCALE;
 import static reactor.function.TupleUtils.function;
 
 @InteractionDiscordCommand(name = "locale", description = "Configure bot locale.")
-public class InteractionLocaleCommand extends SettingsCommand{
+public class LocaleCommand extends SettingsCommand{
 
-    protected InteractionLocaleCommand(){
+    protected LocaleCommand(){
 
         addOption(builder -> builder.name("value")
                 .description("New locale.")
