@@ -4,6 +4,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.*;
 import inside.command.CommandHolder;
 import inside.interaction.*;
+import inside.util.Strings;
 import inside.util.func.BooleanFunction;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
@@ -55,7 +56,11 @@ public class CommandAliasCommand extends OwnerCommand{
                             .switchIfEmpty(Mono.justOrEmpty(commandHolder.getCommandInfo(s))
                                     .flatMap(info -> entityRetriever.createCommandConfig(
                                             guildId, Arrays.asList(info.key()), Collections.emptyList())))
-                            .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never())))
+                            .switchIfEmpty(Mono.justOrEmpty(commandHolder.getCommandInfoMap().values().stream()
+                                            .flatMap(commandInfo -> Arrays.stream(commandInfo.key()))
+                                            .min(Comparator.comparingInt(a -> Strings.levenshtein(a, s))))
+                                    .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never()))
+                                    .flatMap(suggestion -> messageService.err(env.event(), "command.response.found-closest", s).then(Mono.never()))))
                     .flatMap(commandConfig -> Mono.justOrEmpty(env.getOption("value")
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asBoolean))
@@ -102,7 +107,11 @@ public class CommandAliasCommand extends OwnerCommand{
                             .switchIfEmpty(Mono.justOrEmpty(commandHolder.getCommandInfo(s))
                                     .flatMap(info -> entityRetriever.createCommandConfig(
                                             guildId, Arrays.asList(info.key()), Collections.emptyList())))
-                            .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never())))
+                            .switchIfEmpty(Mono.justOrEmpty(commandHolder.getCommandInfoMap().values().stream()
+                                            .flatMap(commandInfo -> Arrays.stream(commandInfo.key()))
+                                            .min(Comparator.comparingInt(a -> Strings.levenshtein(a, s))))
+                                    .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never()))
+                                    .flatMap(suggestion -> messageService.err(env.event(), "command.response.found-closest", s).then(Mono.never()))))
                     .flatMap(commandConfig -> messageService.text(env.event(),
                             commandConfig.getAliases().isEmpty()
                                     ? "command.settings.command-alias.absent"
@@ -145,7 +154,11 @@ public class CommandAliasCommand extends OwnerCommand{
                             .switchIfEmpty(Mono.justOrEmpty(commandHolder.getCommandInfo(s))
                                     .flatMap(info -> entityRetriever.createCommandConfig(
                                             guildId, Arrays.asList(info.key()), Collections.emptyList())))
-                            .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never())))
+                            .switchIfEmpty(Mono.justOrEmpty(commandHolder.getCommandInfoMap().values().stream()
+                                            .flatMap(commandInfo -> Arrays.stream(commandInfo.key()))
+                                            .min(Comparator.comparingInt(a -> Strings.levenshtein(a, s))))
+                                    .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never()))
+                                    .flatMap(suggestion -> messageService.err(env.event(), "command.response.found-closest", s).then(Mono.never()))))
                     .zipWith(Mono.justOrEmpty(env.getOption("value")
                             .flatMap(ApplicationCommandInteractionOption::getValue)
                             .map(ApplicationCommandInteractionOptionValue::asString)))
@@ -196,7 +209,11 @@ public class CommandAliasCommand extends OwnerCommand{
                             .switchIfEmpty(Mono.justOrEmpty(commandHolder.getCommandInfo(s))
                                     .flatMap(info -> entityRetriever.createCommandConfig(
                                             guildId, Arrays.asList(info.key()), Collections.emptyList())))
-                            .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never())))
+                            .switchIfEmpty(Mono.justOrEmpty(commandHolder.getCommandInfoMap().values().stream()
+                                            .flatMap(commandInfo -> Arrays.stream(commandInfo.key()))
+                                            .min(Comparator.comparingInt(a -> Strings.levenshtein(a, s))))
+                                    .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never()))
+                                    .flatMap(suggestion -> messageService.err(env.event(), "command.response.found-closest", s).then(Mono.never()))))
                     .zipWith(Mono.justOrEmpty(env.getOption("value")
                             .flatMap(ApplicationCommandInteractionOption::getValue)
                             .map(ApplicationCommandInteractionOptionValue::asString)))
@@ -244,7 +261,11 @@ public class CommandAliasCommand extends OwnerCommand{
                             .switchIfEmpty(Mono.justOrEmpty(commandHolder.getCommandInfo(s))
                                     .flatMap(info -> entityRetriever.createCommandConfig(
                                             guildId, Arrays.asList(info.key()), Collections.emptyList())))
-                            .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never())))
+                            .switchIfEmpty(Mono.justOrEmpty(commandHolder.getCommandInfoMap().values().stream()
+                                            .flatMap(commandInfo -> Arrays.stream(commandInfo.key()))
+                                            .min(Comparator.comparingInt(a -> Strings.levenshtein(a, s))))
+                                    .switchIfEmpty(messageService.err(env.event(), "command.settings.command-alias.not-found").then(Mono.never()))
+                                    .flatMap(suggestion -> messageService.err(env.event(), "command.response.found-closest", s).then(Mono.never()))))
                     .doOnNext(configAliases -> configAliases.getAliases().clear())
                     .flatMap(commandConfig -> messageService.text(env.event(), "command.settings.command-alias.clear")
                             .and(entityRetriever.save(commandConfig)));
