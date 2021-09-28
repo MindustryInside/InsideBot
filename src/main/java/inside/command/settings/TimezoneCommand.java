@@ -39,7 +39,7 @@ public class TimezoneCommand extends OwnerCommand{
                 .flatMap(guildConfig -> Mono.defer(() -> {
                     if(timeZone == null){
                         return ZoneId.getAvailableZoneIds().stream()
-                                .min(Comparator.comparingInt(s -> Strings.levenshtein(s, str)))
+                                .min(Comparator.comparingInt(s -> Strings.damerauLevenshtein(s, str)))
                                 .map(s -> messageService.err(env, "command.settings.timezone.unknown.suggest", s))
                                 .orElse(messageService.err(env, "command.settings.timezone.unknown"));
                     }

@@ -38,7 +38,7 @@ public class TimeZoneCommand extends SettingsCommand{
                     ZoneId timeZone = Try.ofCallable(() -> ZoneId.of(value)).orElse(null);
                     if(timeZone == null){
                         return ZoneId.getAvailableZoneIds().stream()
-                                .min(Comparator.comparingInt(s -> Strings.levenshtein(s, value)))
+                                .min(Comparator.comparingInt(s -> Strings.damerauLevenshtein(s, value)))
                                 .map(s -> messageService.err(env.event(), "command.settings.timezone.unknown.suggest", s))
                                 .orElse(messageService.err(env.event(), "command.settings.timezone.unknown"));
                     }

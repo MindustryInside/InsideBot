@@ -80,7 +80,7 @@ public class HelpCommand extends Command{
         Mono<Void> snowHelp = Mono.defer(() -> {
             String unwrapped = category.orElse("");
             return categoryFlux.map(Map.Entry::getKey)
-                    .transform(f -> MathFlux.min(f, Comparator.comparingInt(s -> Strings.levenshtein(s.name(), unwrapped))))
+                    .transform(f -> MathFlux.min(f, Comparator.comparingInt(s -> Strings.damerauLevenshtein(s.name(), unwrapped))))
                     .switchIfEmpty(messageService.err(env, "command.help.unknown").then(Mono.empty()))
                     .flatMap(s -> messageService.err(env, "command.help.found-closest", s))
                     .then();

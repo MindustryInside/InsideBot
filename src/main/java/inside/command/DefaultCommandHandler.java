@@ -71,10 +71,10 @@ public class DefaultCommandHandler implements CommandHandler{
                         .flatMap(c -> Mono.justOrEmpty(commandHolder.getCommandInfo(c.getNames().get(0)))
                                 .flatMap(info -> Mono.justOrEmpty(
                                         Stream.concat(Arrays.stream(info.key()), c.getAliases().stream())
-                                        .min(Comparator.comparingInt(cmd -> Strings.levenshtein(s, cmd))))))
+                                        .min(Comparator.comparingInt(cmd -> Strings.damerauLevenshtein(s, cmd))))))
                         .switchIfEmpty(Mono.justOrEmpty(commandHolder.getCommandInfoMap().values().stream()
                                 .flatMap(commandInfo -> Arrays.stream(commandInfo.key()))
-                                .min(Comparator.comparingInt(a -> Strings.levenshtein(a, s))))))
+                                .min(Comparator.comparingInt(a -> Strings.damerauLevenshtein(a, s))))))
                 .switchIfEmpty(prefix.map(GuildConfig::formatPrefix).flatMap(str ->
                         messageService.err(env, "command.response.unknown", str)).then(Mono.never()))
                 .flatMap(s -> messageService.err(env, "command.response.found-closest", s))

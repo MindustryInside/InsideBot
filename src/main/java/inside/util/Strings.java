@@ -32,7 +32,7 @@ public abstract class Strings{
         return Try.ofCallable(() -> Long.parseLong(s)).orElse(defaultValue);
     }
 
-    public static int levenshtein(CharSequence x, CharSequence y){
+    public static int damerauLevenshtein(CharSequence x, CharSequence y){
         int[][] dp = new int[x.length() + 1][y.length() + 1];
 
         for(int i = 0; i <= x.length(); i++){
@@ -42,9 +42,15 @@ public abstract class Strings{
                 }else if(j == 0){
                     dp[i][j] = i;
                 }else{
-                    dp[i][j] = Math.min(Math.min(dp[i - 1][j - 1] + (x.charAt(i - 1) == y.charAt(j - 1) ? 0 : 1),
+                    dp[i][j] = Math.min(Math.min(dp[i - 1][j - 1]
+                            + (x.charAt(i - 1) == y.charAt(j - 1) ? 0 : 1),
                             dp[i - 1][j] + 1),
                             dp[i][j - 1] + 1);
+                }
+
+                if(i > 1 && j > 1 && x.charAt(i - 1) == y.charAt(j - 2) && x.charAt(i - 2) == y.charAt(j - 1)){
+                    dp[i][j] = Math.min(dp[i][j], dp[i - 2][j - 2]
+                            + (x.charAt(i - 1) == y.charAt(j - 1) ? 0 : 1));
                 }
             }
         }

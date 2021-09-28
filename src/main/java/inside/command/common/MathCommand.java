@@ -50,7 +50,7 @@ public class MathCommand extends Command{
         public Expression.LazyNumber lazyEval(List<Expression.LazyNumber> lazyParams){
             var first = lazyParams.get(0);
             var second = lazyParams.get(1);
-            return createNumber(() -> BigDecimal.valueOf(Strings.levenshtein(first.getString(), second.getString())));
+            return createNumber(() -> BigDecimal.valueOf(Strings.damerauLevenshtein(first.getString(), second.getString())));
         }
     };
 
