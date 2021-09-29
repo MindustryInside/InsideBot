@@ -13,7 +13,7 @@ import reactor.math.MathFlux;
 import java.util.*;
 import java.util.stream.*;
 
-@DiscordCommand(key = {"help", "?", "man"}, params = "command.help.params", description = "command.help.description")
+@DiscordCommand(key = {"help", "?"}, params = "command.help.params", description = "command.help.description")
 public class HelpCommand extends Command{
     @Autowired
     private CommandHolder commandHolder;
