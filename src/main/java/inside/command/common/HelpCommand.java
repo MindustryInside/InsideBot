@@ -63,18 +63,18 @@ public class HelpCommand extends Command{
                         messageService.getEnum(env.context(), e.getKey()), e.getKey()))
                 .collect(Collectors.joining())
                 .map(s -> s.concat("\n").concat(messageService.get(env.context(), "command.help.disclaimer.get-list")))
-                .flatMap(categoriesStr -> env.getReplyChannel().flatMap(channel -> channel.createMessage(
-                                EmbedCreateSpec.builder()
-                                        .title(messageService.get(env.context(), "command.help"))
-                                        .description(categoriesStr)
-                                        .color(settings.getDefaults().getNormalColor())
-                                        .build())
+                .flatMap(categoriesStr -> env.channel().createMessage(
+                        EmbedCreateSpec.builder()
+                                .title(messageService.get(env.context(), "command.help"))
+                                .description(categoriesStr)
+                                .color(settings.getDefaults().getNormalColor())
+                                .build())
                         .withComponents(ActionRow.of(
                                 Arrays.stream(CommandCategory.all)
                                         .map(c -> Button.primary("inside-help-"
-                                                + c.ordinal() + "-" + env.getAuthorAsMember().getId().asLong(),
+                                                + c.ordinal() + "-" + env.member().getId().asLong(),
                                                 messageService.getEnum(env.context(), c)))
-                                        .toList()))))
+                                        .toList())))
                 .then();
 
         Mono<Void> snowHelp = Mono.defer(() -> {
@@ -101,8 +101,8 @@ public class HelpCommand extends Command{
                 .collect(categoryCollector)
                 .map(builder -> builder.append(messageService.get(env.context(), "command.help.disclaimer.user"))
                         .append("\n").append(messageService.get(env.context(), "command.help.disclaimer.help")))
-                .flatMap(str -> messageService.info(env, spec -> spec.title(messageService.getEnum(env.context(),
-                                category.map(CommandCategory::valueOf).orElseThrow(IllegalStateException::new)))
-                        .description(str.toString())));
+                .flatMap(str -> messageService.infoTitled(env, messageService.getEnum(env.context(),
+                        category.map(CommandCategory::valueOf).orElseThrow(IllegalStateException::new)), str.toString()))
+                .then();
     }
 }

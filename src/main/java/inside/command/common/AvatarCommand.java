@@ -6,12 +6,11 @@ import discord4j.core.object.entity.*;
 import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.core.spec.*;
 import discord4j.discordjson.json.gateway.RequestGuildMembers;
-import discord4j.rest.util.AllowedMentions;
 import inside.Settings;
 import inside.command.Command;
 import inside.command.model.*;
 import inside.data.entity.GuildConfig;
-import inside.interaction.component.SearchSelectMenuListener;
+import inside.interaction.component.selectmenu.SearchSelectMenuListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 
@@ -29,21 +28,21 @@ public class AvatarCommand extends Command{
 
     @Override
     public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-        Member author = env.getAuthorAsMember();
+        Member author = env.member();
         Snowflake guildId = author.getGuildId();
 
         Optional<OptionValue> firstOpt = interaction.getOption(0)
                 .flatMap(CommandOption::getValue);
 
-        Mono<User> referencedUser = Mono.justOrEmpty(env.getMessage().getMessageReference())
+        Mono<User> referencedUser = Mono.justOrEmpty(env.message().getMessageReference())
                 .flatMap(ref -> Mono.justOrEmpty(ref.getMessageId()).flatMap(messageId ->
-                        env.getMessage().getClient().withRetrievalStrategy(EntityRetrievalStrategy.REST)
+                        env.message().getClient().withRetrievalStrategy(EntityRetrievalStrategy.REST)
                                 .getMessageById(ref.getChannelId(), messageId)))
                 .flatMap(message -> Mono.justOrEmpty(message.getAuthor()));
 
         Mono<User> searchUser = Mono.justOrEmpty(firstOpt)
                 .map(OptionValue::asString)
-                .flatMapMany(s -> env.getMessage()
+                .flatMapMany(s -> env.message()
                         .getClient().requestMembers(RequestGuildMembers.builder()
                                 .limit(3)
                                 .query(s)
@@ -51,7 +50,7 @@ public class AvatarCommand extends Command{
                                 .build()))
                 .switchIfEmpty(messageService.err(env, "command.incorrect-name").then(Mono.never()))
                 .collectList()
-                .flatMap(list -> list.size() == 1 ? Mono.just(list.get(0)) : env.getMessage().getChannel()
+                .flatMap(list -> list.size() == 1 ? Mono.just(list.get(0)) : env.message().getChannel()
                         .flatMap(channel -> channel.createMessage(MessageCreateSpec.builder()
                                 .content(messageService.get(env.context(), "message.choose-user"))
                                 .addComponent(ActionRow.of(SelectMenu.of(
@@ -64,37 +63,42 @@ public class AvatarCommand extends Command{
                                 .build()))
                         .flatMap(message -> searchSelectMenuListener.registerInteraction(
                                 message.getId(), e -> e.getClient().getMemberById(
-                                        guildId, Snowflake.of(e.getValues().get(0)))
-                                        .flatMap(target -> e.edit(InteractionApplicationCommandCallbackSpec.builder()
+                                        guildId, Snowflake.of(e.event().getValues().get(0)))
+                                        .flatMap(target -> e.event().edit(InteractionApplicationCommandCallbackSpec.builder()
                                                 .components(List.of())
                                                 .content("")
                                                 .addEmbed(EmbedCreateSpec.builder()
                                                         .color(settings.getDefaults().getNormalColor())
                                                         .image(target.getAvatarUrl() + "?size=512")
-                                                        .description(messageService.format(env.context(), "command.avatar.text", target.getUsername(),
+                                                        .description(messageService.format(e.context(), "command.avatar.text", target.getUsername(),
                                                                 target.getMention()))
                                                         .build())
-                                                .allowedMentions(AllowedMentions.suppressAll())
                                                 .build()))
-                                        .then(searchSelectMenuListener.unregisterInteraction(e.getMessageId()))))
+                                        .then(searchSelectMenuListener.unregisterInteraction(
+                                                e.event().getMessageId()))))
                         .then(Mono.never()));
 
-        return Mono.justOrEmpty(firstOpt.map(OptionValue::asSnowflake)).flatMap(id -> env.getMessage().getClient()
+        return Mono.justOrEmpty(firstOpt.map(OptionValue::asSnowflake)).flatMap(id -> env.message().getClient()
                         .withRetrievalStrategy(EntityRetrievalStrategy.REST).getUserById(id))
                 .switchIfEmpty(referencedUser)
-                .switchIfEmpty(env.getMessage().getClient().withRetrievalStrategy(EntityRetrievalStrategy.REST)
-                        .getUserById(env.getAuthorAsMember().getId())
+                .switchIfEmpty(env.message().getClient().withRetrievalStrategy(EntityRetrievalStrategy.REST)
+                        .getUserById(env.member().getId())
                         .filter(ignored -> firstOpt.isEmpty()))
                 .switchIfEmpty(searchUser)
                 .switchIfEmpty(messageService.err(env, "command.incorrect-name").then(Mono.never()))
-                .flatMap(target -> messageService.info(env, embed -> embed.image(target.getAvatarUrl() + "?size=512")
+                .flatMap(target -> env.channel().createMessage(EmbedCreateSpec.builder()
+                        .image(target.getAvatarUrl() + "?size=512")
+                        .color(settings.getDefaults().getNormalColor())
                         .description(messageService.format(env.context(), "command.avatar.text", target.getUsername(),
-                                target.getMention()))));
+                                target.getMention()))
+                        .build()))
+                .then();
     }
 
     @Override
     public Mono<Void> help(CommandEnvironment env, String prefix){
         return messageService.infoTitled(env, "command.help.title", "command.avatar.help",
-                GuildConfig.formatPrefix(prefix));
+                GuildConfig.formatPrefix(prefix))
+                .then();
     }
 }

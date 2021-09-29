@@ -3,10 +3,13 @@ package inside.event;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.interaction.*;
+import discord4j.discordjson.json.ApplicationCommandInteractionOptionData;
 import inside.Settings;
 import inside.data.service.EntityRetriever;
 import inside.interaction.InteractionCommandEnvironment;
 import inside.interaction.component.*;
+import inside.interaction.component.button.ButtonListener;
+import inside.interaction.component.selectmenu.SelectMenuListener;
 import inside.service.*;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,11 +74,18 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
                 .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
                         KEY_TIMEZONE, guildConfig.timeZone()));
 
-        return initContext.flatMap(ctx -> Mono.defer(() -> Flux.fromIterable(buttonListeners)
-                        .filter(predicate((s, l) -> id.startsWith(s)))
-                        .flatMap(function((s, l) -> l.handle(event)))
-                        .then())
-                .contextWrite(ctx));
+        return initContext.flatMap(ctx -> Mono.defer(() -> {
+            InteractionButtonEnvironment env = InteractionButtonEnvironment.builder()
+                    .context(ctx)
+                    .event(event)
+                    .build();
+
+            return Flux.fromIterable(buttonListeners)
+                    .filter(predicate((s, l) -> id.startsWith(s)))
+                    .flatMap(function((s, l) -> l.handle(env)))
+                    .then();
+        })
+        .contextWrite(ctx));
     }
 
     @Override
@@ -92,15 +102,21 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
                 .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
                         KEY_TIMEZONE, guildConfig.timeZone()));
 
-        return initContext.flatMap(ctx -> Mono.defer(() -> Flux.fromIterable(selectMenuListeners)
-                        .filter(predicate((s, l) -> id.startsWith(s)))
-                        .flatMap(function((s, l) -> l.handle(event)))
-                        .then())
-                .contextWrite(ctx));
+        return initContext.flatMap(ctx -> Mono.defer(() -> {
+            InteractionSelectMenuEnvironment env = InteractionSelectMenuEnvironment.builder()
+                    .context(ctx)
+                    .event(event)
+                    .build();
+
+            return Flux.fromIterable(selectMenuListeners)
+                    .filter(predicate((s, l) -> id.startsWith(s)))
+                    .flatMap(function((s, l) -> l.handle(env)))
+                    .then();
+        }).contextWrite(ctx));
     }
 
     @Override
-    public Publisher<?> onApplicationCommandInteraction(ApplicationCommandInteractionEvent event){
+    public Publisher<?> onChatInputInteraction(ChatInputInteractionEvent event){
         Mono<Context> initContext = Mono.justOrEmpty(event.getInteraction().getGuildId())
                 .flatMap(guildId -> entityRetriever.getGuildConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createGuildConfig(guildId)))
@@ -109,10 +125,10 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
                 .defaultIfEmpty(Context.of(KEY_LOCALE, messageService.getDefaultLocale(),
                         KEY_TIMEZONE, settings.getDefaults().getTimeZone()));
 
-        return initContext.flatMap(context -> discordService.handle(InteractionCommandEnvironment.builder()
+        return initContext.flatMap(context -> Mono.defer(() -> discordService.handleChatInputCommand(
+                InteractionCommandEnvironment.builder()
                         .event(event)
                         .context(context)
-                        .build())
-                .contextWrite(context));
+                        .build())).contextWrite(context));
     }
 }

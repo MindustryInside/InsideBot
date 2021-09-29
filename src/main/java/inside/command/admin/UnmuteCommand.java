@@ -20,17 +20,17 @@ public class UnmuteCommand extends AdminCommand{
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asSnowflake);
 
-        Snowflake guildId = env.getAuthorAsMember().getGuildId();
+        Snowflake guildId = env.member().getGuildId();
 
         return entityRetriever.getAdminConfigById(guildId)
                 .switchIfEmpty(entityRetriever.createAdminConfig(guildId))
                 .filter(adminConfig -> adminConfig.getMuteRoleID().isPresent())
                 .switchIfEmpty(messageService.err(env, "command.disabled.mute").then(Mono.never()))
                 .flatMap(ignored -> Mono.justOrEmpty(targetId))
-                .flatMap(id -> env.getMessage().getClient().getMemberById(guildId, id))
+                .flatMap(id -> env.message().getClient().getMemberById(guildId, id))
                 .switchIfEmpty(messageService.err(env, "command.incorrect-name").then(Mono.never()))
                 .filterWhen(adminService::isMuted)
                 .switchIfEmpty(messageService.err(env, "audit.member.unmute.is-not-muted").then(Mono.never()))
-                .flatMap(target -> adminService.unmute(target).and(env.getMessage().addReaction(ok)));
+                .flatMap(target -> adminService.unmute(target).and(env.message().addReaction(ok)));
     }
 }

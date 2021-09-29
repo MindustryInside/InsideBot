@@ -2,6 +2,7 @@ package inside.command.common;
 
 import com.udojava.evalex.*;
 import discord4j.core.object.entity.Message;
+import discord4j.core.spec.MessageCreateSpec;
 import inside.command.Command;
 import inside.command.model.*;
 import inside.data.entity.GuildConfig;
@@ -90,20 +91,27 @@ public class MathCommand extends Command{
                                 t instanceof NumberFormatException,
                         t -> messageService.errTitled(env, "command.math.error.title", t.getMessage()).then(Mono.empty()))
                 .map(BigDecimal::toString)
-                .flatMap(decimal -> messageService.text(env, spec -> {
+                .flatMap(decimal -> {
+                    var messageSpec = MessageCreateSpec.builder()
+                            .messageReference(env.message().getId());
+
                     if(decimal.isBlank()){
-                        spec.content(messageService.get(env.context(), "message.placeholder"));
+                        messageSpec.content(messageService.get(env.context(), "message.placeholder"));
                     }else if(decimal.length() >= Message.MAX_CONTENT_LENGTH){
-                        spec.addFile(MESSAGE_TXT, ReusableByteInputStream.ofString(decimal));
+                        messageSpec.addFile(MESSAGE_TXT, ReusableByteInputStream.ofString(decimal));
                     }else{
-                        spec.content(decimal);
+                        messageSpec.content(decimal);
                     }
-                }));
+
+                    return env.channel().createMessage(messageSpec.build())
+                            .then();
+                });
     }
 
     @Override
     public Mono<Void> help(CommandEnvironment env, String prefix){
         return messageService.infoTitled(env, "command.help.title", "command.math.help",
-                GuildConfig.formatPrefix(prefix));
+                GuildConfig.formatPrefix(prefix))
+                .then();
     }
 }

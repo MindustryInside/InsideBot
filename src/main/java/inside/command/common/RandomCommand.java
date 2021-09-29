@@ -42,6 +42,7 @@ public class RandomCommand extends Command{
         String str = String.valueOf(ThreadLocalRandom.current().nextLong(
                 lower + (!linc ? 1 : 0), higher + (hinc ? 1 : 0)));
 
-        return messageService.text(env, str);
+        return messageService.text(env, str)
+                .then();
     }
 }

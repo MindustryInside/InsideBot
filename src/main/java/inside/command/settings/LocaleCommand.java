@@ -15,7 +15,7 @@ import static inside.util.ContextUtil.KEY_LOCALE;
 public class LocaleCommand extends OwnerCommand{
     @Override
     public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-        Member member = env.getAuthorAsMember();
+        Member member = env.member();
 
         boolean present = interaction.getOption(0).isPresent();
 
@@ -44,6 +44,7 @@ public class LocaleCommand extends OwnerCommand{
                                     ctx.<Locale>get(KEY_LOCALE).getDisplayName()))
                             .contextWrite(ctx -> ctx.put(KEY_LOCALE, locale))
                             .and(entityRetriever.save(guildConfig));
-                });
+                })
+                .then();
     }
 }

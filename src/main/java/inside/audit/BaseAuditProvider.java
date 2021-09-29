@@ -1,6 +1,7 @@
 package inside.audit;
 
 import discord4j.core.object.entity.*;
+import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.spec.*;
 import discord4j.rest.util.Permission;
 import inside.data.entity.*;
@@ -32,7 +33,8 @@ public abstract class BaseAuditProvider implements AuditProvider{
     @Override
     public Mono<Void> send(AuditConfig config, AuditAction action, List<? extends Tuple2<String, InputStream>> attachments){
         return Mono.deferContextual(ctx -> Mono.justOrEmpty(config.getLogChannelId())
-                .flatMap(discordService::getTextChannelById)
+                .flatMap(discordService.gateway()::getChannelById)
+                .cast(TextChannel.class)
                 .filter(ignored -> config.isEnabled(action.getType()))
                 .filterWhen(channel -> channel.getEffectivePermissions(discordService.gateway().getSelfId())
                         .map(set -> set.contains(Permission.SEND_MESSAGES))

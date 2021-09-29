@@ -2,7 +2,6 @@ package inside.command.common;
 
 import discord4j.core.object.component.*;
 import discord4j.core.object.entity.Member;
-import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.*;
 import discord4j.rest.util.*;
@@ -45,8 +44,7 @@ public class PollCommand extends Command{
 
     @Override
     public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-        Mono<MessageChannel> channel = env.getReplyChannel();
-        Member author = env.getAuthorAsMember();
+        Member author = env.member();
 
         String text = interaction.getOption("poll text")
                 .flatMap(CommandOption::getValue)
@@ -79,19 +77,16 @@ public class PollCommand extends Command{
             }
         }
 
-        return channel.flatMap(reply -> reply.createMessage(MessageCreateSpec.builder()
-                        .allowedMentions(AllowedMentions.suppressAll())
-                        .addEmbed(EmbedCreateSpec.builder()
-                                .title(title)
-                                .color(settings.getDefaults().getNormalColor())
-                                .description(IntStream.range(1, vars.length)
-                                        .mapToObj(i -> String.format("**%d**. %s%n", i, vars[i]))
-                                        .collect(Collectors.joining()))
-                                .author(author.getTag(), null, author.getAvatarUrl())
-                                .build())
-                        .components(rows)
-                        .build()))
-                .flatMap(message -> entityRetriever.createPoll(env.getAuthorAsMember().getGuildId(),
+        return env.channel().createMessage(EmbedCreateSpec.builder()
+                        .title(title)
+                        .color(settings.getDefaults().getNormalColor())
+                        .description(IntStream.range(1, vars.length)
+                                .mapToObj(i -> String.format("**%d**. %s%n", i, vars[i]))
+                                .collect(Collectors.joining()))
+                        .author(author.getTag(), null, author.getAvatarUrl())
+                        .build())
+                .withComponents(rows)
+                .flatMap(message -> entityRetriever.createPoll(env.member().getGuildId(),
                         message.getId(), Arrays.asList(vars)))
                 .then();
     }
@@ -99,6 +94,7 @@ public class PollCommand extends Command{
     @Override
     public Mono<Void> help(CommandEnvironment env, String prefix){
         return messageService.infoTitled(env, "command.help.title", "command.poll.help",
-                GuildConfig.formatPrefix(prefix));
+                GuildConfig.formatPrefix(prefix))
+                .then();
     }
 }

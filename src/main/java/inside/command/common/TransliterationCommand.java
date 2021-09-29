@@ -1,6 +1,7 @@
 package inside.command.common;
 
 import discord4j.core.object.entity.Message;
+import discord4j.core.spec.*;
 import inside.command.Command;
 import inside.command.model.*;
 import inside.util.*;
@@ -72,14 +73,18 @@ public class TransliterationCommand extends Command{
                 .map(TransliterationCommand::translit)
                 .orElse("");
 
-        return messageService.text(env, spec -> {
-            if(translited.isBlank()){
-                spec.content(messageService.get(env.context(), "message.placeholder"));
-            }else if(translited.length() >= Message.MAX_CONTENT_LENGTH){
-                spec.addFile(MESSAGE_TXT, ReusableByteInputStream.ofString(translited));
-            }else{
-                spec.content(translited);
-            }
-        }).contextWrite(ctx -> ctx.put(KEY_REPLY, true));
+        var messageSpec = MessageCreateSpec.builder()
+                .messageReference(env.message().getId());
+
+        if(translited.isBlank()){
+            messageSpec.content(messageService.get(env.context(), "message.placeholder"));
+        }else if(translited.length() >= Message.MAX_CONTENT_LENGTH){
+            messageSpec.addFile(MESSAGE_TXT, ReusableByteInputStream.ofString(translited));
+        }else{
+            messageSpec.content(translited);
+        }
+
+        return env.channel().createMessage(messageSpec.build())
+                .then();
     }
 }

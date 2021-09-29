@@ -22,7 +22,7 @@ import static reactor.function.TupleUtils.function;
 public class MuteCommand extends AdminCommand{
     @Override
     public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-        Member author = env.getAuthorAsMember();
+        Member author = env.member();
 
         Optional<Snowflake> targetId = interaction.getOption("@user")
                 .flatMap(CommandOption::getValue)
@@ -50,7 +50,7 @@ public class MuteCommand extends AdminCommand{
                 .filter(adminConfig -> adminConfig.getMuteRoleID().isPresent())
                 .switchIfEmpty(messageService.err(env, "command.disabled.mute").then(Mono.never()))
                 .flatMap(ignored -> Mono.justOrEmpty(targetId))
-                .flatMap(id -> env.getMessage().getClient().getMemberById(guildId, id))
+                .flatMap(id -> env.message().getClient().getMemberById(guildId, id))
                 .switchIfEmpty(messageService.err(env, "command.incorrect-name").then(Mono.never()))
                 .filter(Predicate.not(User::isBot))
                 .switchIfEmpty(messageService.err(env, "common.bot").then(Mono.never()))
@@ -69,7 +69,7 @@ public class MuteCommand extends AdminCommand{
                     }
 
                     return adminService.mute(author, member, delay.toInstant(), reason)
-                            .and(env.getMessage().addReaction(ok));
+                            .and(env.message().addReaction(ok));
                 });
     }
 }

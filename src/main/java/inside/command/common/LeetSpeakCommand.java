@@ -1,6 +1,7 @@
 package inside.command.common;
 
 import discord4j.core.object.entity.Message;
+import discord4j.core.spec.MessageCreateSpec;
 import inside.command.Command;
 import inside.command.model.*;
 import inside.util.Strings;
@@ -89,14 +90,18 @@ public class LeetSpeakCommand extends Command{
                 .map(str -> leeted(str, ru))
                 .orElse("");
 
-        return messageService.text(env, spec -> {
-            if(text.isBlank()){
-                spec.content(messageService.get(env.context(), "message.placeholder"));
-            }else if(text.length() >= Message.MAX_CONTENT_LENGTH){
-                spec.addFile(MESSAGE_TXT, ReusableByteInputStream.ofString(text));
-            }else{
-                spec.content(text);
-            }
-        }).contextWrite(ctx -> ctx.put(KEY_REPLY, true));
+        var messageSpec = MessageCreateSpec.builder()
+                .messageReference(env.message().getId());
+
+        if(text.isBlank()){
+            messageSpec.content(messageService.get(env.context(), "message.placeholder"));
+        }else if(text.length() >= Message.MAX_CONTENT_LENGTH){
+            messageSpec.addFile(MESSAGE_TXT, ReusableByteInputStream.ofString(text));
+        }else{
+            messageSpec.content(text);
+        }
+
+        return env.channel().createMessage(messageSpec.build())
+                .then();
     }
 }

@@ -1,40 +1,22 @@
 package inside.command.model;
 
 import discord4j.core.object.entity.*;
-import discord4j.core.object.entity.channel.MessageChannel;
-import org.immutables.builder.Builder;
-import reactor.core.publisher.Mono;
+import discord4j.core.object.entity.channel.GuildMessageChannel;
+import org.immutables.value.Value;
 import reactor.util.context.ContextView;
 
-public class CommandEnvironment{
-    private final Member member;
-    private final Message message;
-    private final ContextView context;
+@Value.Immutable
+public abstract class CommandEnvironment{
 
-    @Builder.Constructor
-    protected CommandEnvironment(Member member, Message message, ContextView context){
-        this.member = member;
-        this.message = message;
-        this.context = context;
+    public static ImmutableCommandEnvironment.Builder builder(){
+        return ImmutableCommandEnvironment.builder();
     }
 
-    public static CommandEnvironmentBuilder builder(){
-        return new CommandEnvironmentBuilder();
-    }
+    public abstract GuildMessageChannel channel();
 
-    public Member getAuthorAsMember(){
-        return member;
-    }
+    public abstract ContextView context();
 
-    public Message getMessage(){
-        return message;
-    }
+    public abstract Message message();
 
-    public ContextView context(){
-        return context;
-    }
-
-    public Mono<MessageChannel> getReplyChannel(){
-        return getMessage().getChannel();
-    }
+    public abstract Member member();
 }

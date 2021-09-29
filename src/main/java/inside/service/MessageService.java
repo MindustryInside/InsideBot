@@ -6,6 +6,7 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.*;
 import inside.command.model.CommandEnvironment;
+import inside.interaction.InteractionEnvironment;
 import reactor.core.publisher.Mono;
 import reactor.util.context.ContextView;
 
@@ -22,7 +23,7 @@ public interface MessageService{
 
     String get(ContextView ctx, String key);
 
-    String getCount(ContextView ctx, String key, long count);
+    String getPluralized(ContextView ctx, String key, long count);
 
     String getEnum(ContextView ctx, Enum<?> type);
 
@@ -38,31 +39,28 @@ public interface MessageService{
 
     // send (command)
 
-    Mono<Void> text(CommandEnvironment environment, String text, Object... args);
+    MessageCreateMono text(CommandEnvironment environment, String text, Object... args);
 
-    Mono<Void> text(CommandEnvironment environment, Consumer<MessageCreateSpec.Builder> message);
+    MessageCreateMono info(CommandEnvironment environment, String text, Object... args);
 
-    Mono<Void> info(Mono<? extends MessageChannel> channel, String title, String text, Object... args); // for using in DM
-
-    Mono<Void> infoTitled(CommandEnvironment environment, String title, String text, Object... args);
-
-    Mono<Void> info(CommandEnvironment environment, Consumer<EmbedCreateSpec.Builder> embed);
+    MessageCreateMono infoTitled(CommandEnvironment environment, String title, String text, Object... args);
 
     Mono<Void> err(CommandEnvironment environment, String text, Object... args);
 
     Mono<Void> errTitled(CommandEnvironment environment, String title, String text, Object... args);
 
     // send (interactive)
+    // huh, nice names
 
-    Mono<Void> text(InteractionCreateEvent event, String text, Object... args);
+    InteractionApplicationCommandCallbackReplyMono text(InteractionEnvironment environment, String text, Object... args);
 
-    Mono<Void> infoTitled(InteractionCreateEvent event, String title, String text, Object... args);
+    InteractionApplicationCommandCallbackReplyMono infoTitled(InteractionEnvironment environment, String title, String text, Object... args);
 
-    Mono<Void> info(InteractionCreateEvent event, Consumer<EmbedCreateSpec.Builder> embed);
+    InteractionApplicationCommandCallbackReplyMono info(InteractionEnvironment environment, String text, Object... args);
 
-    Mono<Void> err(InteractionCreateEvent event, String text, Object... args);
+    InteractionApplicationCommandCallbackReplyMono err(InteractionEnvironment environment, String text, Object... args);
 
-    Mono<Void> errTitled(InteractionCreateEvent event, String title, String text, Object... args);
+    InteractionApplicationCommandCallbackReplyMono errTitled(InteractionEnvironment environment, String title, String text, Object... args);
 
     // data
 

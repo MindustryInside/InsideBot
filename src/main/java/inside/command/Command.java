@@ -22,7 +22,8 @@ public abstract class Command{
     }
 
     public Mono<Void> help(CommandEnvironment env, String prefix){
-        return messageService.text(env, "command.help.default");
+        return messageService.text(env, "command.help.default")
+                .then();
     }
 
     protected DiscordCommand getAnnotation(){

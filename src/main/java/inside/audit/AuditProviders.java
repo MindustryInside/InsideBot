@@ -122,7 +122,7 @@ public class AuditProviders{
             }
 
             embed.description(messageService.format(context, "audit.message.clear.description", count,
-                    messageService.getCount(context, "common.plurals.message", count)));
+                    messageService.getPluralized(context, "common.plurals.message", count)));
             embed.addField(messageService.get(context, "audit.member.admin"),
                     getUserReference(context, action.getUser()), true);
             embed.addField(messageService.get(context, "audit.message.channel"),
@@ -248,7 +248,7 @@ public class AuditProviders{
 
             embed.author(formatName(action.getUser()), null, url);
             embed.description(messageService.format(context, "audit.member.role-add.title",
-                    messageService.getCount(context, "audit.plurals.role", roleIds.size()),
+                    messageService.getPluralized(context, "audit.plurals.role", roleIds.size()),
                     roleIds.stream().map(DiscordUtil::getRoleMention).collect(Collectors.joining(", ")),
                     getUserReference(context, action.getUser())));
             addTimestamp(context, action, embed);
@@ -267,7 +267,7 @@ public class AuditProviders{
 
             embed.author(formatName(action.getUser()), null, url);
             embed.description(messageService.format(context, "audit.member.role-remove.title",
-                    messageService.getCount(context, "audit.plurals.role", roleIds.size()),
+                    messageService.getPluralized(context, "audit.plurals.role", roleIds.size()),
                     roleIds.stream().map(DiscordUtil::getRoleMention).collect(Collectors.joining(", ")),
                     getUserReference(context, action.getUser())));
             addTimestamp(context, action, embed);

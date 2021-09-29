@@ -30,7 +30,9 @@ public class CommandOption{
     }
 
     public Optional<OptionValue> getValue(){
-        return Optional.ofNullable(value).filter(Predicate.not(Strings::isEmpty)).map(OptionValue::new);
+        return Optional.ofNullable(value)
+                .filter(Predicate.not(Strings::isEmpty))
+                .map(OptionValue::new);
     }
 
     public List<OptionValue> getChoices(){

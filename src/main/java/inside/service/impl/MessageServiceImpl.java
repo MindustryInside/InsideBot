@@ -3,12 +3,14 @@ package inside.service.impl;
 import com.github.benmanes.caffeine.cache.*;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.interaction.InteractionCreateEvent;
+import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.*;
 import discord4j.discordjson.possible.Possible;
 import discord4j.rest.util.AllowedMentions;
 import inside.Settings;
 import inside.command.model.CommandEnvironment;
+import inside.interaction.InteractionEnvironment;
 import inside.service.MessageService;
 import inside.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,7 +82,7 @@ public class MessageServiceImpl implements MessageService{
     }
 
     @Override
-    public String getCount(ContextView ctx, String key, long count){
+    public String getPluralized(ContextView ctx, String key, long count){
         String code = getCount0(ctx.get(KEY_LOCALE), count);
         return get(ctx, String.format("%s.%s", key, code));
     }
@@ -136,64 +138,27 @@ public class MessageServiceImpl implements MessageService{
     }
 
     @Override
-    public Mono<Void> text(CommandEnvironment environment, String text, Object... args){
-        return Mono.deferContextual(ctx -> text(environment, spec ->
-                spec.content(text.isBlank() ? get(ctx, "message.placeholder") : format(ctx, text, args))));
+    public MessageCreateMono text(CommandEnvironment environment, String text, Object... args){
+        return environment.channel().createMessage(
+                text.isBlank() ? get(environment.context(), "message.placeholder")
+                        : format(environment.context(), text, args));
     }
 
     @Override
-    public Mono<Void> text(CommandEnvironment environment, Consumer<MessageCreateSpec.Builder> message){
-        return Mono.deferContextual(ctx -> environment.getReplyChannel()
-                .flatMap(c -> {
-                    var messageSpec = MessageCreateSpec.builder();
-
-                    message.andThen(spec -> spec.messageReference(ctx.<Boolean>getOrEmpty(KEY_REPLY).orElse(false)
-                                            ? Possible.of(environment.getMessage().getId())
-                                            : Possible.absent())
-                                    .allowedMentions(AllowedMentions.suppressAll()))
-                            .accept(messageSpec);
-
-                    return c.createMessage(messageSpec.build());
-                })
-                .then());
+    public MessageCreateMono info(CommandEnvironment environment, String text, Object... args){
+        return environment.channel().createMessage(EmbedCreateSpec.builder()
+                .description(format(environment.context(), text, args))
+                .color(settings.getDefaults().getNormalColor())
+                .build());
     }
 
     @Override
-    public Mono<Void> info(Mono<? extends MessageChannel> channel, String title, String text, Object... args){
-        return Mono.deferContextual(ctx -> channel.flatMap(c -> c.createMessage(MessageCreateSpec.builder()
-                        .allowedMentions(AllowedMentions.suppressAll())
-                        .addEmbed(EmbedCreateSpec.builder()
-                                .title(get(ctx, title))
-                                .description(format(ctx, text, args))
-                                .color(settings.getDefaults().getNormalColor())
-                                .build())
-                        .build())))
-                .then();
-    }
-
-    @Override
-    public Mono<Void> infoTitled(CommandEnvironment environment, String title, String text, Object... args){
-        return Mono.deferContextual(ctx -> info(environment, embed -> embed.title(get(ctx, title))
-                .description(format(ctx, text, args))));
-    }
-
-    @Override
-    public Mono<Void> info(CommandEnvironment environment, Consumer<EmbedCreateSpec.Builder> embed){
-        return Mono.deferContextual(ctx -> environment.getReplyChannel()
-                .flatMap(c -> {
-                    var embedSpec = EmbedCreateSpec.builder();
-
-                    embed.andThen(spec -> spec.color(settings.getDefaults().getNormalColor())).accept(embedSpec);
-
-                    return c.createMessage(MessageCreateSpec.builder()
-                            .messageReference(ctx.<Boolean>getOrEmpty(KEY_REPLY).orElse(false)
-                                    ? Possible.of(environment.getMessage().getId())
-                                    : Possible.absent())
-                            .allowedMentions(AllowedMentions.suppressAll())
-                            .addEmbed(embedSpec.build())
-                            .build());
-                })
-                .then());
+    public MessageCreateMono infoTitled(CommandEnvironment environment, String title, String text, Object... args){
+        return environment.channel().createMessage(EmbedCreateSpec.builder()
+                .title(get(environment.context(), title))
+                .description(format(environment.context(), text, args))
+                .color(settings.getDefaults().getNormalColor())
+                .build());
     }
 
     @Override
@@ -203,64 +168,57 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     public Mono<Void> errTitled(CommandEnvironment environment, String title, String text, Object... args){
-        return Mono.deferContextual(ctx -> environment.getReplyChannel()
-                        .flatMap(c -> c.createMessage(MessageCreateSpec.builder()
-                                .messageReference(ctx.<Boolean>getOrEmpty(KEY_REPLY).orElse(false)
-                                        ? Possible.of(environment.getMessage().getId())
-                                        : Possible.absent())
-                                .allowedMentions(AllowedMentions.suppressAll())
-                                .addEmbed(EmbedCreateSpec.builder()
-                                        .color(settings.getDefaults().getErrorColor())
-                                        .description(format(ctx, text, args))
-                                        .title(get(ctx, title))
-                                        .build())
-                                .build())))
-                .flatMap(message -> Mono.delay(settings.getDiscord().getErrorEmbedTtl())
-                        .then(message.delete().and(environment.getMessage().addReaction(failed))));
-    }
-
-    @Override
-    public Mono<Void> text(InteractionCreateEvent event, String text, Object... args){
-        return Mono.deferContextual(ctx -> event.reply(InteractionApplicationCommandCallbackSpec.builder()
-                .allowedMentions(AllowedMentions.suppressAll())
-                .content(text.isBlank() ? get(ctx, "message.placeholder") : format(ctx, text, args))
-                .build()));
-    }
-
-    @Override
-    public Mono<Void> infoTitled(InteractionCreateEvent event, String title, String text, Object... args){
-        return Mono.deferContextual(ctx -> info(event, embed -> embed.title(get(ctx, title))
-                .description(format(ctx, text, args))));
-    }
-
-    @Override
-    public Mono<Void> info(InteractionCreateEvent event, Consumer<EmbedCreateSpec.Builder> embed){
-        return Mono.defer(() -> {
-            var embedSpec = EmbedCreateSpec.builder();
-
-            embed.andThen(spec -> spec.color(settings.getDefaults().getNormalColor())).accept(embedSpec);
-            return event.reply(InteractionApplicationCommandCallbackSpec.builder()
-                    .addEmbed(embedSpec.build())
-                    .build());
-        });
-    }
-
-    @Override
-    public Mono<Void> err(InteractionCreateEvent event, String text, Object... args){
-        return errTitled(event, "message.error.general.title", text, args);
-    }
-
-    @Override
-    public Mono<Void> errTitled(InteractionCreateEvent event, String title, String text, Object... args){
-        return Mono.deferContextual(ctx -> event.reply(InteractionApplicationCommandCallbackSpec.builder()
-                .allowedMentions(AllowedMentions.suppressAll())
-                .ephemeral(true)
+        return environment.channel().createMessage(MessageCreateSpec.builder()
                 .addEmbed(EmbedCreateSpec.builder()
                         .color(settings.getDefaults().getErrorColor())
-                        .description(format(ctx, text, args))
-                        .title(get(ctx, title))
+                        .description(format(environment.context(), text, args))
+                        .title(get(environment.context(), title))
                         .build())
-                .build()));
+                .build())
+                .flatMap(message -> Mono.delay(settings.getDiscord().getErrorEmbedTtl())
+                        .then(message.delete().and(environment.message().addReaction(failed))));
+    }
+
+    @Override
+    public InteractionApplicationCommandCallbackReplyMono text(InteractionEnvironment environment, String text, Object... args){
+        return environment.event().reply()
+                .withContent(text.isBlank() ? get(environment.context(), "message.placeholder")
+                        : format(environment.context(), text, args));
+    }
+
+    @Override
+    public InteractionApplicationCommandCallbackReplyMono infoTitled(InteractionEnvironment environment, String title, String text, Object... args){
+        return environment.event().reply()
+                .withEmbeds(EmbedCreateSpec.builder()
+                        .color(settings.getDefaults().getNormalColor())
+                        .title(get(environment.context(), title))
+                        .description(format(environment.context(), text, args))
+                        .build());
+    }
+
+    @Override
+    public InteractionApplicationCommandCallbackReplyMono info(InteractionEnvironment environment, String text, Object... args){
+        return environment.event().reply()
+                .withEmbeds(EmbedCreateSpec.builder()
+                        .color(settings.getDefaults().getNormalColor())
+                        .description(format(environment.context(), text, args))
+                        .build());
+    }
+
+    @Override
+    public InteractionApplicationCommandCallbackReplyMono err(InteractionEnvironment environment, String text, Object... args){
+        return errTitled(environment, "message.error.general.title", text, args);
+    }
+
+    @Override
+    public InteractionApplicationCommandCallbackReplyMono errTitled(InteractionEnvironment environment, String title, String text, Object... args){
+        return environment.event().reply()
+                .withEphemeral(true)
+                .withEmbeds(EmbedCreateSpec.builder()
+                        .color(settings.getDefaults().getErrorColor())
+                        .description(format(environment.context(), text, args))
+                        .title(get(environment.context(), title))
+                        .build());
     }
 
     @Override

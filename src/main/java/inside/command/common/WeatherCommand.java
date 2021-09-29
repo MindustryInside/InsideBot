@@ -47,16 +47,16 @@ public class WeatherCommand extends Command{
                         ? messageService.err(env, "command.weather.not-found").then(Mono.never())
                         : buf.asString())
                 .flatMap(str -> Mono.fromCallable(() ->
-                        env.getMessage().getClient().rest().getCoreResources().getJacksonResources()
+                        env.message().getClient().rest().getCoreResources().getJacksonResources()
                                 .getObjectMapper().readValue(str, CurrentWeatherData.class)))
-                .flatMap(data -> messageService.info(env, spec -> spec.description(messageService.format(env.context(),
-                                "command.weather.format", data.weather().get(0).description(),
-                                data.main().temperature(), data.main().feelsLike(),
-                                data.main().temperatureMin(), data.main().temperatureMax(),
-                                data.main().pressure() * hPa / mmHg, data.main().humidity(),
-                                data.visibility(), data.clouds().all(), data.wind().speed(),
-                                TimestampFormat.LONG_DATE_TIME.format(Instant.ofEpochSecond(data.dateTime()))))
-                        .title(data.name())))
-                .contextWrite(ctx -> ctx.put(KEY_REPLY, true));
+                .flatMap(data -> messageService.infoTitled(env, data.name(),
+                        "command.weather.format", data.weather().get(0).description(),
+                        data.main().temperature(), data.main().feelsLike(),
+                        data.main().temperatureMin(), data.main().temperatureMax(),
+                        data.main().pressure() * hPa / mmHg, data.main().humidity(),
+                        data.visibility(), data.clouds().all(), data.wind().speed(),
+                        TimestampFormat.LONG_DATE_TIME.format(Instant.ofEpochSecond(data.dateTime())))
+                        .withMessageReference(env.message().getId()))
+                .then();
     }
 }

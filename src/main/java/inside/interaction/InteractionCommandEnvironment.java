@@ -1,29 +1,16 @@
 package inside.interaction;
 
-import discord4j.core.GatewayDiscordClient;
-import discord4j.core.event.domain.interaction.ApplicationCommandInteractionEvent;
+import discord4j.core.event.domain.interaction.*;
 import discord4j.core.object.command.*;
-import discord4j.core.object.entity.channel.MessageChannel;
-import org.immutables.builder.Builder;
-import reactor.core.publisher.Mono;
-import reactor.util.context.ContextView;
+import org.immutables.value.Value;
 
 import java.util.*;
 
-public class InteractionCommandEnvironment{
-    private final ApplicationCommandInteractionEvent event;
-    private final ContextView context;
-    private final List<ApplicationCommandInteractionOption> options;
+@Value.Immutable
+public abstract class InteractionCommandEnvironment extends InteractionEnvironment{
 
-    @Builder.Constructor
-    protected InteractionCommandEnvironment(ApplicationCommandInteractionEvent event, ContextView context){
-        this.event = event;
-        this.context = context;
-        options = new ArrayList<>();
-        ApplicationCommandInteraction commandInteraction = event.getInteraction().getCommandInteraction()
-                .orElseThrow(IllegalStateException::new);
-
-        flattenOptions(commandInteraction.getOptions(), options);
+    public static ImmutableInteractionCommandEnvironment.Builder builder(){
+        return ImmutableInteractionCommandEnvironment.builder();
     }
 
     private static void flattenOptions(Iterable<? extends ApplicationCommandInteractionOption> options,
@@ -34,29 +21,19 @@ public class InteractionCommandEnvironment{
         }
     }
 
-    public static InteractionCommandEnvironmentBuilder builder(){
-        return new InteractionCommandEnvironmentBuilder();
-    }
-
-    public ApplicationCommandInteractionEvent event(){
-        return event;
-    }
-
-    public ContextView context(){
-        return context;
-    }
-
-    public Mono<MessageChannel> getReplyChannel(){
-        return event.getInteraction().getChannel();
-    }
-
-    public GatewayDiscordClient getClient(){
-        return event().getClient();
+    @Value.Derived
+    protected List<ApplicationCommandInteractionOption> getOptions(){
+        List<ApplicationCommandInteractionOption> list = new ArrayList<>();
+        flattenOptions(event().getOptions(), list);
+        return list;
     }
 
     public Optional<ApplicationCommandInteractionOption> getOption(String name){
-        return options.stream()
+        return getOptions().stream()
                 .filter(opt -> opt.getName().equals(name))
                 .findFirst();
     }
+
+    @Override
+    public abstract ChatInputInteractionEvent event();
 }

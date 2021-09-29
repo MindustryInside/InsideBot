@@ -14,7 +14,7 @@ import java.util.function.Predicate;
 public class UnwarnAllCommand extends AdminCommand{
     @Override
     public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-        Member author = env.getAuthorAsMember();
+        Member author = env.member();
 
         Optional<Snowflake> targetId = interaction.getOption("@user")
                 .flatMap(CommandOption::getValue)
@@ -22,7 +22,7 @@ public class UnwarnAllCommand extends AdminCommand{
 
         Snowflake guildId = author.getGuildId();
 
-        return Mono.justOrEmpty(targetId).flatMap(id -> env.getMessage().getClient().getMemberById(guildId, id))
+        return Mono.justOrEmpty(targetId).flatMap(id -> env.message().getClient().getMemberById(guildId, id))
                 .switchIfEmpty(messageService.err(env, "command.incorrect-name").then(Mono.never()))
                 .filter(Predicate.not(User::isBot))
                 .switchIfEmpty(messageService.err(env, "common.bot").then(Mono.never()))

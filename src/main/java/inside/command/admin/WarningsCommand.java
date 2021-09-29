@@ -1,6 +1,7 @@
 package inside.command.admin;
 
 import discord4j.common.util.*;
+import discord4j.core.object.Embed;
 import discord4j.core.object.component.*;
 import discord4j.core.object.entity.*;
 import discord4j.core.spec.*;
@@ -31,17 +32,17 @@ public class WarningsCommand extends AdminCommand{
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asSnowflake);
 
-        Mono<Member> referencedUser = Mono.justOrEmpty(env.getMessage().getMessageReference())
+        Mono<Member> referencedUser = Mono.justOrEmpty(env.message().getMessageReference())
                 .flatMap(ref -> Mono.justOrEmpty(ref.getMessageId()).flatMap(messageId ->
-                        env.getMessage().getClient().getMessageById(ref.getChannelId(), messageId)))
+                        env.message().getClient().getMessageById(ref.getChannelId(), messageId)))
                 .flatMap(Message::getAuthorAsMember);
 
-        Snowflake guildId = env.getAuthorAsMember().getGuildId();
+        Snowflake guildId = env.member().getGuildId();
 
-        Snowflake authorId = env.getAuthorAsMember().getId();
+        Snowflake authorId = env.member().getId();
 
         return Mono.justOrEmpty(targetId)
-                .flatMap(userId -> env.getMessage().getClient().getMemberById(guildId, userId))
+                .flatMap(userId -> env.message().getClient().getMemberById(guildId, userId))
                 .switchIfEmpty(referencedUser)
                 .switchIfEmpty(messageService.err(env, "command.incorrect-name").then(Mono.never()))
                 .filter(Predicate.not(User::isBot))
@@ -59,22 +60,26 @@ public class WarningsCommand extends AdminCommand{
                         .collectList())
                 .zipWhen(tuple -> adminService.warnings(tuple.getT1()).count(),
                         (tuple, count) -> Tuples.of(tuple.getT1(), tuple.getT2(), count))
-                .flatMap(function((target, fields, count) -> messageService.text(env, spec -> spec.addEmbed(EmbedCreateSpec.builder()
-                                .fields(fields)
-                                .title(messageService.format(env.context(), "command.admin.warnings.title",
-                                        target.getDisplayName()))
-                                .color(settings.getDefaults().getNormalColor())
-                                .footer(messageService.format(env.context(), "command.admin.warnings.page",
-                                        1, Mathf.ceilPositive(count / (float)PER_PAGE)), null)
-                                .build())
-                        .addComponent(ActionRow.of(
-                                Button.primary("inside-warnings-" + authorId.asString() +
-                                                        "-" + target.getId().asString() + "-prev-0",
-                                                messageService.get(env.context(), "common.prev-page"))
-                                        .disabled(),
-                                Button.primary("inside-warnings-" + authorId.asString() +
-                                                        "-" + target.getId().asString() + "-next-1",
-                                                messageService.get(env.context(), "common.next-page"))
-                                        .disabled(count <= PER_PAGE))))));
+                .flatMap(function((target, fields, count) -> env.channel()
+                        .createMessage(MessageCreateSpec.builder()
+                                .addEmbed(EmbedCreateSpec.builder()
+                                        .title(messageService.format(env.context(), "command.admin.warnings.title",
+                                                target.getDisplayName()))
+                                        .fields(fields)
+                                        .color(settings.getDefaults().getNormalColor())
+                                        .footer(messageService.format(env.context(), "command.admin.warnings.page",
+                                                1, Mathf.ceilPositive(count / (float)PER_PAGE)), null)
+                                        .build())
+                                .addComponent(ActionRow.of(
+                                        Button.primary("inside-warnings-" + authorId.asString() +
+                                                                "-" + target.getId().asString() + "-prev-0",
+                                                        messageService.get(env.context(), "common.prev-page"))
+                                                .disabled(),
+                                        Button.primary("inside-warnings-" + authorId.asString() +
+                                                                "-" + target.getId().asString() + "-next-1",
+                                                        messageService.get(env.context(), "common.next-page"))
+                                                .disabled(count <= PER_PAGE)))
+                                .build())))
+                .then();
     }
 }

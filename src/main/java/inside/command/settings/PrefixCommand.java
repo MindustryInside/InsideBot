@@ -16,7 +16,7 @@ public class PrefixCommand extends OwnerCommand{
 
     @Override
     public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-        Member member = env.getAuthorAsMember();
+        Member member = env.member();
 
         String mode = interaction.getOption(0)
                 .flatMap(CommandOption::getChoice)

@@ -36,9 +36,9 @@ public class RemindCommand extends Command{
             return messageService.err(env, "message.error.invalid-time");
         }
 
-        Member member = env.getAuthorAsMember();
+        Member member = env.member();
         JobDetail job = RemindJob.createDetails(member.getGuildId(), member.getId(),
-                env.getMessage().getChannelId(), text);
+                env.message().getChannelId(), text);
 
         Trigger trigger = TriggerBuilder.newTrigger()
                 .startAt(Date.from(time.toInstant()))
@@ -46,6 +46,6 @@ public class RemindCommand extends Command{
                 .build();
 
         Try.run(() -> schedulerFactoryBean.getScheduler().scheduleJob(job, trigger));
-        return env.getMessage().addReaction(ok);
+        return env.message().addReaction(ok);
     }
 }

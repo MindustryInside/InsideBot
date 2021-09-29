@@ -1,7 +1,6 @@
 package inside.command.common;
 
 import discord4j.core.object.reaction.ReactionEmoji;
-import discord4j.core.spec.MessageCreateSpec;
 import discord4j.rest.util.*;
 import inside.command.Command;
 import inside.command.model.*;
@@ -21,11 +20,8 @@ public class QuickPollCommand extends Command{
                 .map(OptionValue::asString)
                 .orElseThrow(IllegalStateException::new);
 
-        return env.getReplyChannel().flatMap(reply -> reply.createMessage(MessageCreateSpec.builder()
-                        .content(messageService.format(env.context(),
-                                "command.qpoll.text", env.getAuthorAsMember().getUsername(), text))
-                        .allowedMentions(AllowedMentions.suppressAll())
-                        .build()))
+        return env.channel().createMessage(messageService.format(
+                env.context(), "command.qpoll.text", env.member().getUsername(), text))
                 .flatMap(message1 -> message1.addReaction(up)
                         .and(message1.addReaction(down)));
     }
@@ -33,6 +29,7 @@ public class QuickPollCommand extends Command{
     @Override
     public Mono<Void> help(CommandEnvironment env, String prefix){
         return messageService.infoTitled(env, "command.help.title", "command.qpoll.help",
-                GuildConfig.formatPrefix(prefix));
+                GuildConfig.formatPrefix(prefix))
+                .then();
     }
 }

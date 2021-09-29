@@ -14,6 +14,6 @@ public abstract class AdminCommand extends Command{
 
     @Override
     public Mono<Boolean> filter(CommandEnvironment env){
-        return adminService.isAdmin(env.getAuthorAsMember());
+        return adminService.isAdmin(env.member());
     }
 }

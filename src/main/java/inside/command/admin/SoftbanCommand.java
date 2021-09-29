@@ -23,7 +23,7 @@ import static reactor.function.TupleUtils.function;
 public class SoftbanCommand extends AdminCommand{
     @Override
     public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-        Member author = env.getAuthorAsMember();
+        Member author = env.member();
 
         Optional<Snowflake> targetId = interaction.getOption(0)
                 .flatMap(CommandOption::getValue)
@@ -52,7 +52,7 @@ public class SoftbanCommand extends AdminCommand{
 
         Snowflake guildId = author.getGuildId();
 
-        return Mono.justOrEmpty(targetId).flatMap(id -> env.getMessage().getClient().getMemberById(guildId, id))
+        return Mono.justOrEmpty(targetId).flatMap(id -> env.message().getClient().getMemberById(guildId, id))
                 .switchIfEmpty(messageService.err(env, "command.incorrect-name").then(Mono.never()))
                 .filter(Predicate.not(User::isBot))
                 .switchIfEmpty(messageService.err(env, "common.bot").then(Mono.never()))
@@ -64,6 +64,6 @@ public class SoftbanCommand extends AdminCommand{
                                 .deleteMessageDays(deleteDays)
                                 .build()))
                         .then(member.getGuild().flatMap(guild -> guild.unban(member.getId()))))
-                .and(env.getMessage().addReaction(ok));
+                .and(env.message().addReaction(ok));
     }
 }

@@ -46,6 +46,7 @@ public class TextLayoutCommand extends Command{
                 .orElseThrow(IllegalStateException::new);
 
         return messageService.text(env, en ? text2rus(text) : text2eng(text))
-                .contextWrite(ctx -> ctx.put(KEY_REPLY, true));
+                .withMessageReference(env.message().getId())
+                .then();
     }
 }

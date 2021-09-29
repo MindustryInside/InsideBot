@@ -10,9 +10,7 @@ public class PingCommand extends Command{
     @Override
     public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
         long start = System.currentTimeMillis();
-        return env.getReplyChannel()
-                .flatMap(channel -> channel.createMessage(
-                        messageService.get(env.context(), "command.ping.testing")))
+        return env.channel().createMessage(messageService.get(env.context(), "command.ping.testing"))
                 .flatMap(message -> message.edit(MessageEditSpec.builder()
                         .contentOrNull(messageService.format(env.context(), "command.ping.completed",
                                 System.currentTimeMillis() - start))

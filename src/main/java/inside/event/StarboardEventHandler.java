@@ -116,7 +116,6 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
                                     return target.edit(MessageEditSpec.builder()
                                             .addEmbed(embedSpec.build())
-                                            .allowedMentionsOrNull(AllowedMentions.suppressAll())
                                             .contentOrNull(messageService.format(context, "starboard.format",
                                                     formatted.get(Mathf.clamp((count - 1) / 5, 0, formatted.size() - 1)),
                                                     count, DiscordUtil.getChannelMention(source.getChannelId())))
@@ -133,7 +132,6 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                                             context, "starboard.format", formatted.get(Mathf.clamp(
                                                                     (count - 1) / 5, 0, formatted.size() - 1)),
                                                             count, DiscordUtil.getChannelMention(source.getChannelId())))
-                                                    .allowedMentions(AllowedMentions.suppressAll())
                                                     .addEmbed(embedSpec.build())
                                                     .build())
                                             .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId())
@@ -222,7 +220,6 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                     Snowflake sourceChannelId = event.getChannelId();
                                     return target.edit(MessageEditSpec.builder()
                                             .addEmbed(embedSpec.build())
-                                            .allowedMentionsOrNull(AllowedMentions.suppressAll())
                                             .contentOrNull(messageService.format(context, "starboard.format",
                                                     formatted.get(Mathf.clamp((count - 1) / 5, 0, formatted.size() - 1)),
                                                     count, DiscordUtil.getChannelMention(sourceChannelId)))

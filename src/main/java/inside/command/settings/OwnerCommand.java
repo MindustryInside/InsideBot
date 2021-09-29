@@ -10,7 +10,7 @@ import reactor.core.publisher.Mono;
 public abstract class OwnerCommand extends Command{
     @Override
     public Mono<Boolean> filter(CommandEnvironment env){
-        Member member = env.getAuthorAsMember();
+        Member member = env.member();
 
         Mono<Boolean> isOwner = member.getGuild().flatMap(Guild::getOwner)
                 .map(member::equals);

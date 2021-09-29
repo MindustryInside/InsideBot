@@ -1,7 +1,6 @@
 package inside.command.admin;
 
 import discord4j.core.object.entity.*;
-import discord4j.core.object.entity.channel.GuildMessageChannel;
 import discord4j.rest.util.Permission;
 import inside.Settings;
 import inside.audit.*;
@@ -37,8 +36,7 @@ public class DeleteCommand extends AdminCommand{
 
     @Override
     public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
-        Member author = env.getAuthorAsMember();
-        Mono<GuildMessageChannel> reply = env.getReplyChannel().cast(GuildMessageChannel.class);
+        Member author = env.member();
 
         Optional<String> arg = interaction.getOption("count")
                 .flatMap(CommandOption::getValue)
@@ -83,7 +81,8 @@ public class DeleteCommand extends AdminCommand{
             result.append("\n");
         };
 
-        Mono<Void> history = reply.flatMapMany(channel -> channel.getMessagesBefore(env.getMessage().getId())
+        Mono<Void> history = env.channel()
+                .getMessagesBefore(env.message().getId())
                         .take(number, true)
                         .sort(Comparator.comparing(Message::getId))
                         .filter(message -> message.getTimestamp().isAfter(limit))
@@ -91,23 +90,24 @@ public class DeleteCommand extends AdminCommand{
                                 .doOnNext(member -> appendInfo.accept(message, member))
                                 .flatMap(ignored -> entityRetriever.deleteMessageInfoById(message.getId()))
                                 .thenReturn(message))
-                        .transform(messages -> number > 1 ? channel.bulkDeleteMessages(messages).then() :
-                                messages.next().flatMap(Message::delete).then()))
+                        .transform(messages -> number > 1 ? env.channel().bulkDeleteMessages(messages).then() :
+                                messages.next().flatMap(Message::delete).then())
                 .then();
 
-        Mono<Void> log = reply.flatMap(channel -> auditService.newBuilder(author.getGuildId(), AuditActionType.MESSAGE_CLEAR)
+        Mono<Void> log = auditService.newBuilder(author.getGuildId(), AuditActionType.MESSAGE_CLEAR)
                 .withUser(author)
-                .withChannel(channel)
+                .withChannel(env.channel())
                 .withAttribute(COUNT, number)
                 .withAttachment(MESSAGE_TXT, ReusableByteInputStream.ofString(result.toString()))
-                .save());
+                .save();
 
-        return history.then(log).then(env.getMessage().addReaction(ok));
+        return history.then(log).then(env.message().addReaction(ok));
     }
 
     @Override
     public Mono<Void> help(CommandEnvironment env, String prefix){
         return messageService.infoTitled(env, "command.help.title", "command.admin.delete.help",
-                GuildConfig.formatPrefix(prefix));
+                GuildConfig.formatPrefix(prefix))
+                .then();
     }
 }

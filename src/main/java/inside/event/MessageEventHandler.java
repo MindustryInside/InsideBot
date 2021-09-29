@@ -84,12 +84,15 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                 .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
                         KEY_TIMEZONE, guildConfig.timeZone()));
 
-        Mono<Void> handleMessage = Mono.deferContextual(ctx ->
-                commandHandler.handleMessage(CommandEnvironment.builder()
-                        .message(message)
-                        .member(member)
-                        .context(ctx)
-                        .build()));
+        Mono<Void> handleMessage = message.getChannel()
+                .cast(GuildMessageChannel.class)
+                .flatMap(channel -> Mono.deferContextual(ctx ->
+                        commandHandler.handleMessage(CommandEnvironment.builder()
+                                .member(member)
+                                .message(message)
+                                .channel(channel)
+                                .context(ctx)
+                                .build())));
 
         return initContext.flatMap(context -> Mono.when(handleMessage, updateActivity, safeMessageInfo).contextWrite(context));
     }
@@ -134,6 +137,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                     Mono<?> command = Mono.defer(() -> {
                         if(messageService.isAwaitEdit(message.getId())){
                             return commandHandler.handleMessage(CommandEnvironment.builder()
+                                    .channel(channel)
                                     .message(message)
                                     .member(member)
                                     .context(context)

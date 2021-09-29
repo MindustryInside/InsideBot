@@ -67,20 +67,22 @@ public class TranslateCommand extends Command{
 
         return httpClient.get().get().uri(CommandUtils.expandQuery("https://translate.google.com/translate_a/t", query))
                 .responseSingle((res, buf) -> buf.asString().flatMap(byteBuf -> Mono.fromCallable(() ->
-                        env.getMessage().getClient().rest().getCoreResources().getJacksonResources()
+                        env.message().getClient().rest().getCoreResources().getJacksonResources()
                                 .getObjectMapper().readTree(byteBuf))))
                 .flatMap(node -> Mono.justOrEmpty(Optional.ofNullable(node.get("sentences"))
                         .map(arr -> arr.get(0))
                         .map(single -> single.get("trans"))
                         .map(JsonNode::asText)))
                 .switchIfEmpty(messageService.err(env, "command.translate.incorrect-language").then(Mono.never()))
-                .flatMap(str -> messageService.text(env, str))
-                .contextWrite(ctx -> ctx.put(KEY_REPLY, true));
+                .flatMap(str -> messageService.text(env, str)
+                        .withMessageReference(env.message().getId()))
+                .then();
     }
 
     @Override
     public Mono<Void> help(CommandEnvironment env, String prefix){
         return messageService.infoTitled(env, "command.help.title", "command.translate.help",
-                GuildConfig.formatPrefix(prefix), languages);
+                GuildConfig.formatPrefix(prefix), languages)
+                .then();
     }
 }
