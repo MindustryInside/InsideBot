@@ -83,6 +83,10 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                     return Mono.zip(emojiCount, starboardChannel, sourceMessage)
                             .filter(predicate((count, channel, source) ->
                                     source.getInteraction().isEmpty() && source.getWebhookId().isEmpty()))
+                            .filter(predicate((count, channel, source) -> config.isSelfStarring()
+                                    || source.getAuthor()
+                                    .map(u -> !u.getId().equals(event.getUserId()))
+                                    .orElse(true)))
                             .flatMap(function((count, channel, source) -> {
 
                                 Mono<Message> findIfAbsent = channel.getLastMessageId()
@@ -186,6 +190,10 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                     return Mono.zip(emojiCount, starboardChannel, sourceMessage)
                             .filter(predicate((count, channel, source) ->
                                     source.getInteraction().isEmpty() && source.getWebhookId().isEmpty()))
+                            .filter(predicate((count, channel, source) -> config.isSelfStarring()
+                                    || source.getAuthor()
+                                    .map(u -> !u.getId().equals(event.getUserId()))
+                                    .orElse(true)))
                             .flatMap(function((count, channel, source) -> {
 
                                 Mono<Message> findIfAbsent = channel.getLastMessageId()

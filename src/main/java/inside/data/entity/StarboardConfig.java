@@ -25,6 +25,9 @@ public class StarboardConfig extends ConfigEntity{
     @Column(columnDefinition = "json")
     private List<EmojiData> emojis;
 
+    @Column(name = "self_starring")
+    private boolean selfStarring;
+
     public int getLowerStarBarrier(){
         return lowerStarBarrier;
     }
@@ -49,12 +52,21 @@ public class StarboardConfig extends ConfigEntity{
         this.emojis = Objects.requireNonNull(emojis, "emojis");
     }
 
+    public boolean isSelfStarring(){
+        return selfStarring;
+    }
+
+    public void setSelfStarring(boolean selfStarring){
+        this.selfStarring = selfStarring;
+    }
+
     @Override
     public String toString(){
         return "StarboardConfig{" +
                 "lowerStarBarrier=" + lowerStarBarrier +
                 ", starboardChannelId='" + starboardChannelId + '\'' +
                 ", emojis=" + emojis +
+                ", selfStarring=" + selfStarring +
                 "} " + super.toString();
     }
 }

@@ -335,4 +335,40 @@ public class StarboardCommand extends OwnerCommand{
                             }));
         }
     }
+
+    @InteractionDiscordCommand(name = "self-starring", description = "Enable self starring.",
+            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    public static class StarboardCommandSelfStarring extends OwnerAwareCommand<StarboardCommand>{
+
+        protected StarboardCommandSelfStarring(@Aware StarboardCommand owner){
+            super(owner);
+
+            addOption(builder -> builder.name("value")
+                    .description("New state.")
+                    .type(ApplicationCommandOption.Type.BOOLEAN.getValue()));
+        }
+
+        @Override
+        public Mono<Void> execute(InteractionCommandEnvironment env){
+
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+
+            BooleanFunction<String> formatBool = bool ->
+                    messageService.get(env.context(), bool ? "command.settings.enabled" : "command.settings.disabled");
+
+            return entityRetriever.getStarboardConfigById(guildId)
+                    .switchIfEmpty(entityRetriever.createStarboardConfig(guildId))
+                    .flatMap(starboardConfig -> Mono.justOrEmpty(env.getOption("value")
+                                    .flatMap(ApplicationCommandInteractionOption::getValue)
+                                    .map(ApplicationCommandInteractionOptionValue::asBoolean))
+                            .switchIfEmpty(messageService.text(env, "command.settings.starboard-self-starring.update",
+                                    formatBool.apply(starboardConfig.isSelfStarring())).then(Mono.never()))
+                            .flatMap(bool -> {
+                                starboardConfig.setSelfStarring(bool);
+                                return messageService.text(env, "command.settings.starboard-self-starring.update",
+                                                formatBool.apply(bool))
+                                        .and(entityRetriever.save(starboardConfig));
+                            }));
+        }
+    }
 }
