@@ -67,12 +67,15 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                         return Mono.empty();
                     }
 
-                    Mono<Integer> emojiCount = event.getMessage()
-                            .flatMapIterable(Message::getReactions)
-                            .filter(reaction -> emojis.contains(reaction.getEmoji()))
-                            .map(Reaction::getCount)
+                    Mono<Long> emojiCount = event.getMessage()
+                            .flatMapMany(message -> Flux.fromIterable(message.getReactions())
+                                    .filter(reaction -> emojis.contains(reaction.getEmoji()))
+                                    .flatMap(r -> config.isSelfStarring() ? Mono.just((long)r.getCount()) :
+                                            message.getReactors(r.getEmoji())
+                                                    .filter(u -> !u.getId().equals(event.getUserId()))
+                                                    .count()))
                             .as(MathFlux::max)
-                            .defaultIfEmpty(0)
+                            .defaultIfEmpty(0L)
                             .filter(l -> l >= config.getLowerStarBarrier());
 
                     Mono<TopLevelGuildMessageChannel> starboardChannel = event.getClient().getChannelById(channelId)
@@ -121,7 +124,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                     return target.edit(MessageEditSpec.builder()
                                             .addEmbed(embedSpec.build())
                                             .contentOrNull(messageService.format(context, "starboard.format",
-                                                    formatted.get(Mathf.clamp((count - 1) / 5, 0, formatted.size() - 1)),
+                                                    formatted.get(Math.toIntExact(Mathf.clamp((count - 1) / 5, 0, formatted.size() - 1))),
                                                     count, DiscordUtil.getChannelMention(source.getChannelId())))
                                             .build());
                                 });
@@ -133,8 +136,9 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
                                     return channel.createMessage(MessageCreateSpec.builder()
                                                     .content(messageService.format(
-                                                            context, "starboard.format", formatted.get(Mathf.clamp(
-                                                                    (count - 1) / 5, 0, formatted.size() - 1)),
+                                                            context, "starboard.format", formatted.get(
+                                                                    Math.toIntExact(Mathf.clamp(
+                                                                    (count - 1) / 5, 0, formatted.size() - 1))),
                                                             count, DiscordUtil.getChannelMention(source.getChannelId())))
                                                     .addEmbed(embedSpec.build())
                                                     .build())
@@ -175,13 +179,16 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                         return Mono.empty();
                     }
 
-                    Mono<Integer> emojiCount = event.getMessage()
-                            .flatMapIterable(Message::getReactions)
-                            .filter(reaction -> emojis.contains(reaction.getEmoji()))
-                            .map(Reaction::getCount)
+                    Mono<Long> emojiCount = event.getMessage()
+                            .flatMapMany(message -> Flux.fromIterable(message.getReactions())
+                                    .filter(reaction -> emojis.contains(reaction.getEmoji()))
+                                    .flatMap(r -> config.isSelfStarring() ? Mono.just((long)r.getCount()) :
+                                            message.getReactors(r.getEmoji())
+                                                    .filter(u -> !u.getId().equals(event.getUserId()))
+                                                    .count()))
                             .as(MathFlux::max)
-                            .defaultIfEmpty(0);
-
+                            .defaultIfEmpty(0L)
+                            .filter(l -> l >= config.getLowerStarBarrier());
                     Mono<TopLevelGuildMessageChannel> starboardChannel = event.getClient().getChannelById(channelId)
                             .cast(TopLevelGuildMessageChannel.class);
 
@@ -229,7 +236,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                     return target.edit(MessageEditSpec.builder()
                                             .addEmbed(embedSpec.build())
                                             .contentOrNull(messageService.format(context, "starboard.format",
-                                                    formatted.get(Mathf.clamp((count - 1) / 5, 0, formatted.size() - 1)),
+                                                    formatted.get(Math.toIntExact(Mathf.clamp((count - 1) / 5, 0, formatted.size() - 1))),
                                                     count, DiscordUtil.getChannelMention(sourceChannelId)))
                                             .build());
                                 });

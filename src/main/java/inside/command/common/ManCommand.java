@@ -39,7 +39,7 @@ public class ManCommand extends Command{
                                 .flatMapIterable(CommandConfig::getAliases))
                         .collectList())
                 .flatMap(TupleUtils.function((info, names) -> {
-                    StringBuilder builder = new StringBuilder("```");
+                    StringBuilder builder = new StringBuilder("```\n");
 
                     String nameCategory = messageService.get(env.context(), "command.man.category.name");
                     String synopsisCategory = messageService.get(env.context(), "command.man.category.synopsis");

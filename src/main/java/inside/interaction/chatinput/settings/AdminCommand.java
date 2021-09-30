@@ -4,6 +4,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.*;
 import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
+import inside.annotation.Aware;
 import inside.data.entity.AdminActionType;
 import inside.interaction.*;
 import inside.interaction.chatinput.*;

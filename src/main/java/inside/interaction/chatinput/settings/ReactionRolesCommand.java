@@ -4,6 +4,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.*;
 import discord4j.core.object.entity.GuildEmoji;
 import discord4j.discordjson.json.EmojiData;
+import inside.annotation.Aware;
 import inside.data.entity.EmojiDispenser;
 import inside.interaction.*;
 import inside.interaction.chatinput.*;
