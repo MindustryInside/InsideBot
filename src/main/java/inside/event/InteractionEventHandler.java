@@ -6,7 +6,7 @@ import discord4j.core.event.domain.interaction.*;
 import discord4j.discordjson.json.ApplicationCommandInteractionOptionData;
 import inside.Settings;
 import inside.data.service.EntityRetriever;
-import inside.interaction.InteractionCommandEnvironment;
+import inside.interaction.*;
 import inside.interaction.component.*;
 import inside.interaction.component.button.ButtonListener;
 import inside.interaction.component.selectmenu.SelectMenuListener;
@@ -58,6 +58,24 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
 
     private <T extends InteractionListener> Tuple2<String, T> extractIdentifier(T l){
         return Tuples.of(l.getClass().getAnnotation(ComponentProvider.class).value(), l);
+    }
+
+    @Override
+    public Publisher<?> onUserInteraction(UserInteractionEvent event){
+        Mono<Context> initContext = Mono.justOrEmpty(event.getInteraction().getGuildId())
+                .flatMap(guildId -> entityRetriever.getGuildConfigById(guildId)
+                        .switchIfEmpty(entityRetriever.createGuildConfig(guildId)))
+                .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
+                        KEY_TIMEZONE, guildConfig.timeZone()))
+                .defaultIfEmpty(Context.of(KEY_LOCALE, messageService.getDefaultLocale(),
+                        KEY_TIMEZONE, settings.getDefaults().getTimeZone()));
+
+        return initContext.flatMap(context -> Mono.defer(() -> discordService.handleUserCommand(
+                InteractionUserEnvironment.builder()
+                        .event(event)
+                        .context(context)
+                        .build()))
+                .contextWrite(context));
     }
 
     @Override

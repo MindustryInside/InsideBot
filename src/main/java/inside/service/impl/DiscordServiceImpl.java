@@ -9,6 +9,7 @@ import discord4j.core.*;
 import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.object.command.ApplicationCommandOption;
 import discord4j.core.shard.MemberRequestFilter;
+import discord4j.discordjson.json.ApplicationCommandRequest;
 import discord4j.gateway.intent.*;
 import discord4j.rest.http.client.ClientException;
 import discord4j.rest.request.*;
@@ -20,6 +21,7 @@ import inside.data.entity.Activity;
 import inside.data.service.EntityRetriever;
 import inside.interaction.*;
 import inside.interaction.chatinput.InteractionChatInputCommand;
+import inside.interaction.chatinput.common.GuildCommand;
 import inside.interaction.user.UserCommand;
 import inside.service.DiscordService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,21 +84,37 @@ public class DiscordServiceImpl implements DiscordService{
                 .orElseThrow(IllegalStateException::new);
 
         long applicationId = gateway.rest().getApplicationId().blockOptional().orElse(0L);
+
+        List<ApplicationCommandRequest> guildCommands = new ArrayList<>();
+        var commands0 = commands.stream()
+                .filter(cmd -> cmd.getType() == ApplicationCommandOption.Type.UNKNOWN)
+                .map(cmd -> {
+                    var req = cmd.getRequest();
+
+                    String name = req.name();
+                    switch(cmd.getCommandType()){
+                        case USER -> userCommandMap.put(name, (UserCommand)cmd);
+                        case CHAT_INPUT -> chatInputCommandMap.put(name, (InteractionChatInputCommand)cmd);
+                    }
+
+                    if(cmd instanceof GuildCommand){
+                        guildCommands.add(req);
+                        return null;
+                    }
+
+                    return req;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
         gateway.rest().getApplicationService()
-                .bulkOverwriteGlobalApplicationCommand(applicationId, commands.stream()
-                        .filter(cmd -> cmd.getType() == ApplicationCommandOption.Type.UNKNOWN)
-                        .map(cmd -> {
-                            var req = cmd.getRequest();
+                .bulkOverwriteGlobalApplicationCommand(applicationId, commands0)
+                .subscribe();
 
-                            String name = req.name();
-                            switch(cmd.getCommandType()){
-                                case USER -> userCommandMap.put(name, (UserCommand)cmd);
-                                case CHAT_INPUT -> chatInputCommandMap.put(name, (InteractionChatInputCommand)cmd);
-                            }
-
-                            return req;
-                        })
-                        .collect(Collectors.toList()))
+        gateway.rest().getGuilds()
+                .flatMap(data -> gateway.rest().getApplicationService()
+                        .bulkOverwriteGuildApplicationCommand(applicationId, data.id().asLong(),
+                                guildCommands))
                 .subscribe();
 
         gateway.on(ReactiveEventAdapter.from(adapters)).subscribe();
