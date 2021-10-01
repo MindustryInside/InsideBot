@@ -5,7 +5,7 @@ import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.message.*;
 import discord4j.core.object.Embed;
 import discord4j.core.object.entity.*;
-import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
+import discord4j.core.object.entity.channel.*;
 import discord4j.core.object.reaction.*;
 import discord4j.core.spec.*;
 import discord4j.rest.util.*;
@@ -78,8 +78,8 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                             .defaultIfEmpty(0L)
                             .filter(l -> l >= config.getLowerStarBarrier());
 
-                    Mono<TopLevelGuildMessageChannel> starboardChannel = event.getClient().getChannelById(channelId)
-                            .cast(TopLevelGuildMessageChannel.class);
+                    Mono<GuildMessageChannel> starboardChannel = event.getClient().getChannelById(channelId)
+                            .cast(GuildMessageChannel.class);
 
                     Mono<Message> sourceMessage = event.getMessage();
 
@@ -189,8 +189,8 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                             .as(MathFlux::max)
                             .defaultIfEmpty(0L)
                             .filter(l -> l >= config.getLowerStarBarrier());
-                    Mono<TopLevelGuildMessageChannel> starboardChannel = event.getClient().getChannelById(channelId)
-                            .cast(TopLevelGuildMessageChannel.class);
+                    Mono<GuildMessageChannel> starboardChannel = event.getClient().getChannelById(channelId)
+                            .cast(GuildMessageChannel.class);
 
                     Mono<Message> sourceMessage = event.getMessage();
 
@@ -316,7 +316,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
             }
 
             return starboard.flatMap(board -> event.getClient().getChannelById(channelId)
-                    .cast(TopLevelGuildMessageChannel.class)
+                    .cast(GuildMessageChannel.class)
                     .flatMap(channel -> channel.getMessageById(board.getTargetMessageId()))
                     .flatMap(Message::delete)
                     .then(entityRetriever.delete(board)));

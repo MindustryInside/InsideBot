@@ -3,7 +3,7 @@ package inside.event;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.message.*;
-import discord4j.core.object.entity.channel.GuildChannel;
+import discord4j.core.object.entity.channel.*;
 import inside.audit.*;
 import inside.data.service.EntityRetriever;
 import org.reactivestreams.Publisher;
@@ -39,7 +39,7 @@ public class ReactionEventHandler extends ReactiveEventAdapter{
                         KEY_TIMEZONE, guildConfig.timeZone()));
 
         return initContext.flatMap(context -> Mono.zip(event.getUser().flatMap(user -> user.asMember(guildId)),
-                        event.getChannel().ofType(GuildChannel.class))
+                        event.getChannel().ofType(GuildMessageChannel.class))
                 .flatMap(function((member, channel) -> auditService.newBuilder(guildId, AuditActionType.REACTION_ADD)
                         .withUser(member)
                         .withChannel(channel)
@@ -62,7 +62,7 @@ public class ReactionEventHandler extends ReactiveEventAdapter{
                         KEY_TIMEZONE, guildConfig.timeZone()));
 
         return initContext.flatMap(context -> Mono.zip(event.getUser().flatMap(user -> user.asMember(guildId)),
-                        event.getChannel().ofType(GuildChannel.class))
+                        event.getChannel().ofType(GuildMessageChannel.class))
                 .flatMap(function((member, channel) -> auditService.newBuilder(guildId, AuditActionType.REACTION_REMOVE)
                         .withUser(member)
                         .withChannel(channel)
@@ -84,7 +84,7 @@ public class ReactionEventHandler extends ReactiveEventAdapter{
                 .map(guildConfig -> Context.of(KEY_LOCALE, guildConfig.locale(),
                         KEY_TIMEZONE, guildConfig.timeZone()));
 
-        return initContext.flatMap(context -> event.getChannel().ofType(GuildChannel.class)
+        return initContext.flatMap(context -> event.getChannel().ofType(GuildMessageChannel.class)
                 .flatMap(channel -> auditService.newBuilder(guildId, AuditActionType.REACTION_REMOVE_ALL)
                         .withChannel(channel)
                         .withAttribute(Attribute.MESSAGE_ID, event.getMessageId())

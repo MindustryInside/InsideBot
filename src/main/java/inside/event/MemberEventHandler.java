@@ -5,7 +5,7 @@ import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.guild.*;
 import discord4j.core.object.audit.*;
 import discord4j.core.object.entity.*;
-import discord4j.core.object.entity.channel.TopLevelGuildMessageChannel;
+import discord4j.core.object.entity.channel.*;
 import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.core.spec.*;
 import discord4j.rest.util.Permission;
@@ -89,7 +89,7 @@ public class MemberEventHandler extends ReactiveEventAdapter{
         //noinspection Convert2MethodRef
         Mono<Void> welcomeMessage = entityRetriever.getWelcomeMessageById(guildId)
                 .flatMap(welcomeMessage1 -> event.getClient().getChannelById(welcomeMessage1.getChannelId())
-                        .cast(TopLevelGuildMessageChannel.class)
+                        .cast(GuildMessageChannel.class)
                         .zipWith(welcomeMessageService.compile(MessageTemplate.builder()
                                 .member(member)
                                 .template(welcomeMessage1)
