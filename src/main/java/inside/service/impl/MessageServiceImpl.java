@@ -74,8 +74,16 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     public String get(ContextView ctx, String key){
+        return get(ctx, key, key);
+    }
+
+    @Override
+    public String get(ContextView ctx, String key, String defaultKey){
         try{
-            return Strings.isEmpty(key) ? "" : context.getMessage(key, null, ctx.get(KEY_LOCALE));
+            if(Strings.isEmpty(key)){
+                return "";
+            }
+            return Objects.requireNonNull(context.getMessage(key, null, defaultKey, ctx.get(KEY_LOCALE)));
         }catch(NoSuchMessageException e){
             return key;
         }

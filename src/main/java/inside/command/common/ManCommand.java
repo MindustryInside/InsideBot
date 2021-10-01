@@ -59,7 +59,9 @@ public class ManCommand extends Command{
                     builder.append(messageService.get(env.context(), info.paramText()).toUpperCase()).append(SEPARATOR);
 
                     builder.append(descriptionCategory).append("\n");
-                    builder.append(INDENT).append(messageService.get(env.context(), info.description())).append(SEPARATOR);
+                    String description = messageService.get(env.context(),
+                            info.description() + "-full", info.description());
+                    builder.append(INDENT).append(description).append(SEPARATOR);
 
                     builder.append("```");
                     return messageService.text(env, builder.toString())

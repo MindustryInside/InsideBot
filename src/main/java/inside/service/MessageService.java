@@ -23,6 +23,8 @@ public interface MessageService{
 
     String get(ContextView ctx, String key);
 
+    String get(ContextView ctx, String key, String defaultKey);
+
     String getPluralized(ContextView ctx, String key, long count);
 
     String getEnum(ContextView ctx, Enum<?> type);
