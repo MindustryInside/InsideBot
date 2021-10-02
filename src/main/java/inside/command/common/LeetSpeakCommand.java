@@ -12,7 +12,6 @@ import java.util.*;
 import java.util.function.UnaryOperator;
 
 import static inside.audit.BaseAuditProvider.MESSAGE_TXT;
-import static inside.util.ContextUtil.KEY_REPLY;
 
 @DiscordCommand(key = {"leet", "1337"}, params = "command.1337.params", description = "command.1337.description")
 public class LeetSpeakCommand extends Command{

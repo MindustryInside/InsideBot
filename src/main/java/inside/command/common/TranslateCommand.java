@@ -11,8 +11,6 @@ import reactor.netty.http.client.HttpClient;
 
 import java.util.*;
 
-import static inside.util.ContextUtil.KEY_REPLY;
-
 @DiscordCommand(key = {"translate", "tr"}, params = "command.translate.params", description = "command.translate.description")
 public class TranslateCommand extends Command{
     private static final String languages = """

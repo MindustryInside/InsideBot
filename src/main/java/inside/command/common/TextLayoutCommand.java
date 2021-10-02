@@ -4,8 +4,6 @@ import inside.command.Command;
 import inside.command.model.*;
 import reactor.core.publisher.Mono;
 
-import static inside.util.ContextUtil.KEY_REPLY;
-
 @DiscordCommand(key = "r", params = "command.text-layout.params", description = "command.text-layout.description")
 public class TextLayoutCommand extends Command{
     private static final String[] engPattern;

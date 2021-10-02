@@ -13,7 +13,6 @@ import java.util.function.UnaryOperator;
 
 import static inside.audit.BaseAuditProvider.MESSAGE_TXT;
 import static inside.command.common.CommandUtils.mapOf;
-import static inside.util.ContextUtil.KEY_REPLY;
 
 @DiscordCommand(key = "translit", params = "command.transliteration.params", description = "command.transliteration.description")
 public class TransliterationCommand extends Command{
