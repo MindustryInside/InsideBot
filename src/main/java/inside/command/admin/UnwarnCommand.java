@@ -47,7 +47,7 @@ public class UnwarnCommand extends AdminCommand{
                         return messageService.err(env, "command.incorrect-number");
                     }
 
-                    return messageService.text(env, "command.admin.unwarn", target.getUsername(), warn)
+                    return messageService.text(env, "command.admin.unwarn", target.getMention(), warn)
                             .and(adminService.unwarn(target, warn - 1));
                 }))
                 .then();

@@ -54,7 +54,7 @@ public class WarnCommand extends AdminCommand{
                     }
 
                     Mono<Void> warnings = Mono.defer(() -> adminService.warnings(member).count()).flatMap(count -> {
-                        Mono<Void> message = messageService.text(env, "command.admin.warn", member.getUsername(), count)
+                        Mono<Void> message = messageService.text(env, "command.admin.warn", member.getMention(), count)
                                 .then();
 
                         Mono<AdminConfig> config = entityRetriever.getAdminConfigById(guildId)

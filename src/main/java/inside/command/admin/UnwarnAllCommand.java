@@ -28,7 +28,7 @@ public class UnwarnAllCommand extends AdminCommand{
                 .switchIfEmpty(messageService.err(env, "common.bot").then(Mono.never()))
                 .filterWhen(target -> adminService.isOwner(author).map(owner -> !target.equals(author) || owner))
                 .switchIfEmpty(messageService.err(env, "command.admin.unwarnall.permission-denied").then(Mono.never())) // pluralized variant
-                .flatMap(target -> messageService.text(env, "command.admin.unwarnall", target.getUsername())
+                .flatMap(target -> messageService.text(env, "command.admin.unwarnall", target.getMention())
                         .then(adminService.unwarnAll(guildId, target.getId())));
     }
 }
