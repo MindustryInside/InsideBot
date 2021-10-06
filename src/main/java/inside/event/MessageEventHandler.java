@@ -197,7 +197,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
                         KEY_TIMEZONE, guildConfig.timeZone()));
 
         Mono<Void> logMessageDelete = initContext.flatMap(context ->
-                Mono.zip(event.getChannel().ofType(TextChannel.class), messageInfo)
+                Mono.zip(event.getChannel().ofType(GuildMessageChannel.class), messageInfo)
                 .flatMap(function((channel, info) -> {
                     String decrypted = messageService.decrypt(info.getContent(), message.getId(), message.getChannelId());
                     AuditActionBuilder builder = auditService.newBuilder(guildId, MESSAGE_DELETE)
