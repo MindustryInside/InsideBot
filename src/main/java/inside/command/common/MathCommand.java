@@ -84,7 +84,7 @@ public class MathCommand extends Command{
         String text = interaction.getOption(0)
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asString)
-                .orElseThrow(IllegalStateException::new);
+                .orElseThrow();
 
         return createExpression(text).publishOn(Schedulers.boundedElastic())
                 .onErrorResume(t -> t instanceof ArithmeticException || t instanceof Expression.ExpressionException ||

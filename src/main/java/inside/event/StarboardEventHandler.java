@@ -246,7 +246,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
     }
 
     private void computeEmbed(Context context, Message source, Snowflake guildId, EmbedCreateSpec.Builder embedSpec){
-        var authorUser = source.getAuthor().orElseThrow(IllegalStateException::new);
+        var authorUser = source.getAuthor().orElseThrow();
         embedSpec.author(authorUser.getTag(), null, authorUser.getAvatarUrl());
 
         String content = MessageUtil.substringTo(source.getContent(), Embed.MAX_DESCRIPTION_LENGTH);
@@ -289,9 +289,9 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
     private void updateEmbed(Embed old, EmbedCreateSpec.Builder embedSpec){
         old.getDescription().ifPresent(embedSpec::description);
-        var embedAuthor = old.getAuthor().orElseThrow(IllegalStateException::new);
-        embedSpec.author(embedAuthor.getName().orElseThrow(IllegalStateException::new), null,
-                embedAuthor.getIconUrl().orElseThrow(IllegalStateException::new));
+        var embedAuthor = old.getAuthor().orElseThrow();
+        embedSpec.author(embedAuthor.getName().orElseThrow(), null,
+                embedAuthor.getIconUrl().orElseThrow());
         embedSpec.fields(old.getFields().stream()
                 .map(field -> EmbedCreateFields.Field.of(field.getName(), field.getValue(), field.isInline()))
                 .collect(Collectors.toList()));

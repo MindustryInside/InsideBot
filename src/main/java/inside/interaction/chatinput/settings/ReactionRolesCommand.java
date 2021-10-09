@@ -43,7 +43,7 @@ public class ReactionRolesCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
 
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             return entityRetriever.getAllEmojiDispenserInGuild(guildId)
                     .switchIfEmpty(messageService.err(env, "command.settings.reaction-roles.absents").then(Mono.never()))
@@ -85,12 +85,12 @@ public class ReactionRolesCommand extends OwnerCommand{
         public Mono<Void> execute(InteractionCommandEnvironment env){
 
             //TODO: USE!
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             String emojistr = env.getOption("emoji")
                     .flatMap(ApplicationCommandInteractionOption::getValue)
                     .map(ApplicationCommandInteractionOptionValue::asString)
-                    .orElseThrow(IllegalStateException::new);
+                    .orElseThrow();
 
             Mono<EmojiData> fetchEmoji = env.getClient().getGuildEmojis(guildId)
                     .filter(emoji -> emoji.asFormat().equals(emojistr) ||
@@ -105,7 +105,7 @@ public class ReactionRolesCommand extends OwnerCommand{
             Snowflake roleId = env.getOption("role")
                     .flatMap(ApplicationCommandInteractionOption::getValue)
                     .map(ApplicationCommandInteractionOptionValue::asSnowflake)
-                    .orElseThrow(IllegalStateException::new);
+                    .orElseThrow();
 
             Snowflake messageId = env.getOption("message-id")
                     .flatMap(ApplicationCommandInteractionOption::getValue)
@@ -148,12 +148,12 @@ public class ReactionRolesCommand extends OwnerCommand{
         public Mono<Void> execute(InteractionCommandEnvironment env){
 
             //TODO: USE!
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             Snowflake roleId = env.getOption("role")
                     .flatMap(ApplicationCommandInteractionOption::getValue)
                     .map(ApplicationCommandInteractionOptionValue::asSnowflake)
-                    .orElseThrow(IllegalStateException::new);
+                    .orElseThrow();
 
             Snowflake messageId = env.getOption("message-id")
                     .flatMap(ApplicationCommandInteractionOption::getValue)
@@ -184,7 +184,7 @@ public class ReactionRolesCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
 
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             return entityRetriever.getEmojiDispenserCountInGuild(guildId)
                     .flatMap(l -> entityRetriever.deleteAllEmojiDispenserInGuild(guildId)

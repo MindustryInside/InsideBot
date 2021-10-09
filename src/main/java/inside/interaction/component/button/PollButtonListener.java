@@ -83,5 +83,5 @@ public class PollButtonListener implements ButtonListener{
         });
     }
 
-    private static final Supplier<IllegalStateException> ise = IllegalStateException::new;
+    private static final Supplier<IllegalStateException> ise = ;
 }

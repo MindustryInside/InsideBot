@@ -6,7 +6,7 @@ import discord4j.core.event.domain.message.*;
 import discord4j.core.object.Embed.Field;
 import discord4j.core.object.audit.*;
 import discord4j.core.object.entity.*;
-import discord4j.core.object.entity.channel.*;
+import discord4j.core.object.entity.channel.GuildMessageChannel;
 import discord4j.core.spec.AuditLogQuerySpec;
 import inside.audit.*;
 import inside.command.CommandHandler;

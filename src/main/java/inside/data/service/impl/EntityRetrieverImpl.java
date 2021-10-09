@@ -330,8 +330,8 @@ public class EntityRetrieverImpl implements EntityRetriever{
         return Mono.defer(() -> {
             MessageInfo messageInfo = new MessageInfo();
             messageInfo.setMessageId(message.getId());
-            messageInfo.setUserId(message.getAuthor().map(User::getId).orElseThrow(IllegalStateException::new)); // only users, not webhooks
-            messageInfo.setGuildId(message.getGuildId().orElseThrow(IllegalStateException::new)); // only guilds
+            messageInfo.setUserId(message.getAuthor().map(User::getId).orElseThrow()); // only users, not webhooks
+            messageInfo.setGuildId(message.getGuildId().orElseThrow()); // only guilds
             messageInfo.setTimestamp(message.getTimestamp());
             messageInfo.setContent(messageService.encrypt(MessageUtil.effectiveContent(message), message.getId(), message.getChannelId()));
             return save(messageInfo).thenReturn(messageInfo);

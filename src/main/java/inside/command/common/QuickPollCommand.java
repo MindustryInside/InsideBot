@@ -18,7 +18,7 @@ public class QuickPollCommand extends Command{
         String text = interaction.getOption(0)
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asString)
-                .orElseThrow(IllegalStateException::new);
+                .orElseThrow();
 
         return env.channel().createMessage(messageService.format(
                 env.context(), "command.qpoll.text", env.member().getUsername(), text))

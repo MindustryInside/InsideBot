@@ -38,7 +38,7 @@ public class AuditCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
 
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             BooleanFunction<String> formatBool = bool ->
                     messageService.get(env.context(), bool ? "command.settings.enabled" : "command.settings.disabled");
@@ -74,7 +74,7 @@ public class AuditCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
 
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             return entityRetriever.getAuditConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createAuditConfig(guildId))
@@ -113,7 +113,7 @@ public class AuditCommand extends OwnerCommand{
             @Override
             public Mono<Void> execute(InteractionCommandEnvironment env){
 
-                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
                 return entityRetriever.getAuditConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createAuditConfig(guildId))
@@ -142,7 +142,7 @@ public class AuditCommand extends OwnerCommand{
             @Override
             public Mono<Void> execute(InteractionCommandEnvironment env){
 
-                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
                 return entityRetriever.getAuditConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createAuditConfig(guildId))
@@ -191,7 +191,7 @@ public class AuditCommand extends OwnerCommand{
             @Override
             public Mono<Void> execute(InteractionCommandEnvironment env){
 
-                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
                 return entityRetriever.getAuditConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createAuditConfig(guildId))
@@ -235,7 +235,7 @@ public class AuditCommand extends OwnerCommand{
             @Override
             public Mono<Void> execute(InteractionCommandEnvironment env){
 
-                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
                 return entityRetriever.getAuditConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createAuditConfig(guildId))

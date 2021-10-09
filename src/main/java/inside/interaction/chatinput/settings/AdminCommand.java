@@ -40,7 +40,7 @@ public class AdminCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
 
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             return entityRetriever.getAdminConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createAdminConfig(guildId))
@@ -74,7 +74,7 @@ public class AdminCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
 
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             Function<Duration, String> formatDuration = duration ->
                     DurationFormat.wordBased(env.context().get(KEY_LOCALE)).format(duration);
@@ -115,7 +115,7 @@ public class AdminCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
 
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             return entityRetriever.getAdminConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createAdminConfig(guildId))
@@ -150,7 +150,7 @@ public class AdminCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
 
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             Function<Duration, String> formatDuration = duration ->
                     DurationFormat.wordBased(env.context().get(KEY_LOCALE)).format(duration);
@@ -203,7 +203,7 @@ public class AdminCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
 
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             return entityRetriever.getAdminConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createAdminConfig(guildId))
@@ -215,7 +215,7 @@ public class AdminCommand extends OwnerCommand{
                                             adminConfig.getThresholdAction())).then(Mono.never()))
                             .flatMap(str -> {
                                 AdminActionType action = Try.ofCallable(() -> AdminActionType.valueOf(str))
-                                        .toOptional().orElseThrow(IllegalStateException::new);
+                                        .toOptional().orElseThrow();
 
                                 adminConfig.setThresholdAction(action);
                                 return messageService.text(env, "command.settings.threshold-action.update",
@@ -245,7 +245,7 @@ public class AdminCommand extends OwnerCommand{
             @Override
             public Mono<Void> execute(InteractionCommandEnvironment env){
 
-                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
                 return entityRetriever.getAdminConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createAdminConfig(guildId))
@@ -274,7 +274,7 @@ public class AdminCommand extends OwnerCommand{
             @Override
             public Mono<Void> execute(InteractionCommandEnvironment env){
 
-                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
                 return entityRetriever.getAdminConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createAdminConfig(guildId))
@@ -319,7 +319,7 @@ public class AdminCommand extends OwnerCommand{
             @Override
             public Mono<Void> execute(InteractionCommandEnvironment env){
 
-                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
                 return entityRetriever.getAdminConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createAdminConfig(guildId))
@@ -359,7 +359,7 @@ public class AdminCommand extends OwnerCommand{
             @Override
             public Mono<Void> execute(InteractionCommandEnvironment env){
 
-                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
                 return entityRetriever.getAdminConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createAdminConfig(guildId))

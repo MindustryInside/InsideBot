@@ -41,7 +41,7 @@ public class TextLayoutCommand extends Command{
         String text = interaction.getOption(1)
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asString)
-                .orElseThrow(IllegalStateException::new);
+                .orElseThrow();
 
         return messageService.text(env, en ? text2rus(text) : text2eng(text))
                 .withMessageReference(env.message().getId())

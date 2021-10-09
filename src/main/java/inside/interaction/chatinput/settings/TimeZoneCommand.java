@@ -26,7 +26,7 @@ public class TimeZoneCommand extends SettingsCommand{
     @Override
     public Mono<Void> execute(InteractionCommandEnvironment env){
 
-        Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+        Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
         return entityRetriever.getGuildConfigById(guildId)
                 .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
@@ -41,7 +41,7 @@ public class TimeZoneCommand extends SettingsCommand{
                         return ZoneId.getAvailableZoneIds().stream()
                                 .min(Comparator.comparingInt(s -> Strings.damerauLevenshtein(s, value)))
                                 .map(s -> messageService.err(env, "command.settings.timezone.unknown.suggest", s))
-                                .orElse(messageService.err(env, "command.settings.timezone.unknown"));
+                                .orElseGet(() -> messageService.err(env, "command.settings.timezone.unknown"));
                     }
 
                     guildConfig.timeZone(timeZone);

@@ -38,7 +38,7 @@ public class StarboardCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
 
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             BooleanFunction<String> formatBool = bool ->
                     messageService.get(env.context(), bool ? "command.settings.enabled" : "command.settings.disabled");
@@ -74,7 +74,7 @@ public class StarboardCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
 
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             return entityRetriever.getStarboardConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createStarboardConfig(guildId))
@@ -120,7 +120,7 @@ public class StarboardCommand extends OwnerCommand{
             @Override
             public Mono<Void> execute(InteractionCommandEnvironment env){
 
-                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
                 Function<List<EmojiData>, String> formatEmojis = emojis -> {
                     StringBuilder builder = new StringBuilder();
@@ -160,7 +160,7 @@ public class StarboardCommand extends OwnerCommand{
             @Override
             public Mono<Void> execute(InteractionCommandEnvironment env){
 
-                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
                 return entityRetriever.getStarboardConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createStarboardConfig(guildId))
@@ -168,7 +168,7 @@ public class StarboardCommand extends OwnerCommand{
                             String value = env.getOption("value")
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asString)
-                                    .orElseThrow(IllegalStateException::new);
+                                    .orElseThrow();
 
                             String[] text = value.split("(\\s+)?,(\\s+)?");
                             return Flux.fromArray(text).flatMap(str -> env.getClient().getGuildEmojis(guildId)
@@ -219,7 +219,7 @@ public class StarboardCommand extends OwnerCommand{
             @Override
             public Mono<Void> execute(InteractionCommandEnvironment env){
 
-                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
                 return entityRetriever.getStarboardConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createStarboardConfig(guildId))
@@ -227,7 +227,7 @@ public class StarboardCommand extends OwnerCommand{
                             String value = env.getOption("value")
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asString)
-                                    .orElseThrow(IllegalStateException::new);
+                                    .orElseThrow();
 
                             List<EmojiData> emojis = starboardConfig.getEmojis();
 
@@ -289,7 +289,7 @@ public class StarboardCommand extends OwnerCommand{
             @Override
             public Mono<Void> execute(InteractionCommandEnvironment env){
 
-                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+                Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
                 return entityRetriever.getStarboardConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createStarboardConfig(guildId))
@@ -317,7 +317,7 @@ public class StarboardCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
 
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             return entityRetriever.getStarboardConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createStarboardConfig(guildId))
@@ -352,7 +352,7 @@ public class StarboardCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
 
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             BooleanFunction<String> formatBool = bool ->
                     messageService.get(env.context(), bool ? "command.settings.enabled" : "command.settings.disabled");

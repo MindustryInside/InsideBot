@@ -85,7 +85,7 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
             return Mono.empty();
         }
 
-        Snowflake guildId = event.getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+        Snowflake guildId = event.getInteraction().getGuildId().orElseThrow();
 
         Mono<Context> initContext = entityRetriever.getGuildConfigById(guildId)
                 .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
@@ -113,7 +113,7 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
             return Mono.empty();
         }
 
-        Snowflake guildId = event.getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+        Snowflake guildId = event.getInteraction().getGuildId().orElseThrow();
 
         Mono<Context> initContext = entityRetriever.getGuildConfigById(guildId)
                 .switchIfEmpty(entityRetriever.createGuildConfig(guildId))

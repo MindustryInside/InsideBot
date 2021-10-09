@@ -165,7 +165,7 @@ public class AdminServiceImpl implements AdminService{
                 .map(action -> Try.run(() -> schedulerFactoryBean.getScheduler().scheduleJob(UnwarnJob.createDetails(action), TriggerBuilder.newTrigger()
                         .startAt(action.getEndTimestamp()
                                 .map(Date::from)
-                                .orElseThrow(IllegalStateException::new))
+                                .orElseThrow())
                         .withSchedule(SimpleScheduleBuilder.simpleSchedule())
                         .build())))
                 .then();

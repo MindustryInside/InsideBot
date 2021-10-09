@@ -102,7 +102,7 @@ public class HelpCommand extends Command{
                 .map(builder -> builder.append(messageService.get(env.context(), "command.help.disclaimer.user"))
                         .append("\n").append(messageService.get(env.context(), "command.help.disclaimer.help")))
                 .flatMap(str -> messageService.infoTitled(env, messageService.getEnum(env.context(),
-                        category.map(CommandCategory::valueOf).orElseThrow(IllegalStateException::new)), str.toString()))
+                        category.map(CommandCategory::valueOf).orElseThrow()), str.toString()))
                 .then();
     }
 }

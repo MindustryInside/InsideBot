@@ -24,7 +24,7 @@ public class ManCommand extends Command{
         String name = interaction.getOption(0)
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asString)
-                .orElseThrow(IllegalStateException::new);
+                .orElseThrow();
 
         Snowflake guildId = env.member().getGuildId();
 

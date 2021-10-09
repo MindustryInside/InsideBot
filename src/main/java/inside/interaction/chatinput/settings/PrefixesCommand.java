@@ -28,7 +28,7 @@ public class PrefixesCommand extends OwnerCommand{
 
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             return entityRetriever.getGuildConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
@@ -55,7 +55,7 @@ public class PrefixesCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
 
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             return entityRetriever.getGuildConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
@@ -92,7 +92,7 @@ public class PrefixesCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
 
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             return entityRetriever.getGuildConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createGuildConfig(guildId))
@@ -126,7 +126,7 @@ public class PrefixesCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
 
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             return entityRetriever.getGuildConfigById(guildId)
                     .switchIfEmpty(entityRetriever.createGuildConfig(guildId))

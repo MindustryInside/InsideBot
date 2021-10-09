@@ -49,7 +49,7 @@ public class PollCommand extends Command{
         String text = interaction.getOption("poll text")
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asString)
-                .orElseThrow(IllegalStateException::new);
+                .orElseThrow();
 
         String[] vars = text.split("(?<!\\\\)" + Pattern.quote(","));
         String title = vars.length > 0 ? vars[0] : null;

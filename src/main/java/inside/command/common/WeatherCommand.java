@@ -33,7 +33,7 @@ public class WeatherCommand extends Command{
         String city = interaction.getOption(0)
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asString)
-                .orElseThrow(IllegalStateException::new);
+                .orElseThrow();
 
         Map<String, Object> query = Map.of(
                 "q", city,

@@ -25,7 +25,7 @@ public class MathCommand extends BaseInteractionCommand{
         String expression = env.getOption("expression")
                 .flatMap(ApplicationCommandInteractionOption::getValue)
                 .map(ApplicationCommandInteractionOptionValue::asString)
-                .orElseThrow(IllegalStateException::new);
+                .orElseThrow();
 
         return inside.command.common.MathCommand.createExpression(expression).publishOn(Schedulers.boundedElastic())
                 .onErrorResume(t -> t instanceof ArithmeticException || t instanceof Expression.ExpressionException ||

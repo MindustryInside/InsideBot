@@ -19,7 +19,7 @@ public class EmojiCommand extends Command{
         String text = interaction.getOption(0)
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asString)
-                .orElseThrow(IllegalStateException::new);
+                .orElseThrow();
 
         return env.member().getGuild()
                 .flatMapMany(guild -> guild.getEmojis(EntityRetrievalStrategy.REST))

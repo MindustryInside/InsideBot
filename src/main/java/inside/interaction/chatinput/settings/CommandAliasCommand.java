@@ -45,7 +45,7 @@ public class CommandAliasCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
 
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             BooleanFunction<String> formatBool = bool ->
                     messageService.get(env.context(), bool ? "command.settings.enabled" : "command.settings.disabled");
@@ -96,12 +96,12 @@ public class CommandAliasCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
             Snowflake guildId = env.event().getInteraction().getGuildId()
-                    .orElseThrow(IllegalStateException::new);
+                    .orElseThrow();
 
             String name = env.getOption("name")
                     .flatMap(ApplicationCommandInteractionOption::getValue)
                     .map(ApplicationCommandInteractionOptionValue::asString)
-                    .orElseThrow(IllegalStateException::new);
+                    .orElseThrow();
 
             return Mono.justOrEmpty(name)
                     .map(String::toLowerCase)
@@ -146,7 +146,7 @@ public class CommandAliasCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
 
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             return Mono.justOrEmpty(env.getOption("name")
                             .flatMap(ApplicationCommandInteractionOption::getValue)
@@ -203,7 +203,7 @@ public class CommandAliasCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
 
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             return Mono.justOrEmpty(env.getOption("name")
                             .flatMap(ApplicationCommandInteractionOption::getValue)
@@ -257,7 +257,7 @@ public class CommandAliasCommand extends OwnerCommand{
         @Override
         public Mono<Void> execute(InteractionCommandEnvironment env){
 
-            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow(IllegalStateException::new);
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             return Mono.justOrEmpty(env.getOption("name")
                             .flatMap(ApplicationCommandInteractionOption::getValue)

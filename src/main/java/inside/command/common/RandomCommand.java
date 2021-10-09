@@ -17,7 +17,7 @@ public class RandomCommand extends Command{
         String range = interaction.getOption(0)
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asString)
-                .orElseThrow(IllegalStateException::new);
+                .orElseThrow();
 
         Matcher matcher = rangePattern.matcher(range);
         if(!matcher.matches()){

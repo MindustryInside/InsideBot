@@ -81,7 +81,7 @@ public class DiscordServiceImpl implements DiscordService{
                 ))
                 .login()
                 .blockOptional()
-                .orElseThrow(IllegalStateException::new);
+                .orElseThrow();
 
         long applicationId = gateway.rest().getApplicationId().blockOptional().orElse(0L);
 

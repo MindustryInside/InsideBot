@@ -23,7 +23,7 @@ public abstract class DiscordUtil{
         return emoji.asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
                 .orElseGet(() -> emoji.asCustomEmoji()
                         .map(ReactionEmoji.Custom::asFormat)
-                        .orElseThrow(IllegalStateException::new));
+                        .orElseThrow());
     }
 
     public static String getEmojiString(EmojiData data){

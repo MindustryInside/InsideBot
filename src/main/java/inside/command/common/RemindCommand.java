@@ -30,7 +30,7 @@ public class RemindCommand extends Command{
         String text = interaction.getOption(1)
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asString)
-                .orElseThrow(IllegalStateException::new);
+                .orElseThrow();
 
         if(time == null){
             return messageService.err(env, "message.error.invalid-time");
