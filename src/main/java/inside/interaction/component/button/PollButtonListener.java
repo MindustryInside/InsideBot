@@ -37,7 +37,7 @@ public class PollButtonListener implements ButtonListener{
             String[] parts = env.event().getCustomId().split("-");
             int idx = Integer.parseInt(parts[2]); // [ inside, poll, 0 ]
 
-            Message message = env.event().getMessage().orElseThrow(ise);
+            Message message = env.event().getMessage().orElseThrow();
             List<Embed> embeds = message.getEmbeds();
             Embed source = embeds.isEmpty() ? null : embeds.get(0);
             var embedSpec = EmbedCreateSpec.builder();
@@ -49,16 +49,16 @@ public class PollButtonListener implements ButtonListener{
             }else{
                 embedSpec.author(source.getAuthor()
                         .map(author -> EmbedCreateFields.Author.of(
-                                author.getName().orElseThrow(ise), null,
-                                author.getIconUrl().orElseThrow(ise)))
-                        .orElseThrow(ise));
-                embedSpec.title(source.getTitle().orElseThrow(ise));
-                embedSpec.color(source.getColor().orElseThrow(ise));
-                embedSpec.description(source.getDescription().orElseThrow(ise));
+                                author.getName().orElseThrow(), null,
+                                author.getIconUrl().orElseThrow()))
+                        .orElseThrow());
+                embedSpec.title(source.getTitle().orElseThrow());
+                embedSpec.color(source.getColor().orElseThrow());
+                embedSpec.description(source.getDescription().orElseThrow());
             }
 
             PollAnswer answer = new PollAnswer();
-            answer.setGuildId(env.event().getInteraction().getGuildId().orElseThrow(ise));
+            answer.setGuildId(env.event().getInteraction().getGuildId().orElseThrow());
             answer.setOption(idx);
             answer.setUserId(user.getId());
 
@@ -82,6 +82,4 @@ public class PollButtonListener implements ButtonListener{
                     .then();
         });
     }
-
-    private static final Supplier<IllegalStateException> ise = ;
 }
