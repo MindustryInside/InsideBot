@@ -295,6 +295,9 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
         embedSpec.fields(old.getFields().stream()
                 .map(field -> EmbedCreateFields.Field.of(field.getName(), field.getValue(), field.isInline()))
                 .collect(Collectors.toList()));
+        embedSpec.footer(old.getFooter().map(footer -> EmbedCreateFields.Footer.of(
+                footer.getText(), footer.getIconUrl().orElse(null))).orElseThrow());
+
         old.getImage().map(Embed.Image::getUrl).ifPresent(embedSpec::image);
     }
 
