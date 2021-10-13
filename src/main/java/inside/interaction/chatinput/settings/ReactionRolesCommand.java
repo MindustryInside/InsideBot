@@ -64,8 +64,7 @@ public class ReactionRolesCommand extends OwnerCommand{
         protected ReactionRolesCommandAdd(@Aware ReactionRolesCommand owner){
             super(owner);
 
-            addOption(builder -> builder
-                    .name("emoji")
+            addOption(builder -> builder.name("emoji")
                     .description("Unicode or custom emoji.")
                     .required(true)
                     .type(ApplicationCommandOption.Type.STRING.getValue()));

@@ -14,9 +14,7 @@ public class AvatarCommand extends BaseUserCommand{
 
     @Override
     public Mono<Void> execute(InteractionUserEnvironment env){
-        return Mono.justOrEmpty(env.event().getInteraction()
-                        .getCommandInteraction().orElseThrow()
-                        .getResolved().flatMap(re -> re.getUser(env.getTargetId())))
+        return Mono.justOrEmpty(env.event().getResolvedUser())
                 .flatMap(user -> messageService.info(env, "command.avatar.text", user.getUsername(), user.getMention())
                         .withEmbeds(EmbedCreateSpec.builder()
                                 .description(messageService.format(env.context(),
