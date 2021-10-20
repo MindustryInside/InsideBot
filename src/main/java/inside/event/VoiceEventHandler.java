@@ -4,7 +4,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.VoiceStateUpdateEvent;
 import discord4j.core.object.VoiceState;
-import discord4j.core.object.entity.channel.GuildChannel;
+import discord4j.core.object.entity.channel.*;
 import inside.audit.*;
 import inside.data.service.EntityRetriever;
 import org.reactivestreams.Publisher;
@@ -37,13 +37,13 @@ public class VoiceEventHandler extends ReactiveEventAdapter{
                         KEY_TIMEZONE, guildConfig.timeZone()));
 
         if(event.isMoveEvent()){
-            Mono<GuildChannel> old = Mono.justOrEmpty(event.getOld())
+            Mono<VoiceChannel> old = Mono.justOrEmpty(event.getOld())
                     .flatMap(VoiceState::getChannel)
-                    .cast(GuildChannel.class);
+                    .cast(VoiceChannel.class);
 
             return initContext.flatMap(context -> Mono.zip(old, event.getCurrent().getUser(), event.getCurrent().getChannel())
                     .flatMap(function((oldChannel, user, currentChannel) -> auditService.newBuilder(guildId, VOICE_MOVE)
-                            .withAttribute(Attribute.OLD_CHANNEL, AuditActionBuilder.getReference(oldChannel))
+                            .withAttribute(Attribute.OLD_CHANNEL, oldChannel)
                             .withChannel(currentChannel)
                             .withUser(user)
                             .save()))

@@ -5,11 +5,12 @@ import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.core.spec.EmbedCreateSpec;
 import inside.Settings;
 import inside.interaction.*;
+import inside.interaction.annotation.ChatInputCommand;
 import inside.interaction.chatinput.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 
-@InteractionDiscordCommand(name = "avatar", description = "Get user avatar.")
+@ChatInputCommand(name = "avatar", description = "Get user avatar.")
 public class AvatarCommand extends BaseInteractionCommand{
 
     @Autowired
@@ -24,7 +25,7 @@ public class AvatarCommand extends BaseInteractionCommand{
     }
 
     @Override
-    public Mono<Void> execute(InteractionCommandEnvironment env){
+    public Mono<Void> execute(CommandEnvironment env){
         return env.getOption("target")
                 .flatMap(ApplicationCommandInteractionOption::getValue)
                 .map(opt -> env.getClient().withRetrievalStrategy(EntityRetrievalStrategy.REST)

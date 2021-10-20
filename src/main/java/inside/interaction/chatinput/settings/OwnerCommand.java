@@ -1,8 +1,7 @@
 package inside.interaction.chatinput.settings;
 
-import discord4j.core.object.command.ApplicationCommandInteraction;
 import discord4j.discordjson.json.ApplicationCommandOptionData;
-import inside.interaction.*;
+import inside.interaction.CommandEnvironment;
 import inside.interaction.chatinput.*;
 import reactor.bool.BooleanUtils;
 import reactor.core.publisher.Mono;
@@ -30,13 +29,13 @@ public abstract class OwnerCommand extends SettingsCommand implements Interactio
     }
 
     @Override
-    public Mono<Void> execute(InteractionCommandEnvironment env){
+    public Mono<Void> execute(CommandEnvironment env){
         String commandName = env.event().getOptions().get(0).getName();
         return Mono.justOrEmpty(getSubCommand(commandName)).flatMap(subcmd -> subcmd.execute(env));
     }
 
     @Override
-    public Mono<Boolean> filter(InteractionCommandEnvironment env){
+    public Mono<Boolean> filter(CommandEnvironment env){
         String commandName = env.event().getOptions().get(0).getName();
         Mono<Boolean> isSubCommandFilter = Mono.justOrEmpty(getSubCommand(commandName))
                 .flatMap(subcmd -> subcmd.filter(env));

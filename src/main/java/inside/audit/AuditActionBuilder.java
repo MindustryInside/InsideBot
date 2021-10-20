@@ -3,8 +3,6 @@ package inside.audit;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.GuildChannel;
-import inside.data.entity.*;
-import inside.data.entity.base.NamedReference;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.Nullable;
 import reactor.util.function.*;
@@ -14,76 +12,53 @@ import java.time.Instant;
 import java.util.*;
 
 public abstract class AuditActionBuilder{
-
-    protected final AuditAction action;
+    private final Instant timestamp;
+    private final Snowflake guildId;
+    private final AuditActionType type;
+    private final Map<String, Object> attributes;
+    @Nullable
+    private User user;
+    @Nullable
+    private User target;
+    @Nullable
+    private GuildChannel channel;
     @Nullable
     protected List<Tuple2<String, InputStream>> attachments;
 
     protected AuditActionBuilder(Snowflake guildId, AuditActionType type){
-        action = new AuditAction();
-        action.setGuildId(guildId);
-        action.setTimestamp(Instant.now());
-        action.setType(type);
-        action.setAttributes(new HashMap<>(7));
-    }
-
-    public static NamedReference getReference(Member member){
-        Objects.requireNonNull(member, "member");
-        return new NamedReference(member.getId(), member.getUsername(), member.getDiscriminator());
-    }
-
-    public static NamedReference getReference(User user){
-        Objects.requireNonNull(user, "user");
-        return new NamedReference(user.getId(), user.getUsername(), user.getDiscriminator());
-    }
-
-    public static NamedReference getReference(LocalMember member){
-        Objects.requireNonNull(member, "member");
-        return new NamedReference(member.getUserId(), member.getEffectiveName());
-    }
-
-    public static NamedReference getReference(GuildChannel channel){
-        Objects.requireNonNull(channel, "channel");
-        return new NamedReference(channel.getId(), channel.getName());
+        this.guildId = Objects.requireNonNull(guildId, "guildId");
+        this.type = Objects.requireNonNull(type, "type");
+        this.timestamp = Instant.now();
+        this.attributes = new HashMap<>(7);
     }
 
     public AuditActionBuilder withUser(Member user){
-        action.setUser(getReference(user));
+        this.user = user;
         return this;
     }
 
     public AuditActionBuilder withUser(User user){
-        action.setUser(getReference(user));
-        return this;
-    }
-
-    public AuditActionBuilder withUser(LocalMember user){
-        action.setUser(getReference(user));
+        this.user = user;
         return this;
     }
 
     public AuditActionBuilder withTargetUser(Member user){
-        action.setTarget(getReference(user));
+        this.target = user;
         return this;
     }
 
     public AuditActionBuilder withTargetUser(User user){
-        action.setTarget(getReference(user));
-        return this;
-    }
-
-    public AuditActionBuilder withTargetUser(LocalMember user){
-        action.setTarget(getReference(user));
+        this.target = user;
         return this;
     }
 
     public AuditActionBuilder withChannel(GuildChannel channel){
-        action.setChannel(getReference(channel));
+        this.channel = channel;
         return this;
     }
 
     public <T> AuditActionBuilder withAttribute(Attribute<T> key, @Nullable T value){
-        action.getAttributes().put(key.name, value);
+        attributes.put(key.name, value);
         return this;
     }
 
@@ -93,6 +68,44 @@ public abstract class AuditActionBuilder{
         }
         attachments.add(Tuples.of(key, data));
         return this;
+    }
+
+    public Instant getTimestamp(){
+        return timestamp;
+    }
+
+    public Snowflake getGuildId(){
+        return guildId;
+    }
+
+    public AuditActionType getType(){
+        return type;
+    }
+
+    @Nullable
+    public User getUser(){
+        return user;
+    }
+
+    @Nullable
+    public User getTarget(){
+        return target;
+    }
+
+    @Nullable
+    public GuildChannel getChannel(){
+        return channel;
+    }
+
+    public Map<String, Object> getAttributes(){
+        return attributes;
+    }
+
+    @Nullable
+    @SuppressWarnings("unchecked")
+    public <T> T getAttribute(Attribute<T> key){
+        Object value = attributes.get(key.name);
+        return value != null ? (T)value : null;
     }
 
     public abstract Mono<Void> save();

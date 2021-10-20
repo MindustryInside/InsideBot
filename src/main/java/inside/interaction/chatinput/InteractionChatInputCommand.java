@@ -9,9 +9,9 @@ import java.util.List;
 
 public interface InteractionChatInputCommand extends InteractionCommand{
 
-    Mono<Boolean> filter(InteractionCommandEnvironment env);
+    Mono<Boolean> filter(CommandEnvironment env);
 
-    Mono<Void> execute(InteractionCommandEnvironment env);
+    Mono<Void> execute(CommandEnvironment env);
 
     String getDescription();
 

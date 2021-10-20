@@ -3,7 +3,7 @@ package inside.interaction.chatinput.settings;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.*;
 import inside.interaction.*;
-import inside.interaction.chatinput.InteractionDiscordCommand;
+import inside.interaction.annotation.ChatInputCommand;
 import inside.util.*;
 import reactor.core.publisher.Mono;
 
@@ -13,7 +13,7 @@ import java.util.*;
 import static inside.util.ContextUtil.KEY_TIMEZONE;
 import static reactor.function.TupleUtils.function;
 
-@InteractionDiscordCommand(name = "timezone", description = "Configure bot time zone.")
+@ChatInputCommand(name = "timezone", description = "Configure bot time zone.")
 public class TimeZoneCommand extends SettingsCommand{
 
     protected TimeZoneCommand(){
@@ -24,7 +24,7 @@ public class TimeZoneCommand extends SettingsCommand{
     }
 
     @Override
-    public Mono<Void> execute(InteractionCommandEnvironment env){
+    public Mono<Void> execute(CommandEnvironment env){
 
         Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 

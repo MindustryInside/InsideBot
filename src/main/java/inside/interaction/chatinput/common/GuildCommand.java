@@ -11,7 +11,7 @@ public abstract class GuildCommand extends BaseInteractionCommand{
     protected Settings settings;
 
     @Override
-    public Mono<Boolean> filter(InteractionCommandEnvironment env){
+    public Mono<Boolean> filter(CommandEnvironment env){
         if(env.event().getInteraction().getMember().isEmpty()){
             return messageService.err(env, "command.interaction.only-guild").thenReturn(false);
         }

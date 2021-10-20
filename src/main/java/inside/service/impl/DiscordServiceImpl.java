@@ -22,7 +22,7 @@ import inside.data.service.EntityRetriever;
 import inside.interaction.*;
 import inside.interaction.chatinput.InteractionChatInputCommand;
 import inside.interaction.chatinput.common.GuildCommand;
-import inside.interaction.user.UserCommand;
+import inside.interaction.user.UserInteractionCommand;
 import inside.service.DiscordService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -39,7 +39,7 @@ import static reactor.function.TupleUtils.*;
 public class DiscordServiceImpl implements DiscordService{
 
     private final Map<String, InteractionChatInputCommand> chatInputCommandMap = new LinkedHashMap<>();
-    private final Map<String, UserCommand> userCommandMap = new LinkedHashMap<>();
+    private final Map<String, UserInteractionCommand> userCommandMap = new LinkedHashMap<>();
 
     private GatewayDiscordClient gateway;
 
@@ -93,7 +93,7 @@ public class DiscordServiceImpl implements DiscordService{
 
                     String name = req.name();
                     switch(cmd.getCommandType()){
-                        case USER -> userCommandMap.put(name, (UserCommand)cmd);
+                        case USER -> userCommandMap.put(name, (UserInteractionCommand)cmd);
                         case CHAT_INPUT -> chatInputCommandMap.put(name, (InteractionChatInputCommand)cmd);
                     }
 
@@ -121,14 +121,14 @@ public class DiscordServiceImpl implements DiscordService{
     }
 
     @Override
-    public Mono<Void> handleChatInputCommand(InteractionCommandEnvironment env){
+    public Mono<Void> handleChatInputCommand(CommandEnvironment env){
         return Mono.justOrEmpty(chatInputCommandMap.get(env.event().getCommandName()))
                 .filterWhen(cmd -> cmd.filter(env))
                 .flatMap(cmd -> cmd.execute(env));
     }
 
     @Override
-    public Mono<Void> handleUserCommand(InteractionUserEnvironment env){
+    public Mono<Void> handleUserCommand(UserEnvironment env){
         return Mono.justOrEmpty(userCommandMap.get(env.event().getCommandName()))
                 .filterWhen(cmd -> cmd.filter(env))
                 .flatMap(cmd -> cmd.execute(env));

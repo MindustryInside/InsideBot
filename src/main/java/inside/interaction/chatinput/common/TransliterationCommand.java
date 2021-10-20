@@ -2,12 +2,13 @@ package inside.interaction.chatinput.common;
 
 import discord4j.core.object.command.*;
 import inside.interaction.*;
+import inside.interaction.annotation.ChatInputCommand;
 import inside.interaction.chatinput.*;
 import reactor.core.publisher.Mono;
 
 import java.util.function.Predicate;
 
-@InteractionDiscordCommand(name = "tr", description = "Translating key into transliteration.")
+@ChatInputCommand(name = "tr", description = "Translating key into transliteration.")
 public class TransliterationCommand extends BaseInteractionCommand{
 
     public TransliterationCommand(){
@@ -19,7 +20,7 @@ public class TransliterationCommand extends BaseInteractionCommand{
     }
 
     @Override
-    public Mono<Void> execute(InteractionCommandEnvironment env){
+    public Mono<Void> execute(CommandEnvironment env){
         String text = env.getOption("text")
                 .flatMap(ApplicationCommandInteractionOption::getValue)
                 .map(ApplicationCommandInteractionOptionValue::asString)

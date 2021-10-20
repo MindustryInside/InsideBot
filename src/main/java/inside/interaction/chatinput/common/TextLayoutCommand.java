@@ -3,10 +3,11 @@ package inside.interaction.chatinput.common;
 import discord4j.core.object.command.*;
 import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import inside.interaction.*;
+import inside.interaction.annotation.ChatInputCommand;
 import inside.interaction.chatinput.*;
 import reactor.core.publisher.Mono;
 
-@InteractionDiscordCommand(name = "r", description = "Change text layout.")
+@ChatInputCommand(name = "r", description = "Change text layout.")
 public class TextLayoutCommand extends BaseInteractionCommand{
 
     public TextLayoutCommand(){
@@ -31,7 +32,7 @@ public class TextLayoutCommand extends BaseInteractionCommand{
     }
 
     @Override
-    public Mono<Void> execute(InteractionCommandEnvironment env){
+    public Mono<Void> execute(CommandEnvironment env){
         boolean russian = env.getOption("type")
                 .flatMap(ApplicationCommandInteractionOption::getValue)
                 .map(ApplicationCommandInteractionOptionValue::asString)

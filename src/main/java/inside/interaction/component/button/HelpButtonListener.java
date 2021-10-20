@@ -7,7 +7,8 @@ import discord4j.core.spec.*;
 import inside.Settings;
 import inside.command.*;
 import inside.command.model.*;
-import inside.interaction.component.*;
+import inside.interaction.ButtonEnvironment;
+import inside.interaction.annotation.ComponentProvider;
 import inside.service.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.*;
@@ -31,7 +32,7 @@ public class HelpButtonListener implements ButtonListener{
     }
 
     @Override
-    public Mono<Void> handle(InteractionButtonEnvironment env){
+    public Mono<Void> handle(ButtonEnvironment env){
         String[] parts = env.event().getCustomId().split("-"); // [ inside, help, 0, 0 ]
         Snowflake authorId = Snowflake.of(parts[3]);
 

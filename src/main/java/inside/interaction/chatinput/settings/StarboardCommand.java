@@ -6,6 +6,7 @@ import discord4j.core.object.entity.GuildEmoji;
 import discord4j.discordjson.json.EmojiData;
 import inside.annotation.Aware;
 import inside.interaction.*;
+import inside.interaction.annotation.*;
 import inside.interaction.chatinput.*;
 import inside.util.*;
 import inside.util.func.BooleanFunction;
@@ -16,15 +17,14 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-@InteractionDiscordCommand(name = "starboard", description = "Starboard settings.")
+@ChatInputCommand(name = "starboard", description = "Starboard settings.")
 public class StarboardCommand extends OwnerCommand{
 
     protected StarboardCommand(@Aware List<? extends InteractionOwnerAwareCommand<StarboardCommand>> subcommands){
         super(subcommands);
     }
 
-    @InteractionDiscordCommand(name = "enable", description = "Enable starboard.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "enable", description = "Enable starboard.")
     public static class StarboardCommandEnable extends OwnerAwareCommand<StarboardCommand>{
 
         protected StarboardCommandEnable(@Aware StarboardCommand owner){
@@ -36,7 +36,7 @@ public class StarboardCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -59,8 +59,7 @@ public class StarboardCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "barrier", description = "Configure the starboard barrier.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "barrier", description = "Configure the starboard barrier.")
     public static class StarboardCommandBarrier extends OwnerAwareCommand<StarboardCommand>{
 
         protected StarboardCommandBarrier(@Aware StarboardCommand owner){
@@ -72,7 +71,7 @@ public class StarboardCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -98,8 +97,7 @@ public class StarboardCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "emojis", description = "Configure starboard emojis.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND_GROUP)
+    @SubcommandGroup(name = "emojis", description = "Configure starboard emojis.")
     public static class StarboardCommandEmojis extends SubGroupOwnerCommand<StarboardCommand>{
 
         private static final Pattern unicode = Pattern.compile("[^\\p{L}\\p{N}\\p{P}\\p{Z}]", Pattern.UNICODE_CHARACTER_CLASS);
@@ -109,8 +107,7 @@ public class StarboardCommand extends OwnerCommand{
             super(owner, subcommands);
         }
 
-        @InteractionDiscordCommand(name = "list", description = "Display current emoji list.",
-                type = ApplicationCommandOption.Type.SUB_COMMAND)
+        @Subcommand(name = "list", description = "Display current emoji list.")
         public static class StarboardCommandEmojisHelp extends OwnerAwareCommand<StarboardCommandEmojis>{
 
             protected StarboardCommandEmojisHelp(@Aware StarboardCommandEmojis owner){
@@ -118,7 +115,7 @@ public class StarboardCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(InteractionCommandEnvironment env){
+            public Mono<Void> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -144,8 +141,7 @@ public class StarboardCommand extends OwnerCommand{
             }
         }
 
-        @InteractionDiscordCommand(name = "add", description = "Add emoji(s).",
-                type = ApplicationCommandOption.Type.SUB_COMMAND)
+        @Subcommand(name = "add", description = "Add emoji(s).")
         public static class StarboardCommandEmojisAdd extends OwnerAwareCommand<StarboardCommandEmojis>{
 
             protected StarboardCommandEmojisAdd(@Aware StarboardCommandEmojis owner){
@@ -158,7 +154,7 @@ public class StarboardCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(InteractionCommandEnvironment env){
+            public Mono<Void> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -201,8 +197,7 @@ public class StarboardCommand extends OwnerCommand{
             }
         }
 
-        @InteractionDiscordCommand(name = "remove", description = "Remove emoji(s).",
-                type = ApplicationCommandOption.Type.SUB_COMMAND)
+        @Subcommand(name = "remove", description = "Remove emoji(s).")
         public static class StarboardCommandEmojisRemove extends OwnerAwareCommand<StarboardCommandEmojis>{
 
             private static final Pattern indexModePattern = Pattern.compile("^(#\\d+)$");
@@ -217,7 +212,7 @@ public class StarboardCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(InteractionCommandEnvironment env){
+            public Mono<Void> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -278,8 +273,7 @@ public class StarboardCommand extends OwnerCommand{
             }
         }
 
-        @InteractionDiscordCommand(name = "clear", description = "Remove all emojis.",
-                type = ApplicationCommandOption.Type.SUB_COMMAND)
+        @Subcommand(name = "clear", description = "Remove all emojis.")
         public static class StarboardCommandEmojisClear extends OwnerAwareCommand<StarboardCommandEmojis>{
 
             protected StarboardCommandEmojisClear(@Aware StarboardCommandEmojis owner){
@@ -287,7 +281,7 @@ public class StarboardCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(InteractionCommandEnvironment env){
+            public Mono<Void> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -302,8 +296,7 @@ public class StarboardCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "channel", description = "Configure starboard channel.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "channel", description = "Configure starboard channel.")
     public static class StarboardCommandChannel extends OwnerAwareCommand<StarboardCommand>{
 
         protected StarboardCommandChannel(@Aware StarboardCommand owner){
@@ -315,7 +308,7 @@ public class StarboardCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -337,8 +330,7 @@ public class StarboardCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "self-starring", description = "Enable self starring.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "self-starring", description = "Enable self starring.")
     public static class StarboardCommandSelfStarring extends OwnerAwareCommand<StarboardCommand>{
 
         protected StarboardCommandSelfStarring(@Aware StarboardCommand owner){
@@ -350,7 +342,7 @@ public class StarboardCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 

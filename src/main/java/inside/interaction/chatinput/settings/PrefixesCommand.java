@@ -4,6 +4,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.*;
 import inside.annotation.Aware;
 import inside.interaction.*;
+import inside.interaction.annotation.*;
 import inside.interaction.chatinput.*;
 import reactor.core.publisher.Mono;
 
@@ -11,15 +12,14 @@ import java.util.*;
 
 import static reactor.function.TupleUtils.function;
 
-@InteractionDiscordCommand(name = "prefixes", description = "Configure bot prefixes.")
+@ChatInputCommand(name = "prefixes", description = "Configure bot prefixes.")
 public class PrefixesCommand extends OwnerCommand{
 
     protected PrefixesCommand(@Aware List<? extends InteractionOwnerAwareCommand<PrefixesCommand>> subcommands){
         super(subcommands);
     }
 
-    @InteractionDiscordCommand(name = "list", description = "Display current prefixes.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "list", description = "Display current prefixes.")
     public static class PrefixesCommandList extends OwnerAwareCommand<PrefixesCommand>{
 
         protected PrefixesCommandList(@Aware PrefixesCommand owner){
@@ -27,7 +27,7 @@ public class PrefixesCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             return entityRetriever.getGuildConfigById(guildId)
@@ -39,8 +39,7 @@ public class PrefixesCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "add", description = "Add prefix(s)",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "add", description = "Add prefix(s)")
     public static class PrefixesCommandAdd extends OwnerAwareCommand<PrefixesCommand>{
 
         protected PrefixesCommandAdd(@Aware PrefixesCommand owner){
@@ -53,7 +52,7 @@ public class PrefixesCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -76,8 +75,7 @@ public class PrefixesCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "remove", description = "Remove prefix(s).",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "remove", description = "Remove prefix(s).")
     public static class PrefixesCommandRemove extends OwnerAwareCommand<PrefixesCommand>{
 
         protected PrefixesCommandRemove(@Aware PrefixesCommand owner){
@@ -90,7 +88,7 @@ public class PrefixesCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -115,8 +113,7 @@ public class PrefixesCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "clear", description = "Remove all prefixes",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "clear", description = "Remove all prefixes")
     public static class PrefixesCommandClear extends OwnerAwareCommand<PrefixesCommand>{
 
         protected PrefixesCommandClear(@Aware PrefixesCommand owner){
@@ -124,7 +121,7 @@ public class PrefixesCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 

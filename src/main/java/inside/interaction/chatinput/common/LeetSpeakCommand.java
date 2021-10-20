@@ -3,12 +3,13 @@ package inside.interaction.chatinput.common;
 import discord4j.core.object.command.*;
 import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import inside.interaction.*;
+import inside.interaction.annotation.ChatInputCommand;
 import inside.interaction.chatinput.*;
 import reactor.core.publisher.Mono;
 
 import java.util.function.Predicate;
 
-@InteractionDiscordCommand(name = "1337", description = "Translate text into leet speak.")
+@ChatInputCommand(name = "1337", description = "Translate text into leet speak.")
 public class LeetSpeakCommand extends BaseInteractionCommand{
 
     public LeetSpeakCommand(){
@@ -33,7 +34,7 @@ public class LeetSpeakCommand extends BaseInteractionCommand{
     }
 
     @Override
-    public Mono<Void> execute(InteractionCommandEnvironment env){
+    public Mono<Void> execute(CommandEnvironment env){
         boolean russian = env.getOption("type")
                 .flatMap(ApplicationCommandInteractionOption::getValue)
                 .map(ApplicationCommandInteractionOptionValue::asString)

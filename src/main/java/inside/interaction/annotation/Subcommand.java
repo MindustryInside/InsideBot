@@ -1,4 +1,4 @@
-package inside.interaction.user;
+package inside.interaction.annotation;
 
 import org.springframework.stereotype.Component;
 
@@ -7,7 +7,9 @@ import java.lang.annotation.*;
 @Component
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface InteractionUserCommand{
+public @interface Subcommand{
 
     String name();
+
+    String description();
 }

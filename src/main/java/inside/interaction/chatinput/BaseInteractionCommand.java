@@ -3,7 +3,8 @@ package inside.interaction.chatinput;
 import discord4j.core.object.command.ApplicationCommandOption;
 import discord4j.discordjson.json.*;
 import inside.data.service.EntityRetriever;
-import inside.interaction.InteractionCommandEnvironment;
+import inside.interaction.*;
+import inside.interaction.annotation.*;
 import inside.service.MessageService;
 import inside.util.Preconditions;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,33 +20,32 @@ public abstract class BaseInteractionCommand implements InteractionChatInputComm
     @Autowired
     protected EntityRetriever entityRetriever;
 
-    private final InteractionDiscordCommand metadata =
-            getClass().getDeclaredAnnotation(InteractionDiscordCommand.class);
+    private final CommandMetadata metadata = CommandMetadata.of(getClass());
     private final List<ApplicationCommandOptionData> options = new ArrayList<>();
 
     @Override
-    public Mono<Boolean> filter(InteractionCommandEnvironment env){
+    public Mono<Boolean> filter(CommandEnvironment env){
         return Mono.just(true);
     }
 
     @Override
-    public Mono<Void> execute(InteractionCommandEnvironment env){
+    public Mono<Void> execute(CommandEnvironment env){
         return Mono.empty();
     }
 
     @Override
     public String getName(){
-        return metadata.name();
+        return metadata.name;
     }
 
     @Override
     public String getDescription(){
-        return metadata.description();
+        return metadata.description;
     }
 
     @Override
     public ApplicationCommandOption.Type getType(){
-        return metadata.type();
+        return metadata.type;
     }
 
     @Override
@@ -71,5 +71,40 @@ public abstract class BaseInteractionCommand implements InteractionChatInputComm
         var build = mutatedOption.build();
         options.add(build);
         return build;
+    }
+
+    private static class CommandMetadata{
+        private final String name;
+        private final String description;
+        private final ApplicationCommandOption.Type type;
+
+        private CommandMetadata(String name, String description, ApplicationCommandOption.Type type){
+            this.name = name;
+            this.description = description;
+            this.type = type;
+        }
+
+        static CommandMetadata of(Class<? extends InteractionCommand> type){
+
+            var chatInput = type.getAnnotation(ChatInputCommand.class);
+            if(chatInput != null){
+                return new CommandMetadata(chatInput.name(), chatInput.description(),
+                        ApplicationCommandOption.Type.SUB_COMMAND_GROUP);
+            }
+
+            var subcommand = type.getAnnotation(Subcommand.class);
+            if(subcommand != null){
+                return new CommandMetadata(subcommand.name(), subcommand.description(),
+                        ApplicationCommandOption.Type.SUB_COMMAND_GROUP);
+            }
+
+            var subcommandGroup = type.getAnnotation(SubcommandGroup.class);
+            if(subcommandGroup != null){
+                return new CommandMetadata(subcommandGroup.name(), subcommandGroup.description(),
+                        ApplicationCommandOption.Type.SUB_COMMAND_GROUP);
+            }
+
+            throw new UnsupportedOperationException("Unknown type");
+        }
     }
 }

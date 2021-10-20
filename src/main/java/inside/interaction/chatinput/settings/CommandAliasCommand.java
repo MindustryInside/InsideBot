@@ -5,6 +5,7 @@ import discord4j.core.object.command.*;
 import inside.annotation.Aware;
 import inside.command.CommandHolder;
 import inside.interaction.*;
+import inside.interaction.annotation.*;
 import inside.interaction.chatinput.*;
 import inside.util.Strings;
 import inside.util.func.BooleanFunction;
@@ -15,15 +16,14 @@ import java.util.*;
 
 import static reactor.function.TupleUtils.function;
 
-@InteractionDiscordCommand(name = "command-alias", description = "Configure command aliases.")
+@ChatInputCommand(name = "command-alias", description = "Configure command aliases.")
 public class CommandAliasCommand extends OwnerCommand{
 
     protected CommandAliasCommand(@Aware List<? extends InteractionOwnerAwareCommand<CommandAliasCommand>> subcommands){
         super(subcommands);
     }
 
-    @InteractionDiscordCommand(name = "enable", description = "Enable command configuring.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "enable", description = "Enable command configuring.")
     public static class CommandAliasCommandEnable extends OwnerAwareCommand<CommandAliasCommand>{
 
         @Autowired
@@ -43,7 +43,7 @@ public class CommandAliasCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -77,8 +77,7 @@ public class CommandAliasCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "list", description = "Display current command alias list.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "list", description = "Display current command alias list.")
     public static class CommandAliasCommandList extends OwnerAwareCommand<CommandAliasCommand>{
 
         @Autowired
@@ -94,7 +93,7 @@ public class CommandAliasCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
             Snowflake guildId = env.event().getInteraction().getGuildId()
                     .orElseThrow();
 
@@ -122,8 +121,7 @@ public class CommandAliasCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "add", description = "Add alias(s)",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "add", description = "Add alias(s)")
     public static class CommandAliasCommandAdd extends OwnerAwareCommand<CommandAliasCommand>{
 
         @Autowired
@@ -144,7 +142,7 @@ public class CommandAliasCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -179,8 +177,7 @@ public class CommandAliasCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "remove", description = "Remove alias(s).",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "remove", description = "Remove alias(s).")
     public static class CommandAliasCommandRemove extends OwnerAwareCommand<CommandAliasCommand>{
 
         @Autowired
@@ -201,7 +198,7 @@ public class CommandAliasCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -238,8 +235,7 @@ public class CommandAliasCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "clear", description = "Remove all aliases.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "clear", description = "Remove all aliases.")
     public static class CommandAliasCommandClear extends OwnerAwareCommand<CommandAliasCommand>{
 
         @Autowired
@@ -255,7 +251,7 @@ public class CommandAliasCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 

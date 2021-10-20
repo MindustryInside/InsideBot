@@ -7,6 +7,7 @@ import discord4j.discordjson.json.EmojiData;
 import inside.annotation.Aware;
 import inside.data.entity.EmojiDispenser;
 import inside.interaction.*;
+import inside.interaction.annotation.*;
 import inside.interaction.chatinput.*;
 import inside.util.*;
 import reactor.core.publisher.Mono;
@@ -14,7 +15,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@InteractionDiscordCommand(name = "reaction-roles", description = "Configure reaction roles.")
+@ChatInputCommand(name = "reaction-roles", description = "Configure reaction roles.")
 public class ReactionRolesCommand extends OwnerCommand{
 
     protected ReactionRolesCommand(@Aware List<? extends InteractionOwnerAwareCommand<ReactionRolesCommand>> subcommands){
@@ -22,7 +23,7 @@ public class ReactionRolesCommand extends OwnerCommand{
     }
 
     @Override
-    public Mono<Void> execute(InteractionCommandEnvironment env){
+    public Mono<Void> execute(CommandEnvironment env){
         return super.execute(env);
     }
 
@@ -32,8 +33,7 @@ public class ReactionRolesCommand extends OwnerCommand{
                 DiscordUtil.getEmojiString(e.getEmoji()));
     }
 
-    @InteractionDiscordCommand(name = "list", description = "Display current reaction roles.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "list", description = "Display current reaction roles.")
     public static class ReactionRolesCommandList extends OwnerAwareCommand<ReactionRolesCommand>{
 
         protected ReactionRolesCommandList(@Aware ReactionRolesCommand owner){
@@ -41,7 +41,7 @@ public class ReactionRolesCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -55,8 +55,7 @@ public class ReactionRolesCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "add", description = "Add reaction role.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "add", description = "Add reaction role.")
     public static class ReactionRolesCommandAdd extends OwnerAwareCommand<ReactionRolesCommand>{
 
         private static final int MAX_REACTION_ROLE_COUNT = 20;
@@ -81,7 +80,7 @@ public class ReactionRolesCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             //TODO: USE!
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
@@ -125,8 +124,7 @@ public class ReactionRolesCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "remove", description = "Remove reaction role.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "remove", description = "Remove reaction role.")
     public static class ReactionRolesCommandRemove extends OwnerAwareCommand<ReactionRolesCommand>{
 
         protected ReactionRolesCommandRemove(@Aware ReactionRolesCommand owner){
@@ -144,7 +142,7 @@ public class ReactionRolesCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             //TODO: USE!
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
@@ -172,8 +170,7 @@ public class ReactionRolesCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "clear", description = "Remove all reaction roles.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "clear", description = "Remove all reaction roles.")
     public static class ReactionRolesCommandClear extends OwnerAwareCommand<ReactionRolesCommand>{
 
         protected ReactionRolesCommandClear(@Aware ReactionRolesCommand owner){
@@ -181,7 +178,7 @@ public class ReactionRolesCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 

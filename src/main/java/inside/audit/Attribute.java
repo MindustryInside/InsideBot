@@ -2,6 +2,7 @@ package inside.audit;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.channel.VoiceChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
 import inside.data.entity.base.NamedReference;
 
@@ -34,7 +35,7 @@ public final class Attribute<T>{
 
     public static final Attribute<Collection<Snowflake>> ROLE_IDS = attribute("role_ids");
 
-    public static final Attribute<NamedReference> OLD_CHANNEL = attribute("old_channel");
+    public static final Attribute<VoiceChannel> OLD_CHANNEL = attribute("old_channel");
 
     public static final Attribute<Message> MESSAGE = attribute("message");
 

@@ -3,10 +3,10 @@ package inside.event;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.interaction.*;
-import discord4j.discordjson.json.ApplicationCommandInteractionOptionData;
 import inside.Settings;
 import inside.data.service.EntityRetriever;
 import inside.interaction.*;
+import inside.interaction.annotation.ComponentProvider;
 import inside.interaction.component.*;
 import inside.interaction.component.button.ButtonListener;
 import inside.interaction.component.selectmenu.SelectMenuListener;
@@ -45,19 +45,15 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
     @Autowired(required = false)
     private void registerButtonListeners(List<ButtonListener> buttonListeners){
         this.buttonListeners = buttonListeners.stream()
-                .map(this::extractIdentifier)
+                .map(listener -> Tuples.of(listener.getCustomId(), listener))
                 .toList();
     }
 
     @Autowired(required = false)
     private void registerSelectMenuListeners(List<SelectMenuListener> selectMenuListeners){
         this.selectMenuListeners = selectMenuListeners.stream()
-                .map(this::extractIdentifier)
+                .map(listener -> Tuples.of(listener.getCustomId(), listener))
                 .toList();
-    }
-
-    private <T extends InteractionListener> Tuple2<String, T> extractIdentifier(T l){
-        return Tuples.of(l.getClass().getAnnotation(ComponentProvider.class).value(), l);
     }
 
     @Override
@@ -71,10 +67,7 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
                         KEY_TIMEZONE, settings.getDefaults().getTimeZone()));
 
         return initContext.flatMap(context -> Mono.defer(() -> discordService.handleUserCommand(
-                InteractionUserEnvironment.builder()
-                        .event(event)
-                        .context(context)
-                        .build()))
+                UserEnvironment.of(context, event)))
                 .contextWrite(context));
     }
 
@@ -93,10 +86,7 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
                         KEY_TIMEZONE, guildConfig.timeZone()));
 
         return initContext.flatMap(ctx -> Mono.defer(() -> {
-            InteractionButtonEnvironment env = InteractionButtonEnvironment.builder()
-                    .context(ctx)
-                    .event(event)
-                    .build();
+            ButtonEnvironment env = ButtonEnvironment.of(ctx, event);
 
             return Flux.fromIterable(buttonListeners)
                     .filter(predicate((s, l) -> id.startsWith(s)))
@@ -121,10 +111,7 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
                         KEY_TIMEZONE, guildConfig.timeZone()));
 
         return initContext.flatMap(ctx -> Mono.defer(() -> {
-            InteractionSelectMenuEnvironment env = InteractionSelectMenuEnvironment.builder()
-                    .context(ctx)
-                    .event(event)
-                    .build();
+            SelectMenuEnvironment env = SelectMenuEnvironment.of(ctx, event);
 
             return Flux.fromIterable(selectMenuListeners)
                     .filter(predicate((s, l) -> id.startsWith(s)))
@@ -144,9 +131,7 @@ public class InteractionEventHandler extends ReactiveEventAdapter{
                         KEY_TIMEZONE, settings.getDefaults().getTimeZone()));
 
         return initContext.flatMap(context -> Mono.defer(() -> discordService.handleChatInputCommand(
-                InteractionCommandEnvironment.builder()
-                        .event(event)
-                        .context(context)
-                        .build())).contextWrite(context));
+                CommandEnvironment.of(context, event)))
+                .contextWrite(context));
     }
 }

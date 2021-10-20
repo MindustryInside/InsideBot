@@ -6,7 +6,8 @@ import discord4j.core.object.entity.Member;
 import discord4j.core.spec.*;
 import inside.Settings;
 import inside.command.admin.WarningsCommand;
-import inside.interaction.component.*;
+import inside.interaction.ButtonEnvironment;
+import inside.interaction.annotation.ComponentProvider;
 import inside.service.*;
 import inside.util.Mathf;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +32,7 @@ public class WarningsButtonListener implements ButtonListener{
     }
 
     @Override
-    public Mono<Void> handle(InteractionButtonEnvironment env){
+    public Mono<Void> handle(ButtonEnvironment env){
         String[] parts = env.event().getCustomId().split("-");
         Snowflake authorId = Snowflake.of(parts[2]);
         Snowflake targetId = Snowflake.of(parts[3]);

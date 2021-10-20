@@ -7,6 +7,7 @@ import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import inside.annotation.Aware;
 import inside.data.entity.AdminActionType;
 import inside.interaction.*;
+import inside.interaction.annotation.*;
 import inside.interaction.chatinput.*;
 import inside.util.*;
 import reactor.core.publisher.*;
@@ -18,15 +19,14 @@ import java.util.stream.Collectors;
 
 import static inside.util.ContextUtil.KEY_LOCALE;
 
-@InteractionDiscordCommand(name = "admin", description = "Admin settings.")
+@ChatInputCommand(name = "admin", description = "Admin settings.")
 public class AdminCommand extends OwnerCommand{
 
     protected AdminCommand(@Aware List<? extends InteractionOwnerAwareCommand<AdminCommand>> subcommands){
         super(subcommands);
     }
 
-    @InteractionDiscordCommand(name = "warnings", description = "Configure max warnings count.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "warnings", description = "Configure max warnings count.")
     public static class AdminCommandWarnings extends OwnerAwareCommand<AdminCommand>{
 
         protected AdminCommandWarnings(@Aware AdminCommand owner){
@@ -38,7 +38,7 @@ public class AdminCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -59,8 +59,7 @@ public class AdminCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "duration", description = "Configure default duration.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "duration", description = "Configure default duration.")
     public static class AdminCommandDuration extends OwnerAwareCommand<AdminCommand>{
 
         protected AdminCommandDuration(@Aware AdminCommand owner){
@@ -72,7 +71,7 @@ public class AdminCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -100,8 +99,7 @@ public class AdminCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "mute-role", description = "Configure mute role.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "mute-role", description = "Configure mute role.")
     public static class AdminCommandMuteRole extends OwnerAwareCommand<AdminCommand>{
 
         protected AdminCommandMuteRole(@Aware AdminCommand owner){
@@ -113,7 +111,7 @@ public class AdminCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -135,8 +133,7 @@ public class AdminCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "warn-duration", description = "Configure warn expire duration.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "warn-duration", description = "Configure warn expire duration.")
     public static class AdminCommandWarnDuration extends OwnerAwareCommand<AdminCommand>{
 
         protected AdminCommandWarnDuration(@Aware AdminCommand owner){
@@ -148,7 +145,7 @@ public class AdminCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -176,8 +173,7 @@ public class AdminCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "threshold-action", description = "Configure warn threshold action.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "threshold-action", description = "Configure warn threshold action.")
     public static class AdminCommandThresholdAction extends OwnerAwareCommand<AdminCommand>{
 
         protected AdminCommandThresholdAction(@Aware AdminCommand owner){
@@ -201,7 +197,7 @@ public class AdminCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -226,16 +222,14 @@ public class AdminCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "admin-roles", description = "Configure admin roles list.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND_GROUP)
+    @SubcommandGroup(name = "admin-roles", description = "Configure admin roles list.")
     public static class AdminCommandAdminRoles extends SubGroupOwnerCommand<AdminCommand>{
 
         protected AdminCommandAdminRoles(@Aware AdminCommand owner, @Aware List<? extends InteractionOwnerAwareCommand<AdminCommandAdminRoles>> subcommands){
             super(owner, subcommands);
         }
 
-        @InteractionDiscordCommand(name = "list", description = "Display current admin roles list.",
-                type = ApplicationCommandOption.Type.SUB_COMMAND)
+        @Subcommand(name = "list", description = "Display current admin roles list.")
         public static class AdminCommandAdminRolesList extends OwnerAwareCommand<AdminCommandAdminRoles>{
 
             protected AdminCommandAdminRolesList(@Aware AdminCommandAdminRoles owner){
@@ -243,7 +237,7 @@ public class AdminCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(InteractionCommandEnvironment env){
+            public Mono<Void> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -258,8 +252,7 @@ public class AdminCommand extends OwnerCommand{
             }
         }
 
-        @InteractionDiscordCommand(name = "add", description = "Add admin role(s).",
-                type = ApplicationCommandOption.Type.SUB_COMMAND)
+        @Subcommand(name = "add", description = "Add admin role(s).")
         public static class AdminCommandAdminRolesAdd extends OwnerAwareCommand<AdminCommandAdminRoles>{
 
             protected AdminCommandAdminRolesAdd(@Aware AdminCommandAdminRoles owner){
@@ -272,7 +265,7 @@ public class AdminCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(InteractionCommandEnvironment env){
+            public Mono<Void> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -303,8 +296,7 @@ public class AdminCommand extends OwnerCommand{
             }
         }
 
-        @InteractionDiscordCommand(name = "remove", description = "Remove admin role(s).",
-                type = ApplicationCommandOption.Type.SUB_COMMAND)
+        @Subcommand(name = "remove", description = "Remove admin role(s).")
         public static class AdminCommandAdminRolesRemove extends OwnerAwareCommand<AdminCommandAdminRoles>{
 
             protected AdminCommandAdminRolesRemove(@Aware AdminCommandAdminRoles owner){
@@ -317,7 +309,7 @@ public class AdminCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(InteractionCommandEnvironment env){
+            public Mono<Void> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -348,8 +340,7 @@ public class AdminCommand extends OwnerCommand{
             }
         }
 
-        @InteractionDiscordCommand(name = "clear", description = "Remove all admin roles.",
-                type = ApplicationCommandOption.Type.SUB_COMMAND)
+        @Subcommand(name = "clear", description = "Remove all admin roles.")
         public static class AdminCommandAdminRolesClear extends OwnerAwareCommand<AdminCommandAdminRoles>{
 
             protected AdminCommandAdminRolesClear(@Aware AdminCommandAdminRoles owner){
@@ -357,7 +348,7 @@ public class AdminCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(InteractionCommandEnvironment env){
+            public Mono<Void> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 

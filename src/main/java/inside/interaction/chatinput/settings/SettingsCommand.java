@@ -2,14 +2,14 @@ package inside.interaction.chatinput.settings;
 
 import discord4j.core.object.entity.*;
 import discord4j.rest.util.Permission;
-import inside.interaction.InteractionCommandEnvironment;
+import inside.interaction.CommandEnvironment;
 import inside.interaction.chatinput.common.GuildCommand;
 import reactor.bool.BooleanUtils;
 import reactor.core.publisher.Mono;
 
 public abstract class SettingsCommand extends GuildCommand{
     @Override
-    public Mono<Boolean> filter(InteractionCommandEnvironment env){
+    public Mono<Boolean> filter(CommandEnvironment env){
         Member member = env.event().getInteraction().getMember().orElse(null);
         if(member == null){
             return Mono.just(false);

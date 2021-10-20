@@ -4,11 +4,11 @@ import discord4j.core.object.command.*;
 import inside.interaction.*;
 import reactor.core.publisher.Mono;
 
-public interface UserCommand extends InteractionCommand{
+public interface UserInteractionCommand extends InteractionCommand{
 
-    Mono<Boolean> filter(InteractionUserEnvironment env);
+    Mono<Boolean> filter(UserEnvironment env);
 
-    Mono<Void> execute(InteractionUserEnvironment env);
+    Mono<Void> execute(UserEnvironment env);
 
     @Override
     default ApplicationCommandOption.Type getType(){

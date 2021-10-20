@@ -3,7 +3,8 @@ package inside.interaction.component.selectmenu;
 import com.github.benmanes.caffeine.cache.*;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.Member;
-import inside.interaction.component.*;
+import inside.interaction.SelectMenuEnvironment;
+import inside.interaction.annotation.ComponentProvider;
 import inside.service.MessageService;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +17,7 @@ import java.util.function.Function;
 public class SearchSelectMenuListener implements SelectMenuListener{
 
     // messageId->function
-    private final Cache<Snowflake, Function<InteractionSelectMenuEnvironment, Publisher<?>>> interactions = Caffeine.newBuilder()
+    private final Cache<Snowflake, Function<SelectMenuEnvironment, Publisher<?>>> interactions = Caffeine.newBuilder()
             .expireAfterWrite(Duration.ofSeconds(30))
             .build();
 
@@ -26,12 +27,12 @@ public class SearchSelectMenuListener implements SelectMenuListener{
         this.messageService = messageService;
     }
 
-    public Mono<Void> registerInteraction(Snowflake messageId, Function<InteractionSelectMenuEnvironment, Publisher<?>> func){
+    public Mono<Void> registerInteraction(Snowflake messageId, Function<SelectMenuEnvironment, Publisher<?>> func){
         return Mono.fromRunnable(() -> interactions.put(messageId, func));
     }
 
     @Override
-    public Mono<Void> handle(InteractionSelectMenuEnvironment env){
+    public Mono<Void> handle(SelectMenuEnvironment env){
         String[] parts = env.event().getCustomId().split("-"); // [ inside, search, 0 ]
         Snowflake authorId = Snowflake.of(parts[2]);
 

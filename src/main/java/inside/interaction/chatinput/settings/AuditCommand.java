@@ -5,6 +5,7 @@ import discord4j.core.object.command.*;
 import inside.annotation.Aware;
 import inside.audit.AuditActionType;
 import inside.interaction.*;
+import inside.interaction.annotation.*;
 import inside.interaction.chatinput.*;
 import inside.util.DiscordUtil;
 import inside.util.func.BooleanFunction;
@@ -16,15 +17,14 @@ import java.util.stream.Collectors;
 
 import static reactor.function.TupleUtils.*;
 
-@InteractionDiscordCommand(name = "audit", description = "Audit log settings.")
+@ChatInputCommand(name = "audit", description = "Audit log settings.")
 public class AuditCommand extends OwnerCommand{
 
     protected AuditCommand(@Aware List<? extends InteractionOwnerAwareCommand<AuditCommand>> subcommands){
         super(subcommands);
     }
 
-    @InteractionDiscordCommand(name = "enable", description = "Enable audit logging.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "enable", description = "Enable audit logging.")
     public static class AuditCommandEnable extends OwnerAwareCommand<AuditCommand>{
 
         protected AuditCommandEnable(@Aware AuditCommand owner){
@@ -36,7 +36,7 @@ public class AuditCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -59,8 +59,7 @@ public class AuditCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "channel", description = "Configure log channel.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "channel", description = "Configure log channel.")
     public static class AuditCommandChannel extends OwnerAwareCommand<AuditCommand>{
 
         protected AuditCommandChannel(@Aware AuditCommand owner){
@@ -72,7 +71,7 @@ public class AuditCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -94,16 +93,14 @@ public class AuditCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "actions", description = "Configure audit actions.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND_GROUP)
+    @SubcommandGroup(name = "actions", description = "Configure audit actions.")
     public static class AuditCommandActions extends SubGroupOwnerCommand<AuditCommand>{
 
         protected AuditCommandActions(@Aware AuditCommand owner, @Aware List<? extends InteractionOwnerAwareCommand<AuditCommandActions>> subcommands){
             super(owner, subcommands);
         }
 
-        @InteractionDiscordCommand(name = "list", description = "Display current audit actions.",
-                type = ApplicationCommandOption.Type.SUB_COMMAND)
+        @Subcommand(name = "list", description = "Display current audit actions.")
         public static class AuditCommandActionsList extends OwnerAwareCommand<AuditCommandActions>{
 
             protected AuditCommandActionsList(@Aware AuditCommandActions owner){
@@ -111,7 +108,7 @@ public class AuditCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(InteractionCommandEnvironment env){
+            public Mono<Void> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -126,8 +123,7 @@ public class AuditCommand extends OwnerCommand{
             }
         }
 
-        @InteractionDiscordCommand(name = "add", description = "Add audit action(s).",
-                type = ApplicationCommandOption.Type.SUB_COMMAND)
+        @Subcommand(name = "add", description = "Add audit action(s).")
         public static class AuditCommandActionsAdd extends OwnerAwareCommand<AuditCommandActions>{
 
             protected AuditCommandActionsAdd(@Aware AuditCommandActions owner){
@@ -140,7 +136,7 @@ public class AuditCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(InteractionCommandEnvironment env){
+            public Mono<Void> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -175,8 +171,7 @@ public class AuditCommand extends OwnerCommand{
             }
         }
 
-        @InteractionDiscordCommand(name = "remove", description = "Remove audit action(s).",
-                type = ApplicationCommandOption.Type.SUB_COMMAND)
+        @Subcommand(name = "remove", description = "Remove audit action(s).")
         public static class AuditCommandActionsRemove extends OwnerAwareCommand<AuditCommandActions>{
 
             protected AuditCommandActionsRemove(@Aware AuditCommandActions owner){
@@ -189,7 +184,7 @@ public class AuditCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(InteractionCommandEnvironment env){
+            public Mono<Void> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -224,8 +219,7 @@ public class AuditCommand extends OwnerCommand{
             }
         }
 
-        @InteractionDiscordCommand(name = "clear", description = "Remove all audit actions.",
-                type = ApplicationCommandOption.Type.SUB_COMMAND)
+        @Subcommand(name = "clear", description = "Remove all audit actions.")
         public static class AuditCommandActionsClear extends OwnerAwareCommand<AuditCommandActions>{
 
             protected AuditCommandActionsClear(@Aware AuditCommandActions owner){
@@ -233,7 +227,7 @@ public class AuditCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(InteractionCommandEnvironment env){
+            public Mono<Void> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 

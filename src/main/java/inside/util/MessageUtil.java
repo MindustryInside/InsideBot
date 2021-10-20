@@ -52,10 +52,18 @@ public abstract class MessageUtil{
             builder.append(message.getContent());
         }
 
-        if(!message.getAttachments().isEmpty()){
-            builder.append("\n---\n");
-            message.getAttachments().forEach(a -> builder.append(a.getUrl()).append("\n"));
-        }
+        var att = message.getAttachments();
+        att.forEach(a -> builder.append("[")
+                .append(a.getFilename()).append(", ")
+                .append(a.getUrl()).append("]\n"));
+
+        var sti = message.getStickers();
+        sti.forEach(s -> builder.append("[")
+                .append("id: ").append(s.getId().asString()).append(", ")
+                .append("pack Id: ").append(s.getPackId().asString()).append(", ")
+                .append("name: ")
+                .append(s.getName()).append("]\n"));
+
         return builder.toString();
     }
 

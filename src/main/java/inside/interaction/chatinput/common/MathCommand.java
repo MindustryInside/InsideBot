@@ -4,12 +4,13 @@ import com.udojava.evalex.Expression;
 import discord4j.core.object.command.*;
 import discord4j.core.object.entity.Message;
 import inside.interaction.*;
+import inside.interaction.annotation.ChatInputCommand;
 import inside.interaction.chatinput.*;
 import inside.util.MessageUtil;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-@InteractionDiscordCommand(name = "math", description = "Calculate math expression.")
+@ChatInputCommand(name = "math", description = "Calculate math expression.")
 public class MathCommand extends BaseInteractionCommand{
 
     public MathCommand(){
@@ -21,7 +22,7 @@ public class MathCommand extends BaseInteractionCommand{
     }
 
     @Override
-    public Mono<Void> execute(InteractionCommandEnvironment env){
+    public Mono<Void> execute(CommandEnvironment env){
         String expression = env.getOption("expression")
                 .flatMap(ApplicationCommandInteractionOption::getValue)
                 .map(ApplicationCommandInteractionOptionValue::asString)

@@ -2,17 +2,17 @@ package inside.audit;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.*;
-import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.*;
+import discord4j.core.object.entity.channel.*;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.*;
-import inside.data.entity.AuditAction;
 import inside.data.entity.base.NamedReference;
 import inside.util.*;
 import reactor.util.context.ContextView;
 
 import java.time.Instant;
 import java.time.format.*;
-import java.util.Collection;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static inside.audit.Attribute.*;
@@ -28,7 +28,7 @@ public class AuditProviders{
     @ForwardAuditProvider(AuditActionType.MESSAGE_EDIT)
     public static class MessageEditAuditProvider extends BaseAuditProvider{
         @Override
-        protected void build(AuditAction action, ContextView context, MessageCreateSpec.Builder spec, EmbedCreateSpec.Builder embed){
+        protected void build(AuditActionBuilder action, ContextView context, EmbedCreateSpec.Builder embed){
             Snowflake messageId = action.getAttribute(MESSAGE_ID);
             String oldContent = action.getAttribute(OLD_CONTENT);
             String newContent = action.getAttribute(NEW_CONTENT);
@@ -39,7 +39,7 @@ public class AuditProviders{
             }
 
             String guildIdString = action.getGuildId().asString();
-            String channelIdString = action.getChannel().getId();
+            String channelIdString = message.getChannelId().asString();
 
             embed.author(formatName(action.getUser()), null, url);
             embed.description(messageService.format(context, "audit.message.edit.description",
@@ -64,7 +64,7 @@ public class AuditProviders{
                                     guildIdString, channelIdString, messageIdString), false));
 
             embed.addField(messageService.get(context, "audit.message.channel"),
-                    getChannelReference(context, action.getChannel()), false);
+                    getReferenceContent(context, action.getChannel()), false);
 
             addTimestamp(context, action, embed);
         }
@@ -73,17 +73,17 @@ public class AuditProviders{
     @ForwardAuditProvider(AuditActionType.MESSAGE_DELETE)
     public static class MessageDeleteAuditProvider extends BaseAuditProvider{
         @Override
-        protected void build(AuditAction action, ContextView context, MessageCreateSpec.Builder spec, EmbedCreateSpec.Builder embed){
+        protected void build(AuditActionBuilder action, ContextView context, EmbedCreateSpec.Builder embed){
             String oldContent = action.getAttribute(OLD_CONTENT);
             String url = action.getAttribute(AVATAR_URL);
-            NamedReference target = action.getTarget();
+            User target = action.getTarget();
             Message message = action.getAttribute(MESSAGE);
             if(oldContent == null || url == null || target == null || message == null){
                 return;
             }
 
             String guildIdString = action.getGuildId().asString();
-            String channelIdString = action.getChannel().getId();
+            String channelIdString = message.getChannelId().asString();
 
             embed.author(formatName(target), null, url);
 
@@ -101,11 +101,11 @@ public class AuditProviders{
                                     guildIdString, channelIdString, messageIdString), false));
 
             embed.addField(messageService.get(context, "audit.message.channel"),
-                    getChannelReference(context, action.getChannel()), false);
+                    getReferenceContent(context, action.getChannel()), false);
 
-            if(!action.getUser().equals(target)){
+            if(!Objects.equals(action.getUser(), target)){
                 embed.addField(messageService.get(context, "audit.message.responsible-user"),
-                        getUserReference(context, action.getUser()), false);
+                        getReferenceContent(context, action.getUser()), false);
             }
 
             addTimestamp(context, action, embed);
@@ -115,7 +115,7 @@ public class AuditProviders{
     @ForwardAuditProvider(AuditActionType.MESSAGE_CLEAR)
     public static class MessageClearAuditProvider extends BaseAuditProvider{
         @Override
-        protected void build(AuditAction action, ContextView context, MessageCreateSpec.Builder spec, EmbedCreateSpec.Builder embed){
+        protected void build(AuditActionBuilder action, ContextView context, EmbedCreateSpec.Builder embed){
             Long count = action.getAttribute(COUNT);
             if(count == null){
                 return;
@@ -124,9 +124,9 @@ public class AuditProviders{
             embed.description(messageService.format(context, "audit.message.clear.description", count,
                     messageService.getPluralized(context, "common.plurals.message", count)));
             embed.addField(messageService.get(context, "audit.member.admin"),
-                    getUserReference(context, action.getUser()), true);
+                    getReferenceContent(context, action.getUser()), true);
             embed.addField(messageService.get(context, "audit.message.channel"),
-                    getChannelReference(context, action.getChannel()), false);
+                    getReferenceContent(context, action.getChannel()), false);
             addTimestamp(context, action, embed);
         }
     }
@@ -137,9 +137,9 @@ public class AuditProviders{
     @ForwardAuditProvider(AuditActionType.MEMBER_JOIN)
     public static class MemberJoinAuditProvider extends BaseAuditProvider{
         @Override
-        protected void build(AuditAction action, ContextView context, MessageCreateSpec.Builder spec, EmbedCreateSpec.Builder embed){
+        protected void build(AuditActionBuilder action, ContextView context, EmbedCreateSpec.Builder embed){
             embed.description(messageService.format(context, "audit.member.join.description",
-                    getUserReference(context, action.getUser())));
+                    getReferenceContent(context, action.getUser())));
             addTimestamp(context, action, embed);
         }
     }
@@ -147,9 +147,9 @@ public class AuditProviders{
     @ForwardAuditProvider(AuditActionType.MEMBER_LEAVE)
     public static class MemberLeaveAuditProvider extends BaseAuditProvider{
         @Override
-        protected void build(AuditAction action, ContextView context, MessageCreateSpec.Builder spec, EmbedCreateSpec.Builder embed){
+        protected void build(AuditActionBuilder action, ContextView context, EmbedCreateSpec.Builder embed){
             embed.description(messageService.format(context, "audit.member.leave.description",
-                    getUserReference(context, action.getUser())));
+                    getReferenceContent(context, action.getUser())));
             addTimestamp(context, action, embed);
         }
     }
@@ -157,16 +157,16 @@ public class AuditProviders{
     @ForwardAuditProvider(AuditActionType.MEMBER_KICK)
     public static class MemberKickAuditProvider extends BaseAuditProvider{
         @Override
-        protected void build(AuditAction action, ContextView context, MessageCreateSpec.Builder spec, EmbedCreateSpec.Builder embed){
+        protected void build(AuditActionBuilder action, ContextView context, EmbedCreateSpec.Builder embed){
             String reason = action.getAttribute(REASON);
-            NamedReference target = action.getTarget();
+            User target = action.getTarget();
             if(target == null || reason == null){
                 return;
             }
 
-            embed.description(messageService.format(context, "audit.member.kick.title", getUserReference(context, target)));
+            embed.description(messageService.format(context, "audit.member.kick.title", getReferenceContent(context, target)));
             embed.addField(messageService.get(context, "audit.member.admin"),
-                    getUserReference(context, action.getUser()), true);
+                    getReferenceContent(context, action.getUser()), true);
             embed.addField(messageService.get(context, "audit.member.reason"), reason, true);
             addTimestamp(context, action, embed);
         }
@@ -175,16 +175,16 @@ public class AuditProviders{
     @ForwardAuditProvider(AuditActionType.MEMBER_BAN)
     public static class MemberBanAuditProvider extends BaseAuditProvider{
         @Override
-        protected void build(AuditAction action, ContextView context, MessageCreateSpec.Builder spec, EmbedCreateSpec.Builder embed){
+        protected void build(AuditActionBuilder action, ContextView context, EmbedCreateSpec.Builder embed){
             String reason = action.getAttribute(REASON);
-            NamedReference target = action.getTarget();
+            User target = action.getTarget();
             if(target == null || reason == null){
                 return;
             }
 
-            embed.description(messageService.format(context, "audit.member.ban.title", getUserReference(context, target)));
+            embed.description(messageService.format(context, "audit.member.ban.title", getReferenceContent(context, target)));
             embed.addField(messageService.get(context, "audit.member.admin"),
-                    getUserReference(context, action.getUser()), true);
+                    getReferenceContent(context, action.getUser()), true);
             embed.addField(messageService.get(context, "audit.member.reason"), reason, true);
             addTimestamp(context, action, embed);
         }
@@ -193,13 +193,13 @@ public class AuditProviders{
     @ForwardAuditProvider(AuditActionType.MEMBER_UNMUTE)
     public static class MemberUnmuteAuditProvider extends BaseAuditProvider{
         @Override
-        protected void build(AuditAction action, ContextView context, MessageCreateSpec.Builder spec, EmbedCreateSpec.Builder embed){
-            NamedReference target = action.getTarget();
+        protected void build(AuditActionBuilder action, ContextView context, EmbedCreateSpec.Builder embed){
+            User target = action.getTarget();
             if(target == null){
                 return;
             }
 
-            embed.description(messageService.format(context, "audit.member.unmute.title", getUserReference(context, target)));
+            embed.description(messageService.format(context, "audit.member.unmute.title", getReferenceContent(context, target)));
             addTimestamp(context, action, embed);
         }
     }
@@ -207,10 +207,10 @@ public class AuditProviders{
     @ForwardAuditProvider(AuditActionType.MEMBER_MUTE)
     public static class MemberMuteAuditProvider extends BaseAuditProvider{
         @Override
-        protected void build(AuditAction action, ContextView context, MessageCreateSpec.Builder spec, EmbedCreateSpec.Builder embed){
+        protected void build(AuditActionBuilder action, ContextView context, EmbedCreateSpec.Builder embed){
             Instant delay = action.getAttribute(DELAY);
             String reason = action.getAttribute(REASON);
-            NamedReference target = action.getTarget();
+            User target = action.getTarget();
             if(reason == null){
                 reason = messageService.get(context, "common.not-defined");
             }
@@ -223,9 +223,9 @@ public class AuditProviders{
                     .withLocale(context.get(KEY_LOCALE))
                     .withZone(context.get(KEY_TIMEZONE));
 
-            embed.description(messageService.format(context, "audit.member.mute.title", getUserReference(context, target)));
+            embed.description(messageService.format(context, "audit.member.mute.title", getReferenceContent(context, target)));
             embed.addField(messageService.get(context, "audit.member.admin"),
-                    getUserReference(context, action.getUser()), true);
+                    getReferenceContent(context, action.getUser()), true);
             embed.addField(messageService.get(context, "audit.member.reason"), reason, true);
             embed.addField(messageService.get(context, "audit.member.mute.delay"),
                     formatter.format(delay), true);
@@ -239,7 +239,7 @@ public class AuditProviders{
     @ForwardAuditProvider(AuditActionType.MEMBER_ROLE_ADD)
     public static class MemberRoleAddAuditProvider extends BaseAuditProvider{
         @Override
-        protected void build(AuditAction action, ContextView context, MessageCreateSpec.Builder spec, EmbedCreateSpec.Builder embed){
+        protected void build(AuditActionBuilder action, ContextView context, EmbedCreateSpec.Builder embed){
             String url = action.getAttribute(AVATAR_URL);
             Collection<Snowflake> roleIds = action.getAttribute(ROLE_IDS);
             if(url == null || roleIds == null){
@@ -250,7 +250,7 @@ public class AuditProviders{
             embed.description(messageService.format(context, "audit.member.role-add.title",
                     messageService.getPluralized(context, "audit.plurals.role", roleIds.size()),
                     roleIds.stream().map(DiscordUtil::getRoleMention).collect(Collectors.joining(", ")),
-                    getUserReference(context, action.getUser())));
+                    getReferenceContent(context, action.getUser())));
             addTimestamp(context, action, embed);
         }
     }
@@ -258,7 +258,7 @@ public class AuditProviders{
     @ForwardAuditProvider(AuditActionType.MEMBER_ROLE_REMOVE)
     public static class MemberRoleRemoveAuditProvider extends BaseAuditProvider{
         @Override
-        protected void build(AuditAction action, ContextView context, MessageCreateSpec.Builder spec, EmbedCreateSpec.Builder embed){
+        protected void build(AuditActionBuilder action, ContextView context, EmbedCreateSpec.Builder embed){
             String url = action.getAttribute(AVATAR_URL);
             Collection<Snowflake> roleIds = action.getAttribute(ROLE_IDS);
             if(url == null || roleIds == null){
@@ -269,7 +269,7 @@ public class AuditProviders{
             embed.description(messageService.format(context, "audit.member.role-remove.title",
                     messageService.getPluralized(context, "audit.plurals.role", roleIds.size()),
                     roleIds.stream().map(DiscordUtil::getRoleMention).collect(Collectors.joining(", ")),
-                    getUserReference(context, action.getUser())));
+                    getReferenceContent(context, action.getUser())));
             addTimestamp(context, action, embed);
         }
     }
@@ -277,7 +277,7 @@ public class AuditProviders{
     @ForwardAuditProvider(AuditActionType.MEMBER_AVATAR_UPDATE)
     public static class MemberAvatarUpdateAuditProvider extends BaseAuditProvider{
         @Override
-        protected void build(AuditAction action, ContextView context, MessageCreateSpec.Builder spec, EmbedCreateSpec.Builder embed){
+        protected void build(AuditActionBuilder action, ContextView context, EmbedCreateSpec.Builder embed){
             String url = action.getAttribute(AVATAR_URL);
             String oldUrl = action.getAttribute(OLD_AVATAR_URL);
             if(oldUrl == null || url == null){
@@ -286,7 +286,7 @@ public class AuditProviders{
 
             embed.author(formatName(action.getUser()), null, url);
             embed.description(messageService.format(context, "audit.member.avatar-update.title",
-                    getUserReference(context, action.getUser())));
+                    getReferenceContent(context, action.getUser())));
             embed.thumbnail(oldUrl);
             addTimestamp(context, action, embed);
         }
@@ -295,7 +295,7 @@ public class AuditProviders{
     @ForwardAuditProvider(AuditActionType.MEMBER_NICKNAME_UPDATE)
     public static class MemberNicknameUpdate extends BaseAuditProvider{
         @Override
-        protected void build(AuditAction action, ContextView context, MessageCreateSpec.Builder spec, EmbedCreateSpec.Builder embed){
+        protected void build(AuditActionBuilder action, ContextView context, EmbedCreateSpec.Builder embed){
             String url = action.getAttribute(AVATAR_URL);
             String oldNickname = action.getAttribute(OLD_NICKNAME);
             String newNickname = action.getAttribute(NEW_NICKNAME);
@@ -305,7 +305,7 @@ public class AuditProviders{
 
             embed.author(formatName(action.getUser()), null, url);
             embed.description(messageService.format(context, "audit.member.nickname-update.title",
-                    getUserReference(context, action.getUser()),
+                    getReferenceContent(context, action.getUser()),
                     oldNickname, newNickname));
             addTimestamp(context, action, embed);
         }
@@ -317,7 +317,7 @@ public class AuditProviders{
     @ForwardAuditProvider(AuditActionType.REACTION_ADD)
     public static class ReactionAddAuditProvider extends BaseAuditProvider{
         @Override
-        protected void build(AuditAction action, ContextView context, MessageCreateSpec.Builder spec, EmbedCreateSpec.Builder embed){
+        protected void build(AuditActionBuilder action, ContextView context, EmbedCreateSpec.Builder embed){
             Snowflake messageId = action.getAttribute(MESSAGE_ID);
             ReactionEmoji emoji = action.getAttribute(REACTION_EMOJI);
             if(messageId == null || emoji == null){
@@ -325,7 +325,7 @@ public class AuditProviders{
             }
 
             embed.description(messageService.format(context, "audit.reaction.add.description",
-                    getUserReference(context, action.getUser()), DiscordUtil.getEmojiString(emoji),
+                    getReferenceContent(context, action.getUser()), DiscordUtil.getEmojiString(emoji),
                     action.getGuildId().asString(), action.getChannel().getId(), messageId.asString()));
 
             addTimestamp(context, action, embed);
@@ -335,7 +335,7 @@ public class AuditProviders{
     @ForwardAuditProvider(AuditActionType.REACTION_REMOVE)
     public static class ReactionRemoveAuditProvider extends BaseAuditProvider{
         @Override
-        protected void build(AuditAction action, ContextView context, MessageCreateSpec.Builder spec, EmbedCreateSpec.Builder embed){
+        protected void build(AuditActionBuilder action, ContextView context, EmbedCreateSpec.Builder embed){
             Snowflake messageId = action.getAttribute(MESSAGE_ID);
             ReactionEmoji emoji = action.getAttribute(REACTION_EMOJI);
             if(messageId == null || emoji == null){
@@ -343,7 +343,7 @@ public class AuditProviders{
             }
 
             embed.description(messageService.format(context, "audit.reaction.remove.description",
-                    DiscordUtil.getEmojiString(emoji), getUserReference(context, action.getUser()),
+                    DiscordUtil.getEmojiString(emoji), getReferenceContent(context, action.getUser()),
                     action.getGuildId().asString(), action.getChannel().getId(), messageId.asString()));
 
             addTimestamp(context, action, embed);
@@ -353,7 +353,7 @@ public class AuditProviders{
     @ForwardAuditProvider(AuditActionType.REACTION_REMOVE_ALL)
     public static class ReactionRemoveAllAuditProvider extends BaseAuditProvider{
         @Override
-        protected void build(AuditAction action, ContextView context, MessageCreateSpec.Builder spec, EmbedCreateSpec.Builder embed){
+        protected void build(AuditActionBuilder action, ContextView context, EmbedCreateSpec.Builder embed){
             Snowflake messageId = action.getAttribute(MESSAGE_ID);
             if(messageId == null){
                 return;
@@ -372,9 +372,9 @@ public class AuditProviders{
     @ForwardAuditProvider(AuditActionType.VOICE_JOIN)
     public static class VoiceJoinAuditProvider extends BaseAuditProvider{
         @Override
-        protected void build(AuditAction action, ContextView context, MessageCreateSpec.Builder spec, EmbedCreateSpec.Builder embed){
+        protected void build(AuditActionBuilder action, ContextView context, EmbedCreateSpec.Builder embed){
             embed.description(messageService.format(context, "audit.voice.join.description",
-                    getUserReference(context, action.getUser()), getShortReference(context, action.getChannel())));
+                    getReferenceContent(context, action.getUser()), getShortReference(context, action.getChannel())));
             addTimestamp(context, action, embed);
         }
     }
@@ -382,9 +382,9 @@ public class AuditProviders{
     @ForwardAuditProvider(AuditActionType.VOICE_LEAVE)
     public static class VoiceLeaveAuditProvider extends BaseAuditProvider{
         @Override
-        protected void build(AuditAction action, ContextView context, MessageCreateSpec.Builder spec, EmbedCreateSpec.Builder embed){
+        protected void build(AuditActionBuilder action, ContextView context, EmbedCreateSpec.Builder embed){
             embed.description(messageService.format(context, "audit.voice.leave.description",
-                    getUserReference(context, action.getUser()), getShortReference(context, action.getChannel())));
+                    getReferenceContent(context, action.getUser()), getShortReference(context, action.getChannel())));
             addTimestamp(context, action, embed);
         }
     }
@@ -392,14 +392,14 @@ public class AuditProviders{
     @ForwardAuditProvider(AuditActionType.VOICE_MOVE)
     public static class VoiceMoveAuditProvider extends BaseAuditProvider{
         @Override
-        protected void build(AuditAction action, ContextView context, MessageCreateSpec.Builder spec, EmbedCreateSpec.Builder embed){
-            NamedReference oldChannel = action.getAttribute(OLD_CHANNEL);
+        protected void build(AuditActionBuilder action, ContextView context, EmbedCreateSpec.Builder embed){
+            VoiceChannel oldChannel = action.getAttribute(OLD_CHANNEL);
             if(oldChannel == null){
                 return;
             }
 
             embed.description(messageService.format(context, "audit.voice.move.description",
-                    getUserReference(context, action.getUser()),
+                    getReferenceContent(context, action.getUser()),
                     getShortReference(context, oldChannel),
                     getShortReference(context, action.getChannel())));
             addTimestamp(context, action, embed);

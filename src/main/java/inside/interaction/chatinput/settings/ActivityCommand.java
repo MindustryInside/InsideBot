@@ -4,6 +4,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.*;
 import inside.annotation.Aware;
 import inside.interaction.*;
+import inside.interaction.annotation.*;
 import inside.interaction.chatinput.*;
 import inside.util.*;
 import inside.util.func.BooleanFunction;
@@ -15,15 +16,14 @@ import java.util.function.Function;
 
 import static inside.util.ContextUtil.KEY_LOCALE;
 
-@InteractionDiscordCommand(name = "activity", description = "Activity features settings.")
+@ChatInputCommand(name = "activity", description = "Activity features settings.")
 public class ActivityCommand extends OwnerCommand{
 
     protected ActivityCommand(@Aware List<? extends InteractionOwnerAwareCommand<ActivityCommand>> subcommands){
         super(subcommands);
     }
 
-    @InteractionDiscordCommand(name = "enable", description = "Enable activity system.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "enable", description = "Enable activity system.")
     public static class ActivityCommandEnable extends OwnerAwareCommand<ActivityCommand>{
 
         protected ActivityCommandEnable(@Aware ActivityCommand owner){
@@ -35,7 +35,7 @@ public class ActivityCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -58,8 +58,7 @@ public class ActivityCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "active-user-role", description = "Configure active user role.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "active-user-role", description = "Configure active user role.")
     public static class ActivityCommandActiveUserRole extends OwnerAwareCommand<ActivityCommand>{
 
         protected ActivityCommandActiveUserRole(@Aware ActivityCommand owner){
@@ -71,7 +70,7 @@ public class ActivityCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -93,8 +92,7 @@ public class ActivityCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "message-barrier", description = "Configure message barrier.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "message-barrier", description = "Configure message barrier.")
     public static class ActivityCommandMessageBarrier extends OwnerAwareCommand<ActivityCommand>{
 
         protected ActivityCommandMessageBarrier(@Aware ActivityCommand owner){
@@ -106,7 +104,7 @@ public class ActivityCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -132,8 +130,7 @@ public class ActivityCommand extends OwnerCommand{
         }
     }
 
-    @InteractionDiscordCommand(name = "keep-counting-duration", description = "Configure keep counting duration.",
-            type = ApplicationCommandOption.Type.SUB_COMMAND)
+    @Subcommand(name = "keep-counting-duration", description = "Configure keep counting duration.")
     public static class ActivityCommandKeepCountingDuration extends OwnerAwareCommand<ActivityCommand>{
 
         protected ActivityCommandKeepCountingDuration(@Aware ActivityCommand owner){
@@ -145,7 +142,7 @@ public class ActivityCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(InteractionCommandEnvironment env){
+        public Mono<Void> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
