@@ -5,6 +5,7 @@ import discord4j.core.spec.EmbedCreateSpec;
 import inside.Settings;
 import inside.command.Command;
 import inside.command.model.*;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 
@@ -15,7 +16,7 @@ public class EmojiCommand extends Command{
     private Settings settings;
 
     @Override
-    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction){
         String text = interaction.getOption(0)
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asString)

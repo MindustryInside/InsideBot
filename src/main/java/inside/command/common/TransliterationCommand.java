@@ -6,6 +6,7 @@ import inside.command.Command;
 import inside.command.model.*;
 import inside.util.*;
 import inside.util.io.ReusableByteInputStream;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
@@ -65,7 +66,7 @@ public class TransliterationCommand extends Command{
     }
 
     @Override
-    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction){
         String translited = interaction.getOption(0)
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asString)

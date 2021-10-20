@@ -4,6 +4,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.rest.util.Permission;
 import inside.command.CommandCategory;
 import inside.command.model.*;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
@@ -15,7 +16,7 @@ import static inside.service.MessageService.ok;
         category = CommandCategory.admin)
 public class UnmuteCommand extends AdminCommand{
     @Override
-    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction){
         Optional<Snowflake> targetId = interaction.getOption("@user")
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asSnowflake);

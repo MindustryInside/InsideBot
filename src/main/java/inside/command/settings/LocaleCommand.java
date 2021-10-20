@@ -3,6 +3,7 @@ package inside.command.settings;
 import discord4j.core.object.entity.Member;
 import inside.command.CommandCategory;
 import inside.command.model.*;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 import java.util.Locale;
@@ -14,7 +15,7 @@ import static inside.util.ContextUtil.KEY_LOCALE;
         category = CommandCategory.owner)
 public class LocaleCommand extends OwnerCommand{
     @Override
-    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction){
         Member member = env.member();
 
         boolean present = interaction.getOption(0).isPresent();

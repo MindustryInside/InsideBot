@@ -96,8 +96,8 @@ public class DefaultCommandHandler implements CommandHandler{
                             "command.response.incorrect-arguments";
 
                     if(argstr.matches("^(?i)(help|\\?)$")){
-                        return command.filter(env).flatMap(bool -> bool
-                                ? command.help(env, prx)
+                        return Mono.from(command.filter(env)).flatMap(bool -> bool
+                                ? Mono.from(command.help(env, prx)).then()
                                 : Mono.empty());
                     }
 
@@ -170,7 +170,7 @@ public class DefaultCommandHandler implements CommandHandler{
 
                     return Mono.just(command)
                             .filterWhen(c -> c.filter(env))
-                            .flatMap(c -> c.execute(env, new CommandInteraction(cmdkey, result)))
+                            .flatMap(c -> Mono.from(c.execute(env, new CommandInteraction(cmdkey, result))).then())
                             .doFirst(() -> messageService.removeEdit(env.message().getId()))
                             .onErrorResume(t -> t.getMessage() != null &&
                                     (t.getMessage().contains("Missing Access") ||

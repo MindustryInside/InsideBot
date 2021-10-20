@@ -10,6 +10,7 @@ import inside.command.Command;
 import inside.command.model.*;
 import inside.data.entity.GuildConfig;
 import inside.util.Strings;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 
@@ -43,7 +44,7 @@ public class PollCommand extends Command{
     private Settings settings;
 
     @Override
-    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction){
         Member author = env.member();
 
         String text = interaction.getOption("poll text")
@@ -92,7 +93,7 @@ public class PollCommand extends Command{
     }
 
     @Override
-    public Mono<Void> help(CommandEnvironment env, String prefix){
+    public Publisher<?> help(CommandEnvironment env, String prefix){
         return messageService.infoTitled(env, "command.help.title", "command.poll.help",
                 GuildConfig.formatPrefix(prefix))
                 .then();

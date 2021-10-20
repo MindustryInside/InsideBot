@@ -3,6 +3,7 @@ package inside.command.common;
 import inside.command.Command;
 import inside.command.model.*;
 import inside.util.Strings;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 import java.util.concurrent.ThreadLocalRandom;
@@ -13,7 +14,7 @@ public class RandomCommand extends Command{
     private static final Pattern rangePattern = Pattern.compile("^[(\\[]([-+]?[0-9]+)[,.;\\s]+([-+]?[0-9]+)[])]$");
 
     @Override
-    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction){
         String range = interaction.getOption(0)
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asString)

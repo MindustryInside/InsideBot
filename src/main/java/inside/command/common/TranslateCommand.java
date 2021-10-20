@@ -6,6 +6,7 @@ import inside.command.Command;
 import inside.command.model.*;
 import inside.data.entity.GuildConfig;
 import inside.util.Lazy;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
@@ -41,7 +42,7 @@ public class TranslateCommand extends Command{
     private final Lazy<HttpClient> httpClient = Lazy.of(ReactorResources.DEFAULT_HTTP_CLIENT);
 
     @Override
-    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction){
         String from = interaction.getOption(0)
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asString)
@@ -78,7 +79,7 @@ public class TranslateCommand extends Command{
     }
 
     @Override
-    public Mono<Void> help(CommandEnvironment env, String prefix){
+    public Publisher<?> help(CommandEnvironment env, String prefix){
         return messageService.infoTitled(env, "command.help.title", "command.translate.help",
                 GuildConfig.formatPrefix(prefix), languages)
                 .then();

@@ -9,6 +9,7 @@ import inside.data.entity.GuildConfig;
 import inside.util.Lazy;
 import inside.util.codec.Base64Coder;
 import inside.util.io.ReusableByteInputStream;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
@@ -21,7 +22,7 @@ public class Base64Command extends Command{
     private final Lazy<HttpClient> httpClient = Lazy.of(ReactorResources.DEFAULT_HTTP_CLIENT);
 
     @Override
-    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction){
         boolean encode = interaction.getOption(0)
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asString)
@@ -67,7 +68,7 @@ public class Base64Command extends Command{
     }
 
     @Override
-    public Mono<Void> help(CommandEnvironment env, String prefix){
+    public Publisher<?> help(CommandEnvironment env, String prefix){
         return messageService.infoTitled(env, "command.help.title", "command.base64.help",
                         GuildConfig.formatPrefix(prefix))
                 .then();

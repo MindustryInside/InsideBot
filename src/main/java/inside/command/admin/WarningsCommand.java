@@ -9,6 +9,7 @@ import inside.Settings;
 import inside.command.CommandCategory;
 import inside.command.model.*;
 import inside.util.Mathf;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuples;
@@ -27,7 +28,7 @@ public class WarningsCommand extends AdminCommand{
     private Settings settings;
 
     @Override
-    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction){
         Optional<Snowflake> targetId = interaction.getOption(0)
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asSnowflake);

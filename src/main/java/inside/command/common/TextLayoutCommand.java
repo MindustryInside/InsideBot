@@ -2,6 +2,7 @@ package inside.command.common;
 
 import inside.command.Command;
 import inside.command.model.*;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 @DiscordCommand(key = "r", params = "command.text-layout.params", description = "command.text-layout.description")
@@ -31,7 +32,7 @@ public class TextLayoutCommand extends Command{
     }
 
     @Override
-    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction){
         boolean en = interaction.getOption(0)
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asString)

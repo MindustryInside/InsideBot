@@ -2,21 +2,19 @@ package inside.command.model;
 
 import discord4j.core.object.entity.*;
 import discord4j.core.object.entity.channel.GuildMessageChannel;
+import inside.annotation.EnvironmentStyle;
 import org.immutables.value.Value;
 import reactor.util.context.ContextView;
 
+@EnvironmentStyle
 @Value.Immutable
-public abstract class CommandEnvironment{
+interface CommandEnvironmentDef{
 
-    public static ImmutableCommandEnvironment.Builder builder(){
-        return ImmutableCommandEnvironment.builder();
-    }
+    GuildMessageChannel channel();
 
-    public abstract GuildMessageChannel channel();
+    ContextView context();
 
-    public abstract ContextView context();
+    Message message();
 
-    public abstract Message message();
-
-    public abstract Member member();
+    Member member();
 }

@@ -11,6 +11,7 @@ import inside.command.Command;
 import inside.command.model.*;
 import inside.data.entity.GuildConfig;
 import inside.interaction.component.selectmenu.SearchSelectMenuListener;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 
@@ -27,7 +28,7 @@ public class AvatarCommand extends Command{
     private Settings settings;
 
     @Override
-    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction){
         Member author = env.member();
         Snowflake guildId = author.getGuildId();
 
@@ -96,7 +97,7 @@ public class AvatarCommand extends Command{
     }
 
     @Override
-    public Mono<Void> help(CommandEnvironment env, String prefix){
+    public Publisher<?> help(CommandEnvironment env, String prefix){
         return messageService.infoTitled(env, "command.help.title", "command.avatar.help",
                 GuildConfig.formatPrefix(prefix))
                 .then();

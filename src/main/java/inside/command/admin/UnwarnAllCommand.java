@@ -4,6 +4,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.entity.*;
 import inside.command.CommandCategory;
 import inside.command.model.*;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
@@ -13,7 +14,7 @@ import java.util.function.Predicate;
         category = CommandCategory.admin)
 public class UnwarnAllCommand extends AdminCommand{
     @Override
-    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction){
         Member author = env.member();
 
         Optional<Snowflake> targetId = interaction.getOption("@user")

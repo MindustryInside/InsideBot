@@ -5,6 +5,7 @@ import inside.command.*;
 import inside.command.model.*;
 import inside.data.entity.CommandConfig;
 import inside.data.entity.base.ConfigEntity;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.*;
 import reactor.function.TupleUtils;
@@ -20,7 +21,7 @@ public class ManCommand extends Command{
     private CommandHolder commandHolder;
 
     @Override
-    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction){
         String name = interaction.getOption(0)
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asString)
@@ -60,7 +61,8 @@ public class ManCommand extends Command{
 
                     builder.append(descriptionCategory).append("\n");
                     String description = messageService.get(env.context(),
-                            info.description() + "-full", info.description());
+                            info.description() + "-full",
+                            messageService.get(env.context(), info.description()));
                     builder.append(INDENT).append(description).append(SEPARATOR);
 
                     builder.append("```");

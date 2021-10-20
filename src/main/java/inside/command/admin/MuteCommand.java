@@ -6,6 +6,7 @@ import discord4j.core.object.entity.*;
 import discord4j.rest.util.Permission;
 import inside.command.CommandCategory;
 import inside.command.model.*;
+import org.reactivestreams.Publisher;
 import reactor.bool.BooleanUtils;
 import reactor.core.publisher.Mono;
 
@@ -21,7 +22,7 @@ import static reactor.function.TupleUtils.function;
         category = CommandCategory.admin)
 public class MuteCommand extends AdminCommand{
     @Override
-    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction){
         Member author = env.member();
 
         Optional<Snowflake> targetId = interaction.getOption("@user")

@@ -6,6 +6,7 @@ import inside.Settings;
 import inside.command.*;
 import inside.command.model.*;
 import inside.util.*;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.*;
 import reactor.math.MathFlux;
@@ -22,7 +23,7 @@ public class HelpCommand extends Command{
     private Settings settings;
 
     @Override
-    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction){
         Optional<String> category = interaction.getOption(0)
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asString)

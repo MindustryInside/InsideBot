@@ -8,6 +8,7 @@ import inside.command.model.*;
 import inside.data.entity.GuildConfig;
 import inside.util.Strings;
 import inside.util.io.ReusableByteInputStream;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -80,7 +81,7 @@ public class MathCommand extends Command{
     }
 
     @Override
-    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction){
         String text = interaction.getOption(0)
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asString)
@@ -109,7 +110,7 @@ public class MathCommand extends Command{
     }
 
     @Override
-    public Mono<Void> help(CommandEnvironment env, String prefix){
+    public Publisher<?> help(CommandEnvironment env, String prefix){
         return messageService.infoTitled(env, "command.help.title", "command.math.help",
                 GuildConfig.formatPrefix(prefix))
                 .then();

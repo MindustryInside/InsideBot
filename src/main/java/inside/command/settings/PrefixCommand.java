@@ -3,6 +3,7 @@ package inside.command.settings;
 import discord4j.core.object.entity.Member;
 import inside.command.CommandCategory;
 import inside.command.model.*;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -15,7 +16,7 @@ public class PrefixCommand extends OwnerCommand{
     private static final Pattern modePattern = Pattern.compile("^(add|remove|clear)$", Pattern.CASE_INSENSITIVE);
 
     @Override
-    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction){
         Member member = env.member();
 
         String mode = interaction.getOption(0)

@@ -6,6 +6,7 @@ import inside.command.model.*;
 import inside.scheduler.job.RemindJob;
 import inside.util.Try;
 import org.quartz.*;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import reactor.core.publisher.Mono;
@@ -21,7 +22,7 @@ public class RemindCommand extends Command{
     private SchedulerFactoryBean schedulerFactoryBean;
 
     @Override
-    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction){
         ZonedDateTime time = interaction.getOption(0)
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asDateTime)

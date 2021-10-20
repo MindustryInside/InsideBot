@@ -4,6 +4,7 @@ import discord4j.core.object.entity.Member;
 import inside.command.CommandCategory;
 import inside.command.model.*;
 import inside.util.*;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 import java.time.ZoneId;
@@ -15,7 +16,7 @@ import static inside.util.ContextUtil.KEY_TIMEZONE;
         category = CommandCategory.owner)
 public class TimeZoneCommand extends OwnerCommand{
     @Override
-    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction){
         Member member = env.member();
 
         boolean present = interaction.getOption(0).isPresent();

@@ -5,6 +5,7 @@ import discord4j.rest.util.*;
 import inside.command.Command;
 import inside.command.model.*;
 import inside.data.entity.GuildConfig;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 @DiscordCommand(key = "qpoll", params = "command.qpoll.params", description = "command.qpoll.description",
@@ -14,7 +15,7 @@ public class QuickPollCommand extends Command{
     public static final ReactionEmoji down = ReactionEmoji.unicode("\uD83D\uDC4E");
 
     @Override
-    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction){
         String text = interaction.getOption(0)
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asString)
@@ -27,7 +28,7 @@ public class QuickPollCommand extends Command{
     }
 
     @Override
-    public Mono<Void> help(CommandEnvironment env, String prefix){
+    public Publisher<?> help(CommandEnvironment env, String prefix){
         return messageService.infoTitled(env, "command.help.title", "command.qpoll.help",
                 GuildConfig.formatPrefix(prefix))
                 .then();

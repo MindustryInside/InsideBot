@@ -8,6 +8,7 @@ import inside.command.model.*;
 import inside.openweather.json.CurrentWeatherData;
 import inside.util.Lazy;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
@@ -29,7 +30,7 @@ public class WeatherCommand extends Command{
     private Settings settings;
 
     @Override
-    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction){
         String city = interaction.getOption(0)
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asString)

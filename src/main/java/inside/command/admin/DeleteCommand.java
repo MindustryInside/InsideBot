@@ -9,6 +9,7 @@ import inside.command.model.*;
 import inside.data.entity.GuildConfig;
 import inside.util.*;
 import inside.util.io.ReusableByteInputStream;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 
@@ -35,7 +36,7 @@ public class DeleteCommand extends AdminCommand{
     private AuditService auditService;
 
     @Override
-    public Mono<Void> execute(CommandEnvironment env, CommandInteraction interaction){
+    public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction){
         Member author = env.member();
 
         Optional<String> arg = interaction.getOption("count")
@@ -105,7 +106,7 @@ public class DeleteCommand extends AdminCommand{
     }
 
     @Override
-    public Mono<Void> help(CommandEnvironment env, String prefix){
+    public Publisher<?> help(CommandEnvironment env, String prefix){
         return messageService.infoTitled(env, "command.help.title", "command.admin.delete.help",
                 GuildConfig.formatPrefix(prefix))
                 .then();
