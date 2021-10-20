@@ -4,12 +4,13 @@ import discord4j.core.object.entity.*;
 import discord4j.rest.util.Permission;
 import inside.interaction.CommandEnvironment;
 import inside.interaction.chatinput.common.GuildCommand;
+import org.reactivestreams.Publisher;
 import reactor.bool.BooleanUtils;
 import reactor.core.publisher.Mono;
 
 public abstract class SettingsCommand extends GuildCommand{
     @Override
-    public Mono<Boolean> filter(CommandEnvironment env){
+    public Publisher<Boolean> filter(CommandEnvironment env){
         Member member = env.event().getInteraction().getMember().orElse(null);
         if(member == null){
             return Mono.just(false);
@@ -24,6 +25,6 @@ public abstract class SettingsCommand extends GuildCommand{
         Mono<Boolean> resp = BooleanUtils.or(isOwner, isGuildManager)
                 .filterWhen(bool -> bool ? Mono.just(true) : messageService.err(env, "command.owner-only").thenReturn(false));
 
-        return BooleanUtils.and(super.filter(env), resp);
+        return BooleanUtils.and(Mono.from(super.filter(env)), resp);
     }
 }

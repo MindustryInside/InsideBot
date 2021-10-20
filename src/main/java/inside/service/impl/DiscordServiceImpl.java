@@ -124,14 +124,16 @@ public class DiscordServiceImpl implements DiscordService{
     public Mono<Void> handleChatInputCommand(CommandEnvironment env){
         return Mono.justOrEmpty(chatInputCommandMap.get(env.event().getCommandName()))
                 .filterWhen(cmd -> cmd.filter(env))
-                .flatMap(cmd -> cmd.execute(env));
+                .flatMap(cmd -> Mono.from(cmd.execute(env)))
+                .then();
     }
 
     @Override
     public Mono<Void> handleUserCommand(UserEnvironment env){
         return Mono.justOrEmpty(userCommandMap.get(env.event().getCommandName()))
                 .filterWhen(cmd -> cmd.filter(env))
-                .flatMap(cmd -> cmd.execute(env));
+                .flatMap(cmd -> Mono.from(cmd.execute(env)))
+                .then();
     }
 
     @PreDestroy

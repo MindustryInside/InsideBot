@@ -5,6 +5,7 @@ import inside.data.service.EntityRetriever;
 import inside.interaction.UserEnvironment;
 import inside.interaction.annotation.UserCommand;
 import inside.service.MessageService;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 
@@ -18,12 +19,12 @@ public abstract class BaseUserInteractionCommand implements UserInteractionComma
     private final UserCommand metadata = getClass().getDeclaredAnnotation(UserCommand.class);
 
     @Override
-    public Mono<Boolean> filter(UserEnvironment env){
+    public Publisher<Boolean> filter(UserEnvironment env){
         return Mono.just(true);
     }
 
     @Override
-    public Mono<Void> execute(UserEnvironment env){
+    public Publisher<?> execute(UserEnvironment env){
         return Mono.empty();
     }
 

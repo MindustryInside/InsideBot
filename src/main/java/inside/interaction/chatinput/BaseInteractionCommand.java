@@ -7,6 +7,7 @@ import inside.interaction.*;
 import inside.interaction.annotation.*;
 import inside.service.MessageService;
 import inside.util.Preconditions;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 
@@ -24,12 +25,12 @@ public abstract class BaseInteractionCommand implements InteractionChatInputComm
     private final List<ApplicationCommandOptionData> options = new ArrayList<>();
 
     @Override
-    public Mono<Boolean> filter(CommandEnvironment env){
+    public Publisher<Boolean> filter(CommandEnvironment env){
         return Mono.just(true);
     }
 
     @Override
-    public Mono<Void> execute(CommandEnvironment env){
+    public Publisher<?> execute(CommandEnvironment env){
         return Mono.empty();
     }
 

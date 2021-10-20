@@ -10,6 +10,7 @@ import inside.interaction.*;
 import inside.interaction.annotation.*;
 import inside.interaction.chatinput.*;
 import inside.util.*;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -23,7 +24,7 @@ public class ReactionRolesCommand extends OwnerCommand{
     }
 
     @Override
-    public Mono<Void> execute(CommandEnvironment env){
+    public Publisher<?> execute(CommandEnvironment env){
         return super.execute(env);
     }
 
@@ -41,7 +42,7 @@ public class ReactionRolesCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env){
+        public Publisher<?> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -80,7 +81,7 @@ public class ReactionRolesCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env){
+        public Publisher<?> execute(CommandEnvironment env){
 
             //TODO: USE!
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
@@ -142,7 +143,7 @@ public class ReactionRolesCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env){
+        public Publisher<?> execute(CommandEnvironment env){
 
             //TODO: USE!
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
@@ -178,7 +179,7 @@ public class ReactionRolesCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env){
+        public Publisher<?> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 

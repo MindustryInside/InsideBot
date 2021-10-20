@@ -3,6 +3,7 @@ package inside.interaction.chatinput.settings;
 import discord4j.discordjson.json.ApplicationCommandOptionData;
 import inside.interaction.CommandEnvironment;
 import inside.interaction.chatinput.*;
+import org.reactivestreams.Publisher;
 import reactor.bool.BooleanUtils;
 import reactor.core.publisher.Mono;
 
@@ -32,18 +33,18 @@ public abstract class SubGroupOwnerCommand<T extends InteractionOwnerCommand>
     }
 
     @Override
-    public Mono<Void> execute(CommandEnvironment env){
+    public Publisher<?> execute(CommandEnvironment env){
         String commandName = env.event().getOptions().get(0).getOptions().get(0).getName();
-        return Mono.justOrEmpty(getSubCommand(commandName)).flatMap(subcmd -> subcmd.execute(env));
+        return Mono.justOrEmpty(getSubCommand(commandName)).flatMap(subcmd -> Mono.from(subcmd.execute(env)));
     }
 
     @Override
-    public Mono<Boolean> filter(CommandEnvironment env){
+    public Publisher<Boolean> filter(CommandEnvironment env){
         String commandName = env.event().getOptions().get(0).getOptions().get(0).getName();
         Mono<Boolean> isSubCommandFilter = Mono.justOrEmpty(getSubCommand(commandName))
-                .flatMap(subcmd -> subcmd.filter(env));
+                .flatMap(subcmd -> Mono.from(subcmd.filter(env)));
 
-        return BooleanUtils.and(super.filter(env), isSubCommandFilter);
+        return BooleanUtils.and(Mono.from(super.filter(env)), isSubCommandFilter);
     }
 
     @Override

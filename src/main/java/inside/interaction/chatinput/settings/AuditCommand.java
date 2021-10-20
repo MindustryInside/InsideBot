@@ -9,6 +9,7 @@ import inside.interaction.annotation.*;
 import inside.interaction.chatinput.*;
 import inside.util.DiscordUtil;
 import inside.util.func.BooleanFunction;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 import reactor.util.function.*;
 
@@ -36,7 +37,7 @@ public class AuditCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env){
+        public Publisher<?> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -71,7 +72,7 @@ public class AuditCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env){
+        public Publisher<?> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -108,7 +109,7 @@ public class AuditCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(CommandEnvironment env){
+            public Publisher<?> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -136,7 +137,7 @@ public class AuditCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(CommandEnvironment env){
+            public Publisher<?> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -184,7 +185,7 @@ public class AuditCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(CommandEnvironment env){
+            public Publisher<?> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -227,7 +228,7 @@ public class AuditCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(CommandEnvironment env){
+            public Publisher<?> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 

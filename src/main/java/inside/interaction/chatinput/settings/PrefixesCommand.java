@@ -6,6 +6,7 @@ import inside.annotation.Aware;
 import inside.interaction.*;
 import inside.interaction.annotation.*;
 import inside.interaction.chatinput.*;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
@@ -27,7 +28,7 @@ public class PrefixesCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env){
+        public Publisher<?> execute(CommandEnvironment env){
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             return entityRetriever.getGuildConfigById(guildId)
@@ -52,7 +53,7 @@ public class PrefixesCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env){
+        public Publisher<?> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -88,7 +89,7 @@ public class PrefixesCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env){
+        public Publisher<?> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -121,7 +122,7 @@ public class PrefixesCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env){
+        public Publisher<?> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 

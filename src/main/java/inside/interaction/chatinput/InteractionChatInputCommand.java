@@ -3,15 +3,16 @@ package inside.interaction.chatinput;
 import discord4j.core.object.command.ApplicationCommand;
 import discord4j.discordjson.json.ApplicationCommandOptionData;
 import inside.interaction.*;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
 
 public interface InteractionChatInputCommand extends InteractionCommand{
 
-    Mono<Boolean> filter(CommandEnvironment env);
+    Publisher<Boolean> filter(CommandEnvironment env);
 
-    Mono<Void> execute(CommandEnvironment env);
+    Publisher<?> execute(CommandEnvironment env);
 
     String getDescription();
 

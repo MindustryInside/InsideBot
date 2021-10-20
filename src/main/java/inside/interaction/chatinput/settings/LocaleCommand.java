@@ -4,6 +4,7 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.*;
 import inside.interaction.*;
 import inside.interaction.annotation.ChatInputCommand;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 import java.util.Locale;
@@ -23,7 +24,7 @@ public class LocaleCommand extends SettingsCommand{
     }
 
     @Override
-    public Mono<Void> execute(CommandEnvironment env){
+    public Publisher<?> execute(CommandEnvironment env){
 
         Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 

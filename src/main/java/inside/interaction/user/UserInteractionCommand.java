@@ -2,13 +2,14 @@ package inside.interaction.user;
 
 import discord4j.core.object.command.*;
 import inside.interaction.*;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 public interface UserInteractionCommand extends InteractionCommand{
 
-    Mono<Boolean> filter(UserEnvironment env);
+    Publisher<Boolean> filter(UserEnvironment env);
 
-    Mono<Void> execute(UserEnvironment env);
+    Publisher<?> execute(UserEnvironment env);
 
     @Override
     default ApplicationCommandOption.Type getType(){

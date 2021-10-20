@@ -3,6 +3,7 @@ package inside.interaction.chatinput.common;
 import inside.Settings;
 import inside.interaction.*;
 import inside.interaction.chatinput.BaseInteractionCommand;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 
@@ -11,7 +12,7 @@ public abstract class GuildCommand extends BaseInteractionCommand{
     protected Settings settings;
 
     @Override
-    public Mono<Boolean> filter(CommandEnvironment env){
+    public Publisher<Boolean> filter(CommandEnvironment env){
         if(env.event().getInteraction().getMember().isEmpty()){
             return messageService.err(env, "command.interaction.only-guild").thenReturn(false);
         }

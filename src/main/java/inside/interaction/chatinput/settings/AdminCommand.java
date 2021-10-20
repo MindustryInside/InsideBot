@@ -10,6 +10,7 @@ import inside.interaction.*;
 import inside.interaction.annotation.*;
 import inside.interaction.chatinput.*;
 import inside.util.*;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.*;
 
 import java.time.Duration;
@@ -38,7 +39,7 @@ public class AdminCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env){
+        public Publisher<?> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -71,7 +72,7 @@ public class AdminCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env){
+        public Publisher<?> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -111,7 +112,7 @@ public class AdminCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env){
+        public Publisher<?> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -145,7 +146,7 @@ public class AdminCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env){
+        public Publisher<?> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -197,7 +198,7 @@ public class AdminCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env){
+        public Publisher<?> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -237,7 +238,7 @@ public class AdminCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(CommandEnvironment env){
+            public Publisher<?> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -265,7 +266,7 @@ public class AdminCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(CommandEnvironment env){
+            public Publisher<?> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -309,7 +310,7 @@ public class AdminCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(CommandEnvironment env){
+            public Publisher<?> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -348,7 +349,7 @@ public class AdminCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(CommandEnvironment env){
+            public Publisher<?> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 

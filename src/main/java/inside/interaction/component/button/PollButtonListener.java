@@ -8,6 +8,7 @@ import inside.data.service.EntityRetriever;
 import inside.interaction.ButtonEnvironment;
 import inside.interaction.annotation.ComponentProvider;
 import inside.service.MessageService;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 
@@ -27,7 +28,7 @@ public class PollButtonListener implements ButtonListener{
     }
 
     @Override
-    public Mono<Void> handle(ButtonEnvironment env){
+    public Publisher<?> handle(ButtonEnvironment env){
         return entityRetriever.getPollById(env.event().getMessageId()).flatMap(poll -> {
             User user = env.event().getInteraction().getUser();
             if(poll.getAnswered().stream().anyMatch(p -> p.getUserId().equals(user.getId()))){

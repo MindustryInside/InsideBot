@@ -10,6 +10,7 @@ import inside.interaction.annotation.*;
 import inside.interaction.chatinput.*;
 import inside.util.*;
 import inside.util.func.BooleanFunction;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.*;
 
 import java.util.*;
@@ -36,7 +37,7 @@ public class StarboardCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env){
+        public Publisher<?> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -71,7 +72,7 @@ public class StarboardCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env){
+        public Publisher<?> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -115,7 +116,7 @@ public class StarboardCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(CommandEnvironment env){
+            public Publisher<?> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -154,7 +155,7 @@ public class StarboardCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(CommandEnvironment env){
+            public Publisher<?> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -212,7 +213,7 @@ public class StarboardCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(CommandEnvironment env){
+            public Publisher<?> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -281,7 +282,7 @@ public class StarboardCommand extends OwnerCommand{
             }
 
             @Override
-            public Mono<Void> execute(CommandEnvironment env){
+            public Publisher<?> execute(CommandEnvironment env){
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -308,7 +309,7 @@ public class StarboardCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env){
+        public Publisher<?> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
@@ -342,7 +343,7 @@ public class StarboardCommand extends OwnerCommand{
         }
 
         @Override
-        public Mono<Void> execute(CommandEnvironment env){
+        public Publisher<?> execute(CommandEnvironment env){
 
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 

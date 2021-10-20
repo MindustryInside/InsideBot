@@ -32,7 +32,7 @@ public class SearchSelectMenuListener implements SelectMenuListener{
     }
 
     @Override
-    public Mono<Void> handle(SelectMenuEnvironment env){
+    public Publisher<?> handle(SelectMenuEnvironment env){
         String[] parts = env.event().getCustomId().split("-"); // [ inside, search, 0 ]
         Snowflake authorId = Snowflake.of(parts[2]);
 

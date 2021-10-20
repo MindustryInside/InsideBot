@@ -5,6 +5,7 @@ import inside.Settings;
 import inside.interaction.UserEnvironment;
 import inside.interaction.annotation.UserCommand;
 import inside.interaction.user.*;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 
@@ -14,7 +15,7 @@ public class AvatarCommand extends BaseUserInteractionCommand{
     private Settings settings;
 
     @Override
-    public Mono<Void> execute(UserEnvironment env){
+    public Publisher<?> execute(UserEnvironment env){
         return Mono.justOrEmpty(env.event().getResolvedUser())
                 .flatMap(user -> messageService.info(env, "command.avatar.text", user.getUsername(), user.getMention())
                         .withEmbeds(EmbedCreateSpec.builder()

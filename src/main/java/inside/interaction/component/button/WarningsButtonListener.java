@@ -10,6 +10,7 @@ import inside.interaction.ButtonEnvironment;
 import inside.interaction.annotation.ComponentProvider;
 import inside.service.*;
 import inside.util.Mathf;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import reactor.core.publisher.Mono;
@@ -32,7 +33,7 @@ public class WarningsButtonListener implements ButtonListener{
     }
 
     @Override
-    public Mono<Void> handle(ButtonEnvironment env){
+    public Publisher<?> handle(ButtonEnvironment env){
         String[] parts = env.event().getCustomId().split("-");
         Snowflake authorId = Snowflake.of(parts[2]);
         Snowflake targetId = Snowflake.of(parts[3]);
