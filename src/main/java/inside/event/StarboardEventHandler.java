@@ -116,7 +116,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                     if(old == null){ // someone remove embed
                                         computeEmbed(context, source, guildId, embedSpec);
                                     }else{
-                                        updateEmbed(old, embedSpec);
+                                        updateEmbed(context, old, embedSpec);
                                     }
 
                                     embedSpec.color(lerp(offsetColor, targetColor, Mathf.round(count / 6f, lerpStep)));
@@ -223,7 +223,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                     if(old == null){ // someone remove embed
                                         computeEmbed(context, source, guildId, embedSpec);
                                     }else{
-                                        updateEmbed(old, embedSpec);
+                                        updateEmbed(context, old, embedSpec);
                                     }
 
                                     embedSpec.color(lerp(offsetColor, targetColor, Mathf.round(count / 6f, lerpStep)));
@@ -287,7 +287,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                 .findFirst().ifPresent(embedSpec::image);
     }
 
-    private void updateEmbed(Embed old, EmbedCreateSpec.Builder embedSpec){
+    private void updateEmbed(Context context, Embed old, EmbedCreateSpec.Builder embedSpec){
         old.getDescription().ifPresent(embedSpec::description);
         var embedAuthor = old.getAuthor().orElseThrow();
         embedSpec.author(embedAuthor.getName().orElseThrow(), null,
@@ -296,7 +296,12 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                 .map(field -> EmbedCreateFields.Field.of(field.getName(), field.getValue(), field.isInline()))
                 .collect(Collectors.toList()));
         embedSpec.footer(old.getFooter().map(footer -> EmbedCreateFields.Footer.of(
-                footer.getText(), footer.getIconUrl().orElse(null))).orElseThrow());
+                footer.getText(), footer.getIconUrl().orElse(null))).orElseGet(() ->
+                EmbedCreateFields.Footer.of(
+                        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
+                                .withLocale(context.get(KEY_LOCALE))
+                                .withZone(context.get(KEY_TIMEZONE))
+                                .format(Instant.now()), null))); // backward fix
 
         old.getImage().map(Embed.Image::getUrl).ifPresent(embedSpec::image);
     }
