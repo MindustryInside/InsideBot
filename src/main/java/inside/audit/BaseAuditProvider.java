@@ -84,7 +84,7 @@ public abstract class BaseAuditProvider implements AuditProvider{
 
     protected String getReferenceContent(ContextView context, Entity entity){
         return messageService.format(context, "audit.reference", formatName(entity),
-                (entity instanceof GuildChannel ? "<#" : "<@") + entity.getId() + ">");
+                (entity instanceof GuildChannel ? "<#" : "<@") + entity.getId().asString() + ">");
     }
 
     protected abstract void build(AuditActionBuilder action, ContextView context, EmbedCreateSpec.Builder embed);
