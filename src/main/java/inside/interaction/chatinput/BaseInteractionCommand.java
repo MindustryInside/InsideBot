@@ -90,13 +90,13 @@ public abstract class BaseInteractionCommand implements InteractionChatInputComm
             var chatInput = type.getAnnotation(ChatInputCommand.class);
             if(chatInput != null){
                 return new CommandMetadata(chatInput.name(), chatInput.description(),
-                        ApplicationCommandOption.Type.SUB_COMMAND_GROUP);
+                        ApplicationCommandOption.Type.UNKNOWN);
             }
 
             var subcommand = type.getAnnotation(Subcommand.class);
             if(subcommand != null){
                 return new CommandMetadata(subcommand.name(), subcommand.description(),
-                        ApplicationCommandOption.Type.SUB_COMMAND_GROUP);
+                        ApplicationCommandOption.Type.SUB_COMMAND);
             }
 
             var subcommandGroup = type.getAnnotation(SubcommandGroup.class);
