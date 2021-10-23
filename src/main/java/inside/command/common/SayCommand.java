@@ -26,7 +26,7 @@ public class SayCommand extends Command{
                 .orElse("");
 
         var atts = env.message().getAttachments();
-        if(!atts.isEmpty()){
+        if(atts.isEmpty()){
             return messageService.text(env, text);
         }
 
