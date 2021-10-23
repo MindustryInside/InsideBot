@@ -23,7 +23,7 @@ public class SayCommand extends Command{
         String text = interaction.getOption("text")
                 .flatMap(CommandOption::getValue)
                 .map(OptionValue::asString)
-                .orElseThrow();
+                .orElse("");
 
         var atts = env.message().getAttachments();
         if(!atts.isEmpty()){
