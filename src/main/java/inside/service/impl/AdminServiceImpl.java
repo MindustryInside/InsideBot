@@ -28,11 +28,8 @@ import static reactor.function.TupleUtils.function;
 public class AdminServiceImpl implements AdminService{
 
     private final AdminActionRepository repository;
-
     private final EntityRetriever entityRetriever;
-
     private final AuditService auditService;
-
     private final SchedulerFactoryBean schedulerFactoryBean;
 
     public AdminServiceImpl(@Autowired AdminActionRepository repository,
