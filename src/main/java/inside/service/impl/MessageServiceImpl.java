@@ -147,9 +147,7 @@ public class MessageServiceImpl implements MessageService{
 
     @Override
     public MessageCreateMono text(CommandEnvironment environment, String text, Object... args){
-        return environment.channel().createMessage(
-                text.isBlank() ? get(environment.context(), "message.placeholder")
-                        : format(environment.context(), text, args));
+        return environment.channel().createMessage(format(environment.context(), text, args));
     }
 
     @Override

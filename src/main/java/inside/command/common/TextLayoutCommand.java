@@ -44,7 +44,8 @@ public class TextLayoutCommand extends Command{
                 .map(OptionValue::asString)
                 .orElseThrow();
 
-        return messageService.text(env, en ? text2rus(text) : text2eng(text))
+        String res = en ? text2rus(text) : text2eng(text);
+        return messageService.text(env, res.isBlank() ? messageService.get(env.context(), "message.placeholder") : res)
                 .withMessageReference(env.message().getId())
                 .then();
     }

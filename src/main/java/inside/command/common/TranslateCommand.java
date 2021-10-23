@@ -73,6 +73,7 @@ public class TranslateCommand extends Command{
                         .map(single -> single.get("trans"))
                         .map(JsonNode::asText)))
                 .switchIfEmpty(messageService.err(env, "command.translate.incorrect-language").then(Mono.never()))
+                .map(str -> str.isBlank() ? messageService.get(env.context(), "message.placeholder") : str)
                 .flatMap(str -> messageService.text(env, str)
                         .withMessageReference(env.message().getId()))
                 .then();
