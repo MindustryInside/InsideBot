@@ -53,16 +53,24 @@ public abstract class MessageUtil{
         }
 
         var att = message.getAttachments();
+        var sti = message.getStickers();
+        if(!att.isEmpty() || !sti.isEmpty()){
+            builder.append("\n```\n");
+        }
+
         att.forEach(a -> builder.append("[")
                 .append(a.getFilename()).append(", ")
                 .append(a.getUrl()).append("]\n"));
 
-        var sti = message.getStickers();
         sti.forEach(s -> builder.append("[")
                 .append("id: ").append(s.getId().asString()).append(", ")
                 .append("pack Id: ").append(s.getPackId().asString()).append(", ")
                 .append("name: ")
                 .append(s.getName()).append("]\n"));
+
+        if(!att.isEmpty() || !sti.isEmpty()){
+            builder.append("```");
+        }
 
         return builder.toString();
     }
