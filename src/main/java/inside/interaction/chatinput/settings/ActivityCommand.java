@@ -25,9 +25,9 @@ public class ActivityCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "enable", description = "Enable activity system.")
-    public static class ActivityCommandEnable extends OwnerAwareCommand<ActivityCommand>{
+    public static class EnableSubcommand extends OwnerAwareCommand<ActivityCommand>{
 
-        protected ActivityCommandEnable(@Aware ActivityCommand owner){
+        protected EnableSubcommand(@Aware ActivityCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("value")
@@ -60,9 +60,9 @@ public class ActivityCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "active-user-role", description = "Configure active user role.")
-    public static class ActivityCommandActiveUserRole extends OwnerAwareCommand<ActivityCommand>{
+    public static class ActiveUserRoleSubcommand extends OwnerAwareCommand<ActivityCommand>{
 
-        protected ActivityCommandActiveUserRole(@Aware ActivityCommand owner){
+        protected ActiveUserRoleSubcommand(@Aware ActivityCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("value")
@@ -94,9 +94,9 @@ public class ActivityCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "message-barrier", description = "Configure message barrier.")
-    public static class ActivityCommandMessageBarrier extends OwnerAwareCommand<ActivityCommand>{
+    public static class MessageBarrierSubcommand extends OwnerAwareCommand<ActivityCommand>{
 
-        protected ActivityCommandMessageBarrier(@Aware ActivityCommand owner){
+        protected MessageBarrierSubcommand(@Aware ActivityCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("value")
@@ -132,9 +132,9 @@ public class ActivityCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "keep-counting-duration", description = "Configure keep counting duration.")
-    public static class ActivityCommandKeepCountingDuration extends OwnerAwareCommand<ActivityCommand>{
+    public static class KeepCountingDurationSubcommand extends OwnerAwareCommand<ActivityCommand>{
 
-        protected ActivityCommandKeepCountingDuration(@Aware ActivityCommand owner){
+        protected KeepCountingDurationSubcommand(@Aware ActivityCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("value")

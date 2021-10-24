@@ -28,9 +28,9 @@ public class AdminCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "warnings", description = "Configure max warnings count.")
-    public static class AdminCommandWarnings extends OwnerAwareCommand<AdminCommand>{
+    public static class WarningsSubcommand extends OwnerAwareCommand<AdminCommand>{
 
-        protected AdminCommandWarnings(@Aware AdminCommand owner){
+        protected WarningsSubcommand(@Aware AdminCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("value")
@@ -61,9 +61,9 @@ public class AdminCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "duration", description = "Configure default duration.")
-    public static class AdminCommandDuration extends OwnerAwareCommand<AdminCommand>{
+    public static class DurationSubcommand extends OwnerAwareCommand<AdminCommand>{
 
-        protected AdminCommandDuration(@Aware AdminCommand owner){
+        protected DurationSubcommand(@Aware AdminCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("value")
@@ -101,9 +101,9 @@ public class AdminCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "mute-role", description = "Configure mute role.")
-    public static class AdminCommandMuteRole extends OwnerAwareCommand<AdminCommand>{
+    public static class MuteRoleSubcommand extends OwnerAwareCommand<AdminCommand>{
 
-        protected AdminCommandMuteRole(@Aware AdminCommand owner){
+        protected MuteRoleSubcommand(@Aware AdminCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("value")
@@ -135,9 +135,9 @@ public class AdminCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "warn-duration", description = "Configure warn expire duration.")
-    public static class AdminCommandWarnDuration extends OwnerAwareCommand<AdminCommand>{
+    public static class WarnDurationSubcommand extends OwnerAwareCommand<AdminCommand>{
 
-        protected AdminCommandWarnDuration(@Aware AdminCommand owner){
+        protected WarnDurationSubcommand(@Aware AdminCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("value")
@@ -175,9 +175,9 @@ public class AdminCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "threshold-action", description = "Configure warn threshold action.")
-    public static class AdminCommandThresholdAction extends OwnerAwareCommand<AdminCommand>{
+    public static class ThresholdActionSubcommand extends OwnerAwareCommand<AdminCommand>{
 
-        protected AdminCommandThresholdAction(@Aware AdminCommand owner){
+        protected ThresholdActionSubcommand(@Aware AdminCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("value")
@@ -224,16 +224,16 @@ public class AdminCommand extends OwnerCommand{
     }
 
     @SubcommandGroup(name = "admin-roles", description = "Configure admin roles list.")
-    public static class AdminCommandAdminRoles extends SubGroupOwnerCommand<AdminCommand>{
+    public static class AdminRolesSubcommandGroup extends SubGroupOwnerCommand<AdminCommand>{
 
-        protected AdminCommandAdminRoles(@Aware AdminCommand owner, @Aware List<? extends InteractionOwnerAwareCommand<AdminCommandAdminRoles>> subcommands){
+        protected AdminRolesSubcommandGroup(@Aware AdminCommand owner, @Aware List<? extends InteractionOwnerAwareCommand<AdminRolesSubcommandGroup>> subcommands){
             super(owner, subcommands);
         }
 
         @Subcommand(name = "list", description = "Display current admin roles list.")
-        public static class AdminCommandAdminRolesList extends OwnerAwareCommand<AdminCommandAdminRoles>{
+        public static class AdminRolesListSubcommand extends OwnerAwareCommand<AdminRolesSubcommandGroup>{
 
-            protected AdminCommandAdminRolesList(@Aware AdminCommandAdminRoles owner){
+            protected AdminRolesListSubcommand(@Aware AdminRolesSubcommandGroup owner){
                 super(owner);
             }
 
@@ -254,9 +254,9 @@ public class AdminCommand extends OwnerCommand{
         }
 
         @Subcommand(name = "add", description = "Add admin role(s).")
-        public static class AdminCommandAdminRolesAdd extends OwnerAwareCommand<AdminCommandAdminRoles>{
+        public static class AdminRolesAddSubcommand extends OwnerAwareCommand<AdminRolesSubcommandGroup>{
 
-            protected AdminCommandAdminRolesAdd(@Aware AdminCommandAdminRoles owner){
+            protected AdminRolesAddSubcommand(@Aware AdminRolesSubcommandGroup owner){
                 super(owner);
 
                 addOption(builder -> builder.name("value")
@@ -298,9 +298,9 @@ public class AdminCommand extends OwnerCommand{
         }
 
         @Subcommand(name = "remove", description = "Remove admin role(s).")
-        public static class AdminCommandAdminRolesRemove extends OwnerAwareCommand<AdminCommandAdminRoles>{
+        public static class AdminRolesRemoveSubcommand extends OwnerAwareCommand<AdminRolesSubcommandGroup>{
 
-            protected AdminCommandAdminRolesRemove(@Aware AdminCommandAdminRoles owner){
+            protected AdminRolesRemoveSubcommand(@Aware AdminRolesSubcommandGroup owner){
                 super(owner);
 
                 addOption(builder -> builder.name("value")
@@ -342,9 +342,9 @@ public class AdminCommand extends OwnerCommand{
         }
 
         @Subcommand(name = "clear", description = "Remove all admin roles.")
-        public static class AdminCommandAdminRolesClear extends OwnerAwareCommand<AdminCommandAdminRoles>{
+        public static class AdminRolesClearSubcommand extends OwnerAwareCommand<AdminRolesSubcommandGroup>{
 
-            protected AdminCommandAdminRolesClear(@Aware AdminCommandAdminRoles owner){
+            protected AdminRolesClearSubcommand(@Aware AdminRolesSubcommandGroup owner){
                 super(owner);
             }
 

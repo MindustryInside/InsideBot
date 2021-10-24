@@ -26,9 +26,9 @@ public class StarboardCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "enable", description = "Enable starboard.")
-    public static class StarboardCommandEnable extends OwnerAwareCommand<StarboardCommand>{
+    public static class EnableSubcommand extends OwnerAwareCommand<StarboardCommand>{
 
-        protected StarboardCommandEnable(@Aware StarboardCommand owner){
+        protected EnableSubcommand(@Aware StarboardCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("value")
@@ -61,9 +61,9 @@ public class StarboardCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "barrier", description = "Configure the starboard barrier.")
-    public static class StarboardCommandBarrier extends OwnerAwareCommand<StarboardCommand>{
+    public static class BarrierSubcommand extends OwnerAwareCommand<StarboardCommand>{
 
-        protected StarboardCommandBarrier(@Aware StarboardCommand owner){
+        protected BarrierSubcommand(@Aware StarboardCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("value")
@@ -99,19 +99,19 @@ public class StarboardCommand extends OwnerCommand{
     }
 
     @SubcommandGroup(name = "emojis", description = "Configure starboard emojis.")
-    public static class StarboardCommandEmojis extends SubGroupOwnerCommand<StarboardCommand>{
+    public static class EmojisSubcommandGroup extends SubGroupOwnerCommand<StarboardCommand>{
 
         private static final Pattern unicode = Pattern.compile("[^\\p{L}\\p{N}\\p{P}\\p{Z}]", Pattern.UNICODE_CHARACTER_CLASS);
 
-        protected StarboardCommandEmojis(@Aware StarboardCommand owner,
-                                         @Aware List<? extends InteractionOwnerAwareCommand<StarboardCommandEmojis>> subcommands){
+        protected EmojisSubcommandGroup(@Aware StarboardCommand owner,
+                                        @Aware List<? extends InteractionOwnerAwareCommand<EmojisSubcommandGroup>> subcommands){
             super(owner, subcommands);
         }
 
         @Subcommand(name = "list", description = "Display current emoji list.")
-        public static class StarboardCommandEmojisHelp extends OwnerAwareCommand<StarboardCommandEmojis>{
+        public static class EmojisHelpSubcommand extends OwnerAwareCommand<EmojisSubcommandGroup>{
 
-            protected StarboardCommandEmojisHelp(@Aware StarboardCommandEmojis owner){
+            protected EmojisHelpSubcommand(@Aware EmojisSubcommandGroup owner){
                 super(owner);
             }
 
@@ -143,9 +143,9 @@ public class StarboardCommand extends OwnerCommand{
         }
 
         @Subcommand(name = "add", description = "Add emoji(s).")
-        public static class StarboardCommandEmojisAdd extends OwnerAwareCommand<StarboardCommandEmojis>{
+        public static class EmojisAddSubcommand extends OwnerAwareCommand<EmojisSubcommandGroup>{
 
-            protected StarboardCommandEmojisAdd(@Aware StarboardCommandEmojis owner){
+            protected EmojisAddSubcommand(@Aware EmojisSubcommandGroup owner){
                 super(owner);
 
                 addOption(builder -> builder.name("value")
@@ -199,11 +199,11 @@ public class StarboardCommand extends OwnerCommand{
         }
 
         @Subcommand(name = "remove", description = "Remove emoji(s).")
-        public static class StarboardCommandEmojisRemove extends OwnerAwareCommand<StarboardCommandEmojis>{
+        public static class EmojisRemoveSubcommand extends OwnerAwareCommand<EmojisSubcommandGroup>{
 
             private static final Pattern indexModePattern = Pattern.compile("^(#\\d+)$");
 
-            protected StarboardCommandEmojisRemove(@Aware StarboardCommandEmojis owner){
+            protected EmojisRemoveSubcommand(@Aware EmojisSubcommandGroup owner){
                 super(owner);
 
                 addOption(builder -> builder.name("value")
@@ -275,9 +275,9 @@ public class StarboardCommand extends OwnerCommand{
         }
 
         @Subcommand(name = "clear", description = "Remove all emojis.")
-        public static class StarboardCommandEmojisClear extends OwnerAwareCommand<StarboardCommandEmojis>{
+        public static class EmojisClearSubcommand extends OwnerAwareCommand<EmojisSubcommandGroup>{
 
-            protected StarboardCommandEmojisClear(@Aware StarboardCommandEmojis owner){
+            protected EmojisClearSubcommand(@Aware EmojisSubcommandGroup owner){
                 super(owner);
             }
 
@@ -298,9 +298,9 @@ public class StarboardCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "channel", description = "Configure starboard channel.")
-    public static class StarboardCommandChannel extends OwnerAwareCommand<StarboardCommand>{
+    public static class ChannelSubcommand extends OwnerAwareCommand<StarboardCommand>{
 
-        protected StarboardCommandChannel(@Aware StarboardCommand owner){
+        protected ChannelSubcommand(@Aware StarboardCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("value")
@@ -332,9 +332,9 @@ public class StarboardCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "self-starring", description = "Enable self starring.")
-    public static class StarboardCommandSelfStarring extends OwnerAwareCommand<StarboardCommand>{
+    public static class SelfStarringSubcommand extends OwnerAwareCommand<StarboardCommand>{
 
-        protected StarboardCommandSelfStarring(@Aware StarboardCommand owner){
+        protected SelfStarringSubcommand(@Aware StarboardCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("value")

@@ -25,12 +25,12 @@ public class CommandAliasCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "enable", description = "Enable command configuring.")
-    public static class CommandAliasCommandEnable extends OwnerAwareCommand<CommandAliasCommand>{
+    public static class EnableSubcommand extends OwnerAwareCommand<CommandAliasCommand>{
 
         @Autowired
         protected CommandHolder commandHolder;
 
-        protected CommandAliasCommandEnable(@Aware CommandAliasCommand owner){
+        protected EnableSubcommand(@Aware CommandAliasCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("name")
@@ -79,12 +79,12 @@ public class CommandAliasCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "list", description = "Display current command alias list.")
-    public static class CommandAliasCommandList extends OwnerAwareCommand<CommandAliasCommand>{
+    public static class ListSubcommand extends OwnerAwareCommand<CommandAliasCommand>{
 
         @Autowired
         protected CommandHolder commandHolder;
 
-        protected CommandAliasCommandList(@Aware CommandAliasCommand owner){
+        protected ListSubcommand(@Aware CommandAliasCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("name")
@@ -123,12 +123,12 @@ public class CommandAliasCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "add", description = "Add alias(s)")
-    public static class CommandAliasCommandAdd extends OwnerAwareCommand<CommandAliasCommand>{
+    public static class AddSubcommand extends OwnerAwareCommand<CommandAliasCommand>{
 
         @Autowired
         protected CommandHolder commandHolder;
 
-        protected CommandAliasCommandAdd(@Aware CommandAliasCommand owner){
+        protected AddSubcommand(@Aware CommandAliasCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("name")
@@ -179,12 +179,12 @@ public class CommandAliasCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "remove", description = "Remove alias(s).")
-    public static class CommandAliasCommandRemove extends OwnerAwareCommand<CommandAliasCommand>{
+    public static class RemoveSubcommand extends OwnerAwareCommand<CommandAliasCommand>{
 
         @Autowired
         protected CommandHolder commandHolder;
 
-        protected CommandAliasCommandRemove(@Aware CommandAliasCommand owner){
+        protected RemoveSubcommand(@Aware CommandAliasCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("name")
@@ -237,12 +237,12 @@ public class CommandAliasCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "clear", description = "Remove all aliases.")
-    public static class CommandAliasCommandClear extends OwnerAwareCommand<CommandAliasCommand>{
+    public static class ClearSubcommand extends OwnerAwareCommand<CommandAliasCommand>{
 
         @Autowired
         protected CommandHolder commandHolder;
 
-        protected CommandAliasCommandClear(@Aware CommandAliasCommand owner){
+        protected ClearSubcommand(@Aware CommandAliasCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("name")

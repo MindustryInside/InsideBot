@@ -26,9 +26,9 @@ public class AuditCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "enable", description = "Enable audit logging.")
-    public static class AuditCommandEnable extends OwnerAwareCommand<AuditCommand>{
+    public static class EnableSubcommand extends OwnerAwareCommand<AuditCommand>{
 
-        protected AuditCommandEnable(@Aware AuditCommand owner){
+        protected EnableSubcommand(@Aware AuditCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("value")
@@ -61,9 +61,9 @@ public class AuditCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "channel", description = "Configure log channel.")
-    public static class AuditCommandChannel extends OwnerAwareCommand<AuditCommand>{
+    public static class ChannelSubcommand extends OwnerAwareCommand<AuditCommand>{
 
-        protected AuditCommandChannel(@Aware AuditCommand owner){
+        protected ChannelSubcommand(@Aware AuditCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("value")
@@ -95,16 +95,16 @@ public class AuditCommand extends OwnerCommand{
     }
 
     @SubcommandGroup(name = "actions", description = "Configure audit actions.")
-    public static class AuditCommandActions extends SubGroupOwnerCommand<AuditCommand>{
+    public static class ActionsSubcommandGroup extends SubGroupOwnerCommand<AuditCommand>{
 
-        protected AuditCommandActions(@Aware AuditCommand owner, @Aware List<? extends InteractionOwnerAwareCommand<AuditCommandActions>> subcommands){
+        protected ActionsSubcommandGroup(@Aware AuditCommand owner, @Aware List<? extends InteractionOwnerAwareCommand<ActionsSubcommandGroup>> subcommands){
             super(owner, subcommands);
         }
 
         @Subcommand(name = "list", description = "Display current audit actions.")
-        public static class AuditCommandActionsList extends OwnerAwareCommand<AuditCommandActions>{
+        public static class ActionsListSubcommand extends OwnerAwareCommand<ActionsSubcommandGroup>{
 
-            protected AuditCommandActionsList(@Aware AuditCommandActions owner){
+            protected ActionsListSubcommand(@Aware ActionsSubcommandGroup owner){
                 super(owner);
             }
 
@@ -125,9 +125,9 @@ public class AuditCommand extends OwnerCommand{
         }
 
         @Subcommand(name = "add", description = "Add audit action(s).")
-        public static class AuditCommandActionsAdd extends OwnerAwareCommand<AuditCommandActions>{
+        public static class ActionsAddSubcommand extends OwnerAwareCommand<ActionsSubcommandGroup>{
 
-            protected AuditCommandActionsAdd(@Aware AuditCommandActions owner){
+            protected ActionsAddSubcommand(@Aware ActionsSubcommandGroup owner){
                 super(owner);
 
                 addOption(builder -> builder.name("value")
@@ -173,9 +173,9 @@ public class AuditCommand extends OwnerCommand{
         }
 
         @Subcommand(name = "remove", description = "Remove audit action(s).")
-        public static class AuditCommandActionsRemove extends OwnerAwareCommand<AuditCommandActions>{
+        public static class ActionsRemoveSubcommand extends OwnerAwareCommand<ActionsSubcommandGroup>{
 
-            protected AuditCommandActionsRemove(@Aware AuditCommandActions owner){
+            protected ActionsRemoveSubcommand(@Aware ActionsSubcommandGroup owner){
                 super(owner);
 
                 addOption(builder -> builder.name("value")
@@ -221,9 +221,9 @@ public class AuditCommand extends OwnerCommand{
         }
 
         @Subcommand(name = "clear", description = "Remove all audit actions.")
-        public static class AuditCommandActionsClear extends OwnerAwareCommand<AuditCommandActions>{
+        public static class ActionsClearSubcommand extends OwnerAwareCommand<ActionsSubcommandGroup>{
 
-            protected AuditCommandActionsClear(@Aware AuditCommandActions owner){
+            protected ActionsClearSubcommand(@Aware ActionsSubcommandGroup owner){
                 super(owner);
             }
 

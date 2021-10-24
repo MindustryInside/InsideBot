@@ -48,7 +48,7 @@ public abstract class MessageUtil{
         Objects.requireNonNull(message, "message");
 
         StringBuilder builder = new StringBuilder();
-        if(!Strings.isEmpty(message.getContent())){
+        if(!message.getContent().isBlank()){
             builder.append(message.getContent());
         }
 

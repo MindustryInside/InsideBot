@@ -121,6 +121,7 @@ public class MessageEventHandler extends ReactiveEventAdapter{
         return initContext.flatMap(context -> Mono.zip(updatedMessage, messageChannel, author)
                 .flatMap(function((message, channel, member) -> {
                     String newContent = MessageUtil.effectiveContent(message);
+
                     Mono<MessageInfo> messageInfo = entityRetriever.getMessageInfoById(event.getMessageId())
                             .switchIfEmpty(Mono.fromSupplier(() -> { // create if not stored
                                 MessageInfo info = new MessageInfo();

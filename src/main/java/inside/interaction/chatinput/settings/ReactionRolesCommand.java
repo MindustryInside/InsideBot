@@ -35,9 +35,9 @@ public class ReactionRolesCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "list", description = "Display current reaction roles.")
-    public static class ReactionRolesCommandList extends OwnerAwareCommand<ReactionRolesCommand>{
+    public static class ListSubcommand extends OwnerAwareCommand<ReactionRolesCommand>{
 
-        protected ReactionRolesCommandList(@Aware ReactionRolesCommand owner){
+        protected ListSubcommand(@Aware ReactionRolesCommand owner){
             super(owner);
         }
 
@@ -57,11 +57,11 @@ public class ReactionRolesCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "add", description = "Add reaction role.")
-    public static class ReactionRolesCommandAdd extends OwnerAwareCommand<ReactionRolesCommand>{
+    public static class AddSubcommand extends OwnerAwareCommand<ReactionRolesCommand>{
 
         private static final int MAX_REACTION_ROLE_COUNT = 20;
 
-        protected ReactionRolesCommandAdd(@Aware ReactionRolesCommand owner){
+        protected AddSubcommand(@Aware ReactionRolesCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("emoji")
@@ -126,9 +126,9 @@ public class ReactionRolesCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "remove", description = "Remove reaction role.")
-    public static class ReactionRolesCommandRemove extends OwnerAwareCommand<ReactionRolesCommand>{
+    public static class RemoveSubcommand extends OwnerAwareCommand<ReactionRolesCommand>{
 
-        protected ReactionRolesCommandRemove(@Aware ReactionRolesCommand owner){
+        protected RemoveSubcommand(@Aware ReactionRolesCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("message-id")
@@ -172,9 +172,9 @@ public class ReactionRolesCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "clear", description = "Remove all reaction roles.")
-    public static class ReactionRolesCommandClear extends OwnerAwareCommand<ReactionRolesCommand>{
+    public static class ClearSubcommand extends OwnerAwareCommand<ReactionRolesCommand>{
 
-        protected ReactionRolesCommandClear(@Aware ReactionRolesCommand owner){
+        protected ClearSubcommand(@Aware ReactionRolesCommand owner){
             super(owner);
         }
 

@@ -21,9 +21,9 @@ public class PrefixesCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "list", description = "Display current prefixes.")
-    public static class PrefixesCommandList extends OwnerAwareCommand<PrefixesCommand>{
+    public static class ListSubcommand extends OwnerAwareCommand<PrefixesCommand>{
 
-        protected PrefixesCommandList(@Aware PrefixesCommand owner){
+        protected ListSubcommand(@Aware PrefixesCommand owner){
             super(owner);
         }
 
@@ -41,9 +41,9 @@ public class PrefixesCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "add", description = "Add prefix(s)")
-    public static class PrefixesCommandAdd extends OwnerAwareCommand<PrefixesCommand>{
+    public static class AddSubcommand extends OwnerAwareCommand<PrefixesCommand>{
 
-        protected PrefixesCommandAdd(@Aware PrefixesCommand owner){
+        protected AddSubcommand(@Aware PrefixesCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("value")
@@ -77,9 +77,9 @@ public class PrefixesCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "remove", description = "Remove prefix(s).")
-    public static class PrefixesCommandRemove extends OwnerAwareCommand<PrefixesCommand>{
+    public static class RemoveSubcommand extends OwnerAwareCommand<PrefixesCommand>{
 
-        protected PrefixesCommandRemove(@Aware PrefixesCommand owner){
+        protected RemoveSubcommand(@Aware PrefixesCommand owner){
             super(owner);
 
             addOption(builder -> builder.name("value")
@@ -115,9 +115,9 @@ public class PrefixesCommand extends OwnerCommand{
     }
 
     @Subcommand(name = "clear", description = "Remove all prefixes")
-    public static class PrefixesCommandClear extends OwnerAwareCommand<PrefixesCommand>{
+    public static class ClearSubcommand extends OwnerAwareCommand<PrefixesCommand>{
 
-        protected PrefixesCommandClear(@Aware PrefixesCommand owner){
+        protected ClearSubcommand(@Aware PrefixesCommand owner){
             super(owner);
         }
 
