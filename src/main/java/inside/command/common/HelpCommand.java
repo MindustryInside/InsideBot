@@ -58,7 +58,7 @@ public class HelpCommand extends Command{
         var categoryFlux = Flux.fromIterable(categoryMap.entrySet())
                 .filterWhen(entry -> Flux.fromIterable(entry.getValue())
                         .filterWhen(e -> e.getKey().filter(env))
-                        .hasElements());
+                        .count().map(c -> c == entry.getValue().size()));
 
         Mono<Void> categories = categoryFlux.map(e -> String.format("• %s (`%s`)%n",
                         messageService.getEnum(env.context(), e.getKey()), e.getKey()))

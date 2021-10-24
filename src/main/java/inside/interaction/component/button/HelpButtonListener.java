@@ -3,6 +3,7 @@ package inside.interaction.component.button;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.*;
 import discord4j.core.object.entity.Member;
+import discord4j.core.object.entity.channel.GuildMessageChannel;
 import discord4j.core.spec.*;
 import inside.Settings;
 import inside.command.*;
@@ -42,38 +43,44 @@ public class HelpButtonListener implements ButtonListener{
             return messageService.err(env, messageService.get(env.context(), "message.foreign-interaction"));
         }
 
+        var categoryMap = commandHolder.getCommandInfoMap()
+                .entrySet().stream()
+                .collect(Collectors.groupingBy(e -> e.getValue().category()));
+
         if(parts[2].equals("back")){
-            var commandEnv = CommandEnvironment.builder()
-                    .context(env.context())
-                    .member(target)
-                    .message(env.event().getMessage().orElseThrow())
-                    .build();
+            return env.event().getInteraction().getChannel()
+                    .cast(GuildMessageChannel.class)
+                    .flatMap(channel -> {
 
-            var categoryMap = commandHolder.getCommandInfoMap()
-                    .entrySet().stream()
-                    .collect(Collectors.groupingBy(e -> e.getValue().category()));
+                        var commandEnv = CommandEnvironment.builder()
+                                .context(env.context())
+                                .member(target)
+                                .message(env.event().getMessage().orElseThrow())
+                                .channel(channel)
+                                .build();
 
-            return Flux.fromIterable(categoryMap.entrySet())
-                    .filterWhen(entry -> Flux.fromIterable(entry.getValue())
-                            .filterWhen(e -> e.getKey().filter(commandEnv))
-                            .hasElements())
-                    .map(e -> String.format("• %s (`%s`)%n",
-                            messageService.getEnum(env.context(), e.getKey()), e.getKey()))
-                    .collect(Collectors.joining())
-                    .map(s -> s.concat("\n").concat(messageService.get(env.context(), "command.help.disclaimer.get-list")))
-                    .flatMap(categoriesStr -> env.event().edit(InteractionApplicationCommandCallbackSpec.builder()
-                            .addEmbed(EmbedCreateSpec.builder()
-                                    .title(messageService.get(env.context(), "command.help"))
-                                    .description(categoriesStr)
-                                    .color(settings.getDefaults().getNormalColor())
-                                    .build())
-                            .addComponent(ActionRow.of(
-                                    Arrays.stream(CommandCategory.all)
-                                            .map(c -> Button.primary("inside-help-"
-                                                            + c.ordinal() + "-" + target.getId().asString(),
-                                                    messageService.getEnum(commandEnv.context(), c)))
-                                            .toList()))
-                            .build()));
+                        return Flux.fromIterable(categoryMap.entrySet())
+                                .filterWhen(entry -> Flux.fromIterable(entry.getValue())
+                                        .filterWhen(e -> e.getKey().filter(commandEnv))
+                                        .count().map(c -> c == entry.getValue().size()))
+                                .map(e -> String.format("• %s (`%s`)%n",
+                                        messageService.getEnum(env.context(), e.getKey()), e.getKey()))
+                                .collect(Collectors.joining())
+                                .map(s -> s.concat("\n").concat(messageService.get(env.context(), "command.help.disclaimer.get-list")))
+                                .flatMap(categoriesStr -> env.event().edit(InteractionApplicationCommandCallbackSpec.builder()
+                                        .addEmbed(EmbedCreateSpec.builder()
+                                                .title(messageService.get(env.context(), "command.help"))
+                                                .description(categoriesStr)
+                                                .color(settings.getDefaults().getNormalColor())
+                                                .build())
+                                        .addComponent(ActionRow.of(
+                                                Arrays.stream(CommandCategory.all)
+                                                        .map(c -> Button.primary("inside-help-"
+                                                                        + c.ordinal() + "-" + target.getId().asString(),
+                                                                messageService.getEnum(commandEnv.context(), c)))
+                                                        .toList()))
+                                        .build()));
+                    });
         }
 
         int ordinal = Integer.parseInt(parts[2]);
@@ -104,7 +111,8 @@ public class HelpButtonListener implements ButtonListener{
         return env.event().edit(InteractionApplicationCommandCallbackSpec.builder()
                 .addEmbed(EmbedCreateSpec.builder()
                         .title(messageService.getEnum(env.context(), category))
-                        .description(commandHolder.getCommandInfoMap().values().stream()
+                        .description(categoryMap.get(category).stream()
+                                .map(Map.Entry::getValue)
                                 .sorted((o1, o2) -> Arrays.compare(o1.key(), o2.key()))
                                 .collect(categoryCollector)
                                 .append(messageService.get(env.context(), "command.help.disclaimer.user")).append("\n")
