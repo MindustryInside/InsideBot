@@ -326,7 +326,7 @@ public class AuditProviders{
 
             embed.description(messageService.format(context, "audit.reaction.add.description",
                     getReferenceContent(context, action.getUser()), DiscordUtil.getEmojiString(emoji),
-                    action.getGuildId().asString(), action.getChannel().getId(), messageId.asString()));
+                    action.getGuildId().asString(), action.getChannel().getId().asString(), messageId.asString()));
 
             addTimestamp(context, action, embed);
         }
@@ -344,7 +344,7 @@ public class AuditProviders{
 
             embed.description(messageService.format(context, "audit.reaction.remove.description",
                     DiscordUtil.getEmojiString(emoji), getReferenceContent(context, action.getUser()),
-                    action.getGuildId().asString(), action.getChannel().getId(), messageId.asString()));
+                    action.getGuildId().asString(), action.getChannel().getId().asString(), messageId.asString()));
 
             addTimestamp(context, action, embed);
         }
@@ -360,7 +360,7 @@ public class AuditProviders{
             }
 
             embed.description(messageService.format(context, "audit.reaction.remove-all.description",
-                    action.getGuildId().asString(), action.getChannel().getId(), messageId.asString()));
+                    action.getGuildId().asString(), action.getChannel().getId().asString(), messageId.asString()));
 
             addTimestamp(context, action, embed);
         }
