@@ -16,7 +16,6 @@ public abstract class AuditActionBuilder{
     private final Snowflake guildId;
     private final AuditActionType type;
     private final Map<String, Object> attributes;
-    @Nullable
     private User user;
     @Nullable
     private User target;
@@ -32,27 +31,17 @@ public abstract class AuditActionBuilder{
         this.attributes = new HashMap<>(7);
     }
 
-    public AuditActionBuilder withUser(Member user){
-        this.user = user;
-        return this;
-    }
-
     public AuditActionBuilder withUser(User user){
-        this.user = user;
+        this.user = Objects.requireNonNull(user, "user");
         return this;
     }
 
-    public AuditActionBuilder withTargetUser(Member user){
+    public AuditActionBuilder withTargetUser(@Nullable User user){
         this.target = user;
         return this;
     }
 
-    public AuditActionBuilder withTargetUser(User user){
-        this.target = user;
-        return this;
-    }
-
-    public AuditActionBuilder withChannel(GuildChannel channel){
+    public AuditActionBuilder withChannel(@Nullable GuildChannel channel){
         this.channel = channel;
         return this;
     }
@@ -82,7 +71,6 @@ public abstract class AuditActionBuilder{
         return type;
     }
 
-    @Nullable
     public User getUser(){
         return user;
     }

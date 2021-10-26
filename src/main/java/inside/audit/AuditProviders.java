@@ -103,7 +103,7 @@ public class AuditProviders{
             embed.addField(messageService.get(context, "audit.message.channel"),
                     getReferenceContent(context, action.getChannel()), false);
 
-            if(!Objects.equals(action.getUser(), target)){
+            if(!action.getUser().equals(target)){
                 embed.addField(messageService.get(context, "audit.message.responsible-user"),
                         getReferenceContent(context, action.getUser()), false);
             }
