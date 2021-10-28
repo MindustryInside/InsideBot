@@ -88,8 +88,7 @@ public class PollCommand extends Command{
                         .build())
                 .withComponents(rows)
                 .flatMap(message -> entityRetriever.createPoll(env.member().getGuildId(),
-                        message.getId(), Arrays.asList(vars)))
-                .then();
+                        message.getId(), Arrays.asList(vars)));
     }
 
     @Override

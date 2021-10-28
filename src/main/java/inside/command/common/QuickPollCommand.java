@@ -29,8 +29,6 @@ public class QuickPollCommand extends Command{
 
     @Override
     public Publisher<?> help(CommandEnvironment env, String prefix){
-        return messageService.infoTitled(env, "command.help.title", "command.qpoll.help",
-                GuildConfig.formatPrefix(prefix))
-                .then();
+        return messageService.infoTitled(env, "command.help.title", "command.qpoll.help", GuildConfig.formatPrefix(prefix));
     }
 }

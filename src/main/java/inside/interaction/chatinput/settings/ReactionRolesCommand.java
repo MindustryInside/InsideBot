@@ -23,11 +23,6 @@ public class ReactionRolesCommand extends OwnerCommand{
         super(subcommands);
     }
 
-    @Override
-    public Publisher<?> execute(CommandEnvironment env){
-        return super.execute(env);
-    }
-
     private static String format(EmojiDispenser e){
         return String.format("%s -> %s (%s)\n",
                 e.getMessageId().asString(), DiscordUtil.getRoleMention(e.getRoleId()),

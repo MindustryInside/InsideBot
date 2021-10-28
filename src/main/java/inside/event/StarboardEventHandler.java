@@ -72,7 +72,9 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                     .filter(reaction -> emojis.contains(reaction.getEmoji()))
                                     .flatMap(r -> config.isSelfStarring() ? Mono.just((long)r.getCount()) :
                                             message.getReactors(r.getEmoji())
-                                                    .filter(u -> !u.getId().equals(event.getUserId()))
+                                                    .filter(u -> !message.getAuthor().map(User::getId)
+                                                            .map(id -> u.getId().equals(id))
+                                                            .orElse(false))
                                                     .count()))
                             .as(MathFlux::max)
                             .defaultIfEmpty(0L)
@@ -184,7 +186,9 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                     .filter(reaction -> emojis.contains(reaction.getEmoji()))
                                     .flatMap(r -> config.isSelfStarring() ? Mono.just((long)r.getCount()) :
                                             message.getReactors(r.getEmoji())
-                                                    .filter(u -> !u.getId().equals(event.getUserId()))
+                                                    .filter(u -> !message.getAuthor().map(User::getId)
+                                                            .map(id -> u.getId().equals(id))
+                                                            .orElse(false))
                                                     .count()))
                             .as(MathFlux::max)
                             .defaultIfEmpty(0L)
