@@ -1,6 +1,7 @@
 package inside.data.service.impl;
 
 import discord4j.core.spec.MessageCreateSpec;
+import discord4j.rest.util.AllowedMentions;
 import inside.Settings;
 import inside.data.entity.WelcomeMessage;
 import inside.data.repository.WelcomeMessageRepository;
@@ -12,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.PropertyPlaceholderHelper;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.Nullable;
+
+import java.util.Locale;
 
 @Service
 public class WelcomeMessageService extends BaseLongObjEntityService<WelcomeMessage, WelcomeMessageRepository>{
@@ -42,8 +45,17 @@ public class WelcomeMessageService extends BaseLongObjEntityService<WelcomeMessa
             var messageSpec = MessageCreateSpec.builder();
 
             String template = messageTemplate.template().getMessage();
-            messageSpec.content(helper.replacePlaceholders(template,
-                    MemberPlaceholderResolver.of(ctx, messageService, messageTemplate.member())));
+            String resolved = helper.replacePlaceholders(template,
+                    MemberPlaceholderResolver.of(ctx, messageService, messageTemplate.member()));
+            if(!resolved.isBlank()){
+                messageSpec.content(resolved);
+            }
+
+            if(template.toLowerCase(Locale.ROOT).contains("mention")){
+                messageSpec.allowedMentions(AllowedMentions.builder()
+                        .allowUser(messageTemplate.member().getId())
+                        .build());
+            }
 
             return Mono.just(messageSpec.build());
         });
