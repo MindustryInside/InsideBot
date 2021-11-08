@@ -13,7 +13,7 @@ public abstract class InteractionEnvironment{
 
     public abstract ContextView context();
 
-    public abstract InteractionCreateEvent event();
+    public abstract DeferrableInteractionEvent event();
 
     public GatewayDiscordClient getClient(){
         return event().getClient();

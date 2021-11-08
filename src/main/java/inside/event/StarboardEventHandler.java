@@ -30,7 +30,6 @@ import static reactor.function.TupleUtils.*;
 
 @Component
 public class StarboardEventHandler extends ReactiveEventAdapter{
-    private static final Duration fetchTimeout = Duration.ofSeconds(5);
     private static final Color offsetColor = Color.of(0xffefc0), targetColor = Color.of(0xdaa520);
     private static final float lerpStep = 1.0E-05f;
 
@@ -62,8 +61,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                             .map(ReactionEmoji::of)
                             .collect(Collectors.toList());
 
-                    // prevents recursive starboard
-                    if(!config.isEnabled() || channelId == null || !emojis.contains(emoji) || channelId.equals(event.getChannelId())){
+                    if(!config.isEnabled() || channelId == null || !emojis.contains(emoji)){
                         return Mono.empty();
                     }
 
@@ -86,8 +84,9 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                     Mono<Message> sourceMessage = event.getMessage();
 
                     return Mono.zip(emojiCount, starboardChannel, sourceMessage)
-                            .filter(predicate((count, channel, source) ->
-                                    source.getInteraction().isEmpty() && source.getWebhookId().isEmpty()))
+                            .filter(predicate((count, channel, source) -> source.getInteraction().isEmpty() &&
+                                    source.getWebhookId().isEmpty() &&
+                                    !isStarboard(source)))
                             .filter(predicate((count, channel, source) -> config.isSelfStarring()
                                     || source.getAuthor()
                                     .map(u -> !u.getId().equals(event.getUserId()))
@@ -98,9 +97,8 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                         .map(channel::getMessagesBefore).orElse(Flux.empty())
                                         .filter(m -> isStarboard(m, source))
                                         .next()
-                                        .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId())
-                                                .thenReturn(target))
-                                        .timeout(fetchTimeout, Mono.empty());
+                                        .flatMap(target -> entityRetriever.createStarboard(
+                                                guildId, source.getId(), target.getId()).thenReturn(target));
 
                                 Mono<Message> targetMessage = entityRetriever.getStarboardBySourceId(guildId, event.getMessageId())
                                         .flatMap(board -> channel.getMessageById(board.getTargetMessageId()))
@@ -177,7 +175,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                             .collect(Collectors.toList());
 
                     // prevents recursive starboard
-                    if(!config.isEnabled() || channelId == null || !emojis.contains(emoji) || channelId.equals(event.getChannelId())){
+                    if(!config.isEnabled() || channelId == null || !emojis.contains(emoji)){
                         return Mono.empty();
                     }
 
@@ -193,16 +191,20 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                             .as(MathFlux::max)
                             .defaultIfEmpty(0L)
                             .filter(l -> l >= config.getLowerStarBarrier());
+
                     Mono<GuildMessageChannel> starboardChannel = event.getClient().getChannelById(channelId)
                             .cast(GuildMessageChannel.class);
 
                     Mono<Message> sourceMessage = event.getMessage();
 
                     return Mono.zip(emojiCount, starboardChannel, sourceMessage)
+                            // interaction filter
                             .filter(predicate((count, channel, source) ->
-                                    source.getInteraction().isEmpty() && source.getWebhookId().isEmpty()))
-                            .filter(predicate((count, channel, source) -> config.isSelfStarring()
-                                    || source.getAuthor()
+                                    source.getInteraction().isEmpty() &&
+                                    source.getWebhookId().isEmpty() &&
+                                    !isStarboard(source))) // prevents recursive starboard
+                            // self-starring checks
+                            .filter(predicate((count, channel, source) -> config.isSelfStarring() || source.getAuthor()
                                     .map(u -> !u.getId().equals(event.getUserId()))
                                     .orElse(true)))
                             .flatMap(function((count, channel, source) -> {
@@ -211,9 +213,8 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
                                         .map(channel::getMessagesBefore).orElse(Flux.empty())
                                         .filter(m -> isStarboard(m, source))
                                         .next()
-                                        .flatMap(target -> entityRetriever.createStarboard(guildId, source.getId(), target.getId())
-                                                .thenReturn(target))
-                                        .timeout(fetchTimeout, Mono.empty());
+                                        .flatMap(target -> entityRetriever.createStarboard(
+                                                guildId, source.getId(), target.getId()).thenReturn(target));
 
                                 Mono<Message> targetMessage = entityRetriever.getStarboardBySourceId(guildId, event.getMessageId())
                                         .flatMap(board -> channel.getMessageById(board.getTargetMessageId()))
@@ -335,6 +336,17 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
         });
     }
 
+    private boolean isStarboard(Message message){
+        var embeds = message.getEmbeds();
+        if(embeds.size() != 1){
+            return false;
+        }
+
+        Embed embed = embeds.get(0);
+        var fields = embed.getFields();
+        return fields.size() >= 1 && embed.getFooter().isPresent() && fields.stream().noneMatch(Embed.Field::isInline);
+    }
+
     private boolean isStarboard(Message possibleTarget, Message source){
         List<Embed> embeds = possibleTarget.getEmbeds();
         if(embeds.size() != 1){
@@ -343,7 +355,8 @@ public class StarboardEventHandler extends ReactiveEventAdapter{
 
         List<Embed.Field> fields = embeds.get(0).getFields();
         String messageIdString = source.getId().asString();
-        return fields.size() >= 1 && fields.get(0).getValue().equals(messageIdString + ")");
+        return fields.size() >= 1 && fields.get(0).getValue().equals(messageIdString + ")") &&
+                embeds.get(0).getFooter().isPresent() && fields.stream().noneMatch(Embed.Field::isInline);
     }
 
     @Override

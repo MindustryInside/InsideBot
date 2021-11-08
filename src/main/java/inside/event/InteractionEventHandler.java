@@ -6,8 +6,6 @@ import discord4j.core.event.domain.interaction.*;
 import inside.Settings;
 import inside.data.service.EntityRetriever;
 import inside.interaction.*;
-import inside.interaction.annotation.ComponentProvider;
-import inside.interaction.component.*;
 import inside.interaction.component.button.ButtonListener;
 import inside.interaction.component.selectmenu.SelectMenuListener;
 import inside.service.*;

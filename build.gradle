@@ -1,5 +1,5 @@
 plugins{
-    id 'org.springframework.boot' version '2.5.4'
+    id 'org.springframework.boot' version '2.5.5'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'com.github.ben-manes.versions' version '0.38.0'
     id 'java-library'
@@ -13,7 +13,7 @@ ext{
     jackson_version = '2.12.5'
     d4j_json_version = '1.7.1-SNAPSHOT'
 
-    junit_version = '5.8.0'
+    junit_version = '5.8.1'
 }
 
 allprojects{
