@@ -22,6 +22,7 @@ import inside.data.service.EntityRetriever;
 import inside.interaction.*;
 import inside.interaction.chatinput.InteractionChatInputCommand;
 import inside.interaction.chatinput.common.GuildCommand;
+import inside.interaction.support.*;
 import inside.interaction.user.UserInteractionCommand;
 import inside.service.DiscordService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,15 +87,16 @@ public class DiscordServiceImpl implements DiscordService{
         long applicationId = gateway.rest().getApplicationId().blockOptional().orElse(0L);
 
         List<ApplicationCommandRequest> guildCommands = new ArrayList<>();
-        var commands0 = commands.stream()
+        var globalCommands = commands.stream()
                 .filter(cmd -> cmd.getType() == ApplicationCommandOption.Type.UNKNOWN)
                 .map(cmd -> {
                     var req = cmd.getRequest();
 
                     String name = req.name();
-                    switch(cmd.getCommandType()){
-                        case USER -> userCommandMap.put(name, (UserInteractionCommand)cmd);
-                        case CHAT_INPUT -> chatInputCommandMap.put(name, (InteractionChatInputCommand)cmd);
+                    if(cmd instanceof UserInteractionCommand u){
+                        userCommandMap.put(name, u);
+                    }else if(cmd instanceof InteractionChatInputCommand c){
+                        chatInputCommandMap.put(name, c);
                     }
 
                     if(cmd instanceof GuildCommand){
@@ -107,14 +109,14 @@ public class DiscordServiceImpl implements DiscordService{
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        gateway.rest().getApplicationService()
-                .bulkOverwriteGlobalApplicationCommand(applicationId, commands0)
+        GlobalCommandRegistrar.create(gateway.rest(), globalCommands)
+                .registerCommands()
                 .subscribe();
 
         gateway.rest().getGuilds()
-                .flatMap(data -> gateway.rest().getApplicationService()
-                        .bulkOverwriteGuildApplicationCommand(applicationId, data.id().asLong(),
-                                guildCommands))
+                .flatMap(data -> GuildCommandRegistrar.create(
+                        gateway.rest(), data.id().asLong(), guildCommands)
+                        .registerCommands())
                 .subscribe();
 
         gateway.on(ReactiveEventAdapter.from(adapters)).subscribe();
