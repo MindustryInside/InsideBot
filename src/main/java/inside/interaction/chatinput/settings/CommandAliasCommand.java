@@ -166,7 +166,7 @@ public class CommandAliasCommand extends OwnerCommand{
                     .flatMap(function((commandConfig, value) -> {
                         List<String> flags = new ArrayList<>(commandConfig.getAliases());
 
-                        String[] text = value.split("(\\s+)?,(\\s+)?");
+                        String[] text = value.split("\\s*,\\s*");
                         Collections.addAll(flags, text);
                         commandConfig.setAliases(flags); // because in the list may not implement add method
 
@@ -223,7 +223,7 @@ public class CommandAliasCommand extends OwnerCommand{
                         List<String> flags = new ArrayList<>(commandConfig.getAliases());
                         List<String> tmp = new ArrayList<>(flags);
 
-                        String[] text = value.split("(\\s+)?,(\\s+)?");
+                        String[] text = value.split("\\s*,\\s*");
                         flags.removeAll(Arrays.asList(text));
                         tmp.removeAll(flags);
                         commandConfig.setAliases(flags);

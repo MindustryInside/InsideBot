@@ -5,16 +5,16 @@ import discord4j.core.object.command.*;
 import discord4j.core.object.entity.GuildEmoji;
 import discord4j.discordjson.json.EmojiData;
 import inside.annotation.Aware;
-import inside.interaction.*;
+import inside.data.entity.StarboardConfig;
+import inside.interaction.CommandEnvironment;
 import inside.interaction.annotation.*;
-import inside.interaction.chatinput.*;
+import inside.interaction.chatinput.InteractionOwnerAwareCommand;
 import inside.util.*;
 import inside.util.func.BooleanFunction;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.*;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -120,25 +120,32 @@ public class StarboardCommand extends OwnerCommand{
 
                 Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
-                Function<List<EmojiData>, String> formatEmojis = emojis -> {
-                    StringBuilder builder = new StringBuilder();
-                    int lastnceil = 0;
-                    for(EmojiData data : emojis){
-                        builder.append(lastnceil).append("..").append(lastnceil + 5);
-                        builder.append(" - ");
-                        builder.append(DiscordUtil.getEmojiString(data));
-                        builder.append("\n");
-                        lastnceil += 5;
-                    }
-                    return builder.toString();
-                };
-
                 return entityRetriever.getStarboardConfigById(guildId)
                         .switchIfEmpty(entityRetriever.createStarboardConfig(guildId))
                         .flatMap(starboardConfig -> messageService.text(env, "command.settings.emojis.current",
                                 starboardConfig.getEmojis().isEmpty()
                                         ? "command.settings.absents"
-                                        : formatEmojis.apply(starboardConfig.getEmojis())));
+                                        : formatEmojis(starboardConfig)));
+            }
+
+            private static String formatEmojis(StarboardConfig config){
+                StringBuilder builder = new StringBuilder();
+                int lastnceil = 0;
+                boolean first = true;
+                int d = config.getLowerStarBarrier();
+                for(EmojiData data : config.getEmojis()){
+                    builder.append(lastnceil).append("..").append(lastnceil + d);
+                    builder.append(" - ");
+                    builder.append(DiscordUtil.getEmojiString(data));
+                    builder.append("\n");
+                    lastnceil += d;
+                    if(first){
+                        // TODO: customize period
+                        d = 5;
+                        first = false;
+                    }
+                }
+                return builder.toString();
             }
         }
 
@@ -167,7 +174,7 @@ public class StarboardCommand extends OwnerCommand{
                                     .map(ApplicationCommandInteractionOptionValue::asString)
                                     .orElseThrow();
 
-                            String[] text = value.split("(\\s+)?,(\\s+)?");
+                            String[] text = value.split("\\s*,\\s*");
                             return Flux.fromArray(text).flatMap(str -> env.getClient().getGuildEmojis(guildId)
                                             .filter(emoji -> emoji.asFormat().equals(str) || emoji.getName().equals(str) ||
                                                     emoji.getId().asString().equals(str))
@@ -243,7 +250,7 @@ public class StarboardCommand extends OwnerCommand{
                                         DiscordUtil.getEmojiString(data));
                             }
 
-                            String[] text = value.split("(\\s+)?,(\\s+)?");
+                            String[] text = value.split("\\s*,\\s*");
                             return Flux.fromArray(text).flatMap(str -> env.getClient().getGuildEmojis(guildId)
                                             .filter(emoji -> emoji.asFormat().equals(str) || emoji.getName().equals(str) ||
                                                     emoji.getId().asString().equals(str))

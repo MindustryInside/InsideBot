@@ -156,7 +156,7 @@ public class AuditCommand extends OwnerCommand{
                                     if(value.equalsIgnoreCase("all")){
                                         flags.addAll(all.stream().map(Tuple2::getT1).collect(Collectors.toSet()));
                                     }else{
-                                        String[] text = value.split("(\\s+)?,(\\s+)?");
+                                        String[] text = value.split("\\s*,\\s*");
                                         Arrays.stream(text).forEach(s -> all.stream()
                                                 .filter(predicate((type, str) -> str.equalsIgnoreCase(s)))
                                                 .findFirst()
@@ -202,7 +202,7 @@ public class AuditCommand extends OwnerCommand{
                                             .map(type -> Tuples.of(type, messageService.getEnum(env.context(), type)))
                                             .toList();
 
-                                    String[] text = value.split("(\\s+)?,(\\s+)?");
+                                    String[] text = value.split("\\s*,\\s*");
                                     Arrays.stream(text).forEach(s -> all.stream()
                                             .filter(predicate((type, str) -> str.equalsIgnoreCase(s)))
                                             .findFirst()

@@ -65,7 +65,7 @@ public class PrefixesCommand extends OwnerCommand{
                     .flatMap(function((guildConfig, value) -> {
                         List<String> flags = guildConfig.prefixes();
 
-                        String[] text = value.split("(\\s+)?,(\\s+)?");
+                        String[] text = value.split("\\s*,\\s*");
                         Collections.addAll(flags, text);
 
                         return messageService.text(env, "command.settings.added"
@@ -102,7 +102,7 @@ public class PrefixesCommand extends OwnerCommand{
                         List<String> flags = guildConfig.prefixes();
                         List<String> tmp = new ArrayList<>(flags);
 
-                        String[] text = value.split("(\\s+)?,(\\s+)?");
+                        String[] text = value.split("\\s*,\\s*");
                         flags.removeAll(Arrays.asList(text));
                         tmp.removeAll(flags);
 

@@ -277,7 +277,7 @@ public class AdminCommand extends OwnerCommand{
                                         .map(ApplicationCommandInteractionOptionValue::asString))
                                 .flatMap(value -> {
                                     Set<Snowflake> roleIds = Collections.synchronizedSet(adminConfig.getAdminRoleIds());
-                                    String[] text = value.split("(\\s+)?,(\\s+)?");
+                                    String[] text = value.split("\\s*,\\s*");
 
                                     return Flux.fromArray(text)
                                             .flatMap(str -> env.getClient()
@@ -321,7 +321,7 @@ public class AdminCommand extends OwnerCommand{
                                         .map(ApplicationCommandInteractionOptionValue::asString))
                                 .flatMap(value -> {
                                     Set<Snowflake> roleIds = adminConfig.getAdminRoleIds();
-                                    String[] text = value.split("(\\s+)?,(\\s+)?");
+                                    String[] text = value.split("\\s*,\\s*");
 
                                     return Flux.fromArray(text)
                                             .flatMap(str -> env.getClient()
