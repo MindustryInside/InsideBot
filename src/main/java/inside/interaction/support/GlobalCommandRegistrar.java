@@ -49,7 +49,7 @@ public class GlobalCommandRegistrar{
                         long existingCommandId = Snowflake.asLong(existingCommand.id());
                         if(commands.containsKey(existingCommand.name())){
                             var command = commands.get(existingCommand.name());
-                            if(isChanged(existingCommand, command)){
+                            if(RegistrarUtil.isChanged(existingCommand, command)){
                                 actions.add(modifyCommand(existingCommandId, command, updatedCount));
                             }
                         }else{
@@ -80,13 +80,6 @@ public class GlobalCommandRegistrar{
         return applicationId.flatMap(id -> restClient.getApplicationService()
                 .deleteGlobalApplicationCommand(id, commandId)
                 .doFinally(it -> counter.incrementAndGet()));
-    }
-
-    private boolean isChanged(ApplicationCommandData oldCommand, ApplicationCommandRequest newCommand){
-        return !oldCommand.type().toOptional().orElse(1).equals(newCommand.type().toOptional().orElse(1))
-                || !oldCommand.description().equals(newCommand.description().toOptional().orElse(""))
-                || !oldCommand.options().toOptional().orElse(List.of())
-                .equals(newCommand.options().toOptional().orElse(List.of()));
     }
 
     private Mono<Map<String, ApplicationCommandData>> getExistingCommands(){
