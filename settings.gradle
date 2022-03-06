@@ -1,6 +1,0 @@
-rootProject.name = 'InsideBot'
-
-if(file('src/legacy').exists()){
-    include 'legacy'
-    project(':legacy').projectDir = file('src/legacy')
-}
