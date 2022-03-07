@@ -21,6 +21,7 @@ import inside.data.EntityRetriever;
 import inside.data.entity.ImmutableStarboard;
 import inside.data.entity.ImmutableStarboardConfig;
 import inside.data.entity.base.ConfigEntity;
+import inside.service.MessageService;
 import inside.util.ContextUtil;
 import inside.util.Mathf;
 import inside.util.MessageUtil;
@@ -47,9 +48,11 @@ public class StarboardEventHandler extends ReactiveEventAdapter {
     private static final float lerpStep = 1.0E-05f;
 
     private final EntityRetriever entityRetriever;
+    private final MessageService messageService;
 
-    public StarboardEventHandler(EntityRetriever entityRetriever) {
+    public StarboardEventHandler(EntityRetriever entityRetriever, MessageService messageService) {
         this.entityRetriever = Objects.requireNonNull(entityRetriever, "entityRetriever");
+        this.messageService = Objects.requireNonNull(messageService, "messageService");
     }
 
     @Override
@@ -292,18 +295,18 @@ public class StarboardEventHandler extends ReactiveEventAdapter {
         return entityRetriever.deleteStarboardBySourceId(guildId, event.getMessageId());
     }
 
-    private void computeEmbed(Context context, Message source, Snowflake guildId, EmbedCreateSpec.Builder embedSpec) {
+    private void computeEmbed(Context ctx, Message source, Snowflake guildId, EmbedCreateSpec.Builder embedSpec) {
         var authorUser = source.getAuthor().orElseThrow();
         embedSpec.author(authorUser.getTag(), null, authorUser.getAvatarUrl());
 
         String content = MessageUtil.substringTo(source.getContent(), Embed.MAX_DESCRIPTION_LENGTH);
         embedSpec.description(content);
-        embedSpec.addField("Источник", "[Прыгнуть!](https://discordapp.com/channels/%s/%s/%s)".formatted(
+        embedSpec.addField(messageService.get(ctx, "starboard.source"), messageService.format(ctx, "starboard.jump",
                 guildId.asString(), source.getChannelId().asString(), source.getId().asString()), false);
 
         embedSpec.footer(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
-                .withLocale(context.get(ContextUtil.KEY_LOCALE))
-                .withZone(context.get(ContextUtil.KEY_TIMEZONE))
+                .withLocale(ctx.get(ContextUtil.KEY_LOCALE))
+                .withZone(ctx.get(ContextUtil.KEY_TIMEZONE))
                 .format(Instant.now()), null);
 
         var files = source.getAttachments().stream()
@@ -313,7 +316,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter {
                 .collect(Collectors.toSet());
 
         if (!files.isEmpty()) {
-            embedSpec.addField(files.size() == 1 ? "Вложение" : "Вложения", files.stream()
+            embedSpec.addField(messageService.get(ctx, "starboard.attachment" + (files.size() > 1 ? "s" : "")), files.stream()
                     .map(att -> String.format("[%s](%s)%n", att.getFilename(), att.getUrl()))
                     .collect(Collectors.joining()), false);
         }

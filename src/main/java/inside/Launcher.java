@@ -207,7 +207,7 @@ public class Launcher {
                             new InteractionEventHandler(configuration, interactionCommandHolder, interactionService, entityRetriever),
                             new MessageEventHandler(entityRetriever),
                             new ReactionRoleEventHandler(entityRetriever),
-                            new StarboardEventHandler(entityRetriever));
+                            new StarboardEventHandler(entityRetriever, messageService));
 
                     var cmds = interactionCommandHolder.getCommands().values();
                     List<ApplicationCommandRequest> globalCommands = new ArrayList<>();
