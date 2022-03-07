@@ -10,8 +10,8 @@ build/
 !gradle-wrapper.jar
 
 # Misc
+configuration.json
 *.bin
 logs/
-src/legacy/
 deploy
 tmp/

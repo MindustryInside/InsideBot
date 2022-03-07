@@ -1,0 +1,4 @@
+rootProject.name = 'InsideBot'
+
+include 'data'
+include 'core'

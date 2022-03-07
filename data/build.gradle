@@ -1,0 +1,10 @@
+dependencies{
+    implementation project(':core')
+
+    compileOnly "org.immutables:value:$immutables_version"
+    compileOnly "com.discord4j:discord-json-encoding:$d4j_json_version"
+
+    annotationProcessor "org.immutables:value:$immutables_version"
+    compileOnly "org.immutables:encode:$immutables_version"
+    compileOnly "javax.annotation:javax.annotation-api:$javax_annotation"
+}
