@@ -5,18 +5,21 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
-import discord4j.core.event.domain.interaction.ComponentInteractionEvent;
 import discord4j.core.event.domain.interaction.SelectMenuInteractionEvent;
 import inside.Configuration;
+import inside.data.EntityRetriever;
 import inside.interaction.ButtonInteractionEnvironment;
+import inside.interaction.ComponentInteractionEnvironment;
 import inside.interaction.SelectMenuInteractionEnvironment;
 import inside.interaction.component.ButtonListener;
 import inside.interaction.component.ComponentListener;
 import inside.interaction.component.SelectMenuListener;
+import inside.util.ContextUtil;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import reactor.function.TupleUtils;
+import reactor.util.context.Context;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
@@ -30,49 +33,67 @@ public class InteractionService extends BaseService {
 
     private final Configuration configuration;
     private final MessageService messageService;
+    private final EntityRetriever entityRetriever;
 
     private final ConcurrentMap<String, ComponentListener> componentListeners = new ConcurrentHashMap<>();
     private final Cache<String, Tuple2<Snowflake, ComponentListener>> componentInteractions;
 
-    public InteractionService(GatewayDiscordClient client, Configuration configuration, MessageService messageService) {
+    public InteractionService(GatewayDiscordClient client, Configuration configuration, MessageService messageService,
+                              EntityRetriever entityRetriever) {
         super(client);
         this.configuration = Objects.requireNonNull(configuration, "configuration");
         this.messageService = Objects.requireNonNull(messageService, "messageService");
+        this.entityRetriever = Objects.requireNonNull(entityRetriever, "entityRetriever");
         this.componentInteractions = Caffeine.newBuilder()
                 .expireAfterWrite(configuration.discord().awaitComponentTimeout())
                 .build();
     }
 
-    private Mono<ComponentListener> findComponentListener(ComponentInteractionEvent event) {
-        String customId = event.getCustomId();
+    private Mono<ComponentListener> findComponentListener(ComponentInteractionEnvironment env) {
+        String customId = env.event().getCustomId();
         if (!customId.startsWith(CUSTOM_ID_PREFIX)) {
             return Mono.empty();
         }
 
         return Mono.justOrEmpty(componentListeners.get(customId))
                 .switchIfEmpty(Mono.justOrEmpty(componentInteractions.getIfPresent(customId))
-                        .switchIfEmpty(messageService.err(event, "Это взаимодействие недоступно.\n" +
-                                "Вызовите команду повторно, чтобы начать новое.").then(Mono.never()))
-                        .filter(TupleUtils.predicate((userId, listener) -> userId.equals(event.getInteraction().getUser().getId())))
+                        .switchIfEmpty(messageService.err(env, "interaction.invalid").then(Mono.never()))
+                        .filter(TupleUtils.predicate((userId, listener) -> userId.equals(
+                                env.event().getInteraction().getUser().getId())))
                         .map(Tuple2::getT2)
-                        .switchIfEmpty(messageService.err(event, "Вы не можете участвовать в чужом взаимодействии.\n" +
-                                "Вызовите команду повторно, чтобы начать новое.").then(Mono.never())))
-                .switchIfEmpty(messageService.err(event, "Это взаимодействие недоступно.\n" +
-                        "Вызовите команду повторно, чтобы начать новое.").then(Mono.never()));
+                        .switchIfEmpty(messageService.err(env, "interaction.foreign").then(Mono.never())))
+                .switchIfEmpty(messageService.err(env, "interaction.invalid").then(Mono.never()));
     }
 
     public Publisher<?> handleButtonInteractionEvent(ButtonInteractionEvent event) {
-        return findComponentListener(event)
-                .cast(ButtonListener.class)
-                .flatMap(listener -> Mono.from(listener.handle(
-                        ButtonInteractionEnvironment.of(configuration, this, event))));
+        return Mono.justOrEmpty(event.getInteraction().getGuildId())
+                .flatMap(id -> entityRetriever.getGuildConfigById(id)
+                        .switchIfEmpty(entityRetriever.createGuildConfig(id)))
+                .map(config -> Context.of(ContextUtil.KEY_LOCALE, config.locale(),
+                        ContextUtil.KEY_TIMEZONE, config.timezone()))
+                .switchIfEmpty(Mono.fromSupplier(() -> Context.of(ContextUtil.KEY_LOCALE, configuration.discord().locale(),
+                        ContextUtil.KEY_TIMEZONE, configuration.discord().timezone())))
+                .map(ctx -> ButtonInteractionEnvironment.of(configuration, this, ctx, event))
+                .flatMap(env -> findComponentListener(env)
+                        .cast(ButtonListener.class)
+                        .flatMap(listener -> Mono.from(listener.handle(env)))
+                        .contextWrite(env.context()));
+
     }
 
     public Publisher<?> handleSelectMenuInteractionEvent(SelectMenuInteractionEvent event) {
-        return findComponentListener(event)
-                .cast(SelectMenuListener.class)
-                .flatMap(listener -> Mono.from(listener.handle(
-                        SelectMenuInteractionEnvironment.of(configuration, this, event))));
+        return Mono.justOrEmpty(event.getInteraction().getGuildId())
+                .flatMap(id -> entityRetriever.getGuildConfigById(id)
+                        .switchIfEmpty(entityRetriever.createGuildConfig(id)))
+                .map(config -> Context.of(ContextUtil.KEY_LOCALE, config.locale(),
+                        ContextUtil.KEY_TIMEZONE, config.timezone()))
+                .switchIfEmpty(Mono.fromSupplier(() -> Context.of(ContextUtil.KEY_LOCALE, configuration.discord().locale(),
+                        ContextUtil.KEY_TIMEZONE, configuration.discord().timezone())))
+                .map(ctx -> SelectMenuInteractionEnvironment.of(configuration, this, ctx, event))
+                .flatMap(env -> findComponentListener(env)
+                        .cast(SelectMenuListener.class)
+                        .flatMap(listener -> Mono.from(listener.handle(env)))
+                        .contextWrite(env.context()));
     }
 
     public void registerComponentListener(ComponentListener listener) {

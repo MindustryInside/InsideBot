@@ -49,7 +49,7 @@ public interface Configuration {
         }
 
         default Locale locale() {
-            return new Locale("ru", "RU");
+            return new Locale("ru");
         }
 
         @JsonProperty("await_component_timeout")

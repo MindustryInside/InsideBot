@@ -4,6 +4,7 @@ import discord4j.discordjson.json.ApplicationCommandOptionData;
 import inside.data.EntityRetriever;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.chatinput.InteractionCommand;
+import inside.service.MessageService;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
@@ -17,8 +18,8 @@ abstract class ConfigOwnerCommand extends InteractionConfigCommand {
 
     protected final Map<String, InteractionCommand> subcommands = new LinkedHashMap<>();
 
-    public ConfigOwnerCommand(EntityRetriever entityRetriever){
-        super(entityRetriever);
+    public ConfigOwnerCommand(MessageService messageService, EntityRetriever entityRetriever){
+        super(messageService, entityRetriever);
     }
 
     protected void addSubcommand(InteractionCommand subcommand){

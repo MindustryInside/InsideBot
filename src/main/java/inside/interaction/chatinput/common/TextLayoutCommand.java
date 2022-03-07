@@ -8,6 +8,7 @@ import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.annotation.ChatInputCommand;
 import inside.interaction.chatinput.InteractionCommand;
+import inside.service.MessageService;
 import inside.util.MessageUtil;
 import org.reactivestreams.Publisher;
 
@@ -37,7 +38,8 @@ public class TextLayoutCommand extends InteractionCommand {
         return text;
     }
 
-    public TextLayoutCommand() {
+    public TextLayoutCommand(MessageService messageService) {
+        super(messageService);
 
         addOption(builder -> builder.name("type")
                 .description("Тип раскладки c которой нужно переводить текст.")
@@ -72,6 +74,6 @@ public class TextLayoutCommand extends InteractionCommand {
                 .map(str -> russian ? text2eng(str) : text2rus(str))
                 .map(s -> MessageUtil.substringTo(s, Message.MAX_CONTENT_LENGTH))
                 .map(env.event()::reply)
-                .orElseGet(() -> err(env, "Не удалось перевести текст."));
+                .orElseGet(() -> messageService.err(env, "commands.common.translate-invalid"));
     }
 }

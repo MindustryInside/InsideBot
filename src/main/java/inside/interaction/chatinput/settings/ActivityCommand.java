@@ -9,6 +9,7 @@ import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.annotation.ChatInputCommand;
 import inside.interaction.annotation.Subcommand;
 import inside.interaction.chatinput.InteractionSubcommand;
+import inside.service.MessageService;
 import inside.util.DurationFormat;
 import inside.util.MessageUtil;
 import io.r2dbc.postgresql.codec.Interval;
@@ -21,8 +22,8 @@ import java.util.function.Function;
 @ChatInputCommand(name = "activity", description = "Настройки роли активного пользователя.")
 public class ActivityCommand extends ConfigOwnerCommand {
 
-    public ActivityCommand(EntityRetriever entityRetriever) {
-        super(entityRetriever);
+    public ActivityCommand(MessageService messageService, EntityRetriever entityRetriever) {
+        super(messageService, entityRetriever);
 
         addSubcommand(new EnableSubcommand(this));
         addSubcommand(new ActiveRoleSubcommand(this));
@@ -47,14 +48,14 @@ public class ActivityCommand extends ConfigOwnerCommand {
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             return owner.entityRetriever.getActivityConfigById(guildId)
-                    .switchIfEmpty(err(env, "Сначала измените настройки активности").then(Mono.never()))
+                    .switchIfEmpty(messageService.err(env, "commands.activity.enable.unconfigured").then(Mono.never()))
                     .flatMap(config -> Mono.justOrEmpty(env.getOption("value")
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asBoolean))
-                            .switchIfEmpty(text(env, "Выдача роли активного пользователя: **{0}**",
-                                    config.enabled() ? "включена" : "выключена").then(Mono.never()))
-                            .flatMap(state -> text(env, "Выдача роли активного пользователя: **{0}**",
-                                    state ? "включена" : "выключена")
+                            .switchIfEmpty(messageService.text(env, "commands.activity.enable.format",
+                                    messageService.getBool(env.context(), "commands.activity.enable", config.enabled())).then(Mono.never()))
+                            .flatMap(state -> messageService.text(env, "commands.activity.enable.format",
+                                            messageService.getBool(env.context(), "commands.activity.enable", state))
                                     .and(owner.entityRetriever.save(config.withEnabled(state)))));
         }
     }
@@ -81,11 +82,11 @@ public class ActivityCommand extends ConfigOwnerCommand {
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asSnowflake)
                                     .map(Snowflake::asLong))
-                            .switchIfEmpty(text(env, "Текущая роль активного пользователя: **{0}**",
-                                            config.roleId() == -1 ? "не установлена" :
+                            .switchIfEmpty(messageService.text(env, "commands.activity.active-role.current",
+                                            config.roleId() == -1 ? messageService.get(env.context(), "commands.activity.active-role.absent") :
                                             MessageUtil.getRoleMention(config.roleId()))
                                     .then(Mono.never()))
-                            .flatMap(roleId -> text(env, "Новая роль активного пользователя: {0}",
+                            .flatMap(roleId -> messageService.text(env, "commands.activity.active-role.update",
                                     MessageUtil.getRoleMention(roleId))
                                     .and(owner.entityRetriever.save(config.withRoleId(roleId)))));
         }
@@ -115,9 +116,10 @@ public class ActivityCommand extends ConfigOwnerCommand {
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asLong)
                                     .map(Math::toIntExact))
-                            .switchIfEmpty(text(env, "Текущий порог активности: **{0}**",
-                                    config.messageThreshold() == -1 ? "не установлен" : config.messageThreshold()).then(Mono.never()))
-                            .flatMap(l -> text(env, "Новый порог активности: **{0}**", l)
+                            .switchIfEmpty(messageService.text(env, "commands.activity.message-threshold.current", config.messageThreshold() == -1
+                                    ? messageService.get(env.context(), "commands.activity.message-threshold.absent")
+                                    : config.messageThreshold()).then(Mono.never()))
+                            .flatMap(l -> messageService.text(env, "commands.activity.message-threshold.update", l)
                                     .and(owner.entityRetriever.save(config.withMessageThreshold(l)))));
         }
     }
@@ -145,15 +147,15 @@ public class ActivityCommand extends ConfigOwnerCommand {
                     .flatMap(config -> Mono.justOrEmpty(env.getOption("value")
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asString))
-                            .switchIfEmpty(text(env, "Текущий период подсчёта активности: **{0}**",
+                            .switchIfEmpty(messageService.text(env, "commands.activity.counting-interval.current",
                                     formatDuration.apply(config.countingInterval())).then(Mono.never()))
                             .flatMap(str -> {
                                 Interval inter = MessageUtil.parseInterval(str);
                                 if (inter == null) {
-                                    return err(env, "Неправильный формат длительности");
+                                    return messageService.err(env, "commands.common.interval-invalid");
                                 }
 
-                                return text(env, "Новый период подсчёта активности: **{0}**", formatDuration.apply(inter))
+                                return messageService.text(env, "commands.activity.counting-interval.update", formatDuration.apply(inter))
                                         .and(owner.entityRetriever.save(config.withCountingInterval(inter)));
                             }));
         }

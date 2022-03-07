@@ -5,6 +5,7 @@ public abstract class InteractionSubcommand<T extends InteractionCommand> extend
     protected final T owner;
 
     protected InteractionSubcommand(T owner) {
+        super(owner.messageService);
         this.owner = owner;
     }
 

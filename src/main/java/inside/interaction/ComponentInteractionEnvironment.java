@@ -6,18 +6,24 @@ import discord4j.core.event.domain.interaction.SelectMenuInteractionEvent;
 import inside.annotation.EnvironmentStyle;
 import org.immutables.value.Value;
 
-@EnvironmentStyle
-@Value.Immutable
-interface ComponentInteractionEnvironmentDef<T extends ComponentInteractionEvent> extends InteractionEnvironment {
+public interface ComponentInteractionEnvironment extends InteractionEnvironment {
 
     @Override
-    T event();
+    ComponentInteractionEvent event();
 }
 
 @EnvironmentStyle
 @Value.Immutable
-interface ButtonInteractionEnvironmentDef extends ComponentInteractionEnvironmentDef<ButtonInteractionEvent> {}
+interface ButtonInteractionEnvironmentDef extends ComponentInteractionEnvironment {
+
+    @Override
+    ButtonInteractionEvent event();
+}
 
 @EnvironmentStyle
 @Value.Immutable
-interface SelectMenuInteractionEnvironmentDef extends ComponentInteractionEnvironmentDef<SelectMenuInteractionEvent> {}
+interface SelectMenuInteractionEnvironmentDef extends ComponentInteractionEnvironment {
+
+    @Override
+    SelectMenuInteractionEvent event();
+}

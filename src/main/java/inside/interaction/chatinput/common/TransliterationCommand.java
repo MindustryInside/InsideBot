@@ -7,6 +7,7 @@ import discord4j.core.object.entity.Message;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.annotation.ChatInputCommand;
 import inside.interaction.chatinput.InteractionCommand;
+import inside.service.MessageService;
 import inside.util.MessageUtil;
 import inside.util.Strings;
 import org.reactivestreams.Publisher;
@@ -68,7 +69,8 @@ public class TransliterationCommand extends InteractionCommand {
         return result.toString();
     }
 
-    public TransliterationCommand() {
+    public TransliterationCommand(MessageService messageService) {
+        super(messageService);
 
         addOption(builder -> builder.name("text")
                 .description("Текст на транслитерацию.")
@@ -85,6 +87,6 @@ public class TransliterationCommand extends InteractionCommand {
                 .filter(Predicate.not(String::isBlank))
                 .map(s -> MessageUtil.substringTo(s, Message.MAX_CONTENT_LENGTH))
                 .map(env.event()::reply)
-                .orElseGet(() -> err(env, "Не удалось перевести текст."));
+                .orElseGet(() -> messageService.err(env, "commands.common.translate-invalid"));
     }
 }

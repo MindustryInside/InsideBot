@@ -6,7 +6,11 @@ import discord4j.common.JacksonResources;
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.ReactiveEventAdapter;
+import discord4j.core.object.entity.Guild;
+import discord4j.discordjson.json.ApplicationCommandData;
+import discord4j.discordjson.json.ApplicationCommandPermissionsData;
 import discord4j.discordjson.json.ApplicationCommandRequest;
+import discord4j.discordjson.json.PartialGuildApplicationCommandPermissionsData;
 import discord4j.gateway.intent.Intent;
 import discord4j.gateway.intent.IntentSet;
 import discord4j.rest.http.client.ClientException;
@@ -36,6 +40,7 @@ import inside.interaction.chatinput.settings.StarboardCommand;
 import inside.service.InteractionService;
 import inside.service.MessageService;
 import inside.service.task.ActivityTask;
+import inside.util.ResourceMessageSource;
 import inside.util.func.UnsafeRunnable;
 import inside.util.json.AdapterModule;
 import io.r2dbc.pool.ConnectionPool;
@@ -47,7 +52,6 @@ import io.r2dbc.spi.R2dbcBadGrammarException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
-import reactor.function.TupleUtils;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 import sun.misc.Signal;
@@ -58,6 +62,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+
+import static reactor.function.TupleUtils.function;
 
 public class Launcher {
     public static final AllowedMentions suppressAll = AllowedMentions.suppressAll();
@@ -155,6 +161,7 @@ public class Launcher {
         var repositoryHolder = new RepositoryHolder(repositoryFactory);
 
         var entityRetriever = new CacheEntityRetriever(new EntityRetrieverImpl(configuration, repositoryHolder));
+        var messageSource = new ResourceMessageSource("bundle");
 
         DiscordClient.builder(configuration.token())
                 .onClientResponse(ResponseFunction.emptyIfNotFound())
@@ -176,25 +183,25 @@ public class Launcher {
 
                     // shard-aware resources
                     // services
-                    var messageService = new MessageService(gateway, configuration);
-                    var interactionService = new InteractionService(gateway, configuration, messageService);
+                    var messageService = new MessageService(gateway, configuration, messageSource);
+                    var interactionService = new InteractionService(gateway, configuration, messageService, entityRetriever);
 
                     var interactionCommandHolder = InteractionCommandHolder.builder()
                             // разное
-                            .addCommand(new MathCommand())
-                            .addCommand(new PingCommand())
-                            .addCommand(new AvatarCommand())
-                            .addCommand(new LeetSpeakCommand())
-                            .addCommand(new TextLayoutCommand())
-                            .addCommand(new TransliterationCommand())
+                            .addCommand(new MathCommand(messageService))
+                            .addCommand(new PingCommand(messageService))
+                            .addCommand(new AvatarCommand(messageService))
+                            .addCommand(new LeetSpeakCommand(messageService))
+                            .addCommand(new TextLayoutCommand(messageService))
+                            .addCommand(new TransliterationCommand(messageService))
                             // настройки
-                            .addCommand(new ActivityCommand(entityRetriever))
-                            .addCommand(new ReactionRolesCommand(entityRetriever))
-                            .addCommand(new StarboardCommand(entityRetriever))
+                            .addCommand(new ActivityCommand(messageService, entityRetriever))
+                            .addCommand(new ReactionRolesCommand(messageService, entityRetriever))
+                            .addCommand(new StarboardCommand(messageService, entityRetriever))
                             .build();
 
                     var handlers = ReactiveEventAdapter.from(
-                            new InteractionEventHandler(configuration, interactionCommandHolder, interactionService),
+                            new InteractionEventHandler(configuration, interactionCommandHolder, interactionService, entityRetriever),
                             new MessageEventHandler(entityRetriever),
                             new ReactionRoleEventHandler(entityRetriever),
                             new StarboardEventHandler(entityRetriever));
@@ -211,13 +218,17 @@ public class Launcher {
                     }
 
                     Mono<Void> registerCommands = Mono.zip(gateway.rest().getApplicationId(), Mono.just(globalCommands))
-                            .flatMapMany(TupleUtils.function((appId, glob) -> gateway.rest().getApplicationService()
+                            .flatMapMany(function((appId, glob) -> gateway.rest().getApplicationService()
                                     .bulkOverwriteGlobalApplicationCommand(appId, glob)))
                             .then(Mono.zip(gateway.rest().getApplicationId(), Mono.just(guildCommands))
-                                    .flatMapMany(TupleUtils.function((appId, guild) -> gateway.rest().getGuilds()
+                                    .flatMapMany(function((appId, guild) -> gateway.getGuilds()
                                             .flatMap(g -> gateway.rest().getApplicationService()
-                                                    .bulkOverwriteGuildApplicationCommand(appId, g.id().asLong(), guild))
-                                            .onErrorResume(e -> e instanceof ClientException, e -> Flux.empty())))
+                                                    .bulkOverwriteGuildApplicationCommand(appId, g.getId().asLong(), guild)
+                                                    .map(data -> createOwnerPermissions(g, data))
+                                                    .collectList()
+                                                    .flatMapMany(p -> gateway.rest().getApplicationService()
+                                                            .bulkModifyApplicationCommandPermissions(appId, g.getId().asLong(), p))
+                                                    .onErrorResume(e -> e instanceof ClientException, e -> Flux.empty()))))
                                     .then());
 
                     Mono<Void> registerEvents = gateway.on(handlers)
@@ -251,6 +262,24 @@ public class Launcher {
                     run(() -> System.exit(1));
                 }))
                 .block();
+    }
+
+    private static PartialGuildApplicationCommandPermissionsData createOwnerPermissions(Guild guild, ApplicationCommandData data){
+        return PartialGuildApplicationCommandPermissionsData.builder()
+                .id(data.id())
+                // разрешаем для владельца сервера
+                .addPermissions(ApplicationCommandPermissionsData.builder()
+                        .type(2)
+                        .id(guild.getOwnerId().asString())
+                        .permission(true)
+                        .build())
+                // запрещаем @everyone
+                .addPermissions(ApplicationCommandPermissionsData.builder()
+                        .type(1)
+                        .id(guild.getId().asString()) // NOTE: не забыть бы, что guild_id == @everyone роль
+                        .permission(false)
+                        .build())
+                .build();
     }
 
     private static void run(UnsafeRunnable runnable) {

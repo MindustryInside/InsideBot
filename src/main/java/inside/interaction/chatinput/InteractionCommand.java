@@ -1,8 +1,6 @@
 package inside.interaction.chatinput;
 
 import discord4j.core.object.command.ApplicationCommandOption;
-import discord4j.core.spec.EmbedCreateSpec;
-import discord4j.core.spec.InteractionApplicationCommandCallbackReplyMono;
 import discord4j.discordjson.json.ApplicationCommandOptionData;
 import discord4j.discordjson.json.ApplicationCommandRequest;
 import discord4j.discordjson.json.ImmutableApplicationCommandOptionData;
@@ -10,19 +8,25 @@ import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.annotation.ChatInputCommand;
 import inside.interaction.annotation.Subcommand;
 import inside.interaction.annotation.SubcommandGroup;
+import inside.service.MessageService;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public abstract class InteractionCommand {
 
     protected final CommandMetadata metadata = CommandMetadata.from(getClass());
+    protected final MessageService messageService;
 
     private final List<ApplicationCommandOptionData> options = new ArrayList<>();
+
+    protected InteractionCommand(MessageService messageService) {
+        this.messageService = Objects.requireNonNull(messageService, "messageService");
+    }
 
     public Publisher<?> execute(ChatInputInteractionEnvironment env) {
         return Mono.empty();
@@ -50,45 +54,6 @@ public abstract class InteractionCommand {
 
     public List<ApplicationCommandOptionData> getOptions() {
         return options;
-    }
-
-    protected InteractionApplicationCommandCallbackReplyMono infoTitled(ChatInputInteractionEnvironment env,
-                                                                        String title, String text, Object... values) {
-        return env.event().reply()
-                .withEmbeds(EmbedCreateSpec.builder()
-                        .title(title)
-                        .color(env.configuration().discord().embedColor())
-                        .description(MessageFormat.format(text, values))
-                        .build());
-    }
-
-    protected InteractionApplicationCommandCallbackReplyMono text(ChatInputInteractionEnvironment env, String text, Object... values) {
-        return env.event().reply(MessageFormat.format(text, values));
-    }
-
-    protected InteractionApplicationCommandCallbackReplyMono info(ChatInputInteractionEnvironment env, String text, Object... values) {
-        return env.event().reply()
-                .withEmbeds(EmbedCreateSpec.builder()
-                        .color(env.configuration().discord().embedColor())
-                        .description(MessageFormat.format(text, values))
-                        .build());
-    }
-
-    protected InteractionApplicationCommandCallbackReplyMono info(ChatInputInteractionEnvironment env, EmbedCreateSpec embedSpec) {
-        return env.event().reply()
-                .withEmbeds(EmbedCreateSpec.builder()
-                        .from(embedSpec)
-                        .color(embedSpec.colorOrElse(env.configuration().discord().embedColor()))
-                        .build());
-    }
-
-    protected InteractionApplicationCommandCallbackReplyMono err(ChatInputInteractionEnvironment env, String text, Object... values) {
-        return env.event().reply()
-                .withEphemeral(true)
-                .withEmbeds(EmbedCreateSpec.builder()
-                        .color(env.configuration().discord().embedErrorColor())
-                        .description(MessageFormat.format(text, values))
-                        .build());
     }
 
     protected void addOption(Consumer<? super ImmutableApplicationCommandOptionData.Builder> option) {

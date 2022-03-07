@@ -8,6 +8,7 @@ import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.annotation.ChatInputCommand;
 import inside.interaction.chatinput.InteractionCommand;
+import inside.service.MessageService;
 import inside.util.MessageUtil;
 import inside.util.Preconditions;
 import inside.util.Strings;
@@ -95,7 +96,8 @@ public class LeetSpeakCommand extends InteractionCommand {
         return result.toString();
     }
 
-    public LeetSpeakCommand() {
+    public LeetSpeakCommand(MessageService messageService) {
+        super(messageService);
 
         addOption(builder -> builder.name("type")
                 .description("Тип перевода.")
@@ -131,6 +133,6 @@ public class LeetSpeakCommand extends InteractionCommand {
                 .filter(Predicate.not(String::isBlank))
                 .map(s -> MessageUtil.substringTo(s, Message.MAX_CONTENT_LENGTH))
                 .map(env.event()::reply)
-                .orElseGet(() -> err(env, "Не удалось перевести текст."));
+                .orElseGet(() -> messageService.err(env, "commands.common.translate-invalid"));
     }
 }
