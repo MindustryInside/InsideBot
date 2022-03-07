@@ -32,9 +32,10 @@ import inside.event.ReactionRoleEventHandler;
 import inside.event.StarboardEventHandler;
 import inside.interaction.chatinput.InteractionCommand;
 import inside.interaction.chatinput.InteractionCommandHolder;
+import inside.interaction.chatinput.InteractionGuildCommand;
+import inside.interaction.chatinput.admin.DeleteCommand;
 import inside.interaction.chatinput.common.*;
 import inside.interaction.chatinput.settings.ActivityCommand;
-import inside.interaction.chatinput.settings.InteractionGuildCommand;
 import inside.interaction.chatinput.settings.ReactionRolesCommand;
 import inside.interaction.chatinput.settings.StarboardCommand;
 import inside.service.InteractionService;
@@ -198,6 +199,8 @@ public class Launcher {
                             .addCommand(new ActivityCommand(messageService, entityRetriever))
                             .addCommand(new ReactionRolesCommand(messageService, entityRetriever))
                             .addCommand(new StarboardCommand(messageService, entityRetriever))
+                            // админские
+                            .addCommand(new DeleteCommand(messageService))
                             .build();
 
                     var handlers = ReactiveEventAdapter.from(

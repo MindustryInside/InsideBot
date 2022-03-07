@@ -1,6 +1,5 @@
-package inside.interaction.chatinput.settings;
+package inside.interaction.chatinput;
 
-import inside.interaction.chatinput.InteractionCommand;
 import inside.service.MessageService;
 
 // Просто для маркирования

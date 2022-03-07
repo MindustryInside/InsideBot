@@ -10,13 +10,31 @@ import inside.util.ContextUtil;
 import inside.util.ResourceMessageSource;
 import reactor.util.context.ContextView;
 
-import java.util.Locale;
-import java.util.MissingResourceException;
-import java.util.Objects;
+import java.util.*;
+import java.util.regex.Pattern;
 
 public class MessageService extends BaseService {
 
     public static final ReactionEmoji ok = ReactionEmoji.unicode("✅"), failed = ReactionEmoji.unicode("❌");
+    public static final List<Locale> supportedLocaled = List.of(new Locale("ru"), new Locale("en"));
+    public static final Map<Locale, Map<String, Pattern>> pluralRules;
+
+    static {
+        pluralRules = Map.of(
+                supportedLocaled.get(0), Map.of(
+                        "zero", Pattern.compile("^\\d*0$"),
+                        "one", Pattern.compile("^(-?\\d*[^1])?1$"),
+                        "two", Pattern.compile("^(-?\\d*[^1])?2$"),
+                        "few", Pattern.compile("(^(-?\\d*[^1])?3)|(^(-?\\d*[^1])?4)$"),
+                        "many", Pattern.compile("^\\d+$")
+                ),
+                supportedLocaled.get(1), Map.of(
+                        "zero", Pattern.compile("^0$"),
+                        "one", Pattern.compile("^1$"),
+                        "other", Pattern.compile("^\\d+$")
+                )
+        );
+    }
 
     private final Configuration configuration;
     private final ResourceMessageSource messageSource;
@@ -84,5 +102,22 @@ public class MessageService extends BaseService {
                 return key;
             }
         }
+    }
+
+    public String getPluralized(ContextView ctx, String key, long count){
+        String code = key + '.' + getCount0(ctx.get(ContextUtil.KEY_LOCALE), count);
+        return get(ctx, code);
+    }
+
+    private String getCount0(Locale locale, long value){
+        String str = String.valueOf(value);
+        var rules = pluralRules.getOrDefault(locale,
+                pluralRules.get(configuration.discord().locale()));
+
+        return rules.entrySet().stream()
+                .filter(plural -> plural.getValue().matcher(str).find())
+                .findFirst()
+                .map(Map.Entry::getKey)
+                .orElse("other");
     }
 }

@@ -1,6 +1,7 @@
 package inside.interaction.chatinput.settings;
 
 import inside.data.EntityRetriever;
+import inside.interaction.chatinput.InteractionGuildCommand;
 import inside.service.MessageService;
 
 import java.util.Objects;

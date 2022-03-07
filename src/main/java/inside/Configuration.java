@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import discord4j.rest.util.Color;
+import inside.service.MessageService;
 import org.immutables.value.Value;
 
 import java.time.Duration;
@@ -49,7 +50,7 @@ public interface Configuration {
         }
 
         default Locale locale() {
-            return new Locale("ru");
+            return MessageService.supportedLocaled.get(0);
         }
 
         @JsonProperty("await_component_timeout")
