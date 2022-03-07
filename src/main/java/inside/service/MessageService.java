@@ -88,8 +88,7 @@ public class MessageService extends BaseService {
     }
 
     public String getEnum(ContextView ctx, Enum<?> cnts) {
-        String key = cnts.getClass().getCanonicalName() + '.' + cnts.name();
-        return get(ctx, key.toLowerCase(Locale.ROOT));
+        return get(ctx, cnts.getClass().getCanonicalName() + '.' + cnts.name());
     }
 
     public String format(ContextView ctx, String key, Object... args) {

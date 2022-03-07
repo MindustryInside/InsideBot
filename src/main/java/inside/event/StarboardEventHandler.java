@@ -34,16 +34,21 @@ import reactor.util.context.Context;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static discord4j.core.object.entity.Message.Type.*;
 import static reactor.function.TupleUtils.function;
 import static reactor.function.TupleUtils.predicate;
 
 public class StarboardEventHandler extends ReactiveEventAdapter {
+    private static final EnumSet<Message.Type> representableTypes = EnumSet.of(GUILD_MEMBER_JOIN,
+            USER_PREMIUM_GUILD_SUBSCRIPTION_TIER_1, USER_PREMIUM_GUILD_SUBSCRIPTION_TIER_2,
+            USER_PREMIUM_GUILD_SUBSCRIPTION_TIER_3);
     private static final Color offsetColor = Color.of(0xffefc0), targetColor = Color.of(0xdaa520);
     private static final float lerpStep = 1.0E-05f;
 
@@ -300,6 +305,10 @@ public class StarboardEventHandler extends ReactiveEventAdapter {
         embedSpec.author(authorUser.getTag(), null, authorUser.getAvatarUrl());
 
         String content = MessageUtil.substringTo(source.getContent(), Embed.MAX_DESCRIPTION_LENGTH);
+        if (content.isBlank() && representableTypes.contains(source.getType())) {
+            content = messageService.getEnum(ctx, source.getType());
+        }
+
         embedSpec.description(content);
         embedSpec.addField(messageService.get(ctx, "starboard.source"), messageService.format(ctx, "starboard.jump",
                 guildId.asString(), source.getChannelId().asString(), source.getId().asString()), false);
