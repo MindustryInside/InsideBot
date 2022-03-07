@@ -36,6 +36,7 @@ import inside.interaction.chatinput.InteractionGuildCommand;
 import inside.interaction.chatinput.admin.DeleteCommand;
 import inside.interaction.chatinput.common.*;
 import inside.interaction.chatinput.settings.ActivityCommand;
+import inside.interaction.chatinput.settings.GuildConfigCommand;
 import inside.interaction.chatinput.settings.ReactionRolesCommand;
 import inside.interaction.chatinput.settings.StarboardCommand;
 import inside.service.InteractionService;
@@ -199,6 +200,7 @@ public class Launcher {
                             .addCommand(new ActivityCommand(messageService, entityRetriever))
                             .addCommand(new ReactionRolesCommand(messageService, entityRetriever))
                             .addCommand(new StarboardCommand(messageService, entityRetriever))
+                            .addCommand(new GuildConfigCommand(messageService, entityRetriever))
                             // админские
                             .addCommand(new DeleteCommand(messageService))
                             .build();

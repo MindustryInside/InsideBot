@@ -284,7 +284,8 @@ public class StarboardEventHandler extends ReactiveEventAdapter {
         return entityRetriever.getStarboardConfigById(guildId)
                 .filter(ConfigEntity::enabled)
                 .flatMap(config -> entityRetriever.getStarboardById(guildId, event.getMessageId())
-                        .flatMap(board -> event.getClient().getMessageById(Snowflake.of(board.targetMessageId()), Snowflake.of(board.targetMessageId()))
+                        .flatMap(board -> event.getClient().getMessageById(Snowflake.of(board.targetMessageId()),
+                                        Snowflake.of(board.targetMessageId()))
                                 .flatMap(Message::delete)
                                 .then(entityRetriever.delete(board))));
     }
