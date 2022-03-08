@@ -52,10 +52,20 @@ public class CacheEntityRetriever implements EntityRetriever {
     }
 
     @Override
+    public Mono<Tuple2<Long, ImmutableActivity>> getPositionAndActivityById(Snowflake guildId, Snowflake userId) {
+        return delegate.getPositionAndActivityById(guildId, userId);
+    }
+
+    @Override
     public Mono<ImmutableActivity> getActivityById(Snowflake guildId, Snowflake userId) {
         return Mono.fromSupplier(() -> activities.getIfPresent(Tuples.of(guildId.asLong(), userId.asLong())))
                 .switchIfEmpty(delegate.getActivityById(guildId, userId)
                         .doOnNext(v -> activities.put(Tuples.of(v.guildId(), v.userId()), v)));
+    }
+
+    @Override
+    public Mono<Long> activityCountInGuild(Snowflake guildId) {
+        return delegate.activityCountInGuild(guildId);
     }
 
     @Override

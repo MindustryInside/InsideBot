@@ -1,5 +1,7 @@
 package inside.interaction.annotation;
 
+import inside.interaction.PermissionCategory;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -12,4 +14,6 @@ public @interface ChatInputCommand {
     String name();
 
     String description();
+
+    PermissionCategory[] permissions() default {PermissionCategory.EVERYONE};
 }

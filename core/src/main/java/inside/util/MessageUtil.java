@@ -2,7 +2,9 @@ package inside.util;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.reaction.ReactionEmoji;
-import discord4j.core.spec.*;
+import discord4j.core.spec.InteractionFollowupCreateSpec;
+import discord4j.core.spec.InteractionReplyEditSpec;
+import discord4j.core.spec.MessageCreateSpec;
 import discord4j.discordjson.json.EmojiData;
 import io.r2dbc.postgresql.codec.Interval;
 import reactor.core.Exceptions;
@@ -69,13 +71,6 @@ public abstract class MessageUtil {
         return "<@!" + id.asString() + ">";
     }
 
-    public static String toStringEmoji(ReactionEmoji emoji) {
-        return emoji.asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
-                .orElseGet(() -> emoji.asCustomEmoji()
-                        .map(ReactionEmoji.Custom::asFormat)
-                        .orElseThrow());
-    }
-
     public static String getRoleMention(Snowflake id) {
         return "<@&" + id.asString() + ">";
     }
@@ -84,24 +79,12 @@ public abstract class MessageUtil {
         return "<@&" + Snowflake.asString(id) + ">";
     }
 
-    public static MessageEditSpec toMessageEditSpec(MessageCreateSpec spec) {
-        return MessageEditSpec.builder()
-                .contentOrNull(spec.content().toOptional().orElse(null))
-                .embedsOrNull(spec.embeds().toOptional().orElse(null))
-                .componentsOrNull(spec.components().toOptional().orElse(null))
-                .allowedMentionsOrNull(spec.allowedMentions().toOptional().orElse(null))
-                .files(spec.files())
-                .fileSpoilers(spec.fileSpoilers())
-                .build();
+    public static String getChannelMention(long id) {
+        return "<#" + Snowflake.asString(id) + ">";
     }
 
-    public static InteractionApplicationCommandCallbackSpec toCallbackSpec(MessageCreateSpec spec) {
-        return InteractionApplicationCommandCallbackSpec.builder()
-                .content(spec.content())
-                .embeds(spec.embeds())
-                .components(spec.components())
-                .allowedMentions(spec.allowedMentions())
-                .build();
+    public static String getChannelMention(Snowflake id) {
+        return "<#" + id.asString() + ">";
     }
 
     public static InteractionFollowupCreateSpec toFollowupCreateSpec(MessageCreateSpec spec) {
@@ -127,14 +110,7 @@ public abstract class MessageUtil {
                 .build();
     }
 
-    public static String getChannelMention(long id) {
-        return "<#" + Snowflake.asString(id) + ">";
-    }
-
-    public static String getChannelMention(Snowflake id) {
-        return "<#" + id.asString() + ">";
-    }
-
+    @Nullable
     public static Interval parseInterval(String text) {
         try {
             text = text.trim();
@@ -144,7 +120,7 @@ public abstract class MessageUtil {
                 return tryDef;
             }
 
-            // Скопировано с Interval#parse, но поддерживает русский язык в названиях единицах измерения
+            // Скопировано с Interval#parse, но поддерживает русский язык в названиях единиц измерения
             int years = 0;
             int months = 0;
             int days = 0;
@@ -197,6 +173,7 @@ public abstract class MessageUtil {
 
             return Interval.of(years, months, days, hours, minutes, seconds);
         } catch (Throwable t) {
+            Exceptions.throwIfJvmFatal(t);
             return null;
         }
     }

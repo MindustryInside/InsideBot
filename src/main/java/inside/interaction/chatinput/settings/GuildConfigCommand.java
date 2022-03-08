@@ -7,6 +7,7 @@ import discord4j.core.object.command.ApplicationCommandOption;
 import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import inside.data.EntityRetriever;
 import inside.interaction.ChatInputInteractionEnvironment;
+import inside.interaction.PermissionCategory;
 import inside.interaction.annotation.ChatInputCommand;
 import inside.interaction.annotation.Subcommand;
 import inside.interaction.chatinput.InteractionSubcommand;
@@ -20,7 +21,7 @@ import java.util.Comparator;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-@ChatInputCommand(name = "config", description = "Общие настройки.")
+@ChatInputCommand(name = "config", description = "Общие настройки.", permissions = PermissionCategory.OWNER)
 public class GuildConfigCommand extends ConfigOwnerCommand {
 
     public GuildConfigCommand(MessageService messageService, EntityRetriever entityRetriever) {

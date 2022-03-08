@@ -10,6 +10,7 @@ import discord4j.discordjson.json.EmojiData;
 import inside.data.EntityRetriever;
 import inside.data.entity.StarboardConfig;
 import inside.interaction.ChatInputInteractionEnvironment;
+import inside.interaction.PermissionCategory;
 import inside.interaction.annotation.ChatInputCommand;
 import inside.interaction.annotation.Subcommand;
 import inside.interaction.annotation.SubcommandGroup;
@@ -26,7 +27,7 @@ import java.util.regex.Matcher;
 import static inside.interaction.chatinput.settings.ReactionRolesCommand.emojiPattern;
 import static reactor.function.TupleUtils.function;
 
-@ChatInputCommand(name = "starboard", description = "Настройки звёздной доски.")
+@ChatInputCommand(name = "starboard", description = "Настройки звёздной доски.", permissions = PermissionCategory.OWNER)
 public class StarboardCommand extends ConfigOwnerCommand {
 
     public StarboardCommand(MessageService messageService, EntityRetriever entityRetriever) {

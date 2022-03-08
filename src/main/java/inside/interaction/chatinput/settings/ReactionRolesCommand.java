@@ -9,6 +9,7 @@ import discord4j.discordjson.json.EmojiData;
 import inside.data.EntityRetriever;
 import inside.data.entity.ReactionRole;
 import inside.interaction.ChatInputInteractionEnvironment;
+import inside.interaction.PermissionCategory;
 import inside.interaction.annotation.ChatInputCommand;
 import inside.interaction.annotation.Subcommand;
 import inside.interaction.chatinput.InteractionSubcommand;
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
 import static inside.data.entity.ReactionRole.MAX_PER_MESSAGE;
 import static reactor.bool.BooleanUtils.not;
 
-@ChatInputCommand(name = "reaction-roles", description = "Настройки реакций-ролей.")
+@ChatInputCommand(name = "reaction-roles", description = "Настройки реакций-ролей.", permissions = PermissionCategory.OWNER)
 public class ReactionRolesCommand extends ConfigOwnerCommand {
 
     public static Pattern emojiPattern = Pattern.compile("^\\p{So}$");

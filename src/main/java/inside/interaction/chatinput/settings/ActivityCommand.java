@@ -6,6 +6,7 @@ import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
 import discord4j.core.object.command.ApplicationCommandOption;
 import inside.data.EntityRetriever;
 import inside.interaction.ChatInputInteractionEnvironment;
+import inside.interaction.PermissionCategory;
 import inside.interaction.annotation.ChatInputCommand;
 import inside.interaction.annotation.Subcommand;
 import inside.interaction.chatinput.InteractionSubcommand;
@@ -19,7 +20,7 @@ import reactor.core.publisher.Mono;
 import java.time.temporal.TemporalAmount;
 import java.util.function.Function;
 
-@ChatInputCommand(name = "activity", description = "Настройки роли активного пользователя.")
+@ChatInputCommand(name = "activity", description = "Настройки роли активного пользователя.", permissions = PermissionCategory.OWNER)
 public class ActivityCommand extends ConfigOwnerCommand {
 
     public ActivityCommand(MessageService messageService, EntityRetriever entityRetriever) {

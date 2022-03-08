@@ -4,6 +4,7 @@ import discord4j.common.util.Snowflake;
 import inside.data.entity.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
 
 public interface EntityRetriever {
 
@@ -18,7 +19,11 @@ public interface EntityRetriever {
 
     Flux<ImmutableActivity> getAllActivityInGuild(Snowflake guildId);
 
+    Mono<Tuple2<Long, ImmutableActivity>> getPositionAndActivityById(Snowflake guildId, Snowflake userId);
+
     Mono<ImmutableActivity> getActivityById(Snowflake guildId, Snowflake userId);
+
+    Mono<Long> activityCountInGuild(Snowflake guildId);
 
     Mono<ImmutableActivity> save(Activity activity);
 

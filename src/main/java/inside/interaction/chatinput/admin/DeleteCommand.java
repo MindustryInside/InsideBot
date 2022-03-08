@@ -5,6 +5,7 @@ import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
 import discord4j.core.object.command.ApplicationCommandOption;
 import discord4j.core.object.entity.channel.GuildMessageChannel;
 import inside.interaction.ChatInputInteractionEnvironment;
+import inside.interaction.PermissionCategory;
 import inside.interaction.annotation.ChatInputCommand;
 import inside.interaction.chatinput.InteractionGuildCommand;
 import inside.service.MessageService;
@@ -16,7 +17,7 @@ import reactor.function.TupleUtils;
 import java.time.Duration;
 import java.time.Instant;
 
-@ChatInputCommand(name = "delete", description = "Удалить указанное число сообщений")
+@ChatInputCommand(name = "delete", description = "Удалить указанное число сообщений", permissions = PermissionCategory.ADMIN)
 public class DeleteCommand extends InteractionGuildCommand {
 
     private static final int MAX_DELETED_MESSAGES = 100;

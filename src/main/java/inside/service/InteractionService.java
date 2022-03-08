@@ -5,9 +5,11 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
+import discord4j.core.event.domain.interaction.ComponentInteractionEvent;
 import discord4j.core.event.domain.interaction.SelectMenuInteractionEvent;
 import inside.Configuration;
 import inside.data.EntityRetriever;
+import inside.data.entity.GuildConfig;
 import inside.interaction.ButtonInteractionEnvironment;
 import inside.interaction.ComponentInteractionEnvironment;
 import inside.interaction.SelectMenuInteractionEnvironment;
@@ -23,6 +25,7 @@ import reactor.util.context.Context;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -65,35 +68,50 @@ public class InteractionService extends BaseService {
                 .switchIfEmpty(messageService.err(env, "interaction.invalid").then(Mono.never()));
     }
 
-    public Publisher<?> handleButtonInteractionEvent(ButtonInteractionEvent event) {
+    public Publisher<?> handleComponentInteractionEvent(ComponentInteractionEvent event) {
         return Mono.justOrEmpty(event.getInteraction().getGuildId())
                 .flatMap(id -> entityRetriever.getGuildConfigById(id)
-                        .switchIfEmpty(entityRetriever.createGuildConfig(id)))
+                        .switchIfEmpty(entityRetriever.save(GuildConfig.builder()
+                                .locale(event.getInteraction().getGuildLocale()
+                                        .map(this::convertLocale)
+                                        .orElseThrow())
+                                .guildId(id.asLong())
+                                .timezone(configuration.discord().timezone())
+                                .build())))
                 .map(config -> Context.of(ContextUtil.KEY_LOCALE, config.locale(),
                         ContextUtil.KEY_TIMEZONE, config.timezone()))
-                .switchIfEmpty(Mono.fromSupplier(() -> Context.of(ContextUtil.KEY_LOCALE, configuration.discord().locale(),
+                .switchIfEmpty(Mono.fromSupplier(() -> Context.of(ContextUtil.KEY_LOCALE,
+                        convertLocale(event.getInteraction().getUserLocale()),
                         ContextUtil.KEY_TIMEZONE, configuration.discord().timezone())))
-                .map(ctx -> ButtonInteractionEnvironment.of(configuration, this, ctx, event))
-                .flatMap(env -> findComponentListener(env)
-                        .cast(ButtonListener.class)
-                        .flatMap(listener -> Mono.from(listener.handle(env)))
-                        .contextWrite(env.context()));
+                .flatMap(ctx -> {
+                    if (event instanceof ButtonInteractionEvent b) {
+                        var env = ButtonInteractionEnvironment.of(configuration, this, ctx, b);
+
+                        return findComponentListener(env)
+                                .cast(ButtonListener.class)
+                                .flatMap(listener -> Mono.from(listener.handle(env)))
+                                .contextWrite(ctx);
+                    } else if (event instanceof SelectMenuInteractionEvent s) {
+                        var env = SelectMenuInteractionEnvironment.of(configuration, this, ctx, s);
+
+                        return findComponentListener(env)
+                                .cast(SelectMenuListener.class)
+                                .flatMap(listener -> Mono.from(listener.handle(env)))
+                                .contextWrite(ctx);
+                    } else {
+                        return Mono.error(new IllegalStateException());
+                    }
+                });
 
     }
 
-    public Publisher<?> handleSelectMenuInteractionEvent(SelectMenuInteractionEvent event) {
-        return Mono.justOrEmpty(event.getInteraction().getGuildId())
-                .flatMap(id -> entityRetriever.getGuildConfigById(id)
-                        .switchIfEmpty(entityRetriever.createGuildConfig(id)))
-                .map(config -> Context.of(ContextUtil.KEY_LOCALE, config.locale(),
-                        ContextUtil.KEY_TIMEZONE, config.timezone()))
-                .switchIfEmpty(Mono.fromSupplier(() -> Context.of(ContextUtil.KEY_LOCALE, configuration.discord().locale(),
-                        ContextUtil.KEY_TIMEZONE, configuration.discord().timezone())))
-                .map(ctx -> SelectMenuInteractionEnvironment.of(configuration, this, ctx, event))
-                .flatMap(env -> findComponentListener(env)
-                        .cast(SelectMenuListener.class)
-                        .flatMap(listener -> Mono.from(listener.handle(env)))
-                        .contextWrite(env.context()));
+    public Locale convertLocale(String language) {
+        int sep = language.indexOf('-');
+        if (sep != -1) {
+            language = language.substring(0, sep);
+        }
+        Locale locale = new Locale(language);
+        return MessageService.supportedLocaled.contains(locale) ? locale : configuration.discord().locale();
     }
 
     public void registerComponentListener(ComponentListener listener) {

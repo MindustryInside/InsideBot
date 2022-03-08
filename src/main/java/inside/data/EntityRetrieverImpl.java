@@ -7,6 +7,7 @@ import inside.data.entity.*;
 import io.r2dbc.postgresql.codec.Interval;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
 
 import java.util.Arrays;
 import java.util.List;
@@ -47,9 +48,20 @@ public class EntityRetrieverImpl implements EntityRetriever {
     }
 
     @Override
+    public Mono<Tuple2<Long, ImmutableActivity>> getPositionAndActivityById(Snowflake guildId, Snowflake userId) {
+        return repositoryHolder.activityRepository.findActivityPositionById(guildId.asLong(), userId.asLong())
+                .zipWith(getActivityById(guildId, userId));
+    }
+
+    @Override
     public Mono<ImmutableActivity> getActivityById(Snowflake guildId, Snowflake userId) {
         return repositoryHolder.activityRepository.findByGuildIdAndUserId(guildId.asLong(), userId.asLong())
                 .cast(ImmutableActivity.class);
+    }
+
+    @Override
+    public Mono<Long> activityCountInGuild(Snowflake guildId) {
+        return repositoryHolder.activityRepository.countByGuildId(guildId.asLong());
     }
 
     @Override

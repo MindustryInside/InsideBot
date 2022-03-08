@@ -18,6 +18,7 @@ import discord4j.rest.request.RouteMatcher;
 import discord4j.rest.response.ResponseFunction;
 import discord4j.rest.route.Routes;
 import discord4j.rest.util.AllowedMentions;
+import discord4j.rest.util.Permission;
 import inside.data.CacheEntityRetriever;
 import inside.data.DatabaseResources;
 import inside.data.EntityRetrieverImpl;
@@ -30,11 +31,14 @@ import inside.event.InteractionEventHandler;
 import inside.event.MessageEventHandler;
 import inside.event.ReactionRoleEventHandler;
 import inside.event.StarboardEventHandler;
+import inside.interaction.PermissionCategory;
 import inside.interaction.chatinput.InteractionCommand;
 import inside.interaction.chatinput.InteractionCommandHolder;
 import inside.interaction.chatinput.InteractionGuildCommand;
 import inside.interaction.chatinput.admin.DeleteCommand;
 import inside.interaction.chatinput.common.*;
+import inside.interaction.chatinput.guild.EmojiCommand;
+import inside.interaction.chatinput.guild.LeaderboardCommand;
 import inside.interaction.chatinput.settings.ActivityCommand;
 import inside.interaction.chatinput.settings.GuildConfigCommand;
 import inside.interaction.chatinput.settings.ReactionRolesCommand;
@@ -62,8 +66,10 @@ import java.io.File;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static reactor.function.TupleUtils.function;
 
@@ -150,7 +156,7 @@ public class Launcher {
         var factory = new PostgresqlConnectionFactory(psqlConfiguration);
 
         var poolConfiguration = ConnectionPoolConfiguration.builder(factory)
-                .maxSize(30)
+                .maxSize(15)
                 .maxLifeTime(Duration.ofSeconds(10))
                 .build();
         var pool = new ConnectionPool(poolConfiguration);
@@ -196,6 +202,9 @@ public class Launcher {
                             .addCommand(new LeetSpeakCommand(messageService))
                             .addCommand(new TextLayoutCommand(messageService))
                             .addCommand(new TransliterationCommand(messageService))
+                            // разное, но серверное
+                            .addCommand(new EmojiCommand(messageService))
+                            .addCommand(new LeaderboardCommand(messageService, entityRetriever))
                             // настройки
                             .addCommand(new ActivityCommand(messageService, entityRetriever))
                             .addCommand(new ReactionRolesCommand(messageService, entityRetriever))
@@ -229,7 +238,9 @@ public class Launcher {
                                     .flatMapMany(function((appId, guild) -> gateway.getGuilds()
                                             .flatMap(g -> gateway.rest().getApplicationService()
                                                     .bulkOverwriteGuildApplicationCommand(appId, g.getId().asLong(), guild)
-                                                    .map(data -> createOwnerPermissions(g, data))
+                                                    .flatMap(data -> createOwnerPermissions(g, interactionCommandHolder.getCommand(data.name())
+                                                            .map(InteractionCommand::getPermissions)
+                                                            .orElseThrow(), data))
                                                     .collectList()
                                                     .flatMapMany(p -> gateway.rest().getApplicationService()
                                                             .bulkModifyApplicationCommandPermissions(appId, g.getId().asLong(), p))
@@ -269,22 +280,38 @@ public class Launcher {
                 .block();
     }
 
-    private static PartialGuildApplicationCommandPermissionsData createOwnerPermissions(Guild guild, ApplicationCommandData data){
-        return PartialGuildApplicationCommandPermissionsData.builder()
+    private static Mono<PartialGuildApplicationCommandPermissionsData> createOwnerPermissions(Guild guild, EnumSet<PermissionCategory> permissions,
+                                                                                              ApplicationCommandData data){
+        var builder = PartialGuildApplicationCommandPermissionsData.builder()
                 .id(data.id())
-                // разрешаем для владельца сервера
                 .addPermissions(ApplicationCommandPermissionsData.builder()
                         .type(2)
                         .id(guild.getOwnerId().asString())
                         .permission(true)
                         .build())
-                // запрещаем @everyone
                 .addPermissions(ApplicationCommandPermissionsData.builder()
                         .type(1)
                         .id(guild.getId().asString()) // NOTE: не забыть бы, что guild_id == @everyone роль
-                        .permission(false)
-                        .build())
-                .build();
+                        .permission(permissions.contains(PermissionCategory.EVERYONE))
+                        .build());
+
+        if (!permissions.contains(PermissionCategory.ADMIN)) {
+            return Mono.just(builder.build());
+        }
+
+        return guild.getRoles()
+                .filter(r -> r.getPermissions().contains(Permission.ADMINISTRATOR))
+                .map(r -> r.getId().asString())
+                .collectList()
+                .map(list -> builder.addAllPermissions(list.stream()
+                        .map(id -> ApplicationCommandPermissionsData.builder()
+                                .type(1)
+                                .id(id)
+                                .permission(true)
+                                .build())
+                        .collect(Collectors.toList()))
+                        .build());
+
     }
 
     private static void run(UnsafeRunnable runnable) {

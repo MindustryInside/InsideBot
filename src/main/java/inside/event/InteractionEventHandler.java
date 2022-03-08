@@ -1,11 +1,12 @@
 package inside.event;
 
 import discord4j.core.event.ReactiveEventAdapter;
-import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
-import discord4j.core.event.domain.interaction.SelectMenuInteractionEvent;
+import discord4j.core.event.domain.interaction.ComponentInteractionEvent;
+import discord4j.core.event.domain.interaction.ModalSubmitInteractionEvent;
 import inside.Configuration;
 import inside.data.EntityRetriever;
+import inside.data.entity.GuildConfig;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.chatinput.InteractionCommandHolder;
 import inside.service.InteractionService;
@@ -32,23 +33,29 @@ public class InteractionEventHandler extends ReactiveEventAdapter {
     }
 
     @Override
-    public Publisher<?> onSelectMenuInteraction(SelectMenuInteractionEvent event) {
-        return interactionService.handleSelectMenuInteractionEvent(event);
-    }
+    public Publisher<?> onComponentInteraction(ComponentInteractionEvent event) {
+        if (event instanceof ModalSubmitInteractionEvent) { // я пока таким не пользуюсь
+            return Mono.empty();
+        }
 
-    @Override
-    public Publisher<?> onButtonInteraction(ButtonInteractionEvent event) {
-        return interactionService.handleButtonInteractionEvent(event);
+        return interactionService.handleComponentInteractionEvent(event);
     }
 
     @Override
     public Publisher<?> onChatInputInteraction(ChatInputInteractionEvent event) {
         return Mono.justOrEmpty(event.getInteraction().getGuildId())
                 .flatMap(id -> entityRetriever.getGuildConfigById(id)
-                        .switchIfEmpty(entityRetriever.createGuildConfig(id)))
+                        .switchIfEmpty(entityRetriever.save(GuildConfig.builder()
+                                .locale(event.getInteraction().getGuildLocale()
+                                        .map(interactionService::convertLocale)
+                                        .orElseThrow())
+                                .guildId(id.asLong())
+                                .timezone(configuration.discord().timezone())
+                                .build())))
                 .map(config -> Context.of(ContextUtil.KEY_LOCALE, config.locale(),
                         ContextUtil.KEY_TIMEZONE, config.timezone()))
-                .switchIfEmpty(Mono.fromSupplier(() -> Context.of(ContextUtil.KEY_LOCALE, configuration.discord().locale(),
+                .switchIfEmpty(Mono.fromSupplier(() -> Context.of(ContextUtil.KEY_LOCALE,
+                        interactionService.convertLocale(event.getInteraction().getUserLocale()),
                         ContextUtil.KEY_TIMEZONE, configuration.discord().timezone())))
                 .map(ctx -> ChatInputInteractionEnvironment.of(configuration, interactionService, ctx, event))
                 .flatMap(env -> Mono.justOrEmpty(interactionCommandHolder.getCommand(event.getCommandName()))

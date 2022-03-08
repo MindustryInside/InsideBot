@@ -5,6 +5,7 @@ import discord4j.discordjson.json.ApplicationCommandOptionData;
 import discord4j.discordjson.json.ApplicationCommandRequest;
 import discord4j.discordjson.json.ImmutableApplicationCommandOptionData;
 import inside.interaction.ChatInputInteractionEnvironment;
+import inside.interaction.PermissionCategory;
 import inside.interaction.annotation.ChatInputCommand;
 import inside.interaction.annotation.Subcommand;
 import inside.interaction.annotation.SubcommandGroup;
@@ -12,9 +13,7 @@ import inside.service.MessageService;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 
 public abstract class InteractionCommand {
@@ -44,6 +43,10 @@ public abstract class InteractionCommand {
         return metadata.type;
     }
 
+    public EnumSet<PermissionCategory> getPermissions() {
+        return metadata.permissions;
+    }
+
     public ApplicationCommandRequest getRequest() {
         return ApplicationCommandRequest.builder()
                 .name(metadata.name)
@@ -62,25 +65,27 @@ public abstract class InteractionCommand {
         options.add(mutatedOption.build());
     }
 
-    private record CommandMetadata(String name, String description, ApplicationCommandOption.Type type) {
+    protected record CommandMetadata(String name, String description, ApplicationCommandOption.Type type,
+                                     EnumSet<PermissionCategory> permissions) {
 
         private static CommandMetadata from(Class<? extends InteractionCommand> type) {
             var chatInputCommand = type.getDeclaredAnnotation(ChatInputCommand.class);
             if (chatInputCommand != null) {
                 return new CommandMetadata(chatInputCommand.name(), chatInputCommand.description(),
-                        ApplicationCommandOption.Type.UNKNOWN);
+                        ApplicationCommandOption.Type.UNKNOWN,
+                        EnumSet.copyOf(Arrays.asList(chatInputCommand.permissions())));
             }
 
             var subcommand = type.getDeclaredAnnotation(Subcommand.class);
             if (subcommand != null) {
                 return new CommandMetadata(subcommand.name(), subcommand.description(),
-                        ApplicationCommandOption.Type.SUB_COMMAND);
+                        ApplicationCommandOption.Type.SUB_COMMAND, EnumSet.noneOf(PermissionCategory.class));
             }
 
             var subcommandGroup = type.getDeclaredAnnotation(SubcommandGroup.class);
             if (subcommandGroup != null) {
                 return new CommandMetadata(subcommandGroup.name(), subcommandGroup.description(),
-                        ApplicationCommandOption.Type.SUB_COMMAND_GROUP);
+                        ApplicationCommandOption.Type.SUB_COMMAND_GROUP, EnumSet.noneOf(PermissionCategory.class));
             }
 
             throw new UnsupportedOperationException("Unknown annotation");

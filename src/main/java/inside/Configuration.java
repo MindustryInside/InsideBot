@@ -46,16 +46,16 @@ public interface Configuration {
         }
 
         default ZoneId timezone() {
-            return ZoneId.of("Europe/Moscow");
+            return ZoneId.of("UTC");
         }
 
         default Locale locale() {
-            return MessageService.supportedLocaled.get(0);
+            return MessageService.supportedLocaled.get(1); // английский
         }
 
         @JsonProperty("await_component_timeout")
         default Duration awaitComponentTimeout() {
-            return Duration.ofMinutes(30);
+            return Duration.ofMinutes(13);
         }
     }
 
