@@ -107,7 +107,7 @@ public class WarnCommand extends ModerationCommand {
                         }
                     }
 
-                    AllowedMentions allowTarget = AllowedMentions.builder()/*.allowUser(targetId)*/.build();
+                    AllowedMentions allowTarget = AllowedMentions.builder().allowUser(targetId).build();
 
                     Optional<Instant> endTimestamp = Optional.ofNullable(interval)
                             .map(i -> Instant.now().plus(i));

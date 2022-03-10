@@ -82,15 +82,15 @@ public class LeaderboardCommand extends InteractionGuildCommand {
                                         .title(messageService.get(env.context(), "commands.leaderboard.title"))
                                         .description(str)
                                         .color(env.configuration().discord().embedColor())
-                                        .footer(messageService.format(env.context(), "commands.leaderboard.pages",
+                                        .footer(messageService.format(env.context(), "pagination.pages",
                                                 page.getPage() + 1, page.getPageCount()), null)
                                         .build())
                                 .components(page.getItemsCount() > PER_PAGE
                                         ? Possible.of(List.of(ActionRow.of(
                                         page.previousButton(id -> Button.primary(id,
-                                                messageService.get(env.context(), "commands.leaderboard.prev-page"))),
+                                                messageService.get(env.context(), "pagination.prev-page"))),
                                         page.nextButton(id -> Button.primary(id,
-                                                messageService.get(env.context(), "commands.leaderboard.next-page"))))))
+                                                messageService.get(env.context(), "pagination.next-page"))))))
                                         : Possible.absent())
                                 .build());
 

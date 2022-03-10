@@ -35,6 +35,7 @@ import inside.interaction.chatinput.guild.EmojiCommand;
 import inside.interaction.chatinput.guild.LeaderboardCommand;
 import inside.interaction.chatinput.moderation.DeleteCommand;
 import inside.interaction.chatinput.moderation.WarnCommand;
+import inside.interaction.chatinput.moderation.WarnsCommand;
 import inside.interaction.chatinput.settings.*;
 import inside.service.InteractionService;
 import inside.service.MessageService;
@@ -209,6 +210,7 @@ public class Launcher {
                             // админские
                             .addCommand(new DeleteCommand(messageService, entityRetriever))
                             .addCommand(new WarnCommand(messageService, entityRetriever))
+                            .addCommand(new WarnsCommand(messageService, entityRetriever))
                             .build();
 
                     var handlers = ReactiveEventAdapter.from(

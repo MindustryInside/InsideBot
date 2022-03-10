@@ -1,4 +1,4 @@
-    create sequence if not exists seq_id;
+create sequence if not exists seq_id;
 
 create or replace function next_id(out result bigint) as
 $$
@@ -10,7 +10,6 @@ declare
 begin
     select nextval('seq_id') % 1024 into seq_id;
     select floor(extract(epoch from clock_timestamp()) * 1000) into now_millis;
-    result := (now_millis - our_epoch) << 10;
-    result := result | seq_id;
+    result := (now_millis - our_epoch) << 10 | seq_id;
 end;
 $$ language plpgsql;
