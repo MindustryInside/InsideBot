@@ -70,8 +70,24 @@ public interface EntityRetriever {
     Mono<ImmutableStarboardConfig> save(StarboardConfig starboardConfig);
 
     //endregion
+    //region moderation action
+
+    Flux<ImmutableModerationAction> getAllModerationActionById(ModerationAction.Type type, Snowflake guildId, Snowflake targetId);
+
+    Mono<Long> moderationActionCountById(ModerationAction.Type type, Snowflake guildId, Snowflake targetId);
+
+    Mono<ImmutableModerationAction> save(ModerationAction moderationAction);
+
+    //endregion
+    //region moderation config
+
+    Mono<ImmutableModerationConfig> getModerationConfigById(Snowflake guildId);
+
+    Mono<ImmutableModerationConfig> save(ModerationConfig moderationConfig);
+
+    //endregion
     //region factory methods
-    // Возможно и не нужно
+    //Возможно и не нужно
 
     Mono<ImmutableGuildConfig> createGuildConfig(Snowflake guildId);
 
@@ -82,6 +98,8 @@ public interface EntityRetriever {
     Mono<ImmutableStarboard> createStarboard(Snowflake guildId, Snowflake sourceMessageId, Snowflake targetMessageId);
 
     Mono<ImmutableStarboardConfig> createStarboardConfig(Snowflake guildId);
+
+    Mono<ImmutableModerationConfig> createModerationConfigById(Snowflake guildId);
 
     //endregion
 }

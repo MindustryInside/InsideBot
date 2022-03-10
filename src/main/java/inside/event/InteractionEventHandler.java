@@ -10,12 +10,14 @@ import inside.data.entity.GuildConfig;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.chatinput.InteractionCommandHolder;
 import inside.service.InteractionService;
-import inside.util.ContextUtil;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 
 import java.util.Objects;
+
+import static inside.util.ContextUtil.KEY_LOCALE;
+import static inside.util.ContextUtil.KEY_TIMEZONE;
 
 public class InteractionEventHandler extends ReactiveEventAdapter {
 
@@ -52,13 +54,14 @@ public class InteractionEventHandler extends ReactiveEventAdapter {
                                 .guildId(id.asLong())
                                 .timezone(configuration.discord().timezone())
                                 .build())))
-                .map(config -> Context.of(ContextUtil.KEY_LOCALE, config.locale(),
-                        ContextUtil.KEY_TIMEZONE, config.timezone()))
-                .switchIfEmpty(Mono.fromSupplier(() -> Context.of(ContextUtil.KEY_LOCALE,
+                .map(config -> Context.of(KEY_LOCALE, config.locale(),
+                        KEY_TIMEZONE, config.timezone()))
+                .switchIfEmpty(Mono.fromSupplier(() -> Context.of(KEY_LOCALE,
                         interactionService.convertLocale(event.getInteraction().getUserLocale()),
-                        ContextUtil.KEY_TIMEZONE, configuration.discord().timezone())))
+                        KEY_TIMEZONE, configuration.discord().timezone())))
                 .map(ctx -> ChatInputInteractionEnvironment.of(configuration, interactionService, ctx, event))
                 .flatMap(env -> Mono.justOrEmpty(interactionCommandHolder.getCommand(event.getCommandName()))
+                        .filterWhen(command -> command.filter(env))
                         .flatMap(command -> Mono.from(command.execute(env)))
                         .contextWrite(env.context()));
     }

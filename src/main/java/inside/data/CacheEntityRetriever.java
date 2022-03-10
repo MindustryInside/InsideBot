@@ -21,6 +21,9 @@ public class CacheEntityRetriever implements EntityRetriever {
     private final Cache<Tuple3<Long, Long, Long>, ImmutableReactionRole> reactionRoles = Caffeine.newBuilder().build();
     private final Cache<Tuple2<Long, Long>, ImmutableStarboard> starboards = Caffeine.newBuilder().build();
     private final Cache<Long, ImmutableStarboardConfig> starboardConfigs = Caffeine.newBuilder().build();
+    // TODO: не знаю как ассоциировать moderationActions
+    // private final Cache<Long, ImmutableModerationAction> moderationActions = Caffeine.newBuilder().build();
+    private final Cache<Long, ImmutableModerationConfig> moderationConfigs = Caffeine.newBuilder().build();
 
     public CacheEntityRetriever(EntityRetriever delegate) {
         this.delegate = Objects.requireNonNull(delegate, "delegate");
@@ -178,6 +181,34 @@ public class CacheEntityRetriever implements EntityRetriever {
     }
 
     @Override
+    public Flux<ImmutableModerationAction> getAllModerationActionById(ModerationAction.Type type, Snowflake guildId, Snowflake targetId) {
+        return delegate.getAllModerationActionById(type, guildId, targetId);
+    }
+
+    @Override
+    public Mono<Long> moderationActionCountById(ModerationAction.Type type, Snowflake guildId, Snowflake targetId) {
+        return delegate.moderationActionCountById(type, guildId, targetId);
+    }
+
+    @Override
+    public Mono<ImmutableModerationAction> save(ModerationAction moderationAction) {
+        return delegate.save(moderationAction);
+    }
+
+    @Override
+    public Mono<ImmutableModerationConfig> getModerationConfigById(Snowflake guildId) {
+        return Mono.fromSupplier(() -> moderationConfigs.getIfPresent(guildId.asLong()))
+                .switchIfEmpty(delegate.getModerationConfigById(guildId)
+                        .doOnNext(v -> moderationConfigs.put(v.guildId(), v)));
+    }
+
+    @Override
+    public Mono<ImmutableModerationConfig> save(ModerationConfig moderationConfig) {
+        return delegate.save(moderationConfig)
+                .doOnNext(v -> moderationConfigs.put(v.guildId(), v));
+    }
+
+    @Override
     public Mono<ImmutableGuildConfig> createGuildConfig(Snowflake guildId) {
         return delegate.createGuildConfig(guildId);
     }
@@ -200,5 +231,10 @@ public class CacheEntityRetriever implements EntityRetriever {
     @Override
     public Mono<ImmutableStarboardConfig> createStarboardConfig(Snowflake guildId) {
         return delegate.createStarboardConfig(guildId);
+    }
+
+    @Override
+    public Mono<ImmutableModerationConfig> createModerationConfigById(Snowflake guildId) {
+        return delegate.createModerationConfigById(guildId);
     }
 }

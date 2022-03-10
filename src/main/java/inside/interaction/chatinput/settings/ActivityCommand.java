@@ -20,7 +20,7 @@ import reactor.core.publisher.Mono;
 import java.time.temporal.TemporalAmount;
 import java.util.function.Function;
 
-@ChatInputCommand(name = "activity", description = "Настройки роли активного пользователя.", permissions = PermissionCategory.OWNER)
+@ChatInputCommand(name = "activity", description = "Настройки роли активного пользователя.", permissions = PermissionCategory.ADMIN)
 public class ActivityCommand extends ConfigOwnerCommand {
 
     public ActivityCommand(MessageService messageService, EntityRetriever entityRetriever) {
@@ -49,6 +49,8 @@ public class ActivityCommand extends ConfigOwnerCommand {
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             return owner.entityRetriever.getActivityConfigById(guildId)
+                    .filter(config -> config.countingInterval() != Interval.ZERO &&
+                            config.messageThreshold() != -1 && config.roleId() != -1)
                     .switchIfEmpty(messageService.err(env, "commands.activity.enable.unconfigured").then(Mono.never()))
                     .flatMap(config -> Mono.justOrEmpty(env.getOption("value")
                                     .flatMap(ApplicationCommandInteractionOption::getValue)

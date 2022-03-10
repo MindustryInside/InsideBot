@@ -1,7 +1,7 @@
 package inside.interaction;
 
 public enum PermissionCategory {
-    OWNER,
     ADMIN,
+    MODERATOR,
     EVERYONE
 }

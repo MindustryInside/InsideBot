@@ -160,6 +160,35 @@ public class EntityRetrieverImpl implements EntityRetriever {
     }
 
     @Override
+    public Flux<ImmutableModerationAction> getAllModerationActionById(ModerationAction.Type type, Snowflake guildId, Snowflake targetId) {
+        return repositoryHolder.moderationActionRepository.findAllByTypeAndGuildIdAndTargetId(type, guildId.asLong(), targetId.asLong())
+                .cast(ImmutableModerationAction.class);
+    }
+
+    @Override
+    public Mono<Long> moderationActionCountById(ModerationAction.Type type, Snowflake guildId, Snowflake targetId) {
+        return repositoryHolder.moderationActionRepository.countByTypeAndGuildIdAndTargetId(type, guildId.asLong(), targetId.asLong());
+    }
+
+    @Override
+    public Mono<ImmutableModerationAction> save(ModerationAction moderationAction) {
+        return repositoryHolder.moderationActionRepository.save(moderationAction)
+                .cast(ImmutableModerationAction.class);
+    }
+
+    @Override
+    public Mono<ImmutableModerationConfig> getModerationConfigById(Snowflake guildId) {
+        return repositoryHolder.moderationConfigRepository.findByGuildId(guildId.asLong())
+                .cast(ImmutableModerationConfig.class);
+    }
+
+    @Override
+    public Mono<ImmutableModerationConfig> save(ModerationConfig moderationConfig) {
+        return repositoryHolder.moderationConfigRepository.save(moderationConfig)
+                .cast(ImmutableModerationConfig.class);
+    }
+
+    @Override
     public Mono<ImmutableGuildConfig> createGuildConfig(Snowflake guildId) {
         return save(GuildConfig.builder()
                 .guildId(guildId.asLong())
@@ -207,6 +236,14 @@ public class EntityRetrieverImpl implements EntityRetriever {
                 .starboardChannelId(-1)
                 .selfStarring(false)
                 .emojis(defaultStarsEmojis)
+                .build());
+    }
+
+    @Override
+    public Mono<ImmutableModerationConfig> createModerationConfigById(Snowflake guildId) {
+        return save(ModerationConfig.builder()
+                .guildId(guildId.asLong())
+                .enabled(false)
                 .build());
     }
 }

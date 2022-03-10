@@ -6,11 +6,7 @@ import discord4j.common.JacksonResources;
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.ReactiveEventAdapter;
-import discord4j.core.object.entity.Guild;
-import discord4j.discordjson.json.ApplicationCommandData;
-import discord4j.discordjson.json.ApplicationCommandPermissionsData;
 import discord4j.discordjson.json.ApplicationCommandRequest;
-import discord4j.discordjson.json.PartialGuildApplicationCommandPermissionsData;
 import discord4j.gateway.intent.Intent;
 import discord4j.gateway.intent.IntentSet;
 import discord4j.rest.http.client.ClientException;
@@ -18,7 +14,6 @@ import discord4j.rest.request.RouteMatcher;
 import discord4j.rest.response.ResponseFunction;
 import discord4j.rest.route.Routes;
 import discord4j.rest.util.AllowedMentions;
-import discord4j.rest.util.Permission;
 import inside.data.CacheEntityRetriever;
 import inside.data.DatabaseResources;
 import inside.data.EntityRetrieverImpl;
@@ -27,22 +22,20 @@ import inside.data.api.DefaultRepositoryFactory;
 import inside.data.api.EntityOperations;
 import inside.data.api.codec.LocaleCodec;
 import inside.data.api.r2dbc.DefaultDatabaseClient;
+import inside.data.entity.ModerationAction;
 import inside.event.InteractionEventHandler;
 import inside.event.MessageEventHandler;
 import inside.event.ReactionRoleEventHandler;
 import inside.event.StarboardEventHandler;
-import inside.interaction.PermissionCategory;
 import inside.interaction.chatinput.InteractionCommand;
 import inside.interaction.chatinput.InteractionCommandHolder;
 import inside.interaction.chatinput.InteractionGuildCommand;
-import inside.interaction.chatinput.admin.DeleteCommand;
 import inside.interaction.chatinput.common.*;
 import inside.interaction.chatinput.guild.EmojiCommand;
 import inside.interaction.chatinput.guild.LeaderboardCommand;
-import inside.interaction.chatinput.settings.ActivityCommand;
-import inside.interaction.chatinput.settings.GuildConfigCommand;
-import inside.interaction.chatinput.settings.ReactionRolesCommand;
-import inside.interaction.chatinput.settings.StarboardCommand;
+import inside.interaction.chatinput.moderation.DeleteCommand;
+import inside.interaction.chatinput.moderation.WarnCommand;
+import inside.interaction.chatinput.settings.*;
 import inside.service.InteractionService;
 import inside.service.MessageService;
 import inside.service.task.ActivityTask;
@@ -53,6 +46,7 @@ import io.r2dbc.pool.ConnectionPool;
 import io.r2dbc.pool.ConnectionPoolConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionFactory;
+import io.r2dbc.postgresql.codec.EnumCodec;
 import io.r2dbc.spi.ConnectionFactoryOptions;
 import io.r2dbc.spi.R2dbcBadGrammarException;
 import reactor.core.publisher.Flux;
@@ -66,10 +60,8 @@ import java.io.File;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static reactor.function.TupleUtils.function;
 
@@ -142,8 +134,11 @@ public class Launcher {
 
         var parsed = ConnectionFactoryOptions.parse(url);
         var psqlConfiguration = PostgresqlConnectionConfiguration.builder()
-                .codecRegistrar((connection, allocator, registry) -> Mono.fromRunnable(() -> {
-                    registry.addLast(new LocaleCodec(allocator));
+                .codecRegistrar(EnumCodec.builder()
+                        .withEnum("moderation_action_type", ModerationAction.Type.class)
+                        .build())
+                .codecRegistrar((connection, alloc, registry) -> Mono.fromRunnable(() -> {
+                    registry.addLast(new LocaleCodec(alloc));
                 }))
                 .username(user)
                 .password(password)
@@ -210,12 +205,15 @@ public class Launcher {
                             .addCommand(new ReactionRolesCommand(messageService, entityRetriever))
                             .addCommand(new StarboardCommand(messageService, entityRetriever))
                             .addCommand(new GuildConfigCommand(messageService, entityRetriever))
+                            .addCommand(new AdminConfigCommand(messageService, entityRetriever))
                             // админские
-                            .addCommand(new DeleteCommand(messageService))
+                            .addCommand(new DeleteCommand(messageService, entityRetriever))
+                            .addCommand(new WarnCommand(messageService, entityRetriever))
                             .build();
 
                     var handlers = ReactiveEventAdapter.from(
-                            new InteractionEventHandler(configuration, interactionCommandHolder, interactionService, entityRetriever),
+                            new InteractionEventHandler(configuration, interactionCommandHolder,
+                                    interactionService, entityRetriever),
                             new MessageEventHandler(entityRetriever),
                             new ReactionRoleEventHandler(entityRetriever),
                             new StarboardEventHandler(entityRetriever, messageService));
@@ -238,20 +236,15 @@ public class Launcher {
                                     .flatMapMany(function((appId, guild) -> gateway.getGuilds()
                                             .flatMap(g -> gateway.rest().getApplicationService()
                                                     .bulkOverwriteGuildApplicationCommand(appId, g.getId().asLong(), guild)
-                                                    .flatMap(data -> createOwnerPermissions(g, interactionCommandHolder.getCommand(data.name())
-                                                            .map(InteractionCommand::getPermissions)
-                                                            .orElseThrow(), data))
-                                                    .collectList()
-                                                    .flatMapMany(p -> gateway.rest().getApplicationService()
-                                                            .bulkModifyApplicationCommandPermissions(appId, g.getId().asLong(), p))
-                                                    .onErrorResume(e -> e instanceof ClientException, e -> Flux.empty()))))
-                                    .then());
+                                                    .onErrorResume(e -> e instanceof ClientException c &&
+                                                            c.getStatus().code() == 403, e -> Flux.empty())))) // missing access
+                            .then());
 
                     Mono<Void> registerEvents = gateway.on(handlers)
                             .then();
 
                     Mono<Void> registerTasks = Flux.just(
-                            new ActivityTask(configuration, entityRetriever))
+                                    new ActivityTask(configuration, entityRetriever))
                             .flatMap(task -> Flux.interval(task.getInterval())
                                     .flatMap(l -> task.execute()))
                             .then();
@@ -278,40 +271,6 @@ public class Launcher {
                     run(() -> System.exit(1));
                 }))
                 .block();
-    }
-
-    private static Mono<PartialGuildApplicationCommandPermissionsData> createOwnerPermissions(Guild guild, EnumSet<PermissionCategory> permissions,
-                                                                                              ApplicationCommandData data){
-        var builder = PartialGuildApplicationCommandPermissionsData.builder()
-                .id(data.id())
-                .addPermissions(ApplicationCommandPermissionsData.builder()
-                        .type(2)
-                        .id(guild.getOwnerId().asString())
-                        .permission(true)
-                        .build())
-                .addPermissions(ApplicationCommandPermissionsData.builder()
-                        .type(1)
-                        .id(guild.getId().asString()) // NOTE: не забыть бы, что guild_id == @everyone роль
-                        .permission(permissions.contains(PermissionCategory.EVERYONE))
-                        .build());
-
-        if (!permissions.contains(PermissionCategory.ADMIN)) {
-            return Mono.just(builder.build());
-        }
-
-        return guild.getRoles()
-                .filter(r -> r.getPermissions().contains(Permission.ADMINISTRATOR))
-                .map(r -> r.getId().asString())
-                .collectList()
-                .map(list -> builder.addAllPermissions(list.stream()
-                        .map(id -> ApplicationCommandPermissionsData.builder()
-                                .type(1)
-                                .id(id)
-                                .permission(true)
-                                .build())
-                        .collect(Collectors.toList()))
-                        .build());
-
     }
 
     private static void run(UnsafeRunnable runnable) {

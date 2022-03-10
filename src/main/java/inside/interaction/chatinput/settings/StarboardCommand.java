@@ -27,7 +27,7 @@ import java.util.regex.Matcher;
 import static inside.interaction.chatinput.settings.ReactionRolesCommand.emojiPattern;
 import static reactor.function.TupleUtils.function;
 
-@ChatInputCommand(name = "starboard", description = "Настройки звёздной доски.", permissions = PermissionCategory.OWNER)
+@ChatInputCommand(name = "starboard", description = "Настройки звёздной доски.", permissions = PermissionCategory.ADMIN)
 public class StarboardCommand extends ConfigOwnerCommand {
 
     public StarboardCommand(MessageService messageService, EntityRetriever entityRetriever) {
@@ -57,6 +57,8 @@ public class StarboardCommand extends ConfigOwnerCommand {
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             return owner.entityRetriever.getStarboardConfigById(guildId)
+                    .filter(config -> !config.emojis().isEmpty() && config.threshold() != -1 &&
+                            config.starboardChannelId() != -1)
                     .switchIfEmpty(messageService.err(env, "commands.starboard.enable.unconfigured").then(Mono.never()))
                     .flatMap(config -> Mono.justOrEmpty(env.getOption("value")
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
@@ -214,7 +216,7 @@ public class StarboardCommand extends ConfigOwnerCommand {
 
                 return fetchEmoji.zipWith(owner.entityRetriever.getStarboardConfigById(guildId)
                         .switchIfEmpty(owner.entityRetriever.createStarboardConfig(guildId)))
-                        .map(function((emoji, config) -> {
+                        .flatMap(function((emoji, config) -> {
                             var set = new HashSet<>(config.emojis());
                             boolean add = set.add(emoji);
                             if (!add) {
@@ -269,7 +271,7 @@ public class StarboardCommand extends ConfigOwnerCommand {
 
                 return fetchEmoji.zipWith(owner.entityRetriever.getStarboardConfigById(guildId)
                                 .switchIfEmpty(owner.entityRetriever.createStarboardConfig(guildId)))
-                        .map(function((emoji, config) -> {
+                        .flatMap(function((emoji, config) -> {
                             var set = new HashSet<>(config.emojis());
                             boolean remove = set.remove(emoji);
                             if (!remove) {

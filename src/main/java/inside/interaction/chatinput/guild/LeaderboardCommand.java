@@ -96,6 +96,7 @@ public class LeaderboardCommand extends InteractionGuildCommand {
 
         return entityRetriever.getActivityConfigById(guildId)
                 .filter(ConfigEntity::enabled)
+                .switchIfEmpty(messageService.err(env, "commands.leaderboard.disabled").then(Mono.never()))
                 .flatMap(c -> entityRetriever.activityCountInGuild(guildId))
                 .filter(l -> l > 0)
                 .switchIfEmpty(messageService.err(env, "commands.leaderboard.empty").then(Mono.never()))

@@ -1,13 +1,13 @@
-package inside.interaction.chatinput.admin;
+package inside.interaction.chatinput.moderation;
 
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
 import discord4j.core.object.command.ApplicationCommandOption;
 import discord4j.core.object.entity.channel.GuildMessageChannel;
+import inside.data.EntityRetriever;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.PermissionCategory;
 import inside.interaction.annotation.ChatInputCommand;
-import inside.interaction.chatinput.InteractionGuildCommand;
 import inside.service.MessageService;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
@@ -17,13 +17,13 @@ import reactor.function.TupleUtils;
 import java.time.Duration;
 import java.time.Instant;
 
-@ChatInputCommand(name = "delete", description = "Удалить указанное число сообщений", permissions = PermissionCategory.ADMIN)
-public class DeleteCommand extends InteractionGuildCommand {
+@ChatInputCommand(name = "delete", description = "Удалить указанное число сообщений", permissions = PermissionCategory.MODERATOR)
+public class DeleteCommand extends ModerationCommand {
 
     private static final int MAX_DELETED_MESSAGES = 100;
 
-    public DeleteCommand(MessageService messageService) {
-        super(messageService);
+    public DeleteCommand(MessageService messageService, EntityRetriever entityRetriever) {
+        super(messageService, entityRetriever);
 
         addOption(builder -> builder.name("count")
                 .description("Количество сообщений на удаление")

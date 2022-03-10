@@ -82,4 +82,36 @@ create table if not exists starboard_config(
 create unique index if not exists starboard_config_guild_id
     on starboard_config(guild_id);
 
+create table if not exists moderation_config(
+    id bigint not null default next_id()
+        constraint moderation_config_pkey
+            primary key,
+    guild_id bigint not null,
+    enabled bool not null,
+    warn_expire_interval interval null,
+    mute_base_interval interval null,
+    threshold_punishments jsonb null,
+    admin_role_ids jsonb null
+);
+
+create unique index if not exists moderation_config_guild_id
+    on moderation_config(guild_id);
+
+create type moderation_action_type as enum ('warn', 'mute');
+
+create table if not exists moderation_action(
+    id bigint not null default next_id()
+        constraint moderation_action_pkey
+            primary key,
+    guild_id bigint not null,
+    admin_id bigint not null,
+    target_id bigint not null,
+    type moderation_action_type not null,
+    reason varchar(512) null,
+    end_timestamp timestamptz null
+);
+
+create index if not exists moderation_action_guild_target_id_type
+    on moderation_action(guild_id, target_id, type);
+
 commit;

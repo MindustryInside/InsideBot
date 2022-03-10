@@ -31,6 +31,10 @@ public abstract class InteractionCommand {
         return Mono.empty();
     }
 
+    public Mono<Boolean> filter(ChatInputInteractionEnvironment env) {
+        return Mono.just(true);
+    }
+
     public String getName() {
         return metadata.name;
     }

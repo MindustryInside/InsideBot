@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 import static inside.data.entity.ReactionRole.MAX_PER_MESSAGE;
 import static reactor.bool.BooleanUtils.not;
 
-@ChatInputCommand(name = "reaction-roles", description = "Настройки реакций-ролей.", permissions = PermissionCategory.OWNER)
+@ChatInputCommand(name = "reaction-roles", description = "Настройки реакций-ролей.", permissions = PermissionCategory.ADMIN)
 public class ReactionRolesCommand extends ConfigOwnerCommand {
 
     public static Pattern emojiPattern = Pattern.compile("^\\p{So}$");

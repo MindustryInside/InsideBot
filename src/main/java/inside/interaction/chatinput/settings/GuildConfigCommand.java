@@ -21,7 +21,7 @@ import java.util.Comparator;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-@ChatInputCommand(name = "config", description = "Общие настройки.", permissions = PermissionCategory.OWNER)
+@ChatInputCommand(name = "config", description = "Общие настройки.", permissions = PermissionCategory.ADMIN)
 public class GuildConfigCommand extends ConfigOwnerCommand {
 
     public GuildConfigCommand(MessageService messageService, EntityRetriever entityRetriever) {
