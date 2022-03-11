@@ -91,7 +91,8 @@ create table if not exists moderation_config(
     warn_expire_interval interval null,
     mute_base_interval interval null,
     threshold_punishments jsonb null,
-    admin_role_ids jsonb null
+    admin_role_ids jsonb null,
+    mute_role_id bigint null
 );
 
 create unique index if not exists moderation_config_guild_id

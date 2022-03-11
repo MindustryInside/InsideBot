@@ -32,4 +32,7 @@ public interface ModerationConfig extends ConfigEntity {
 
     @Column(name = "admin_role_ids")
     Optional<Set<Id>> adminRoleIds();
+
+    @Column(name = "mute_role_id")
+    Optional<Long> muteRoleId();
 }

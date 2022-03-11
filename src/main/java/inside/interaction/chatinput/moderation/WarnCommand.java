@@ -31,6 +31,8 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.function.Predicate;
 
+import static inside.data.entity.ModerationAction.timeoutLimit;
+
 @ChatInputCommand(name = "warn", description = "Выдать предупреждение пользователю.", permissions = PermissionCategory.MODERATOR)
 public class WarnCommand extends ModerationCommand {
 
@@ -185,9 +187,13 @@ public class WarnCommand extends ModerationCommand {
                                         .and(entityRetriever.save(autoWarn));
                             }
                             case mute -> {
-                                Optional<Instant> inst = Possible.flatOpt(sett.interval())
-                                        .or(config::muteBaseInterval)
-                                        .map(i -> Instant.now().plus(i));
+                                Instant now = Instant.now();
+                                Optional<Interval> inter = Possible.flatOpt(sett.interval())
+                                        .or(config::muteBaseInterval);
+                                Optional<Instant> inst = inter.map(now::plus);
+
+                                Optional<Snowflake> muteRoleId = config.muteRoleId()
+                                        .map(Snowflake::of);
 
                                 ModerationAction autoWarn = ModerationAction.builder()
                                         .guildId(guildId.asLong())
@@ -209,12 +215,17 @@ public class WarnCommand extends ModerationCommand {
                                     ajcomp.add(autoMuteUntil);
                                 }
 
-                                yield target.getPrivateChannel()
-                                        .onErrorResume(e -> e instanceof ClientException, e -> Mono.empty())
-                                        .flatMap(c -> c.createMessage(messageService.format(env.context(),
-                                                "moderation.auto-mute.text", ajcomp)))
-                                        .and(target.edit().withReason(reason)
-                                                .withCommunicationDisabledUntil(Possible.of(inst)))
+                                yield Mono.justOrEmpty(muteRoleId)
+                                        .flatMap(target::addRole)
+                                        .switchIfEmpty(target.edit().withReason(reason)
+                                                .withCommunicationDisabledUntilOrNull(now.plus(
+                                                        inter.filter(i -> i.getSeconds() > timeoutLimit.getSeconds())
+                                                                .orElse(timeoutLimit)))
+                                                .then(Mono.never()))
+                                        .and(target.getPrivateChannel()
+                                                .onErrorResume(e -> e instanceof ClientException, e -> Mono.empty())
+                                                .flatMap(c -> c.createMessage(messageService.format(env.context(),
+                                                        "moderation.auto-mute.text", ajcomp))))
                                         .and(entityRetriever.save(autoWarn));
                             }
                             default -> Mono.empty();

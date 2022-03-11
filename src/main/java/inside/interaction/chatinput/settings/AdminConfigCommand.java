@@ -4,6 +4,10 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
 import discord4j.core.object.command.ApplicationCommandOption;
+import discord4j.core.object.component.ActionRow;
+import discord4j.core.object.component.Button;
+import discord4j.core.spec.EmbedCreateSpec;
+import discord4j.core.spec.MessageCreateSpec;
 import discord4j.discordjson.Id;
 import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import discord4j.discordjson.possible.Possible;
@@ -16,6 +20,7 @@ import inside.interaction.annotation.ChatInputCommand;
 import inside.interaction.annotation.Subcommand;
 import inside.interaction.annotation.SubcommandGroup;
 import inside.interaction.chatinput.InteractionSubcommand;
+import inside.interaction.util.MessagePaginator;
 import inside.service.MessageService;
 import inside.util.DurationFormat;
 import inside.util.MessageUtil;
@@ -44,6 +49,8 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
         addSubcommand(new MuteBaseIntervalSubcommand(this));
         addSubcommand(new AdminRolesSubcommandGroup(this));
         addSubcommand(new ThresholdPunishmentsSubcommandGroup(this));
+        addSubcommand(new MuteRoleSubcommand(this));
+        addSubcommand(new MuteRoleResetSubcommand(this));
     }
 
     @Subcommand(name = "enable", description = "Включить модерацию.")
@@ -473,6 +480,8 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
         @Subcommand(name = "list", description = "Отобразить список авто-наказаний.")
         protected static class ListSubcommand extends InteractionSubcommand<ThresholdPunishmentsSubcommandGroup> {
 
+            private static final int PER_PAGE = 10;
+
             protected ListSubcommand(ThresholdPunishmentsSubcommandGroup owner) {
                 super(owner);
             }
@@ -490,15 +499,90 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
                                 Possible.flatOpt(sett.interval()).map(formatDuration)
                                         .map(str -> " (" + str + ")").orElse(""));
 
+                Function<MessagePaginator.Page, ? extends Mono<MessageCreateSpec>> paginator = page ->
+                        owner.entityRetriever.getModerationConfigById(guildId)
+                                .flatMapMany(config -> Mono.justOrEmpty(config.thresholdPunishments())
+                                        .filter(l -> !l.isEmpty())
+                                        .flatMapIterable(Map::entrySet))
+                                .switchIfEmpty(messageService.err(env, "commands.moderation-config.threshold-punishment.list.empty").then(Mono.never()))
+                                .sort(Comparator.comparingLong(Map.Entry::getKey))
+                                .skip(page.getPage() * PER_PAGE).take(PER_PAGE, true)
+                                .map(entry -> formatter.apply(entry.getKey(), entry.getValue()))
+                                .collect(Collectors.joining())
+                                .map(str -> MessageCreateSpec.builder()
+                                        .addEmbed(EmbedCreateSpec.builder()
+                                                .title(messageService.get(env.context(), "commands.moderation-config.threshold-punishment.list.title"))
+                                                .description(str)
+                                                .color(env.configuration().discord().embedColor())
+                                                .footer(messageService.format(env.context(), "pagination.pages",
+                                                        page.getPage() + 1, page.getPageCount()), null)
+                                                .build())
+                                        .components(page.getItemsCount() > PER_PAGE
+                                                ? Possible.of(List.of(ActionRow.of(
+                                                page.previousButton(id -> Button.primary(id,
+                                                        messageService.get(env.context(), "pagination.prev-page"))),
+                                                page.nextButton(id -> Button.primary(id,
+                                                        messageService.get(env.context(), "pagination.next-page"))))))
+                                                : Possible.absent())
+                                        .build());
+
                 return owner.entityRetriever.getModerationConfigById(guildId)
                         .switchIfEmpty(owner.entityRetriever.createModerationConfigById(guildId))
                         .flatMap(config -> Mono.justOrEmpty(config.thresholdPunishments()).filter(l -> !l.isEmpty()))
                         .switchIfEmpty(messageService.err(env, "commands.moderation-config.threshold-punishment.list.empty").then(Mono.never()))
-                        .flatMap(map -> messageService.infoTitled(env, "commands.moderation-config.threshold-punishment.list.title",
-                                map.entrySet().stream()
-                                        .map(e -> formatter.apply(e.getKey(), e.getValue()))
-                                        .collect(Collectors.joining())));
+                        .flatMap(map -> MessagePaginator.paginate(env, map.size(), PER_PAGE, paginator));
             }
+        }
+    }
+
+    @Subcommand(name = "mute-role", description = "Настроить роль мута. При отсутствии используется таймаут")
+    protected static class MuteRoleSubcommand extends InteractionSubcommand<AdminConfigCommand> {
+
+        protected MuteRoleSubcommand(AdminConfigCommand owner) {
+            super(owner);
+
+            addOption(builder -> builder.name("value")
+                    .description("Новая роль мута.")
+                    .type(ApplicationCommandOption.Type.ROLE.getValue()));
+        }
+
+        @Override
+        public Publisher<?> execute(ChatInputInteractionEnvironment env) {
+
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
+
+            return owner.entityRetriever.getModerationConfigById(guildId)
+                    .switchIfEmpty(owner.entityRetriever.createModerationConfigById(guildId))
+                    .flatMap(config -> Mono.justOrEmpty(env.getOption("value")
+                                    .flatMap(ApplicationCommandInteractionOption::getValue)
+                                    .map(ApplicationCommandInteractionOptionValue::asSnowflake)
+                                    .map(Snowflake::asLong))
+                            .switchIfEmpty(messageService.text(env, "commands.moderation-config.mute-role.current",
+                                            config.muteRoleId().map(MessageUtil::getRoleMention)
+                                                    .orElseGet(() -> messageService.get(env.context(), "commands.moderation-config.mute-role.absent")))
+                                    .then(Mono.never()))
+                            .flatMap(roleId -> messageService.text(env, "commands.moderation-config.mute-role.update",
+                                            MessageUtil.getRoleMention(roleId))
+                                    .and(owner.entityRetriever.save(config.withMuteRoleId(roleId)))));
+        }
+    }
+
+    @Subcommand(name = "mute-role-reset", description = "Сбросить роль мута.")
+    protected static class MuteRoleResetSubcommand extends InteractionSubcommand<AdminConfigCommand> {
+
+        protected MuteRoleResetSubcommand(AdminConfigCommand owner) {
+            super(owner);
+        }
+
+        @Override
+        public Publisher<?> execute(ChatInputInteractionEnvironment env) {
+
+            Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
+
+            return owner.entityRetriever.getModerationConfigById(guildId)
+                    .switchIfEmpty(owner.entityRetriever.createModerationConfigById(guildId))
+                    .flatMap(config -> messageService.text(env, "commands.moderation-config.mute-role-reset.success")
+                            .and(owner.entityRetriever.save(config.withMuteRoleId(Optional.empty()))));
         }
     }
 }
