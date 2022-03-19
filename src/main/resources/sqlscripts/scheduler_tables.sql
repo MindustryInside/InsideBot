@@ -31,7 +31,6 @@ create table if not exists trigger(
     trigger_type varchar(200) not null,
     start_timestamp timestamptz not null,
     end_timestamp timestamptz null,
-    misfire_instruction smallint null,
     primary key (scheduler_name, trigger_group, trigger_name),
     foreign key (scheduler_name, job_group, job_name)
         references job_detail(scheduler_name, job_group, job_name)
