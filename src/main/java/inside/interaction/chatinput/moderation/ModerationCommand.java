@@ -30,7 +30,7 @@ public abstract class ModerationCommand extends InteractionGuildCommand {
 
         return entityRetriever.getModerationConfigById(author.getGuildId())
                 .filter(ConfigEntity::enabled)
-                .switchIfEmpty(messageService.err(env, "moderation.disabled").then(Mono.never()))
+                .switchIfEmpty(messageService.err(env, "Функции модерирования выключены на этом сервере").then(Mono.never()))
                 .flatMap(config -> or(super.filter(env), Mono.justOrEmpty(author.getRoleIds())
                         .flatMapIterable(Function.identity())
                         .map(id -> Id.of(id.asLong()))

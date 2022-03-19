@@ -3,6 +3,7 @@ package inside.data.api;
 import inside.data.annotation.Column;
 import reactor.util.annotation.Nullable;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Optional;
 
@@ -19,6 +20,8 @@ public interface PersistentProperty {
     Optional<Column> getColumn();
 
     Class<?> getClassType();
+
+    Method getMethod();
 
     @Nullable
     <T> T getValue(Object object);

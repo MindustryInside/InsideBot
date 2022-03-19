@@ -29,7 +29,7 @@ class BuilderMethods {
         this.build = Objects.requireNonNull(build, "build");
     }
 
-    private static BuilderMethods parse(Class<?> type) {
+    private static BuilderMethods compile(Class<?> type) {
         Preconditions.requireArgument(type.getSimpleName().startsWith("Immutable") &&
                 Modifier.isFinal(type.getModifiers()), () -> "No a immutable class: " + type);
 
@@ -79,7 +79,7 @@ class BuilderMethods {
     }
 
     public static BuilderMethods of(Class<?> type) {
-        return cache.computeIfAbsent(findImmutable(type), BuilderMethods::parse);
+        return cache.computeIfAbsent(findImmutable(type), BuilderMethods::compile);
     }
 
     public Method getFromMethod() {

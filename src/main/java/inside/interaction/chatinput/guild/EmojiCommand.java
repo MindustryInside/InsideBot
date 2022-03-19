@@ -38,13 +38,13 @@ public class EmojiCommand extends InteractionGuildCommand {
                 .filter(emoji -> emoji.asFormat().equals(emojistr) || emoji.getName().equals(emojistr) ||
                         emoji.getId().asString().equals(emojistr))
                 .next()
-                .switchIfEmpty(messageService.err(env, "commands.common.emoji-invalid").then(Mono.empty()))
+                .switchIfEmpty(messageService.err(env, "Неправильный формат эмодзи").then(Mono.empty()))
                 .flatMap(emoji -> env.event().reply()
                         .withEmbeds(EmbedCreateSpec.builder()
                                 .color(env.configuration().discord().embedColor())
                                 .image(emoji.getImageUrl() + "?size=512")
-                                .description(messageService.format(env.context(), "commands.emoji.format", emoji.getName(), emoji.asFormat()))
-                                .footer(messageService.format(env.context(), "common.id", emoji.getId().asString()), null)
+                                .description(String.format("Эмодзи **%s** (%s):", emoji.getName(), emoji.asFormat()))
+                                .footer(String.format("ID: %s", emoji.getId().asString()), null)
                                 .build()))
                 .then();
     }

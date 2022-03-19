@@ -37,7 +37,6 @@ import java.time.format.FormatStyle;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -111,33 +110,27 @@ public class StarboardEventHandler extends ReactiveEventAdapter {
                                     .map(u -> !u.getId().equals(event.getUserId()))
                                     .orElse(true)))
                             .flatMap(function((count, source) -> {
-
-                                // Это наверное не самый правильный способ реализовать обновление target_message_id
-                                // Но в принципе это самый лучший способ
-                                AtomicBoolean needCreate = new AtomicBoolean();
                                 AtomicReference<ImmutableStarboard> starboard = new AtomicReference<>();
-
-                                var formatted = emojis.stream()
-                                        .map(MessageUtil::getEmojiString)
-                                        .toList();
 
                                 Mono<Void> createNew = starboardChannel.flatMap(channel -> {
                                     var embedSpec = EmbedCreateSpec.builder();
                                     computeEmbed(context, source, guildId, embedSpec);
                                     embedSpec.color(lerp(offsetColor, targetColor, Mathf.round(count / 6f, lerpStep)));
 
+                                    String emoji = MessageUtil.getEmojiString(emojis.get(Math.toIntExact(
+                                            Mathf.clamp((count - 1) / 5, 0, emojis.size() - 1))));
+
                                     String text = "%s **%s** %s".formatted(
-                                            formatted.get(Math.toIntExact(Mathf.clamp((count - 1) / 5, 0, formatted.size() - 1))),
-                                            count, MessageUtil.getChannelMention(source.getChannelId()));
+                                            emoji, count, MessageUtil.getChannelMention(source.getChannelId()));
 
                                     return channel.createMessage(MessageCreateSpec.builder()
                                                     .content(text)
                                                     .addEmbed(embedSpec.build())
                                                     .build())
                                             .flatMap(target -> {
-                                                if (needCreate.get()) {
-                                                    return entityRetriever.save(starboard.get()
-                                                            .withTargetMessageId(target.getId().asLong()));
+                                                var st = starboard.get();
+                                                if (st != null) {
+                                                    return entityRetriever.save(st.withTargetMessageId(target.getId().asLong()));
                                                 }
                                                 return entityRetriever.createStarboard(guildId, source.getId(), target.getId());
                                             })
@@ -147,9 +140,8 @@ public class StarboardEventHandler extends ReactiveEventAdapter {
                                 return entityRetriever.getStarboardById(guildId, event.getMessageId())
                                         .switchIfEmpty(createNew.then(Mono.empty()))
                                         .flatMap(board -> event.getClient().getMessageById(channelId, Snowflake.of(board.targetMessageId()))
-                                                // Старборд удалён, но запись для него есть, значит просто не создаём новый
+                                                // Старборд удалён, но запись для него есть, значит просто создаём ембед, а запись нет
                                                 .switchIfEmpty(Mono.defer(() -> {
-                                                    needCreate.set(true);
                                                     starboard.set(board);
                                                     return createNew.then(Mono.empty());
                                                 })))
@@ -168,9 +160,11 @@ public class StarboardEventHandler extends ReactiveEventAdapter {
 
                                             embedSpec.color(lerp(offsetColor, targetColor, Mathf.round(count / 6f, lerpStep)));
 
+                                            String emoji = MessageUtil.getEmojiString(emojis.get(Math.toIntExact(
+                                                    Mathf.clamp((count - 1) / 5, 0, emojis.size() - 1))));
+
                                             String text = "%s **%s** %s".formatted(
-                                                    formatted.get(Math.toIntExact(Mathf.clamp((count - 1) / 5, 0, formatted.size() - 1))),
-                                                    count, MessageUtil.getChannelMention(source.getChannelId()));
+                                                    emoji, count, MessageUtil.getChannelMention(source.getChannelId()));
 
                                             return target.edit(MessageEditSpec.builder()
                                                     .addEmbed(embedSpec.build())
@@ -311,7 +305,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter {
         }
 
         embedSpec.description(content);
-        embedSpec.addField(messageService.get(ctx, "starboard.source"), messageService.format(ctx, "starboard.jump",
+        embedSpec.addField("Источник", String.format("[Прыгнуть!](https://discordapp.com/channels/%s/%s/%s)",
                 guildId.asString(), source.getChannelId().asString(), source.getId().asString()), false);
 
         embedSpec.footer(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
@@ -326,7 +320,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter {
                 .collect(Collectors.toSet());
 
         if (!files.isEmpty()) {
-            embedSpec.addField(messageService.get(ctx, "starboard.attachment" + (files.size() > 1 ? "s" : "")), files.stream()
+            embedSpec.addField("Файл" + (files.size() > 1 ? "ы" : ""), files.stream()
                     .map(att -> String.format("[%s](%s)%n", att.getFilename(), att.getUrl()))
                     .collect(Collectors.joining()), false);
         }

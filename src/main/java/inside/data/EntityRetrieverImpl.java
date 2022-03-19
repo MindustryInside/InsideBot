@@ -49,8 +49,7 @@ public class EntityRetrieverImpl implements EntityRetriever {
 
     @Override
     public Mono<Tuple2<Long, ImmutableActivity>> getPositionAndActivityById(Snowflake guildId, Snowflake userId) {
-        return repositoryHolder.activityRepository.findActivityPositionById(guildId.asLong(), userId.asLong())
-                .zipWith(getActivityById(guildId, userId));
+        return repositoryHolder.activityRepository.findActivityPositionById(guildId.asLong(), userId.asLong());
     }
 
     @Override
@@ -194,6 +193,7 @@ public class EntityRetrieverImpl implements EntityRetriever {
                 .guildId(guildId.asLong())
                 .locale(configuration.discord().locale())
                 .timezone(configuration.discord().timezone())
+                .prefixes(configuration.discord().prefixes())
                 .build());
     }
 

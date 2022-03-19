@@ -70,14 +70,14 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
             Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
 
             return owner.entityRetriever.getModerationConfigById(guildId)
-                    .switchIfEmpty(messageService.err(env, "commands.moderation-config.enable.unconfigured").then(Mono.never()))
+                    .switchIfEmpty(messageService.err(env, "Сначала измените настройки модерации").then(Mono.never()))
                     .flatMap(config -> Mono.justOrEmpty(env.getOption("value")
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asBoolean))
-                            .switchIfEmpty(messageService.text(env, "commands.moderation-config.enable.format",
-                                    messageService.getBool(env.context(), "commands.moderation-config.enable", config.enabled())).then(Mono.never()))
-                            .flatMap(state -> messageService.text(env, "commands.moderation-config.enable.format",
-                                            messageService.getBool(env.context(), "commands.moderation-config.enable", state))
+                            .switchIfEmpty(messageService.text(env, "Функции модерации: **%s**",
+                                    config.enabled() ? "включены" : "выключены").then(Mono.never()))
+                            .flatMap(state -> messageService.text(env, "Функции модерации: **%s**",
+                                    state ? "включены" : "выключены")
                                     .and(owner.entityRetriever.save(config.withEnabled(state)))));
         }
     }
@@ -105,21 +105,19 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
                     .flatMap(config -> Mono.justOrEmpty(env.getOption("value")
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asString))
-                            .switchIfEmpty(messageService.text(env, "commands.moderation-config.warn-expire-interval.current",
-                                    config.warnExpireInterval().map(formatDuration)
-                                            .orElseGet(() -> messageService.get(env.context(),
-                                                    "commands.moderation-config.interval-absent"))).then(Mono.never()))
+                            .switchIfEmpty(messageService.text(env, "Текущая базовая длительность предупреждений: **%s**",
+                                    config.warnExpireInterval().map(formatDuration).orElse("не установлена"))
+                                    .then(Mono.never()))
                             .flatMap(str -> {
                                 boolean delete = clearAliases.contains(str.toLowerCase(Locale.ROOT));
                                 Interval inter = delete ? null : MessageUtil.parseInterval(str);
                                 if (!delete && inter == null) {
-                                    return messageService.err(env, "commands.common.interval-invalid");
+                                    return messageService.err(env, "Неправильный формат длительности");
                                 }
 
-                                return messageService.text(env, "commands.moderation-config.warn-expire-interval.update",
-                                                Optional.ofNullable(inter).map(formatDuration)
-                                                        .orElseGet(() -> messageService.get(env.context(),
-                                                                "commands.moderation-config.interval-absent")))
+                                return messageService.text(env, delete ? "Базовая длительность предупреждений сброшена"
+                                                : "Базовая длительность предупреждений обновлена: **%s**",
+                                                Optional.ofNullable(inter).map(formatDuration).orElse("не установлена"))
                                         .and(owner.entityRetriever.save(config.withWarnExpireInterval(
                                                 Optional.ofNullable(inter))));
                             }));
@@ -149,21 +147,20 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
                     .flatMap(config -> Mono.justOrEmpty(env.getOption("value")
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asString))
-                            .switchIfEmpty(messageService.text(env, "commands.moderation-config.mute-base-interval.current",
-                                    config.muteBaseInterval().map(formatDuration)
-                                            .orElseGet(() -> messageService.get(env.context(),
-                                                    "commands.moderation-config.interval-absent"))).then(Mono.never()))
+                            .switchIfEmpty(messageService.text(env, "Текущая базовая длительность мута: **%s**",
+                                    config.muteBaseInterval().map(formatDuration).orElse("не установлена"))
+                                    .then(Mono.never()))
                             .flatMap(str -> {
                                 boolean delete = clearAliases.contains(str.toLowerCase(Locale.ROOT));
                                 Interval inter = delete ? null : MessageUtil.parseInterval(str);
                                 if (!delete && inter == null) {
-                                    return messageService.err(env, "commands.common.interval-invalid");
+                                    return messageService.err(env, "Неправильный формат длительности");
                                 }
 
-                                return messageService.text(env, "commands.moderation-config.mute-base-interval.update",
-                                                Optional.ofNullable(inter).map(formatDuration)
-                                                        .orElseGet(() -> messageService.get(env.context(),
-                                                                "commands.moderation-config.interval-absent")))
+                                return messageService.text(env, delete ?
+                                                "Базовая длительность мута сброшена"
+                                                : "Базовая длительность мута обновлена: **%s**",
+                                                Optional.ofNullable(inter).map(formatDuration).orElse("не установлена"))
                                         .and(owner.entityRetriever.save(config.withMuteBaseInterval(
                                                 Optional.ofNullable(inter))));
                             }));
@@ -212,10 +209,10 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
                             var set = new HashSet<>(config.adminRoleIds().orElse(Set.of()));
                             boolean add = set.add(roleId);
                             if (!add) {
-                                return messageService.err(env, "commands.moderation-config.admin-roles.add.already-exists");
+                                return messageService.err(env, "Такая роль уже находится в списке");
                             }
 
-                            return messageService.text(env, "commands.moderation-config.admin-roles.add.success",
+                            return messageService.text(env, "Роль успешно добавлена в список: %s",
                                             MessageUtil.getRoleMention(roleId.asLong()))
                                     .and(owner.entityRetriever.save(config.withAdminRoleIds(set)));
                         });
@@ -252,10 +249,10 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
                             var set = new HashSet<>(config.adminRoleIds().orElse(Set.of()));
                             boolean remove = set.remove(roleId);
                             if (!remove) {
-                                return messageService.err(env, "commands.moderation-config.admin-roles.remove.unknown");
+                                return messageService.err(env, "Такой роли нет в списке");
                             }
 
-                            return messageService.text(env, "commands.moderation-config.admin-roles.remove.success",
+                            return messageService.text(env, "Роль успешно удалена из списка: %s",
                                             MessageUtil.getRoleMention(roleId.asLong()))
                                     .and(owner.entityRetriever.save(config.withAdminRoleIds(set)));
                         });
@@ -278,8 +275,8 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
                 return owner.entityRetriever.getModerationConfigById(guildId)
                         .switchIfEmpty(owner.entityRetriever.createModerationConfigById(guildId))
                         .filter(config -> config.adminRoleIds().map(l -> !l.isEmpty()).orElse(false))
-                        .switchIfEmpty(messageService.err(env, "commands.moderation-config.admin-roles.list.empty").then(Mono.never()))
-                        .flatMap(config -> messageService.text(env, "commands.moderation-config.admin-roles.clear.success")
+                        .switchIfEmpty(messageService.err(env, "Список ролей пуст").then(Mono.never()))
+                        .flatMap(config -> messageService.text(env, "Список ролей-админов отчищен")
                                 .and(owner.entityRetriever.save(config.withAdminRoleIds(Optional.empty()))));
             }
         }
@@ -300,8 +297,8 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
                 return owner.entityRetriever.getModerationConfigById(guildId)
                         .switchIfEmpty(owner.entityRetriever.createModerationConfigById(guildId))
                         .flatMap(config -> Mono.justOrEmpty(config.adminRoleIds()).filter(l -> !l.isEmpty()))
-                        .switchIfEmpty(messageService.err(env, "commands.moderation-config.admin-roles.list.empty").then(Mono.never()))
-                        .flatMap(list -> messageService.text(env, "commands.moderation-config.admin-roles.list.format",
+                        .switchIfEmpty(messageService.err(env, "Список ролей пуст").then(Mono.never()))
+                        .flatMap(list -> messageService.text(env, "Текущий список ролей: **%s**",
                                 list.stream().map(i -> MessageUtil.getRoleMention(i.asLong()))
                                         .collect(Collectors.joining(", "))));
             }
@@ -376,7 +373,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
                         : Possible.absent();
 
                 if (!inter.isAbsent() && inter.get().isEmpty()) {
-                    return messageService.err(env, "commands.common.interval-invalid");
+                    return messageService.err(env, "Неправильный формат длительности");
                 }
 
                 PunishmentSettings punishmentSettings = PunishmentSettings.builder()
@@ -397,11 +394,10 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
                             var map = new HashMap<>(config.thresholdPunishments().orElse(Map.of()));
                             boolean add = map.put(warnNumber, punishmentSettings) == null;
                             if (!add) {
-                                return messageService.err(env, "commands.moderation-config.threshold-punishment.add.already-exists");
+                                return messageService.err(env, "Такое авто-наказание уже есть");
                             }
 
-                            return messageService.text(env, "commands.moderation-config.threshold-punishment.add.success",
-                                            formatter.apply(punishmentSettings))
+                            return messageService.text(env, "Авто-наказание успешно создано: %s", formatter.apply(punishmentSettings))
                                     .and(owner.entityRetriever.save(config.withThresholdPunishments(map)));
                         });
             }
@@ -445,11 +441,10 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
                             var map = new HashMap<>(config.thresholdPunishments().orElse(Map.of()));
                             PunishmentSettings remove = map.remove(warnNumber);
                             if (remove == null) {
-                                return messageService.err(env, "commands.moderation-config.threshold-punishment.remove.unknown");
+                                return messageService.err(env, "Такого авто-наказания нет");
                             }
 
-                            return messageService.text(env, "commands.moderation-config.threshold-punishment.remove.success",
-                                            formatter.apply(remove))
+                            return messageService.text(env, "Авто-наказание успешно удалено: %s", formatter.apply(remove))
                                     .and(owner.entityRetriever.save(config.withThresholdPunishments(map)));
                         });
             }
@@ -471,8 +466,8 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
                 return owner.entityRetriever.getModerationConfigById(guildId)
                         .switchIfEmpty(owner.entityRetriever.createModerationConfigById(guildId))
                         .filter(config -> config.thresholdPunishments().map(l -> !l.isEmpty()).orElse(false))
-                        .switchIfEmpty(messageService.err(env, "commands.moderation-config.threshold-punishment.list.empty").then(Mono.never()))
-                        .flatMap(config -> messageService.text(env, "commands.moderation-config.threshold-punishment.clear.success")
+                        .switchIfEmpty(messageService.err(env, "Список авто-наказаний пуст").then(Mono.never()))
+                        .flatMap(config -> messageService.text(env, "Список авто-наказаний очищен")
                                 .and(owner.entityRetriever.save(config.withThresholdPunishments(Optional.empty()))));
             }
         }
@@ -504,32 +499,29 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
                                 .flatMapMany(config -> Mono.justOrEmpty(config.thresholdPunishments())
                                         .filter(l -> !l.isEmpty())
                                         .flatMapIterable(Map::entrySet))
-                                .switchIfEmpty(messageService.err(env, "commands.moderation-config.threshold-punishment.list.empty").then(Mono.never()))
+                                .switchIfEmpty(messageService.err(env, "Список авто-наказаний пуст").then(Mono.never()))
                                 .sort(Comparator.comparingLong(Map.Entry::getKey))
                                 .skip(page.getPage() * PER_PAGE).take(PER_PAGE, true)
                                 .map(entry -> formatter.apply(entry.getKey(), entry.getValue()))
                                 .collect(Collectors.joining())
                                 .map(str -> MessageCreateSpec.builder()
                                         .addEmbed(EmbedCreateSpec.builder()
-                                                .title(messageService.get(env.context(), "commands.moderation-config.threshold-punishment.list.title"))
+                                                .title("Текущий список авто-наказаний")
                                                 .description(str)
                                                 .color(env.configuration().discord().embedColor())
-                                                .footer(messageService.format(env.context(), "pagination.pages",
-                                                        page.getPage() + 1, page.getPageCount()), null)
+                                                .footer(String.format("Страница %s/%s", page.getPage() + 1, page.getPageCount()), null)
                                                 .build())
                                         .components(page.getItemsCount() > PER_PAGE
                                                 ? Possible.of(List.of(ActionRow.of(
-                                                page.previousButton(id -> Button.primary(id,
-                                                        messageService.get(env.context(), "pagination.prev-page"))),
-                                                page.nextButton(id -> Button.primary(id,
-                                                        messageService.get(env.context(), "pagination.next-page"))))))
+                                                page.previousButton(id -> Button.primary(id, "Предыдущая Страница")),
+                                                page.nextButton(id -> Button.primary(id, "Следующая Страница")))))
                                                 : Possible.absent())
                                         .build());
 
                 return owner.entityRetriever.getModerationConfigById(guildId)
                         .switchIfEmpty(owner.entityRetriever.createModerationConfigById(guildId))
                         .flatMap(config -> Mono.justOrEmpty(config.thresholdPunishments()).filter(l -> !l.isEmpty()))
-                        .switchIfEmpty(messageService.err(env, "commands.moderation-config.threshold-punishment.list.empty").then(Mono.never()))
+                        .switchIfEmpty(messageService.err(env, "Список авто-наказаний пуст").then(Mono.never()))
                         .flatMap(map -> MessagePaginator.paginate(env, map.size(), PER_PAGE, paginator));
             }
         }
@@ -557,11 +549,10 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asSnowflake)
                                     .map(Snowflake::asLong))
-                            .switchIfEmpty(messageService.text(env, "commands.moderation-config.mute-role.current",
-                                            config.muteRoleId().map(MessageUtil::getRoleMention)
-                                                    .orElseGet(() -> messageService.get(env.context(), "commands.moderation-config.mute-role.absent")))
+                            .switchIfEmpty(messageService.text(env, "Текущая роль мута: **%s**",
+                                    config.muteRoleId().map(MessageUtil::getRoleMention).orElse("Не установлена"))
                                     .then(Mono.never()))
-                            .flatMap(roleId -> messageService.text(env, "commands.moderation-config.mute-role.update",
+                            .flatMap(roleId -> messageService.text(env, "Роль мута обновлена: %s",
                                             MessageUtil.getRoleMention(roleId))
                                     .and(owner.entityRetriever.save(config.withMuteRoleId(roleId)))));
         }
@@ -581,7 +572,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
 
             return owner.entityRetriever.getModerationConfigById(guildId)
                     .switchIfEmpty(owner.entityRetriever.createModerationConfigById(guildId))
-                    .flatMap(config -> messageService.text(env, "commands.moderation-config.mute-role-reset.success")
+                    .flatMap(config -> messageService.text(env, "Роль мута успешно сброшена")
                             .and(owner.entityRetriever.save(config.withMuteRoleId(Optional.empty()))));
         }
     }

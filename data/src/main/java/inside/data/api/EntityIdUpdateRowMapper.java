@@ -1,5 +1,6 @@
 package inside.data.api;
 
+import inside.data.annotation.Entity;
 import inside.data.api.r2dbc.R2dbcRow;
 import inside.data.api.r2dbc.RowMapper;
 import inside.util.Reflect;
@@ -26,42 +27,35 @@ public class EntityIdUpdateRowMapper<T> implements RowMapper<T> {
 
     @Override
     public T apply(R2dbcRow row) {
-        // class-style entities
-        if (!info.getType().isInterface()) {
-            for (PersistentProperty p : info.getGeneratedProperties()) {
-                if (p instanceof FieldPersistentProperty prop) {
-                    var descriptor = entityOperations.getDescriptor(prop);
-                    Object obj = descriptor != null
-                            ? descriptor.wrap(row.get(prop.getName(), descriptor.getSqlType()))
-                            : row.get(prop.getName(), Reflect.wrapIfPrimitive(prop.getClassType()));
-
-                    Reflect.set(prop.getField(), object, obj);
-                }
-            }
-
-            return object;
-        }
-
-        var factory = BuilderMethods.of(info.getType());
+        BuilderMethods factory = BuilderMethods.of(info.getType());
         Object builder = Reflect.invoke(factory.getBuilder(), null);
         Reflect.invoke(factory.getFromMethod(), builder, object);
 
         for (PersistentProperty prop : info.getGeneratedProperties()) {
-            if (prop instanceof MethodPersistentProperty mprop) {
-                var descriptor = entityOperations.getDescriptor(mprop);
-                Object obj = descriptor != null
-                        ? descriptor.wrap(row.get(mprop.getName(), descriptor.getSqlType()))
-                        : row.get(mprop.getName(), Reflect.wrapIfPrimitive(mprop.getClassType()));
+            boolean isEntity = prop.getClassType().isAnnotationPresent(Entity.class);
+            Object old = prop.getValue(object);
+            Object obj = old;
+            if (old != null && isEntity) {
+                var fmapper = create(old, entityOperations.getInformation(prop.getClassType()), entityOperations);
 
-                factory.getMethods().stream()
-                        .filter(m -> {
-                            Type[] params = m.getGenericParameterTypes();
-                            return m.getName().equals(mprop.getMethod().getName()) &&
-                                    params.length == 1 && params[0].equals(mprop.getType());
-                        })
-                        .findFirst()
-                        .ifPresent(m -> Reflect.invoke(m, builder, obj));
+                obj = fmapper.apply(row);
+            } else if (!isEntity) {
+                var descriptor = entityOperations.getDescriptor(prop);
+                obj = descriptor != null
+                        ? descriptor.wrap(row.get(prop.getName(), descriptor.getSqlType()))
+                        : row.get(prop.getName(), Reflect.wrapIfPrimitive(prop.getClassType()));
             }
+
+            Object obj0 = obj;
+
+            factory.getMethods().stream()
+                    .filter(m -> {
+                        Type[] params = m.getGenericParameterTypes();
+                        return m.getName().equals(prop.getMethod().getName()) &&
+                                params.length == 1 && params[0].equals(prop.getType());
+                    })
+                    .findFirst()
+                    .ifPresent(m -> Reflect.invoke(m, builder, obj0));
         }
 
         return Reflect.invoke(factory.getBuild(), builder);

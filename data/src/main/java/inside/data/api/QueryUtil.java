@@ -1,33 +1,39 @@
 package inside.data.api;
 
 import inside.data.annotation.Column;
+import inside.data.annotation.Entity;
 import inside.data.annotation.Query;
+import inside.util.Mathf;
 import inside.util.Preconditions;
+import inside.util.Reflect;
+import org.reactivestreams.Publisher;
+import reactor.util.function.Tuple2;
 
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class QueryUtil {
 
     public static final String SELECT_ALL_QUERY_STRING = "select * from %s";
     public static final String SELECT_COUNT_QUERY_STRING = "select count(*) from %s";
 
+    public static final Pattern andPattern = Pattern.compile("And");
     public static final Pattern isCountQueryPattern = Pattern.compile("^(.+count.+)$", Pattern.CASE_INSENSITIVE);
 
+    private static final String selfAlias = "self";
     private static final Map<List<String>, String> sqlAliases = Map.of(
-            List.of("findAll", "findAllBy", "findBy", "getAllBy", "getBy"), "select *",
-            List.of("count", "countBy"), "select count(*)",
-            List.of("delete", "deleteBy", "deleteAllBy"), "delete");
+            List.of("find", "findAll", "get", "getAll"), "select",
+            List.of("count"), "select count(*)",
+            List.of("delete", "deleteAll"), "delete");
 
     private static final Pattern prefixPattern = Pattern.compile("^(" + sqlAliases.keySet().stream()
                     .map(list -> String.join("|", list))
-                    .collect(Collectors.joining("|")) + ").*",
+                    .collect(Collectors.joining("|")) + ")(.+)$",
             Pattern.CASE_INSENSITIVE);
 
     private QueryUtil() {
@@ -55,28 +61,36 @@ public abstract class QueryUtil {
         builder.append(info.getTable());
 
         builder.append(" where ");
-        var idProperties = info.getIdProperties();
-        for (int i = 0; i < idProperties.size(); i++) {
-            var property = idProperties.get(i);
-
-            builder.append(property.getName());
-            builder.append(" = $").append(i + 1);
-            if (i != idProperties.size() - 1) {
-                builder.append(", ");
-            }
-        }
+        var idProperty = info.getIdProperty();
+        builder.append(idProperty.getName()).append(" = $1");
 
         return builder.toString();
     }
 
-    public static <T> String parseSql(Method method, RelationEntityInformation<T> info) {
+    public static <T> ParseResult parseSql(Method method, RelationEntityInformation<T> info) {
         Objects.requireNonNull(method, "method");
         Preconditions.requireArgument(!Modifier.isStatic(method.getModifiers()));
         Preconditions.requireArgument(Modifier.isAbstract(method.getDeclaringClass().getModifiers()));
+        if (!(method.getGenericReturnType() instanceof ParameterizedType r &&
+                Publisher.class.isAssignableFrom(Reflect.toClass(r.getRawType())))) {
+            throw new IllegalStateException();
+        }
 
+        Type ret = r.getActualTypeArguments()[0];
         Query queryMeta = method.getDeclaredAnnotation(Query.class); // Пользовательский sql
+        List<Class<?>> returns = List.of(info.getType());
         if (queryMeta != null) {
-            return queryMeta.value();
+            if (ret instanceof ParameterizedType tp && Tuple2.class.isAssignableFrom(Reflect.toClass(tp.getRawType()))) {
+                returns = Stream.of(tp.getActualTypeArguments())
+                        .map(Reflect::toClass)
+                        .collect(Collectors.toUnmodifiableList());
+
+                Preconditions.requireState(returns.size() <= 8, "Incorrect props count to return, max is 8");
+            } else if (ret instanceof Class<?> c) {
+                returns = List.of(c);
+            }
+
+            return new ParseResult(queryMeta.value(), returns);
         }
 
         Preconditions.requireArgument(prefixPattern.matcher(method.getName()).find(),
@@ -99,51 +113,90 @@ public abstract class QueryUtil {
                 .orElseThrow();
 
         builder.append(prefix);
-        builder.append(" from ");
 
+        int byBegin = query.indexOf("By");
+
+        String propsSubstr = byBegin != -1 ? query.substring(0, byBegin) : ""; // то что возвращаем
+        String querySubstr = byBegin != -1 ? query.substring(byBegin + 2) : query; // параметры
+
+        if (!propsSubstr.isEmpty()) { // выборка конкретных полей
+            if (!(ret instanceof ParameterizedType tp &&
+                    Tuple2.class.isAssignableFrom(Reflect.toClass(tp.getRawType())))) {
+                throw new IllegalStateException();
+            }
+
+            var props = info.getProperties().stream()
+                    .collect(Collectors.toMap(p -> p.getName().toLowerCase(Locale.ROOT), Function.identity()));
+
+            StringJoiner retpr = new StringJoiner(", ");
+            returns = andPattern.splitAsStream(propsSubstr)
+                    .map(rn -> rn.toLowerCase(Locale.ROOT))
+                    .map(s -> {
+                        if (s.equals(selfAlias)) {
+                            info.getProperties().stream()
+                                    .map(PersistentProperty::getName)
+                                    .forEach(retpr::add);
+
+                            return info.getType();
+                        }
+
+                        PersistentProperty p = props.get(s);
+                        Preconditions.requireState(p != null, () -> "No persistent properties with name '" +
+                                s + "' in the class '" + info.getType().getCanonicalName() + "' found");
+
+                        retpr.add(p.getName());
+                        return p.getClassType();
+                    })
+                    .collect(Collectors.toUnmodifiableList());
+
+            Preconditions.requireState(returns.size() <= 8, "Incorrect props count to return, max is 8");
+
+            builder.append(" ").append(retpr);
+        } else if (prefix.equals("select")) {
+            builder.append(" *");
+        }
+
+        builder.append(" from ");
         builder.append(info.getTable());
-        if (method.getParameterCount() > 0) {
+
+        if (method.getParameterCount() > 0 && !querySubstr.isEmpty()) {
 
             builder.append(" where ");
-            if (query.contains("And")) {
-                String[] parts = query.split("And");
+            if (querySubstr.contains("And")) {
+                String[] parts = andPattern.split(querySubstr);
                 Preconditions.requireArgument(parts.length == method.getParameterCount(), () ->
                         "Malformed parameters count for method " + method);
 
                 for (int i = 0; i < parts.length; i++) {
                     String part = parts[i];
-                    PersistentProperty targetProperty = info.getProperties().stream()
+                    PersistentProperty targetProp = info.getProperties().stream()
                             .filter(prop -> eq(prop, part))
                             .findFirst()
                             .orElseThrow();
 
-                    builder.append(targetProperty.getName()).append(" = $").append(i + 1);
+                    builder.append(targetProp.getName()).append(" = $").append(i + 1);
                     if (i + 1 != parts.length) {
                         builder.append(" and ");
                     }
                 }
             } else {
-                PersistentProperty targetProperty = info.getProperties().stream()
-                        .filter(prop -> eq(prop, query))
+                PersistentProperty targetProp = info.getProperties().stream()
+                        .filter(prop -> eq(prop, querySubstr))
                         .findFirst()
                         .orElseThrow();
 
-                builder.append(targetProperty.getName()).append(" = $1");
+                builder.append(targetProp.getName()).append(" = $1");
             }
         }
 
-        return builder.toString();
+        String sql = builder.toString();
+
+        return new ParseResult(sql, returns);
     }
 
     private static boolean eq(PersistentProperty prop, String query) {
         String fixed = Character.toLowerCase(query.charAt(0)) + query.substring(1);
-        if (prop instanceof FieldPersistentProperty f) {
-            return f.getField().getName().equals(fixed);
-        } else if (prop instanceof MethodPersistentProperty m) {
-            return m.getMethod().getName().equals(fixed);
-        } else {
-            throw new IllegalStateException("Not a valid persistent property type: " + prop.getClass());
-        }
+        return prop.getMethod().getName().equals(fixed);
     }
 
     public static <T> String createUpdateSql(RelationEntityInformation<T> info) {
@@ -165,16 +218,8 @@ public abstract class QueryUtil {
         }
 
         builder.append(" where ");
-        var idProperties = info.getIdProperties();
-        for (int i = 0, offset = candidateProperties.size(); i < idProperties.size(); i++) {
-            var property = idProperties.get(i);
-
-            builder.append(property.getName());
-            builder.append(" = $").append(i + offset + 1);
-            if (i != idProperties.size() - 1) {
-                builder.append(", ");
-            }
-        }
+        var idProperty = info.getIdProperty();
+        builder.append(idProperty.getName()).append(" = $").append(candidateProperties.size() + 1);
 
         return builder.toString();
     }
@@ -205,22 +250,44 @@ public abstract class QueryUtil {
         return builder.toString();
     }
 
-    public static <T> String createSelectSql(RelationEntityInformation<T> info) {
+    private static String generateAlias(RelationEntityInformation<?> info) {
+        return info.getTable().charAt(0) + Integer.toHexString(Mathf.random.nextInt());
+    }
+
+    public static <T> String createSelectSql(RelationEntityInformation<T> info, EntityOperations entityOperations) {
         StringBuilder builder = new StringBuilder();
         builder.append("select * from ");
         builder.append(info.getTable());
 
-        builder.append(" where ");
-        var idProperties = info.getIdProperties();
-        for (int i = 0; i < idProperties.size(); i++) {
-            var property = idProperties.get(i);
-
-            builder.append(property.getName());
-            builder.append(" = $").append(i + 1);
-            if (i != idProperties.size() - 1) {
-                builder.append(", ");
+        String alias = "";
+        var candidateProperties = info.getCandidateProperties();
+        for (PersistentProperty property : candidateProperties) {
+            if (!property.getClassType().isAnnotationPresent(Entity.class)) {
+                continue;
             }
+
+            if (alias.isEmpty()) {
+                alias = generateAlias(info);
+                builder.append(" as ").append(alias);
+            }
+
+            var finfo = entityOperations.getInformation(property.getClassType());
+            String falias = generateAlias(finfo);
+
+            builder.append(" left join ").append(finfo.getTable());
+            builder.append(" as ").append(falias);
+            builder.append(" on ");
+
+            builder.append(alias).append('.').append(property.getName()).append(" = ");
+            builder.append(falias).append('.').append(property.getColumn()
+                    .map(Column::referencedColumnName)
+                    .filter(Predicate.not(String::isBlank))
+                    .orElseThrow());
         }
+
+        builder.append(" where ");
+        var idProperty = info.getIdProperty();
+        builder.append(idProperty.getName()).append(" = $1");
 
         return builder.toString();
     }
@@ -228,4 +295,6 @@ public abstract class QueryUtil {
     public static <T> String createCountSql(RelationEntityInformation<T> info) {
         return String.format(SELECT_COUNT_QUERY_STRING, info.getTable());
     }
+
+    public record ParseResult(String sql, List<Class<?>> returns) {}
 }

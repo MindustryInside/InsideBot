@@ -59,14 +59,14 @@ public class StarboardCommand extends ConfigOwnerCommand {
             return owner.entityRetriever.getStarboardConfigById(guildId)
                     .filter(config -> !config.emojis().isEmpty() && config.threshold() != -1 &&
                             config.starboardChannelId() != -1)
-                    .switchIfEmpty(messageService.err(env, "commands.starboard.enable.unconfigured").then(Mono.never()))
+                    .switchIfEmpty(messageService.err(env, "Сначала измените настройки звёздной доски").then(Mono.never()))
                     .flatMap(config -> Mono.justOrEmpty(env.getOption("value")
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asBoolean))
-                            .switchIfEmpty(messageService.text(env, "commands.starboard.enable.format",
-                                    messageService.getBool(env.context(), "commands.starboard.enable", config.enabled())).then(Mono.never()))
-                            .flatMap(state -> messageService.text(env, "commands.starboard.enable.format",
-                                            messageService.getBool(env.context(), "commands.starboard.enable", state))
+                            .switchIfEmpty(messageService.text(env, "Ведение звёздной доски: **%s**",
+                                    config.enabled() ? "включено" : "выключено").then(Mono.never()))
+                            .flatMap(state -> messageService.text(env, "Ведение звёздной доски: **%s**",
+                                    state ? "включено" : "выключено")
                                     .and(owner.entityRetriever.save(config.withEnabled(state)))));
         }
     }
@@ -92,10 +92,11 @@ public class StarboardCommand extends ConfigOwnerCommand {
                     .flatMap(config -> Mono.justOrEmpty(env.getOption("value")
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asBoolean))
-                            .switchIfEmpty(messageService.text(env, "commands.starboard.self-starring.format",
-                                    messageService.getBool(env.context(), "commands.starboard.self-starring", config.selfStarring())).then(Mono.never()))
-                            .flatMap(state -> messageService.text(env, "commands.starboard.self-starring.format",
-                                    messageService.getBool(env.context(), "commands.starboard.self-starring", state))
+                            .switchIfEmpty(messageService.text(env, "Учёт собственной реакции: **{0}**",
+                                    config.selfStarring() ? "включен" : "выключен")
+                                    .then(Mono.never()))
+                            .flatMap(state -> messageService.text(env, "Учёт собственной реакции: **{0}**",
+                                    state ? "включен" : "выключен")
                                     .and(owner.entityRetriever.save(config.withSelfStarring(state)))));
         }
     }
@@ -124,10 +125,9 @@ public class StarboardCommand extends ConfigOwnerCommand {
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asLong)
                                     .map(Math::toIntExact))
-                            .switchIfEmpty(messageService.text(env, "commands.starboard.threshold.current", config.threshold() == -1
-                                    ? messageService.get(env.context(), "commands.starboard.threshold.absent")
-                                    : config.threshold()).then(Mono.never()))
-                            .flatMap(threshold -> messageService.text(env, "commands.starboard.threshold.update", threshold)
+                            .switchIfEmpty(messageService.text(env, "Текущий порог реакций: **%s**", config.threshold() == -1
+                                    ? "не установлен" : config.threshold()).then(Mono.never()))
+                            .flatMap(threshold -> messageService.text(env, "Порог реакций обновлен: **%s**", threshold)
                                     .and(owner.entityRetriever.save(config.withThreshold(threshold)))));
         }
     }
@@ -154,10 +154,10 @@ public class StarboardCommand extends ConfigOwnerCommand {
                     .flatMap(config -> Mono.justOrEmpty(env.getOption("value")
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asSnowflake))
-                            .switchIfEmpty(messageService.text(env, "commands.starboard.channel.current", config.starboardChannelId() == -1
-                                    ? messageService.get(env.context(), "commands.starboard.channel.absent")
+                            .switchIfEmpty(messageService.text(env, "Текущий канал для ведения звёздной доски: **%s**",
+                                    config.starboardChannelId() == -1 ? "не установлен"
                                     : MessageUtil.getChannelMention(config.starboardChannelId())).then(Mono.never()))
-                            .flatMap(channelId -> messageService.text(env, "commands.starboard.channel.update",
+                            .flatMap(channelId -> messageService.text(env, "Канал для ведения доски обновлён: {%s",
                                     MessageUtil.getChannelMention(channelId))
                                     .and(owner.entityRetriever.save(config.withStarboardChannelId(channelId.asLong())))));
         }
@@ -206,7 +206,7 @@ public class StarboardCommand extends ConfigOwnerCommand {
                         .switchIfEmpty(Mono.defer(() -> {
                             Matcher mtch = emojiPattern.matcher(emojistr);
                             if (!mtch.matches()) {
-                                return messageService.err(env, "commands.common.emoji-invalid").then(Mono.empty());
+                                return messageService.err(env, "Неправильный формат эмодзи").then(Mono.empty());
                             }
                             return Mono.just(EmojiData.builder()
                                     .name(emojistr)
@@ -220,10 +220,10 @@ public class StarboardCommand extends ConfigOwnerCommand {
                             var set = new HashSet<>(config.emojis());
                             boolean add = set.add(emoji);
                             if (!add) {
-                                return messageService.err(env, "commands.starboard.emoji.add.already-exists");
+                                return messageService.err(env, "Такая реакция уже находится в списке.");
                             }
 
-                            return messageService.text(env, "commands.starboard.emoji.add.success",
+                            return messageService.text(env, "Реакция успешно добавлена в список: **%s**",
                                             MessageUtil.getEmojiString(emoji))
                                     .and(owner.entityRetriever.save(config.withEmojis(set)));
                         }));
@@ -261,7 +261,7 @@ public class StarboardCommand extends ConfigOwnerCommand {
                         .switchIfEmpty(Mono.defer(() -> {
                             Matcher mtch = emojiPattern.matcher(emojistr);
                             if (!mtch.matches()) {
-                                return messageService.err(env, "commands.common.emoji-invalid").then(Mono.empty());
+                                return messageService.err(env, "Неправильный формат эмодзи").then(Mono.empty());
                             }
                             return Mono.just(EmojiData.builder()
                                     .name(emojistr)
@@ -275,10 +275,11 @@ public class StarboardCommand extends ConfigOwnerCommand {
                             var set = new HashSet<>(config.emojis());
                             boolean remove = set.remove(emoji);
                             if (!remove) {
-                                return messageService.err(env, "commands.starboard.emoji.remove.unknown");
+                                return messageService.err(env, "Такой реакции нет в списке.");
                             }
 
-                            return messageService.text(env, "commands.starboard.emoji.remove.success", MessageUtil.getEmojiString(emoji))
+                            return messageService.text(env, "Реакция успешно удалена из списка: **%s**",
+                                    MessageUtil.getEmojiString(emoji))
                                     .and(owner.entityRetriever.save(config.withEmojis(set)));
                         }));
             }
@@ -300,8 +301,8 @@ public class StarboardCommand extends ConfigOwnerCommand {
                 return owner.entityRetriever.getStarboardConfigById(guildId)
                         .switchIfEmpty(owner.entityRetriever.createStarboardConfig(guildId))
                         .flatMap(config -> config.emojis().isEmpty()
-                                ? messageService.err(env, "commands.starboard.emoji.list.empty")
-                                : messageService.text(env, "commands.starboard.emoji.clear.success")
+                                ? messageService.err(env, "Список эмодзи пуст")
+                                : messageService.text(env, "Список эмодзи очищен")
                                 .and(owner.entityRetriever.save(config.withEmojis(List.of()))));
             }
         }
@@ -322,8 +323,8 @@ public class StarboardCommand extends ConfigOwnerCommand {
                 return owner.entityRetriever.getStarboardConfigById(guildId)
                         .switchIfEmpty(owner.entityRetriever.createStarboardConfig(guildId))
                         .flatMap(config -> config.emojis().isEmpty()
-                                ? messageService.err(env, "commands.starboard.emoji.list.empty")
-                                : messageService.infoTitled(env, "commands.starboard.emoji.list.title", formatEmojis(config)));
+                                ? messageService.err(env, "Список эмодзи пуст")
+                                : messageService.infoTitled(env, "Текущий список эмодзи", formatEmojis(config)));
             }
 
             private static String formatEmojis(StarboardConfig config){

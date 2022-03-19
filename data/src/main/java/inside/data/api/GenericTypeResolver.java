@@ -26,13 +26,11 @@ public final class GenericTypeResolver {
     }
 
     public static Map<TypeVariable<?>, Type> getTypeVariableMap(Class<?> clazz) {
-        var typeVariableMap = typeVariableCache.get(clazz);
-        if (typeVariableMap == null) {
-            typeVariableMap = new HashMap<>();
-            buildTypeVariableMap(ResolvableType.forClass(clazz), typeVariableMap);
-            typeVariableCache.put(clazz, Collections.unmodifiableMap(typeVariableMap));
-        }
-        return typeVariableMap;
+        return typeVariableCache.computeIfAbsent(clazz, c -> {
+            Map<TypeVariable<?>, Type> m = new HashMap<>();
+            buildTypeVariableMap(ResolvableType.forClass(c), m);
+            return Collections.unmodifiableMap(m);
+        });
     }
 
     private static void buildTypeVariableMap(ResolvableType type, Map<? super TypeVariable<?>, ? super Type> typeVariableMap) {

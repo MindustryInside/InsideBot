@@ -3,32 +3,35 @@ package inside.data.api;
 import inside.data.annotation.Column;
 import inside.data.annotation.Generated;
 import inside.data.annotation.Id;
+import inside.util.Preconditions;
 import inside.util.Reflect;
 import reactor.util.annotation.Nullable;
 
-import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-public class FieldPersistentProperty implements PersistentProperty {
-    private final Field field;
-    private final boolean id;
-    private final boolean generated;
+class PersistentPropertyImpl implements PersistentProperty {
+    private final Method method;
     @Nullable
     private final Column column;
+    private final boolean id;
+    private final boolean generated;
 
-    public FieldPersistentProperty(Field field) {
-        this.field = Objects.requireNonNull(field, "field");
+    public PersistentPropertyImpl(Method method) {
+        this.method = Objects.requireNonNull(method, "method");
+        Preconditions.requireArgument(method.getParameterCount() == 0, () -> "Not a getter method: " + method);
 
-        column = field.getAnnotation(Column.class);
-        id = field.isAnnotationPresent(Id.class);
-        generated = field.isAnnotationPresent(Generated.class);
+        column = method.getAnnotation(Column.class);
+        id = method.isAnnotationPresent(Id.class);
+        generated = method.isAnnotationPresent(Generated.class);
     }
 
-    public Field getField() {
-        return field;
+    @Override
+    public Method getMethod() {
+        return method;
     }
 
     @Override
@@ -46,12 +49,12 @@ public class FieldPersistentProperty implements PersistentProperty {
         return Optional.ofNullable(column)
                 .map(Column::name)
                 .filter(Predicate.not(String::isBlank))
-                .orElseGet(field::getName);
+                .orElseGet(method::getName);
     }
 
     @Override
     public Type getType() {
-        return field.getGenericType();
+        return method.getGenericReturnType();
     }
 
     @Override
@@ -61,12 +64,12 @@ public class FieldPersistentProperty implements PersistentProperty {
 
     @Override
     public Class<?> getClassType() {
-        return field.getType();
+        return method.getReturnType();
     }
 
     @Override
     public <T> T getValue(Object object) {
-        return Reflect.get(field, object);
+        return Reflect.invoke(method, object);
     }
 
     @Override
@@ -77,24 +80,23 @@ public class FieldPersistentProperty implements PersistentProperty {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        FieldPersistentProperty that = (FieldPersistentProperty) o;
+        PersistentPropertyImpl that = (PersistentPropertyImpl) o;
         return id == that.id && generated == that.generated &&
-                field.equals(that.field) &&
-                Objects.equals(column, that.column);
+                method.equals(that.method) && Objects.equals(column, that.column);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(field, id, generated, column);
+        return Objects.hash(method, column, id, generated);
     }
 
     @Override
     public String toString() {
-        return "FieldPersistentProperty{" +
-                "field=" + field +
+        return "MethodPersistentProperty{" +
+                "method=" + method +
+                ", column=" + column +
                 ", id=" + id +
                 ", generated=" + generated +
-                ", column=" + column +
                 '}';
     }
 }

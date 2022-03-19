@@ -10,4 +10,6 @@ import java.lang.annotation.Target;
 public @interface Column {
 
     String name() default "";
+
+    String referencedColumnName() default "";
 }

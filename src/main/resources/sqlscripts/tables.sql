@@ -6,7 +6,8 @@ create table if not exists guild_config(
             primary key,
     guild_id bigint not null,
     timezone varchar(255) not null,
-    locale varchar(255) not null
+    locale varchar(255) not null,
+    prefixes jsonb not null
 );
 
 create unique index if not exists guild_config_guild_id_idx

@@ -87,6 +87,6 @@ public class TransliterationCommand extends InteractionCommand {
                 .filter(Predicate.not(String::isBlank))
                 .map(s -> MessageUtil.substringTo(s, Message.MAX_CONTENT_LENGTH))
                 .map(env.event()::reply)
-                .orElseGet(() -> messageService.err(env, "commands.common.translate-invalid"));
+                .orElseGet(() -> messageService.err(env, "Не удалось перевести текст"));
     }
 }

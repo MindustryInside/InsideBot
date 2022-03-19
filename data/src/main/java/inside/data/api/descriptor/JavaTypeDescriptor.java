@@ -7,7 +7,7 @@ public interface JavaTypeDescriptor<T> {
     Class<?> getSqlType();
 
     @Nullable
-    <X> X unwrap(T value, Class<? extends X> type);
+    Object unwrap(T value);
 
-    <X> T wrap(@Nullable X value);
+    T wrap(@Nullable Object value);
 }

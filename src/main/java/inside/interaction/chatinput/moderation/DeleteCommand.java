@@ -49,14 +49,14 @@ public class DeleteCommand extends ModerationCommand {
                 .flatMapMany(TupleUtils.function((channel, lastMessageId) -> channel.getMessagesBefore(lastMessageId)
                         .take(count, true)
                         .filter(m -> m.getTimestamp().isAfter(timeLimit))
-                        .switchIfEmpty(messageService.err(env, "commands.delete.invalid").thenMany(Flux.never()))
+                        .switchIfEmpty(messageService.err(env, "Не получилось удалить сообщения").thenMany(Flux.never()))
                         .collectList()
                         .flatMap(m -> Mono.defer(() -> {
                             if (m.size() == 1) {
                                 return m.get(0).delete();
                             }
                             return channel.bulkDeleteMessages(Flux.fromIterable(m)).then();
-                        }).then(messageService.text(env, "commands.delete.format", m.size(),
+                        }).then(messageService.text(env, "Удалено **%s** %s", m.size(),
                                 messageService.getPluralized(env.context(), "common.plurals.message", m.size()))))));
     }
 }

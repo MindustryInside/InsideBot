@@ -1,5 +1,7 @@
 package inside;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import discord4j.common.JacksonResources;
@@ -14,6 +16,8 @@ import discord4j.rest.request.RouteMatcher;
 import discord4j.rest.response.ResponseFunction;
 import discord4j.rest.route.Routes;
 import discord4j.rest.util.AllowedMentions;
+import inside.command.CommandHandler;
+import inside.command.CommandHolder;
 import inside.data.CacheEntityRetriever;
 import inside.data.DatabaseResources;
 import inside.data.EntityRetrieverImpl;
@@ -23,6 +27,7 @@ import inside.data.api.EntityOperations;
 import inside.data.api.codec.LocaleCodec;
 import inside.data.api.r2dbc.DefaultDatabaseClient;
 import inside.data.entity.ModerationAction;
+import inside.data.schedule.*;
 import inside.event.InteractionEventHandler;
 import inside.event.MessageEventHandler;
 import inside.event.ReactionRoleEventHandler;
@@ -40,7 +45,6 @@ import inside.interaction.chatinput.settings.*;
 import inside.service.InteractionService;
 import inside.service.MessageService;
 import inside.service.task.ActivityTask;
-import inside.util.ResourceMessageSource;
 import inside.util.func.UnsafeRunnable;
 import inside.util.json.AdapterModule;
 import io.r2dbc.pool.ConnectionPool;
@@ -53,6 +57,7 @@ import io.r2dbc.spi.R2dbcBadGrammarException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 import sun.misc.Signal;
@@ -97,6 +102,16 @@ public class Launcher {
                         .registerModule(new AdapterModule())
                         .registerModule(new ParameterNamesModule()));
 
+        JacksonResources polymorphicJacksonResources = JacksonResources.create()
+                .withMapperFunction(objectMapper -> objectMapper
+                        .registerModule(new JavaTimeModule())
+                        .registerModule(new AdapterModule())
+                        .registerModule(new ParameterNamesModule()))
+                .withMapperFunction(objectMapper -> objectMapper.activateDefaultTypingAsProperty(
+                        BasicPolymorphicTypeValidator.builder().allowIfBaseType(Object.class).build(),
+                        ObjectMapper.DefaultTyping.JAVA_LANG_OBJECT,
+                        "@type"));
+
         Configuration configuration;
         File cfg = new File("configuration.json");
         try {
@@ -137,6 +152,7 @@ public class Launcher {
         var psqlConfiguration = PostgresqlConnectionConfiguration.builder()
                 .codecRegistrar(EnumCodec.builder()
                         .withEnum("moderation_action_type", ModerationAction.Type.class)
+                        .withEnum("trigger_state", Trigger.State.class)
                         .build())
                 .codecRegistrar((connection, alloc, registry) -> Mono.fromRunnable(() -> {
                     registry.addLast(new LocaleCodec(alloc));
@@ -165,7 +181,11 @@ public class Launcher {
         var repositoryHolder = new RepositoryHolder(repositoryFactory);
 
         var entityRetriever = new CacheEntityRetriever(new EntityRetrieverImpl(configuration, repositoryHolder));
-        var messageSource = new ResourceMessageSource("bundle");
+
+        ReactiveScheduler scheduler = new ReactiveSchedulerImpl(databaseClient,
+                new SchedulerResources(Schedulers.boundedElastic(), "inside-scheduler"),
+                polymorphicJacksonResources.getObjectMapper(),
+                new DefaultJobFactory());
 
         DiscordClient.builder(configuration.token())
                 .onClientResponse(ResponseFunction.emptyIfNotFound())
@@ -187,7 +207,7 @@ public class Launcher {
 
                     // shard-aware resources
                     // services
-                    var messageService = new MessageService(gateway, configuration, messageSource);
+                    var messageService = new MessageService(gateway, configuration);
                     var interactionService = new InteractionService(gateway, configuration, messageService, entityRetriever);
 
                     var interactionCommandHolder = InteractionCommandHolder.builder()
@@ -198,6 +218,7 @@ public class Launcher {
                             .addCommand(new LeetSpeakCommand(messageService))
                             .addCommand(new TextLayoutCommand(messageService))
                             .addCommand(new TransliterationCommand(messageService))
+                            .addCommand(new RemindCommand(messageService, scheduler))
                             // разное, но серверное
                             .addCommand(new EmojiCommand(messageService))
                             .addCommand(new LeaderboardCommand(messageService, entityRetriever))
@@ -213,13 +234,6 @@ public class Launcher {
                             .addCommand(new WarnsCommand(messageService, entityRetriever))
                             .build();
 
-                    var handlers = ReactiveEventAdapter.from(
-                            new InteractionEventHandler(configuration, interactionCommandHolder,
-                                    interactionService, entityRetriever),
-                            new MessageEventHandler(entityRetriever),
-                            new ReactionRoleEventHandler(entityRetriever),
-                            new StarboardEventHandler(entityRetriever, messageService));
-
                     var cmds = interactionCommandHolder.getCommands().values();
                     List<ApplicationCommandRequest> globalCommands = new ArrayList<>();
                     List<ApplicationCommandRequest> guildCommands = new ArrayList<>();
@@ -230,6 +244,21 @@ public class Launcher {
                             globalCommands.add(value.getRequest());
                         }
                     }
+
+                    CommandHolder commandHolder = CommandHolder.builder()
+                            .addCommand(new inside.command.common.AvatarCommand(messageService))
+                            .addCommand(new inside.command.common.PingCommand(messageService))
+                            .build();
+
+                    CommandHandler commandHandler = new CommandHandler(entityRetriever, commandHolder,
+                            messageService, configuration);
+
+                    var handlers = ReactiveEventAdapter.from(
+                            new InteractionEventHandler(configuration, interactionCommandHolder,
+                                    interactionService, entityRetriever),
+                            new MessageEventHandler(entityRetriever, commandHandler, configuration, interactionService, messageService),
+                            new ReactionRoleEventHandler(entityRetriever),
+                            new StarboardEventHandler(entityRetriever, messageService));
 
                     Mono<Void> registerCommands = Mono.zip(gateway.rest().getApplicationId(), Mono.just(globalCommands))
                             .flatMapMany(function((appId, glob) -> gateway.rest().getApplicationService()
@@ -251,7 +280,7 @@ public class Launcher {
                                     .flatMap(l -> task.execute()))
                             .then();
 
-                    return Mono.when(registerEvents, registerCommands, registerTasks)
+                    return Mono.when(scheduler.start(), registerEvents, registerCommands, registerTasks)
                             .doFirst(() -> log.info("Bot bootstrapped in {} seconds.", (System.currentTimeMillis() - pre) / 1000f));
                 })
                 .onErrorStop()

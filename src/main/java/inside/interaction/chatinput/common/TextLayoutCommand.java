@@ -74,6 +74,6 @@ public class TextLayoutCommand extends InteractionCommand {
                 .map(str -> russian ? text2eng(str) : text2rus(str))
                 .map(s -> MessageUtil.substringTo(s, Message.MAX_CONTENT_LENGTH))
                 .map(env.event()::reply)
-                .orElseGet(() -> messageService.err(env, "commands.common.translate-invalid"));
+                .orElseGet(() -> messageService.err(env, "Не удалось перевести текст"));
     }
 }

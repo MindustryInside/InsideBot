@@ -46,8 +46,7 @@ public class LeaderboardCommand extends InteractionGuildCommand {
         AtomicBoolean seenAuthor = new AtomicBoolean();
 
         Function<Activity, String> pattern = wallet -> "**%d.** %s " +
-                (wallet.userId() == authorId.asLong() ? " (**" +
-                messageService.get(env.context(), "common.you") + "**)" : "") + " - %d %n";
+                (wallet.userId() == authorId.asLong() ? " (**вы**)" : "") + " - %d %n";
 
         Function<MessagePaginator.Page, ? extends Mono<MessageCreateSpec>> paginator = page ->
                 entityRetriever.getAllActivityInGuild(guildId)
@@ -79,27 +78,24 @@ public class LeaderboardCommand extends InteractionGuildCommand {
                         })
                         .map(str -> MessageCreateSpec.builder()
                                 .addEmbed(EmbedCreateSpec.builder()
-                                        .title(messageService.get(env.context(), "commands.leaderboard.title"))
+                                        .title("Таблица активных пользователей (сообщения)")
                                         .description(str)
                                         .color(env.configuration().discord().embedColor())
-                                        .footer(messageService.format(env.context(), "pagination.pages",
-                                                page.getPage() + 1, page.getPageCount()), null)
+                                        .footer(String.format("Страница %s/%s", page.getPage() + 1, page.getPageCount()), null)
                                         .build())
                                 .components(page.getItemsCount() > PER_PAGE
                                         ? Possible.of(List.of(ActionRow.of(
-                                        page.previousButton(id -> Button.primary(id,
-                                                messageService.get(env.context(), "pagination.prev-page"))),
-                                        page.nextButton(id -> Button.primary(id,
-                                                messageService.get(env.context(), "pagination.next-page"))))))
+                                        page.previousButton(id -> Button.primary(id, "Предыдущая Страница")),
+                                        page.nextButton(id -> Button.primary(id, "Следующая Страница")))))
                                         : Possible.absent())
                                 .build());
 
         return entityRetriever.getActivityConfigById(guildId)
                 .filter(ConfigEntity::enabled)
-                .switchIfEmpty(messageService.err(env, "commands.leaderboard.disabled").then(Mono.never()))
+                .switchIfEmpty(messageService.err(env, "Награждение активности пользователей выключено").then(Mono.never()))
                 .flatMap(c -> entityRetriever.activityCountInGuild(guildId))
                 .filter(l -> l > 0)
-                .switchIfEmpty(messageService.err(env, "commands.leaderboard.empty").then(Mono.never()))
+                .switchIfEmpty(messageService.err(env, "Список активных пользователей пуст").then(Mono.never()))
                 .flatMap(l -> MessagePaginator.paginate(env, l, PER_PAGE, paginator));
     }
 }

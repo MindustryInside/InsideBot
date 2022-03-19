@@ -21,8 +21,11 @@ public interface Activity extends GuildEntity {
     @Column(name = "user_id")
     long userId();
 
+    @Value.Default
     @Column(name = "message_count")
-    int messageCount();
+    default int messageCount() {
+        return 0;
+    }
 
     @Column(name = "last_sent_message")
     Optional<Instant> lastSentMessage();

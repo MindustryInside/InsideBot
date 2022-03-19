@@ -4,10 +4,14 @@ import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.InteractionApplicationCommandCallbackReplyMono;
+import discord4j.core.spec.MessageCreateMono;
+import discord4j.core.spec.MessageCreateSpec;
 import inside.Configuration;
+import inside.command.CommandEnvironment;
 import inside.interaction.InteractionEnvironment;
 import inside.util.ContextUtil;
 import inside.util.ResourceMessageSource;
+import reactor.core.publisher.Mono;
 import reactor.util.context.ContextView;
 
 import java.util.*;
@@ -39,24 +43,25 @@ public class MessageService extends BaseService {
     private final Configuration configuration;
     private final ResourceMessageSource messageSource;
 
-    public MessageService(GatewayDiscordClient client, Configuration configuration, ResourceMessageSource messageSource) {
+    public MessageService(GatewayDiscordClient client, Configuration configuration) {
         super(client);
         this.configuration = Objects.requireNonNull(configuration, "configuration");
-        this.messageSource = Objects.requireNonNull(messageSource, "messageSource");
+
+        this.messageSource = new ResourceMessageSource("bundle");
     }
 
     public InteractionApplicationCommandCallbackReplyMono infoTitled(InteractionEnvironment env, String title,
                                                                      String text, Object... args) {
         return env.event().reply().withEmbeds(EmbedCreateSpec.builder()
-                .title(get(env.context(), title))
-                .description(format(env.context(), text, args))
+                .title(title)
+                .description(String.format(text, args))
                 .color(configuration.discord().embedColor())
                 .build());
     }
 
     public InteractionApplicationCommandCallbackReplyMono info(InteractionEnvironment env, String text, Object... args) {
         return env.event().reply().withEmbeds(EmbedCreateSpec.builder()
-                .description(format(env.context(), text, args))
+                .description(String.format(text, args))
                 .color(configuration.discord().embedColor())
                 .build());
     }
@@ -66,12 +71,39 @@ public class MessageService extends BaseService {
                 .withEphemeral(true)
                 .withEmbeds(EmbedCreateSpec.builder()
                         .color(configuration.discord().embedErrorColor())
-                        .description(format(env.context(), text, values))
+                        .description(String.format(text, values))
                         .build());
     }
 
     public InteractionApplicationCommandCallbackReplyMono text(InteractionEnvironment env, String text, Object... values) {
-        return env.event().reply(format(env.context(), text, values));
+        return env.event().reply(String.format(text, values));
+    }
+
+    // Для текстовых команд
+
+    public MessageCreateMono text(CommandEnvironment env, String text, Object... values) {
+        return env.channel().createMessage(String.format(text, values));
+    }
+
+    public Mono<Void> err(CommandEnvironment env, String text, Object... values) {
+        return env.channel().createMessage(EmbedCreateSpec.builder()
+                        .description(String.format(text, values))
+                        .color(configuration.discord().embedErrorColor())
+                        .build())
+                .flatMap(message -> Mono.delay(configuration.discord().embedErrorTtl())
+                        .then(message.delete().and(env.message().addReaction(failed))));
+    }
+
+    public Mono<Void> errTitled(CommandEnvironment env, String title, String text, Object... args) {
+        return env.channel().createMessage(MessageCreateSpec.builder()
+                        .addEmbed(EmbedCreateSpec.builder()
+                                .color(configuration.discord().embedErrorColor())
+                                .description(String.format(text, args))
+                                .title(title)
+                                .build())
+                        .build())
+                .flatMap(message -> Mono.delay(configuration.discord().embedErrorTtl())
+                        .then(message.delete().and(env.message().addReaction(failed))));
     }
 
     public String get(ContextView ctx, String key) {
@@ -83,12 +115,21 @@ public class MessageService extends BaseService {
         }
     }
 
-    public String getBool(ContextView ctx, String key, boolean state) {
-        return get(ctx, key + (state ? ".on" : ".off"));
+    public String getPluralized(ContextView ctx, String key, long count) {
+        String code = key + '.' + getCount0(ctx.get(ContextUtil.KEY_LOCALE), count);
+        return get(ctx, code);
     }
 
-    public String getEnum(ContextView ctx, Enum<?> cnts) {
-        return get(ctx, cnts.getClass().getCanonicalName() + '.' + cnts.name());
+    private String getCount0(Locale locale, long value) {
+        String str = String.valueOf(value);
+        var rules = pluralRules.getOrDefault(locale,
+                pluralRules.get(configuration.discord().locale()));
+
+        return rules.entrySet().stream()
+                .filter(plural -> plural.getValue().matcher(str).find())
+                .findFirst()
+                .map(Map.Entry::getKey)
+                .orElse("other");
     }
 
     public String format(ContextView ctx, String key, Object... args) {
@@ -103,20 +144,7 @@ public class MessageService extends BaseService {
         }
     }
 
-    public String getPluralized(ContextView ctx, String key, long count){
-        String code = key + '.' + getCount0(ctx.get(ContextUtil.KEY_LOCALE), count);
-        return get(ctx, code);
-    }
-
-    private String getCount0(Locale locale, long value){
-        String str = String.valueOf(value);
-        var rules = pluralRules.getOrDefault(locale,
-                pluralRules.get(configuration.discord().locale()));
-
-        return rules.entrySet().stream()
-                .filter(plural -> plural.getValue().matcher(str).find())
-                .findFirst()
-                .map(Map.Entry::getKey)
-                .orElse("other");
+    public String getEnum(ContextView ctx, Enum<?> cnts) {
+        return get(ctx, cnts.getClass().getCanonicalName() + '.' + cnts.name());
     }
 }

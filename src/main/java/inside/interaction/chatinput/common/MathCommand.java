@@ -37,7 +37,7 @@ public class MathCommand extends InteractionCommand {
                 .publishOn(Schedulers.boundedElastic())
                 .onErrorResume(t -> t instanceof ArithmeticException || t instanceof Expression.ExpressionException ||
                                 t instanceof NumberFormatException,
-                        t -> messageService.err(env, "commands.math.invalid").then(Mono.empty()))
+                        t -> messageService.err(env, "Неправильное выражение").then(Mono.empty()))
                 .flatMap(decimal -> env.event().deferReply()
                         .then(env.event().editReply(MessageUtil.substringTo(expression + " = " + decimal.toString(),
                                 Message.MAX_CONTENT_LENGTH))));

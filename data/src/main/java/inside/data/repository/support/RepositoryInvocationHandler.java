@@ -1,21 +1,28 @@
 package inside.data.repository.support;
 
+import inside.data.api.CompositeRowMapper;
 import inside.data.api.EntityRowMapper;
-import inside.data.api.PropertyRowMapper;
+import inside.data.api.PropertiesRowMapper;
 import inside.data.api.QueryUtil;
+import inside.data.api.QueryUtil.ParseResult;
 import inside.data.api.r2dbc.RowMapper;
 import inside.data.api.r2dbc.spec.ExecuteSpec;
+import inside.util.Preconditions;
 import inside.util.Reflect;
 import io.r2dbc.spi.IsolationLevel;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 import reactor.util.annotation.Nullable;
 
-import java.lang.reflect.*;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.util.Arrays;
-import java.util.Locale;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class RepositoryInvocationHandler implements InvocationHandler {
 
@@ -40,9 +47,12 @@ public class RepositoryInvocationHandler implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, @Nullable Object[] args) {
-        if (log.isTraceEnabled()) {
-            log.trace("Method: {}", method);
-            log.trace("Args: {}", Arrays.deepToString(args));
+        if (method.getDeclaringClass() == Object.class)  {
+            switch (method.getName()) {
+                case "hashCode": return System.identityHashCode(proxy);
+                case "equals": return args != null && proxy == args[0] ? Boolean.TRUE : Boolean.FALSE;
+                case "toString": return proxy.getClass().getName() + '@' + Integer.toHexString(proxy.hashCode());
+            }
         }
 
         for (var inter : baseRepository.getClass().getInterfaces()) {
@@ -51,33 +61,25 @@ public class RepositoryInvocationHandler implements InvocationHandler {
             }
         }
 
-        String sql = QueryUtil.parseSql(method, baseRepository.info);
+        Preconditions.requireState(Publisher.class.isAssignableFrom(method.getReturnType()));
+
+        ParseResult res = QueryUtil.parseSql(method, baseRepository.info);
         if (log.isTraceEnabled()) {
-            log.trace("Sql: {}", sql);
+            log.trace("Parse result: {} for {} (args: {})", res, method,
+                    args != null ? Arrays.deepToString(args) : null);
         }
-
-        boolean isCount = QueryUtil.isCountQuery(sql);
-
-        boolean isMultiple = Flux.class.equals(method.getReturnType()) &&
-                method.getName().toLowerCase(Locale.ROOT).contains("all");
 
         boolean ignoreElements;
-        Type returnTypeUnwrapped = null;
         if (method.getGenericReturnType() instanceof ParameterizedType p) {
             var typeParameters = p.getActualTypeArguments();
-            ignoreElements = typeParameters.length > 0 &&
-                    (returnTypeUnwrapped = typeParameters[0]) instanceof Class<?> c &&
-                    c == Void.class;
+            ignoreElements = typeParameters.length > 0 && typeParameters[0] instanceof Class<?> c && c == Void.class;
         } else {
-            throw new IllegalStateException("Not a reactive return type..");
+            // Подтверждается выше
+            throw new IllegalStateException();
         }
 
-        RowMapper<?> mapper = !isSubtypeOrType(returnTypeUnwrapped, baseRepository.type)
-                ? PropertyRowMapper.create(Reflect.toClass(returnTypeUnwrapped))
-                : EntityRowMapper.create(baseRepository.info, baseRepository.databaseResources.getEntityOperations());
-
         var executeSpec = baseRepository.databaseResources
-                .getDatabaseClient().sql(sql)
+                .getDatabaseClient().sql(res.sql())
                 .transactional(IsolationLevel.READ_COMMITTED);
 
         executeSpec = bindParameters(executeSpec, args);
@@ -86,52 +88,35 @@ public class RepositoryInvocationHandler implements InvocationHandler {
             return executeSpec.then();
         }
 
-        if (isCount) {
+        if (QueryUtil.isCountQuery(res.sql())) {
             return executeSpec.map(row -> row.getLong(0)).one();
         }
 
+        RowMapper<?> mapper;
+        if (res.returns().size() == 1 && baseRepository.type.isAssignableFrom(res.returns().get(0))) {
+            mapper = EntityRowMapper.create(baseRepository.info, baseRepository.databaseResources.getEntityOperations());
+        } else {
+            boolean hasObj = res.returns().stream().anyMatch(baseRepository.type::isAssignableFrom);
+            if (hasObj) {
+                mapper = CompositeRowMapper.create(res.returns().stream()
+                        .map(c -> {
+                            if (baseRepository.type.isAssignableFrom(c)) {
+                                return EntityRowMapper.create(baseRepository.info,
+                                        baseRepository.databaseResources.getEntityOperations());
+                            }
+
+                            return PropertiesRowMapper.create(List.of(c));
+                        })
+                        .collect(Collectors.toList()));
+            } else {
+                mapper = PropertiesRowMapper.create(res.returns());
+            }
+        }
+
         var fetchSpec = executeSpec.map(mapper);
-        if (isMultiple) {
+        if (Flux.class.isAssignableFrom(method.getReturnType())) {
             return fetchSpec.all();
         }
         return fetchSpec.one();
-    }
-
-    private static boolean isSubtypeOrType(@Nullable Type type0, @Nullable Type type1) {
-        if (type0 == null || type1 == null) {
-            return false;
-        }
-        if (type0.equals(type1)) {
-            return true;
-        }
-        if (type0 instanceof Class<?> c0 && type1 instanceof Class<?> c1) {
-            return c0.isAssignableFrom(c1);
-        }
-        if (type0 instanceof GenericArrayType g) {
-            return isSubtypeOrType(g.getGenericComponentType(), type1);
-        }
-        if (type0 instanceof ParameterizedType p && type1 instanceof ParameterizedType p1) {
-            Type[] pArgs = p.getActualTypeArguments();
-            Type[] p1Args = p1.getActualTypeArguments();
-            for (Type pArg : pArgs) {
-                for (Type p1Arg : p1Args) {
-                    if (isSubtypeOrType(pArg, p1Arg)) {
-                        return true;
-                    }
-                }
-            }
-        }
-        if (type0 instanceof WildcardType w) {
-            return Arrays.stream(w.getLowerBounds()).anyMatch(t -> isSubtypeOrType(t, type1)) ||
-                    Arrays.stream(w.getUpperBounds()).anyMatch(t -> isSubtypeOrType(t, type1));
-        }
-        if (type0 instanceof TypeVariable<?> tv) {
-            for (Type t : tv.getBounds()) {
-                if (isSubtypeOrType(t, type1)) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 }

@@ -17,10 +17,8 @@ public class PingCommand extends InteractionCommand {
     public Publisher<?> execute(ChatInputInteractionEnvironment env) {
         long start = System.currentTimeMillis();
 
-        return env.event().deferReply().then(env.event().createFollowup(
-                messageService.get(env.context(), "commands.ping.please-await")))
+        return env.event().deferReply().then(env.event().createFollowup("Подождите..."))
                 .flatMap(message -> env.event().editFollowup(message.getId())
-                        .withContentOrNull(messageService.format(env.context(),
-                                "commands.ping.pong", System.currentTimeMillis() - start)));
+                        .withContentOrNull(String.format("Понг! %sмс", System.currentTimeMillis() - start)));
     }
 }

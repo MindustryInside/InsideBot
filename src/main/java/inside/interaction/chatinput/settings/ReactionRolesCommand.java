@@ -69,14 +69,14 @@ public class ReactionRolesCommand extends ConfigOwnerCommand {
                     .orElse(null);
 
             if (messageId == null) {
-                return messageService.err(env, "commands.reaction-roles.incorrect-message-id");
+                return messageService.err(env, "Неправильный формат ID сообщения.");
             }
 
             return owner.entityRetriever.getAllReactionRolesById(guildId, messageId)
-                    .switchIfEmpty(messageService.err(env, "commands.reaction-roles.list.empty").then(Mono.never()))
+                    .switchIfEmpty(messageService.err(env, "Список реакций-ролей пуст").then(Mono.never()))
                     .map(ReactionRolesCommand::format)
                     .collect(Collectors.joining())
-                    .flatMap(str -> messageService.infoTitled(env, "commands.reaction-roles.list.title", str));
+                    .flatMap(str -> messageService.infoTitled(env, "Список реакций-ролей", str));
         }
     }
 
@@ -120,7 +120,7 @@ public class ReactionRolesCommand extends ConfigOwnerCommand {
                     .switchIfEmpty(Mono.defer(() -> {
                         Matcher mtch = emojiPattern.matcher(emojistr);
                         if (!mtch.matches()) {
-                            return messageService.err(env, "commands.common.emoji-invalid").then(Mono.empty());
+                            return messageService.err(env, "Неправильный формат эмодзи").then(Mono.empty());
                         }
                         return Mono.just(EmojiData.builder()
                                 .name(emojistr)
@@ -140,21 +140,22 @@ public class ReactionRolesCommand extends ConfigOwnerCommand {
                     .orElse(null);
 
             if (messageId == null) {
-                return messageService.err(env, "commands.reaction-roles.incorrect-message-id");
+                return messageService.err(env, "Неправильный формат ID сообщения.");
             }
 
             return fetchEmoji.filterWhen(ignored -> owner.entityRetriever.reactionRolesCountById(guildId, messageId)
                             .map(l -> l < MAX_PER_MESSAGE))
-                    .switchIfEmpty(messageService.err(env, "commands.reaction-roles.add.limit", MAX_PER_MESSAGE).then(Mono.empty()))
+                    .switchIfEmpty(messageService.err(env, "Нельзя создать ещё одну реакцию-роль, " +
+                            "так как сообщение уже имеет максимальное количество реакций (**%s**)", MAX_PER_MESSAGE).then(Mono.empty()))
                     .filterWhen(e -> not(owner.entityRetriever.getReactionRoleById(guildId, messageId, roleId).hasElement()))
-                    .switchIfEmpty(messageService.err(env, "commands.reaction-roles.add.already-exists").then(Mono.empty()))
+                    .switchIfEmpty(messageService.err(env, "Такая реакция-роль уже существует").then(Mono.empty()))
                     .map(emoji -> ReactionRole.builder()
                             .guildId(guildId.asLong())
                             .messageId(messageId.asLong())
                             .roleId(roleId.asLong())
                             .emoji(emoji)
                             .build())
-                    .flatMap(reactionRole -> messageService.text(env, "commands.reaction-roles.add.success", format(reactionRole))
+                    .flatMap(reactionRole -> messageService.text(env, "Реакция-роль успешно добавлена: %s", format(reactionRole))
                             .and(owner.entityRetriever.save(reactionRole)));
         }
     }
@@ -193,12 +194,12 @@ public class ReactionRolesCommand extends ConfigOwnerCommand {
                     .orElse(null);
 
             if (messageId == null) {
-                return messageService.err(env, "commands.reaction-roles.incorrect-message-id");
+                return messageService.err(env, "Неправильный формат ID сообщения.");
             }
 
             return owner.entityRetriever.getReactionRoleById(guildId, messageId, roleId)
-                    .switchIfEmpty(messageService.err(env, "commands.reaction-roles.remove.unknown").then(Mono.empty()))
-                    .flatMap(e -> messageService.text(env, "commands.reaction-roles.remove.success", format(e))
+                    .switchIfEmpty(messageService.err(env, "Реакция-роль прикрепленная к данному сообщению не найдена").then(Mono.empty()))
+                    .flatMap(e -> messageService.text(env, "Реакция-роль успешно удалена: %s", format(e))
                             .and(owner.entityRetriever.delete(e)));
         }
     }
@@ -227,13 +228,13 @@ public class ReactionRolesCommand extends ConfigOwnerCommand {
                     .orElse(null);
 
             if (messageId == null) {
-                return messageService.err(env, "commands.reaction-roles.incorrect-message-id");
+                return messageService.err(env, "Неправильный формат ID сообщения.");
             }
 
             return owner.entityRetriever.reactionRolesCountById(guildId, messageId)
                     .filter(l -> l > 0)
-                    .switchIfEmpty(messageService.text(env, "commands.reaction-roles.list.empty").then(Mono.never()))
-                    .flatMap(l -> messageService.text(env, "commands.reaction-roles.clear.success")
+                    .switchIfEmpty(messageService.text(env, "Список реакций-ролей пуст").then(Mono.never()))
+                    .flatMap(l -> messageService.text(env, "Список реакций-ролей очищен")
                             .and(owner.entityRetriever.deleteAllReactionRolesById(guildId, messageId)));
         }
     }

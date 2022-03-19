@@ -20,14 +20,13 @@ public class OptionalDescriptor<T> extends BaseDescriptor<Optional<T>> {
 
     @Nullable
     @Override
-    @SuppressWarnings("unchecked")
-    public <X> X unwrap(Optional<T> value, Class<? extends X> type) {
-        return (X) value.orElse(null);
+    public Object unwrap(Optional<T> value) {
+        return value.orElse(null);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public <X> Optional<T> wrap(@Nullable X value) {
+    public Optional<T> wrap(@Nullable Object value) {
         if (value == null) {
             return Optional.empty();
         }

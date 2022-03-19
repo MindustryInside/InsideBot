@@ -28,21 +28,16 @@ public class JsonDescriptor extends BaseDescriptor<Object> {
 
     @Nullable
     @Override
-    @SuppressWarnings("unchecked")
-    public <X> X unwrap(Object value, Class<? extends X> type) {
-        if (Json.class.isAssignableFrom(type)) {
-            try {
-                return (X) Json.of(jacksonResources.getObjectMapper().writeValueAsString(value));
-            } catch (Throwable t) {
-                throw Exceptions.propagate(t);
-            }
+    public Object unwrap(Object value) {
+        try {
+            return Json.of(jacksonResources.getObjectMapper().writeValueAsString(value));
+        } catch (Throwable t) {
+            throw Exceptions.propagate(t);
         }
-
-        throw unknownUnwrap(type);
     }
 
     @Override
-    public <X> Object wrap(@Nullable X value) {
+    public Object wrap(@Nullable Object value) {
         if (value == null) {
             try {
                 JsonNode nullNode = jacksonResources.getObjectMapper().nullNode();

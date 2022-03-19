@@ -2,7 +2,6 @@ package inside.data.repository.support;
 
 import inside.data.DatabaseResources;
 import inside.data.api.RelationEntityInformation;
-import inside.data.api.r2dbc.R2dbcConnection;
 import inside.data.repository.base.ReactiveRepository;
 import io.r2dbc.spi.IsolationLevel;
 import reactor.core.publisher.Flux;
@@ -19,6 +18,7 @@ public class BaseRepository<K, T> implements ReactiveRepository<K, T> {
     public BaseRepository(DatabaseResources databaseResources, Class<T> type) {
         this.databaseResources = Objects.requireNonNull(databaseResources, "databaseResources");
         this.type = Objects.requireNonNull(type, "type");
+
         this.info = databaseResources.getEntityOperations().getInformation(type);
     }
 
@@ -39,22 +39,17 @@ public class BaseRepository<K, T> implements ReactiveRepository<K, T> {
     @Override
     public Mono<? extends T> save(T entity) {
         return databaseResources.getDatabaseClient()
-                .transactional(connection -> save(connection, entity))
+                .transactional(connection -> databaseResources.getEntityOperations()
+                        .save(connection, info, entity))
                 .withDefinition(IsolationLevel.READ_COMMITTED);
-    }
-
-    private Mono<? extends T> save(R2dbcConnection connection, T entity) {
-        if (info.isNew(entity)) {
-            return databaseResources.getEntityOperations().insert(connection, info, entity);
-        }
-        return databaseResources.getEntityOperations().update(connection, info, entity).thenReturn(entity);
     }
 
     @Override
     public Flux<? extends T> saveAll(Iterable<? extends T> entities) {
         return databaseResources.getDatabaseClient()
                 .transactionalMany(connection -> Flux.fromIterable(entities)
-                        .flatMap(entity -> save(connection, entity)))
+                        .flatMap(entity -> databaseResources.getEntityOperations()
+                                .save(connection, info, entity)))
                 .withDefinition(IsolationLevel.READ_COMMITTED);
     }
 

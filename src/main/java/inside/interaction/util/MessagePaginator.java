@@ -13,12 +13,12 @@ import reactor.util.Logger;
 import reactor.util.Loggers;
 import reactor.util.function.Tuple2;
 
-import java.security.SecureRandom;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
+import static inside.util.Mathf.random;
 import static inside.util.MessageUtil.toFollowupCreateSpec;
 import static inside.util.MessageUtil.toReplyEditSpec;
 
@@ -30,7 +30,6 @@ public final class MessagePaginator {
 
     private static final String PREVIOUS_ID = "-previous";
     private static final String NEXT_ID = "-next";
-    private static final SecureRandom RANDOM = new SecureRandom();
 
     private MessagePaginator() {
     }
@@ -43,7 +42,7 @@ public final class MessagePaginator {
     public static Mono<Void> paginate(InteractionEnvironment env, long initialPage, long itemsCount, long perPage,
                                       Function<? super Page, ? extends Mono<MessageCreateSpec>> messageGenerator) {
         return Mono.deferContextual(ctx -> {
-            String baseCustomId = InteractionService.CUSTOM_ID_PREFIX + Integer.toHexString(RANDOM.nextInt());
+            String baseCustomId = InteractionService.CUSTOM_ID_PREFIX + "paginator-" + Integer.toHexString(random.nextInt());
             AtomicLong currentPage = new AtomicLong();
             AtomicBoolean active = new AtomicBoolean(true);
             Snowflake userId = env.event().getInteraction().getUser().getId();

@@ -47,6 +47,7 @@ public class InteractionService extends BaseService {
         this.configuration = Objects.requireNonNull(configuration, "configuration");
         this.messageService = Objects.requireNonNull(messageService, "messageService");
         this.entityRetriever = Objects.requireNonNull(entityRetriever, "entityRetriever");
+
         this.componentInteractions = Caffeine.newBuilder()
                 .expireAfterWrite(configuration.discord().awaitComponentTimeout())
                 .build();
@@ -60,12 +61,15 @@ public class InteractionService extends BaseService {
 
         return Mono.justOrEmpty(componentListeners.get(customId))
                 .switchIfEmpty(Mono.justOrEmpty(componentInteractions.getIfPresent(customId))
-                        .switchIfEmpty(messageService.err(env, "interaction.invalid").then(Mono.never()))
+                        .switchIfEmpty(messageService.err(env, "Это взаимодействие недоступно.\n" +
+                                "Вызовите команду повторно, чтобы начать новое.").then(Mono.never()))
                         .filter(TupleUtils.predicate((userId, listener) -> userId.equals(
                                 env.event().getInteraction().getUser().getId())))
                         .map(Tuple2::getT2)
-                        .switchIfEmpty(messageService.err(env, "interaction.foreign").then(Mono.never())))
-                .switchIfEmpty(messageService.err(env, "interaction.invalid").then(Mono.never()));
+                        .switchIfEmpty(messageService.err(env, "Вы не можете участвовать в чужом взаимодействии.\n" +
+                                "Вызовите команду повторно, чтобы начать новое.").then(Mono.never())))
+                .switchIfEmpty(messageService.err(env, "Это взаимодействие недоступно.\n" +
+                        "Вызовите команду повторно, чтобы начать новое.").then(Mono.never()));
     }
 
     public Publisher<?> handleComponentInteractionEvent(ComponentInteractionEvent event) {

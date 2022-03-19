@@ -3,7 +3,6 @@ package inside.data.api;
 import inside.data.annotation.*;
 import inside.util.Preconditions;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -23,15 +22,11 @@ public class RelationEntityInformation<T> {
         this.type = Objects.requireNonNull(type, "type");
     }
 
-    public static <T> RelationEntityInformation<T> parse(Class<T> type) {
-        Preconditions.requireArgument(type.getAnnotation(Entity.class) != null, () -> "Not a entity class " + type.getSimpleName());
+    public static <T> RelationEntityInformation<T> compile(Class<T> type) {
+        Preconditions.requireArgument(type.isAnnotationPresent(Entity.class) && Modifier.isAbstract(type.getModifiers()),
+                () -> "Not a entity class " + type.getCanonicalName());
 
         List<PersistentProperty> properties = new ArrayList<>();
-
-        Stream.concat(getMappedSuperclassFields(type).stream(), Arrays.stream(type.getDeclaredFields()))
-                .filter(field -> !field.isAnnotationPresent(Transient.class)
-                        && !Modifier.isStatic(field.getModifiers()))
-                .forEach(field -> properties.add(new FieldPersistentProperty(field)));
 
         Stream.concat(getMappedSuperclassMethods(type).stream(), Arrays.stream(type.getDeclaredMethods()))
                 .filter(method -> !method.isAnnotationPresent(Transient.class)
@@ -41,7 +36,7 @@ public class RelationEntityInformation<T> {
                         method.isAnnotationPresent(Generated.class))
                         && !Modifier.isStatic(method.getModifiers()))
                 .distinct()
-                .forEach(method -> properties.add(new MethodPersistentProperty(method)));
+                .forEach(method -> properties.add(new PersistentPropertyImpl(method)));
 
         String table = Optional.ofNullable(type.getDeclaredAnnotation(Table.class))
                 .map(Table::name)
@@ -62,48 +57,27 @@ public class RelationEntityInformation<T> {
 
     private static List<Method> getMappedSuperclassMethods(Class<?> type) {
         LinkedList<Method> superMethods = new LinkedList<>();
-        if (type.isInterface()) {
-            LinkedList<Class<?>> superTypes = new LinkedList<>();
-            recursiveCollectMappedSuperclassMethods(type, superTypes);
-            for (Class<?> superType : superTypes) {
-                for (Method method : superType.getDeclaredMethods()) {
-                    superMethods.addFirst(method);
-                }
-            }
-        } else {
-            Class<?> superClass = type.getSuperclass();
-            while (superClass != Object.class && superClass != null &&
-                    superClass.isAnnotationPresent(MapperSuperclass.class)) {
-                Collections.addAll(superMethods, superClass.getDeclaredMethods());
-                superClass = superClass.getSuperclass();
+        LinkedList<Class<?>> superTypes = new LinkedList<>();
+        recursiveCollectMappedSuperclassMethods(type, superTypes);
+        for (Class<?> superType : superTypes) {
+            for (Method method : superType.getDeclaredMethods()) {
+                superMethods.addFirst(method);
             }
         }
+
         return superMethods;
     }
 
-    private static List<Field> getMappedSuperclassFields(Class<?> type) {
-        LinkedList<Field> superFields = new LinkedList<>();
-        Class<?> superClass = type.getSuperclass();
-        while (superClass != Object.class && superClass != null &&
-                superClass.isAnnotationPresent(MapperSuperclass.class)) {
-            for (Field declaredField : superClass.getDeclaredFields()) {
-                superFields.addFirst(declaredField);
-            }
-            superClass = superClass.getSuperclass();
-        }
-        return superFields;
-    }
-
     public boolean isNew(T obj) {
-        return getIdProperties().stream()
-                .map(idProperty -> idProperty.getValue(obj))
-                .anyMatch(id -> id == null || id instanceof Number n && n.doubleValue() == -1);
+        Object act = getIdProperty().getValue(obj);
+        return act == null || act instanceof Number n && n.doubleValue() == -1;
     }
 
-    public List<PersistentProperty> getIdProperties() {
+    public PersistentProperty getIdProperty() {
         return properties.stream()
                 .filter(PersistentProperty::isId)
-                .toList();
+                .findFirst()
+                .orElseThrow();
     }
 
     public List<PersistentProperty> getGeneratedProperties() {

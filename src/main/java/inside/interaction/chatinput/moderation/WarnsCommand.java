@@ -67,35 +67,30 @@ public class WarnsCommand extends InteractionGuildCommand {
                 entityRetriever.getAllModerationActionById(ModerationAction.Type.warn, guildId, targetId)
                         .sort(BaseEntity.timestampComparator)
                         .index().skip(page.getPage() * PER_PAGE).take(PER_PAGE, true)
-                        .map(TupleUtils.function((idx, action) -> String.format("**%d.** %s, " +
-                                        messageService.get(env.context(), "commands.warns.field.moderator") + " %s" +
-                                        action.reason().map(str -> ", " + messageService.get(env.context(), "commands.warns.field.reason")
-                                        + " %s").orElse("") + "%n", idx + 1,
+                        .map(TupleUtils.function((idx, action) -> String.format("**%d.** %s, Модератор: %s" +
+                                        action.reason().map(str -> ", Причина: %s").orElse("") + "%n", idx + 1,
                                 TimestampFormat.LONG_DATE_TIME.format(InternalId.getTimestamp(action.id())),
                                 MessageUtil.getMemberMention(Snowflake.of(action.adminId())), action.reason().orElse(""))))
                         .collect(Collectors.joining())
-                        .map(str -> messageService.format(env.context(), "commands.warns.title" +
-                                        (targetId.equals(author.getId()) ? "-your" : ""),
+                        .map(str -> String.format(targetId.equals(author.getId()) ? "Ваши предупреждения"
+                                : "Предупреждения пользователя **%s** (%s)",
                                 nickname, MessageUtil.getMemberMention(targetId)) + "\n\n" + str)
                         .map(str -> MessageCreateSpec.builder()
                                 .addEmbed(EmbedCreateSpec.builder()
                                         .description(str)
                                         .color(env.configuration().discord().embedColor())
-                                        .footer(messageService.format(env.context(), "pagination.pages",
-                                                page.getPage() + 1, page.getPageCount()), null)
+                                        .footer(String.format("Страница %s/%s", page.getPage() + 1, page.getPageCount()), null)
                                         .build())
                                 .components(page.getItemsCount() > PER_PAGE
                                         ? Possible.of(List.of(ActionRow.of(
-                                        page.previousButton(id -> Button.primary(id,
-                                                messageService.get(env.context(), "pagination.prev-page"))),
-                                        page.nextButton(id -> Button.primary(id,
-                                                messageService.get(env.context(), "pagination.next-page"))))))
+                                        page.previousButton(id -> Button.primary(id, "Предыдущая Страница")),
+                                        page.nextButton(id -> Button.primary(id, "Следующая Страница")))))
                                         : Possible.absent())
                                 .build());
 
         return entityRetriever.moderationActionCountById(ModerationAction.Type.warn, guildId, targetId)
                 .filter(l -> l > 0)
-                .switchIfEmpty(messageService.err(env, "commands.warns.empty").then(Mono.never()))
+                .switchIfEmpty(messageService.err(env, "Пользователь не имеет предупреждений").then(Mono.never()))
                 .flatMap(l -> MessagePaginator.paginate(env, l, PER_PAGE, paginator));
     }
 }

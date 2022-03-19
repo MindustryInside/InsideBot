@@ -71,7 +71,7 @@ public class ResolvableType implements Serializable {
             return NONE;
         }
 
-        if (type instanceof Class) {
+        if (type instanceof Class<?>) {
             return new ResolvableType(type, null, variableResolver, null);
         }
 

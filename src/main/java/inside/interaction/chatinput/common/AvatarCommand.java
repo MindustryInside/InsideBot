@@ -32,8 +32,7 @@ public class AvatarCommand extends InteractionCommand {
                 .orElse(Mono.just(env.event().getInteraction().getUser()))
                 .flatMap(user -> env.event().reply()
                         .withEmbeds(EmbedCreateSpec.builder()
-                                .description(messageService.format(env.context(), "commands.avatar.format",
-                                        user.getUsername(), user.getMention()))
+                                .description(String.format("Аватар **%s** (%s):", user.getUsername(), user.getMention()))
                                 .color(env.configuration().discord().embedColor())
                                 .image(user.getAvatarUrl() + "?size=512")
                                 .build()));

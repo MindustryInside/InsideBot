@@ -76,7 +76,7 @@ public class WarnCommand extends ModerationCommand {
                 .orElse(null);
 
         if (reason != null && reason.length() >= AuditLogEntry.MAX_REASON_LENGTH) {
-            return messageService.err(env, "commands.warn.reason-too-long", AuditLogEntry.MAX_REASON_LENGTH);
+            return messageService.err(env, "Строка причины слишком длинная (лимит: **%s**)", AuditLogEntry.MAX_REASON_LENGTH);
         }
 
         String intervalstr = env.getOption("interval")
@@ -93,19 +93,19 @@ public class WarnCommand extends ModerationCommand {
         return entityRetriever.getModerationConfigById(guildId)
                 .zipWith(env.event().getClient().getMemberById(guildId, targetId)
                         .filter(Predicate.not(User::isBot))
-                        .switchIfEmpty(messageService.err(env, "commands.warn.bot-target").then(Mono.never()))
+                        .switchIfEmpty(messageService.err(env, "Вы не можете выдавать предупреждения ботам").then(Mono.never()))
                         .filter(u -> !u.getId().equals(author.getId()))
-                        .switchIfEmpty(messageService.err(env, "commands.warn.self-warn").then(Mono.never()))
+                        .switchIfEmpty(messageService.err(env, "Вы не можете выдавать предупреждения самому себе").then(Mono.never()))
                         .filterWhen(u -> u.getBasePermissions()
                                 .map(p -> p.equals(PermissionSet.all()) || !p.contains(Permission.ADMINISTRATOR)))
-                        .switchIfEmpty(messageService.err(env, "commands.warn.permission-denied").then(Mono.never())))
+                        .switchIfEmpty(messageService.err(env, "Вы не можете выдавать предупреждения администраторам").then(Mono.never())))
                 .flatMap(TupleUtils.function((config, target) -> {
                     Interval interval = config.warnExpireInterval().orElse(null);
                     if (intervalstr != null) {
                         interval = MessageUtil.parseInterval(intervalstr);
 
                         if (interval == null) {
-                            return messageService.err(env, "commands.common.interval-invalid");
+                            return messageService.err(env, "Неправильный формат длительности");
                         }
                     }
 
@@ -123,9 +123,8 @@ public class WarnCommand extends ModerationCommand {
                             .endTimestamp(endTimestamp)
                             .build();
 
-                    String byReason = reason != null ? messageService.format(env.context(), "moderation.by-reason", reason) : null;
-                    String until = endTimestamp.map(i -> messageService.format(env.context(), "moderation.until",
-                            TimestampFormat.LONG_DATE_TIME.format(i)))
+                    String byReason = reason != null ? String.format("по причине *%s*", reason) : null;
+                    String until = endTimestamp.map(i -> String.format("до *%s*", TimestampFormat.LONG_DATE_TIME.format(i)))
                             .orElse(null);
                     StringJoiner jcomp = new StringJoiner(" ");
                     if (byReason != null) {
@@ -137,13 +136,13 @@ public class WarnCommand extends ModerationCommand {
 
                     return Mono.defer(() -> {
                         if (count == 1) {
-                            return messageService.text(env, "commands.warn.one.success",
+                            return messageService.text(env, "Пользователь **%s** получил предупреждение %s",
                                             MessageUtil.getUserMention(targetId), jcomp)
                                     .withAllowedMentions(allowTarget)
                                     .and(entityRetriever.save(action));
                         }
 
-                        return messageService.text(env, "commands.warn.many.success", MessageUtil.getUserMention(targetId),
+                        return messageService.text(env, "Пользователь **%s** получил **%s** %s %s", MessageUtil.getUserMention(targetId),
                                         count, messageService.getPluralized(env.context(), "common.plurals.warn", count), jcomp)
                                 .withAllowedMentions(allowTarget)
                                 .and(entityRetriever.save(action)
@@ -166,11 +165,10 @@ public class WarnCommand extends ModerationCommand {
                                         .targetId(targetId.asLong())
                                         .type(ModerationAction.Type.warn)
                                         .endTimestamp(inst)
-                                        .reason(messageService.get(env.context(), "moderation.auto-warn"))
+                                        .reason("Авто-пред")
                                         .build();
 
-                                String autoWarnUntil = inst.map(i -> messageService.format(env.context(), "moderation.until",
-                                        TimestampFormat.LONG_DATE_TIME.format(i)))
+                                String autoWarnUntil = inst.map(i -> String.format("до *%s*", TimestampFormat.LONG_DATE_TIME.format(i)))
                                         .orElse(null);
                                 StringJoiner ajcomp = new StringJoiner(" ");
                                 if (byReason != null) {
@@ -182,8 +180,7 @@ public class WarnCommand extends ModerationCommand {
 
                                 yield target.getPrivateChannel()
                                         .onErrorResume(e -> e instanceof ClientException, e -> Mono.empty())
-                                        .flatMap(c -> c.createMessage(messageService.format(env.context(),
-                                                "moderation.auto-warn.text", ajcomp)))
+                                        .flatMap(c -> c.createMessage(String.format("Вы получили автоматическое предупреждение за нарушение правил %s", ajcomp)))
                                         .and(entityRetriever.save(autoWarn));
                             }
                             case mute -> {
@@ -201,10 +198,10 @@ public class WarnCommand extends ModerationCommand {
                                         .targetId(targetId.asLong())
                                         .type(ModerationAction.Type.mute)
                                         .endTimestamp(inst)
-                                        .reason(messageService.get(env.context(), "moderation.auto-mute"))
+                                        .reason("Авто-мут")
                                         .build();
 
-                                String autoMuteUntil = inst.map(i -> messageService.format(env.context(), "moderation.until",
+                                String autoMuteUntil = inst.map(i -> String.format("до *%s*",
                                                 TimestampFormat.LONG_DATE_TIME.format(i)))
                                         .orElse(null);
                                 StringJoiner ajcomp = new StringJoiner(" ");
@@ -224,8 +221,7 @@ public class WarnCommand extends ModerationCommand {
                                                 .then(Mono.never()))
                                         .and(target.getPrivateChannel()
                                                 .onErrorResume(e -> e instanceof ClientException, e -> Mono.empty())
-                                                .flatMap(c -> c.createMessage(messageService.format(env.context(),
-                                                        "moderation.auto-mute.text", ajcomp))))
+                                                .flatMap(c -> c.createMessage("Вы получили автоматический мут за нарушение правил " + ajcomp)))
                                         .and(entityRetriever.save(autoWarn));
                             }
                             default -> Mono.empty();

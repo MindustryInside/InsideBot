@@ -9,6 +9,7 @@ import org.immutables.value.Value;
 
 import java.time.Duration;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Locale;
 
 @Value.Immutable
@@ -45,12 +46,20 @@ public interface Configuration {
             return Color.of(0xff3838);
         }
 
+        default Duration embedErrorTtl() {
+            return Duration.ofSeconds(7);
+        }
+
         default ZoneId timezone() {
             return ZoneId.of("UTC");
         }
 
         default Locale locale() {
             return MessageService.supportedLocaled.get(1); // английский
+        }
+
+        default List<String> prefixes() {
+            return List.of("#");
         }
 
         @JsonProperty("await_component_timeout")

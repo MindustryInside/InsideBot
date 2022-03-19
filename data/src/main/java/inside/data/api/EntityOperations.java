@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import discord4j.common.JacksonResources;
+import inside.data.annotation.Entity;
 import inside.data.api.descriptor.JavaTypeDescriptor;
 import inside.data.api.descriptor.JsonDescriptor;
 import inside.data.api.descriptor.OptionalDescriptor;
+import inside.data.api.descriptor.SubEntityDescriptor;
 import inside.data.api.r2dbc.R2dbcConnection;
 import inside.data.api.r2dbc.R2dbcStatement;
 import inside.data.api.r2dbc.RowMapper;
@@ -14,7 +16,9 @@ import inside.util.Reflect;
 import io.r2dbc.spi.Result;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.function.TupleUtils;
 import reactor.util.annotation.Nullable;
+import reactor.util.function.Tuples;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -32,7 +36,7 @@ public final class EntityOperations {
 
     @SuppressWarnings("unchecked")
     public <T> RelationEntityInformation<T> getInformation(Class<?> type) {
-        return (RelationEntityInformation<T>) information.computeIfAbsent(type, RelationEntityInformation::parse);
+        return (RelationEntityInformation<T>) information.computeIfAbsent(type, RelationEntityInformation::compile);
     }
 
     public <T> Flux<T> selectAll(R2dbcConnection connection, RelationEntityInformation<? extends T> info) {
@@ -45,21 +49,60 @@ public final class EntityOperations {
         });
     }
 
-    public <T> Mono<T> select(R2dbcConnection connection, RelationEntityInformation<? extends T> info, Object... id) {
+    public <T> Mono<T> select(R2dbcConnection connection, RelationEntityInformation<? extends T> info, Object id) {
         return Mono.defer(() -> {
 
             RowMapper<T> rowMapper = EntityRowMapper.create(info, this);
-            R2dbcStatement statement = connection.createStatement(
-                    QueryUtil.createSelectSql(info));
 
-            for (int i = 0; i < id.length; i++) {
-                statement.bindOptional(i, id[i], Reflect.wrapIfPrimitive(id[i].getClass()));
-            }
-
-            return statement.execute()
+            return connection.createStatement(QueryUtil.createSelectSql(info, this))
+                    .bindOptional(0, id, Reflect.wrapIfPrimitive(id.getClass()))
+                    .execute()
                     .flatMap(result -> result.mapWith(rowMapper))
                     .singleOrEmpty();
         });
+    }
+
+    public <T> Mono<T> save(R2dbcConnection connection, RelationEntityInformation<T> info, T entity) {
+        Mono<T> cascadeUpdate = Flux.fromIterable(info.getCandidateProperties())
+                .filter(prop -> prop.getClassType().isAnnotationPresent(Entity.class))
+                .mapNotNull(prop -> {
+                    Object o = prop.getValue(entity);
+                    if (o == null) {
+                        return null;
+                    }
+
+                    return Tuples.of(prop, o);
+                })
+                .flatMap(TupleUtils.function((prop, obj) -> save(connection,
+                        getInformation(prop.getClassType()), obj)
+                        .filter(o -> !o.equals(obj)) // не будем переустанавливать неизмененные поля-объекты
+                        .map(o -> Tuples.of(prop, o))))
+                .collectList()
+                .map(list -> {
+                    // Обновляем entity новыми подобъектами
+                    var factory = BuilderMethods.of(info.getType());
+                    Object builder = Reflect.invoke(factory.getBuilder(), null);
+                    Reflect.invoke(factory.getFromMethod(), builder, entity);
+
+                    for (var tuple : list) {
+                        factory.getMethods().stream()
+                                .filter(m -> {
+                                    Type[] params = m.getGenericParameterTypes();
+                                    return m.getName().equals(tuple.getT1().getMethod().getName()) &&
+                                            params.length == 1 && params[0].equals(tuple.getT1().getType());
+                                })
+                                .findFirst()
+                                .ifPresent(m -> Reflect.invoke(m, builder, tuple.getT2()));
+                    }
+
+                    return Reflect.invoke(factory.getBuild(), builder);
+                })
+                .cast(info.getType());
+
+        if (info.isNew(entity)) {
+            return cascadeUpdate.flatMap(t -> insert(connection, info, t));
+        }
+        return cascadeUpdate.flatMap(t -> update(connection, info, t).thenReturn(t));
     }
 
     public <T> Mono<Integer> update(R2dbcConnection connection, RelationEntityInformation<T> info, T object) {
@@ -76,23 +119,20 @@ public final class EntityOperations {
                         ? descriptor.getSqlType()
                         : Reflect.wrapIfPrimitive(property.getClassType());
                 Object obj = property.getValue(object);
-                Object fieldObj = descriptor != null ? descriptor.unwrap(obj, descriptor.getSqlType()) : obj;
+                Object fieldObj = descriptor != null ? descriptor.unwrap(obj) : obj;
 
                 statement.bindOptional(i, fieldObj, fieldType);
             }
 
-            var idProperties = info.getIdProperties();
-            for (int i = 0, offset = properties.size(); i < idProperties.size(); i++) {
-                PersistentProperty property = idProperties.get(i);
-                var descriptor = getDescriptor(property);
-                Class<?> fieldType = descriptor != null
-                        ? descriptor.getSqlType()
-                        : Reflect.wrapIfPrimitive(property.getClassType());
-                Object obj = property.getValue(object);
-                Object fieldObj = descriptor != null ? descriptor.unwrap(obj, descriptor.getSqlType()) : obj;
+            var idProperty = info.getIdProperty();
+            var descriptor = getDescriptor(idProperty);
+            Class<?> fieldType = descriptor != null
+                    ? descriptor.getSqlType()
+                    : Reflect.wrapIfPrimitive(idProperty.getClassType());
+            Object obj = idProperty.getValue(object);
+            Object fieldObj = descriptor != null ? descriptor.unwrap(obj) : obj;
 
-                statement.bindOptional(i + offset, fieldObj, fieldType);
-            }
+            statement.bindOptional(properties.size(), fieldObj, fieldType);
 
             return statement.execute()
                     .flatMap(Result::getRowsUpdated)
@@ -114,12 +154,12 @@ public final class EntityOperations {
                         ? descriptor.getSqlType()
                         : Reflect.wrapIfPrimitive(property.getClassType());
                 Object obj = property.getValue(object);
-                Object fieldObj = descriptor != null ? descriptor.unwrap(obj, descriptor.getSqlType()) : obj;
+                Object fieldObj = descriptor != null ? descriptor.unwrap(obj) : obj;
 
                 statement.bindOptional(i, fieldObj, fieldType);
             }
 
-            String[] generated = info.getGeneratedProperties().stream()
+            var generated = info.getGeneratedProperties().stream()
                     .map(PersistentProperty::getName)
                     .toArray(String[]::new);
 
@@ -137,19 +177,15 @@ public final class EntityOperations {
             R2dbcStatement statement = connection.createStatement(
                     QueryUtil.createDeleteSql(info));
 
-            var idProperties = info.getIdProperties();
-            for (int i = 0; i < idProperties.size(); i++) {
-                PersistentProperty property = idProperties.get(i);
-                var descriptor = getDescriptor(property);
-                Class<?> fieldType = descriptor != null
-                        ? descriptor.getSqlType()
-                        : Reflect.wrapIfPrimitive(property.getClassType());
+            var idProperty = info.getIdProperty();
+            var descriptor = getDescriptor(idProperty);
+            Class<?> fieldType = descriptor != null
+                    ? descriptor.getSqlType()
+                    : Reflect.wrapIfPrimitive(idProperty.getClassType());
+            Object obj = idProperty.getValue(object);
+            Object fieldObj = descriptor != null ? descriptor.unwrap(obj) : obj;
 
-                Object obj = property.getValue(object);
-                Object fieldObj = descriptor != null ? descriptor.unwrap(obj, descriptor.getSqlType()) : obj;
-
-                statement.bindOptional(i, fieldObj, fieldType);
-            }
+            statement.bindOptional(0, fieldObj, fieldType);
 
             return statement.execute()
                     .flatMap(Result::getRowsUpdated)
@@ -167,6 +203,11 @@ public final class EntityOperations {
     @SuppressWarnings("unchecked")
     public <T> JavaTypeDescriptor<T> getDescriptor(PersistentProperty prop) {
         Type type = prop.getType();
+        if (prop.getClassType().isAnnotationPresent(Entity.class)) {
+            return (JavaTypeDescriptor<T>) descriptors.computeIfAbsent(type,
+                    type1 -> new SubEntityDescriptor(getInformation(prop.getClassType()).getIdProperty()));
+        }
+
         if (isJsonSerial(type)) {
             return (JavaTypeDescriptor<T>) descriptors.computeIfAbsent(type,
                     type1 -> new JsonDescriptor(jacksonResources, type1));

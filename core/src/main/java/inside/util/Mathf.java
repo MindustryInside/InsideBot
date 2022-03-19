@@ -1,6 +1,10 @@
 package inside.util;
 
+import java.security.SecureRandom;
+
 public final class Mathf {
+
+    public static final SecureRandom random = new SecureRandom();
 
     private Mathf() {
     }

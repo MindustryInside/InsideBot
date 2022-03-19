@@ -10,6 +10,7 @@ import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.PermissionCategory;
 import inside.interaction.annotation.ChatInputCommand;
 import inside.interaction.annotation.Subcommand;
+import inside.interaction.annotation.SubcommandGroup;
 import inside.interaction.chatinput.InteractionSubcommand;
 import inside.service.MessageService;
 import inside.util.Strings;
@@ -18,6 +19,8 @@ import reactor.core.publisher.Mono;
 
 import java.time.ZoneId;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
@@ -29,6 +32,7 @@ public class GuildConfigCommand extends ConfigOwnerCommand {
 
         addSubcommand(new LocaleSubcommand(this));
         addSubcommand(new TimeZoneSubcommand(this));
+        addSubcommand(new PrefixesSubcommandGroup(this));
     }
 
     @Subcommand(name = "locale", description = "Настроить язык.")
@@ -59,9 +63,9 @@ public class GuildConfigCommand extends ConfigOwnerCommand {
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asString)
                                     .map(Locale::new)) // безопасно
-                            .switchIfEmpty(messageService.text(env, "commands.config.locale.current",
+                            .switchIfEmpty(messageService.text(env, "Текущий язык бота: **%s**",
                                     config.locale().getDisplayName(config.locale())).then(Mono.never()))
-                            .flatMap(locale -> messageService.text(env, "commands.config.locale.update", locale.getDisplayName(locale))
+                            .flatMap(locale -> messageService.text(env, "Язык изменён на: **%s**", locale.getDisplayName(locale))
                                     .and(owner.entityRetriever.save(config.withLocale(locale)))));
         }
     }
@@ -87,20 +91,153 @@ public class GuildConfigCommand extends ConfigOwnerCommand {
                     .flatMap(config -> Mono.justOrEmpty(env.getOption("value")
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asString))
-                            .switchIfEmpty(messageService.text(env, "commands.config.timezone.current",
+                            .switchIfEmpty(messageService.text(env, "Текущий часовой пояс бота: **%s**",
                                     config.timezone()).then(Mono.never()))
                             .flatMap(tz -> {
                                 try {
                                     ZoneId timezone = ZoneId.of(tz);
-                                    return messageService.text(env, "commands.config.timezone.update", timezone)
+                                    return messageService.text(env, "Часовой пояс изменён на: **%s**", timezone)
                                             .and(owner.entityRetriever.save(config.withTimezone(timezone)));
                                 } catch (Throwable t) {
                                     return ZoneId.getAvailableZoneIds().stream()
                                             .min(Comparator.comparingInt(s -> Strings.damerauLevenshtein(s, tz)))
-                                            .map(s -> messageService.err(env, "commands.config.timezone.unknown.suggest", s))
-                                            .orElseGet(() -> messageService.err(env, "commands.config.timezone.unknown"));
+                                            .map(s -> messageService.err(env, "Часовой пояс не найден. Может вы имели в виду \"%s\"?", s))
+                                            .orElseGet(() -> messageService.err(env, "Часовой пояс не найден"));
                                 }
                             }));
+        }
+    }
+
+    @SubcommandGroup(name = "prefixes", description = "Настроить префиксы.")
+    protected static class PrefixesSubcommandGroup extends ConfigOwnerCommand {
+
+        protected PrefixesSubcommandGroup(GuildConfigCommand owner) {
+            super(owner.messageService, owner.entityRetriever);
+
+            addSubcommand(new AddSubcommand(this));
+            addSubcommand(new RemoveSubcommand(this));
+            addSubcommand(new ClearSubcommand(this));
+            addSubcommand(new ListSubcommand(this));
+        }
+
+        @Subcommand(name = "add", description = "Добавить эмодзи в список.")
+        protected static class AddSubcommand extends InteractionSubcommand<PrefixesSubcommandGroup> {
+
+            protected AddSubcommand(PrefixesSubcommandGroup owner) {
+                super(owner);
+
+                addOption(builder -> builder.name("value")
+                        .description("Новый префикс.")
+                        .required(true)
+                        .type(ApplicationCommandOption.Type.STRING.getValue()));
+            }
+
+            @Override
+            public Publisher<?> execute(ChatInputInteractionEnvironment env) {
+
+                Snowflake guildId = env.event().getInteraction()
+                        .getGuildId().orElseThrow();
+
+                String prefix = env.getOption("value")
+                        .flatMap(ApplicationCommandInteractionOption::getValue)
+                        .map(ApplicationCommandInteractionOptionValue::asString)
+                        .orElseThrow();
+
+                return owner.entityRetriever.getGuildConfigById(guildId)
+                        .switchIfEmpty(owner.entityRetriever.createGuildConfig(guildId))
+                        .flatMap(config -> {
+                            var set = new HashSet<>(config.prefixes());
+                            boolean add = set.add(prefix);
+                            if (!add) {
+                                return messageService.err(env, "Такой префикс уже находится в списке.");
+                            }
+
+                            return messageService.text(env, "Префикс добавлен в список: **%s**", prefix)
+                                    .and(owner.entityRetriever.save(config.withPrefixes(set)));
+                        });
+            }
+        }
+
+        @Subcommand(name = "remove", description = "Удалить эмодзи из списка.")
+        protected static class RemoveSubcommand extends InteractionSubcommand<PrefixesSubcommandGroup> {
+
+            protected RemoveSubcommand(PrefixesSubcommandGroup owner) {
+                super(owner);
+
+                addOption(builder -> builder.name("value")
+                        .description("Префикс, который нужно удалить.")
+                        .required(true)
+                        .type(ApplicationCommandOption.Type.STRING.getValue()));
+            }
+
+            @Override
+            public Publisher<?> execute(ChatInputInteractionEnvironment env) {
+
+                Snowflake guildId = env.event().getInteraction()
+                        .getGuildId().orElseThrow();
+
+                String prefix = env.getOption("value")
+                        .flatMap(ApplicationCommandInteractionOption::getValue)
+                        .map(ApplicationCommandInteractionOptionValue::asString)
+                        .orElseThrow();
+
+                return owner.entityRetriever.getGuildConfigById(guildId)
+                        .switchIfEmpty(owner.entityRetriever.createGuildConfig(guildId))
+                        .flatMap(config -> {
+                            var set = new HashSet<>(config.prefixes());
+                            boolean add = set.add(prefix);
+                            if (!add) {
+                                return messageService.err(env, "Такого префикса нет в списке.");
+                            }
+
+                            return messageService.text(env, "Префикс удалён из списка: **%s**", prefix)
+                                    .and(owner.entityRetriever.save(config.withPrefixes(set)));
+                        });
+            }
+        }
+
+        @Subcommand(name = "clear", description = "Отчистить список эмодзи.")
+        protected static class ClearSubcommand extends InteractionSubcommand<PrefixesSubcommandGroup> {
+
+            protected ClearSubcommand(PrefixesSubcommandGroup owner) {
+                super(owner);
+            }
+
+            @Override
+            public Publisher<?> execute(ChatInputInteractionEnvironment env) {
+
+                Snowflake guildId = env.event().getInteraction()
+                        .getGuildId().orElseThrow();
+
+                return owner.entityRetriever.getGuildConfigById(guildId)
+                        .switchIfEmpty(owner.entityRetriever.createGuildConfig(guildId))
+                        .flatMap(config -> config.prefixes().isEmpty()
+                                ? messageService.err(env, "Список префиксов пуст")
+                                : messageService.text(env, "Список префиксов очищен")
+                                .and(owner.entityRetriever.save(config.withPrefixes(List.of()))));
+            }
+        }
+
+        @Subcommand(name = "list", description = "Отобразить список эмодзи.")
+        protected static class ListSubcommand extends InteractionSubcommand<PrefixesSubcommandGroup> {
+
+            protected ListSubcommand(PrefixesSubcommandGroup owner) {
+                super(owner);
+            }
+
+            @Override
+            public Publisher<?> execute(ChatInputInteractionEnvironment env) {
+
+                Snowflake guildId = env.event().getInteraction()
+                        .getGuildId().orElseThrow();
+
+                return owner.entityRetriever.getGuildConfigById(guildId)
+                        .switchIfEmpty(owner.entityRetriever.createGuildConfig(guildId))
+                        .flatMap(config -> config.prefixes().isEmpty()
+                                ? messageService.err(env, "Список префиксов пуст")
+                                : messageService.text(env, "Текущий список префиксов: %s",
+                                String.join(", ", config.prefixes())));
+            }
         }
     }
 }

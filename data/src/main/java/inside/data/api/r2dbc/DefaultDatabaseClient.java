@@ -10,7 +10,7 @@ import reactor.core.publisher.Mono;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-public class DefaultDatabaseClient implements DatabaseClient {
+public final class DefaultDatabaseClient implements DatabaseClient {
     private final ConnectionFactory delegate;
 
     public DefaultDatabaseClient(ConnectionFactory delegate) {

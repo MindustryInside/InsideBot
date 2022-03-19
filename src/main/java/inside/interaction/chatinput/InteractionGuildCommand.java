@@ -7,7 +7,6 @@ import inside.interaction.PermissionCategory;
 import inside.service.MessageService;
 import reactor.core.publisher.Mono;
 
-// Просто для маркирования
 public abstract class InteractionGuildCommand extends InteractionCommand {
 
     public InteractionGuildCommand(MessageService messageService) {
@@ -24,6 +23,7 @@ public abstract class InteractionGuildCommand extends InteractionCommand {
                                 set.contains(Permission.KICK_MEMBERS) || set.contains(Permission.MODERATE_MEMBERS)) ||
                         getPermissions().contains(PermissionCategory.ADMIN) && set.contains(Permission.ADMINISTRATOR))
                 .filter(Boolean::booleanValue)
-                .switchIfEmpty(messageService.err(env, "commands.common.permission-denied").thenReturn(false));
+                .switchIfEmpty(messageService.err(env, "Вы не можете использовать эту команду, " +
+                        "так как у вас недостаточно прав").thenReturn(false));
     }
 }
