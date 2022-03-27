@@ -21,8 +21,6 @@ public class CacheEntityRetriever implements EntityRetriever {
     private final Cache<Tuple3<Long, Long, Long>, ImmutableReactionRole> reactionRoles = Caffeine.newBuilder().build();
     private final Cache<Tuple2<Long, Long>, ImmutableStarboard> starboards = Caffeine.newBuilder().build();
     private final Cache<Long, ImmutableStarboardConfig> starboardConfigs = Caffeine.newBuilder().build();
-    // TODO: не знаю как ассоциировать moderationActions
-    // private final Cache<Long, ImmutableModerationAction> moderationActions = Caffeine.newBuilder().build();
     private final Cache<Long, ImmutableModerationConfig> moderationConfigs = Caffeine.newBuilder().build();
 
     public CacheEntityRetriever(EntityRetriever delegate) {

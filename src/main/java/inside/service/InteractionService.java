@@ -17,6 +17,7 @@ import inside.interaction.component.ButtonListener;
 import inside.interaction.component.ComponentListener;
 import inside.interaction.component.SelectMenuListener;
 import inside.util.ContextUtil;
+import inside.util.Mathf;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
@@ -26,12 +27,15 @@ import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
 public class InteractionService extends BaseService {
+    private static final Snowflake AVAILABLE_FOR_ALL = Snowflake.of(0);
+
     public static final String CUSTOM_ID_PREFIX = "inside-";
 
     private final Configuration configuration;
@@ -59,11 +63,14 @@ public class InteractionService extends BaseService {
             return Mono.empty();
         }
 
-        return Mono.justOrEmpty(componentListeners.get(customId))
+        return Mono.justOrEmpty(componentListeners.entrySet().stream()
+                        .filter(e -> customId.startsWith(e.getKey()))
+                        .map(Map.Entry::getValue)
+                        .findFirst())
                 .switchIfEmpty(Mono.justOrEmpty(componentInteractions.getIfPresent(customId))
                         .switchIfEmpty(messageService.err(env, "Это взаимодействие недоступно.\n" +
                                 "Вызовите команду повторно, чтобы начать новое.").then(Mono.never()))
-                        .filter(TupleUtils.predicate((userId, listener) -> userId.equals(
+                        .filter(TupleUtils.predicate((userId, listener) -> userId.equals(AVAILABLE_FOR_ALL) || userId.equals(
                                 env.event().getInteraction().getUser().getId())))
                         .map(Tuple2::getT2)
                         .switchIfEmpty(messageService.err(env, "Вы не можете участвовать в чужом взаимодействии.\n" +
@@ -119,11 +126,19 @@ public class InteractionService extends BaseService {
     }
 
     public void registerComponentListener(ComponentListener listener) {
-        componentListeners.put(listener.getCustomId(), listener);
+        componentListeners.put(CUSTOM_ID_PREFIX + listener.getCustomId(), listener);
     }
 
     private void registerComponentInteraction(Snowflake userId, String customId, ComponentListener listener) {
         componentInteractions.put(customId, Tuples.of(userId, listener));
+    }
+
+    public static String applyCustomId(String customId) {
+        return CUSTOM_ID_PREFIX + customId + '-' + Integer.toHexString(Mathf.random.nextInt());
+    }
+
+    public <R> Mono<R> awaitButtonInteraction(String customId, Function<? super ButtonInteractionEnvironment, ? extends Publisher<R>> listener) {
+        return awaitButtonInteraction(AVAILABLE_FOR_ALL, customId, listener);
     }
 
     public <R> Mono<R> awaitButtonInteraction(Snowflake userId, String customId,

@@ -167,7 +167,7 @@ public abstract class MessageUtil {
                     case "д", "день", "дня", "дней" -> days = Integer.parseInt(valueToken);
                     case "ч", "час", "часа", "часов" -> hours = Integer.parseInt(valueToken);
                     case "м", "мин", "минуту", "минут", "минуты" -> minutes = Integer.parseInt(valueToken);
-                    case "с", "сек", "секунд", "секунду", "секунда" -> seconds = Double.parseDouble(valueToken);
+                    case "с", "сек", "секунд", "секунду", "секунда", "секунды" -> seconds = Double.parseDouble(valueToken);
                 }
             }
 

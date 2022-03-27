@@ -42,6 +42,8 @@ import inside.interaction.chatinput.moderation.DeleteCommand;
 import inside.interaction.chatinput.moderation.WarnCommand;
 import inside.interaction.chatinput.moderation.WarnsCommand;
 import inside.interaction.chatinput.settings.*;
+import inside.interaction.component.TicTacToeGameListener;
+import inside.service.GameService;
 import inside.service.InteractionService;
 import inside.service.MessageService;
 import inside.service.task.ActivityTask;
@@ -209,6 +211,9 @@ public class Launcher {
                     // services
                     var messageService = new MessageService(gateway, configuration);
                     var interactionService = new InteractionService(gateway, configuration, messageService, entityRetriever);
+                    var gameService = new GameService(gateway, configuration);
+
+                    interactionService.registerComponentListener(new TicTacToeGameListener(messageService, gameService));
 
                     var interactionCommandHolder = InteractionCommandHolder.builder()
                             // разное
@@ -219,6 +224,7 @@ public class Launcher {
                             .addCommand(new TextLayoutCommand(messageService))
                             .addCommand(new TransliterationCommand(messageService))
                             .addCommand(new RemindCommand(messageService, scheduler))
+                            .addCommand(new TicTacToeGameCommand(messageService, gameService))
                             // разное, но серверное
                             .addCommand(new EmojiCommand(messageService))
                             .addCommand(new LeaderboardCommand(messageService, entityRetriever))
