@@ -184,6 +184,11 @@ public class CacheEntityRetriever implements EntityRetriever {
     }
 
     @Override
+    public Mono<ImmutableModerationAction> getModerationActionById(long id) {
+        return delegate.getModerationActionById(id);
+    }
+
+    @Override
     public Mono<Long> moderationActionCountById(ModerationAction.Type type, Snowflake guildId, Snowflake targetId) {
         return delegate.moderationActionCountById(type, guildId, targetId);
     }
@@ -191,6 +196,11 @@ public class CacheEntityRetriever implements EntityRetriever {
     @Override
     public Mono<ImmutableModerationAction> save(ModerationAction moderationAction) {
         return delegate.save(moderationAction);
+    }
+
+    @Override
+    public Mono<Void> delete(ModerationAction moderationAction) {
+        return delegate.delete(moderationAction);
     }
 
     @Override

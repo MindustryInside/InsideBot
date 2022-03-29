@@ -15,11 +15,15 @@ import discord4j.rest.util.Permission;
 import discord4j.rest.util.PermissionSet;
 import inside.data.EntityRetriever;
 import inside.data.entity.ModerationAction;
-import inside.data.entity.PunishmentSettings;
+import inside.data.schedule.JobDetail;
+import inside.data.schedule.ReactiveScheduler;
+import inside.data.schedule.SimpleScheduleSpec;
+import inside.data.schedule.Trigger;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.PermissionCategory;
 import inside.interaction.annotation.ChatInputCommand;
 import inside.service.MessageService;
+import inside.service.job.UnmuteJob;
 import inside.util.MessageUtil;
 import io.r2dbc.postgresql.codec.Interval;
 import org.reactivestreams.Publisher;
@@ -27,8 +31,10 @@ import reactor.core.publisher.Mono;
 import reactor.function.TupleUtils;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
+import java.util.UUID;
 import java.util.function.Predicate;
 
 import static inside.data.entity.ModerationAction.timeoutLimit;
@@ -36,8 +42,12 @@ import static inside.data.entity.ModerationAction.timeoutLimit;
 @ChatInputCommand(name = "warn", description = "Выдать предупреждение пользователю.", permissions = PermissionCategory.MODERATOR)
 public class WarnCommand extends ModerationCommand {
 
-    public WarnCommand(MessageService messageService, EntityRetriever entityRetriever) {
+    private final ReactiveScheduler reactiveScheduler;
+
+    public WarnCommand(MessageService messageService, EntityRetriever entityRetriever,
+                       ReactiveScheduler reactiveScheduler) {
         super(messageService, entityRetriever);
+        this.reactiveScheduler = Objects.requireNonNull(reactiveScheduler, "reactiveScheduler");
 
         addOption(builder -> builder.name("target")
                 .description("Нарушитель правил.")
@@ -149,83 +159,93 @@ public class WarnCommand extends ModerationCommand {
                                         .repeat(count - 1));
                     })
                     .then(entityRetriever.moderationActionCountById(ModerationAction.Type.warn, guildId, targetId))
-                    .filter(l -> config.thresholdPunishments().map(t -> t.containsKey(l)).orElse(false))
-                    .flatMap(l -> {
-                        PunishmentSettings sett = config.thresholdPunishments().orElseThrow().get(l);
+                    .flatMap(l -> Mono.justOrEmpty(config.thresholdPunishments()).mapNotNull(t -> t.get(l)))
+                    .flatMap(sett -> switch (sett.type()) {
+                        case warn -> {
+                            Optional<Instant> inst = Possible.flatOpt(sett.interval())
+                                    .or(config::warnExpireInterval)
+                                    .map(i -> Instant.now().plus(i));
 
-                        return switch (sett.type()) {
-                            case warn -> {
-                                Optional<Instant> inst = Possible.flatOpt(sett.interval())
-                                        .or(config::warnExpireInterval)
-                                        .map(i -> Instant.now().plus(i));
+                            ModerationAction autoWarn = ModerationAction.builder()
+                                    .guildId(guildId.asLong())
+                                    .adminId(env.event().getClient().getSelfId().asLong())
+                                    .targetId(targetId.asLong())
+                                    .type(ModerationAction.Type.warn)
+                                    .endTimestamp(inst)
+                                    .reason("Авто-пред")
+                                    .build();
 
-                                ModerationAction autoWarn = ModerationAction.builder()
-                                        .guildId(guildId.asLong())
-                                        .adminId(env.event().getClient().getSelfId().asLong())
-                                        .targetId(targetId.asLong())
-                                        .type(ModerationAction.Type.warn)
-                                        .endTimestamp(inst)
-                                        .reason("Авто-пред")
-                                        .build();
-
-                                String autoWarnUntil = inst.map(i -> String.format("до *%s*", TimestampFormat.LONG_DATE_TIME.format(i)))
-                                        .orElse(null);
-                                StringJoiner ajcomp = new StringJoiner(" ");
-                                if (byReason != null) {
-                                    ajcomp.add(byReason);
-                                }
-                                if (autoWarnUntil != null) {
-                                    ajcomp.add(autoWarnUntil);
-                                }
-
-                                yield target.getPrivateChannel()
-                                        .onErrorResume(e -> e instanceof ClientException, e -> Mono.empty())
-                                        .flatMap(c -> c.createMessage(String.format("Вы получили автоматическое предупреждение за нарушение правил %s", ajcomp)))
-                                        .and(entityRetriever.save(autoWarn));
+                            String autoWarnUntil = inst.map(i -> String.format("до *%s*", TimestampFormat.LONG_DATE_TIME.format(i)))
+                                    .orElse(null);
+                            StringJoiner ajcomp = new StringJoiner(" ");
+                            if (byReason != null) {
+                                ajcomp.add(byReason);
                             }
-                            case mute -> {
-                                Instant now = Instant.now();
-                                Optional<Interval> inter = Possible.flatOpt(sett.interval())
-                                        .or(config::muteBaseInterval);
-                                Optional<Instant> inst = inter.map(now::plus);
-
-                                Optional<Snowflake> muteRoleId = config.muteRoleId()
-                                        .map(Snowflake::of);
-
-                                ModerationAction autoWarn = ModerationAction.builder()
-                                        .guildId(guildId.asLong())
-                                        .adminId(env.event().getClient().getSelfId().asLong())
-                                        .targetId(targetId.asLong())
-                                        .type(ModerationAction.Type.mute)
-                                        .endTimestamp(inst)
-                                        .reason("Авто-мут")
-                                        .build();
-
-                                String autoMuteUntil = inst.map(i -> String.format("до *%s*",
-                                                TimestampFormat.LONG_DATE_TIME.format(i)))
-                                        .orElse(null);
-                                StringJoiner ajcomp = new StringJoiner(" ");
-                                if (byReason != null) {
-                                    ajcomp.add(byReason);
-                                }
-                                if (autoMuteUntil != null) {
-                                    ajcomp.add(autoMuteUntil);
-                                }
-
-                                yield Mono.justOrEmpty(muteRoleId)
-                                        .flatMap(target::addRole)
-                                        .switchIfEmpty(target.edit().withReason(reason)
-                                                .withCommunicationDisabledUntilOrNull(now.plus(
-                                                        inter.filter(i -> i.getSeconds() > timeoutLimit.getSeconds())
-                                                                .orElse(timeoutLimit)))
-                                                .then(Mono.never()))
-                                        .and(target.getPrivateChannel()
-                                                .onErrorResume(e -> e instanceof ClientException, e -> Mono.empty())
-                                                .flatMap(c -> c.createMessage("Вы получили автоматический мут за нарушение правил " + ajcomp)))
-                                        .and(entityRetriever.save(autoWarn));
+                            if (autoWarnUntil != null) {
+                                ajcomp.add(autoWarnUntil);
                             }
-                            default -> Mono.empty();
-                        };
+
+                            yield target.getPrivateChannel()
+                                    .onErrorResume(e -> e instanceof ClientException, e -> Mono.empty())
+                                    .flatMap(c -> c.createMessage(String.format("Вы получили автоматическое предупреждение за нарушение правил %s", ajcomp)))
+                                    .and(entityRetriever.save(autoWarn));
+                        }
+                        case mute -> {
+                            Instant now = Instant.now();
+                            Optional<Interval> inter = Possible.flatOpt(sett.interval())
+                                    .or(config::muteBaseInterval);
+                            Optional<Instant> inst = inter.map(now::plus);
+
+                            Optional<Snowflake> muteRoleId = config.muteRoleId()
+                                    .map(Snowflake::of);
+
+                            ModerationAction autoMute = ModerationAction.builder()
+                                    .guildId(guildId.asLong())
+                                    .adminId(env.event().getClient().getSelfId().asLong())
+                                    .targetId(targetId.asLong())
+                                    .type(ModerationAction.Type.mute)
+                                    .endTimestamp(inst)
+                                    .reason("Авто-мут")
+                                    .build();
+
+                            String autoMuteUntil = inst.map(i -> String.format("до *%s*",
+                                            TimestampFormat.LONG_DATE_TIME.format(i)))
+                                    .orElse(null);
+                            StringJoiner ajcomp = new StringJoiner(" ");
+                            if (byReason != null) {
+                                ajcomp.add(byReason);
+                            }
+                            if (autoMuteUntil != null) {
+                                ajcomp.add(autoMuteUntil);
+                            }
+
+                            yield Mono.justOrEmpty(muteRoleId)
+                                    .flatMap(target::addRole)
+                                    .switchIfEmpty(target.edit().withReason(reason)
+                                            .withCommunicationDisabledUntilOrNull(now.plus(
+                                                    inter.filter(i -> i.getSeconds() > timeoutLimit.getSeconds())
+                                                            .orElse(timeoutLimit)))
+                                            .then(Mono.never()))
+                                    .onErrorResume(ClientException.class, e -> Mono.empty())
+                                    .and(target.getPrivateChannel()
+                                            .onErrorResume(ClientException.class, e -> Mono.empty())
+                                            .flatMap(c -> c.createMessage("Вы получили автоматический мут за нарушение правил " + ajcomp)))
+                                    .then(entityRetriever.save(autoMute))
+                                    .zipWith(Mono.justOrEmpty(inst).filter(i -> muteRoleId.isPresent()))
+                                    .log()
+                                    .flatMap(TupleUtils.function((act, i) -> {
+                                        JobDetail job = UnmuteJob.createDetails(act);
+
+                                        Trigger trigger = SimpleScheduleSpec.builder()
+                                                .startTimestamp(i)
+                                                .key(UnmuteJob.GROUP, "trigger-" + UUID.randomUUID())
+                                                .build()
+                                                .asTrigger();
+
+                                        return reactiveScheduler.scheduleJob(job, trigger);
+                                    }));
+                        }
+                        default -> Mono.empty();
                     });
                 }));
     }

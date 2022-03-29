@@ -165,6 +165,12 @@ public class EntityRetrieverImpl implements EntityRetriever {
     }
 
     @Override
+    public Mono<ImmutableModerationAction> getModerationActionById(long id) {
+        return repositoryHolder.moderationActionRepository.find(id)
+                .cast(ImmutableModerationAction.class);
+    }
+
+    @Override
     public Mono<Long> moderationActionCountById(ModerationAction.Type type, Snowflake guildId, Snowflake targetId) {
         return repositoryHolder.moderationActionRepository.countByTypeAndGuildIdAndTargetId(type, guildId.asLong(), targetId.asLong());
     }
@@ -173,6 +179,11 @@ public class EntityRetrieverImpl implements EntityRetriever {
     public Mono<ImmutableModerationAction> save(ModerationAction moderationAction) {
         return repositoryHolder.moderationActionRepository.save(moderationAction)
                 .cast(ImmutableModerationAction.class);
+    }
+
+    @Override
+    public Mono<Void> delete(ModerationAction moderationAction) {
+        return repositoryHolder.moderationActionRepository.delete(moderationAction).then();
     }
 
     @Override

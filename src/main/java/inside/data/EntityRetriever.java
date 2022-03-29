@@ -74,9 +74,14 @@ public interface EntityRetriever {
 
     Flux<ImmutableModerationAction> getAllModerationActionById(ModerationAction.Type type, Snowflake guildId, Snowflake targetId);
 
+    // Только для анмута
+    Mono<ImmutableModerationAction> getModerationActionById(long id);
+
     Mono<Long> moderationActionCountById(ModerationAction.Type type, Snowflake guildId, Snowflake targetId);
 
     Mono<ImmutableModerationAction> save(ModerationAction moderationAction);
+
+    Mono<Void> delete(ModerationAction moderationAction);
 
     //endregion
     //region moderation config

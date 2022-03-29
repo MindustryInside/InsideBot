@@ -1,6 +1,5 @@
 package inside.command.common;
 
-import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
 import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.core.spec.EmbedCreateSpec;
@@ -21,7 +20,6 @@ public class AvatarCommand extends Command {
 
     @Override
     public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction) {
-        Member author = env.member();
 
         Optional<OptionValue> firstOpt = interaction.getOption(0)
                 .flatMap(CommandOption::getValue);
@@ -32,10 +30,13 @@ public class AvatarCommand extends Command {
                                 .getMessageById(ref.getChannelId(), messageId)))
                 .flatMap(message -> Mono.justOrEmpty(message.getAuthor()));
 
-        return Mono.justOrEmpty(firstOpt.map(OptionValue::asSnowflake)).flatMap(id -> env.message().getClient()
-                        .withRetrievalStrategy(EntityRetrievalStrategy.REST).getUserById(id))
+        return Mono.justOrEmpty(firstOpt.map(OptionValue::asSnowflake))
+                .flatMap(id -> env.message().getClient()
+                        .withRetrievalStrategy(EntityRetrievalStrategy.REST)
+                        .getUserById(id))
                 .switchIfEmpty(referencedUser)
-                .switchIfEmpty(env.message().getClient().withRetrievalStrategy(EntityRetrievalStrategy.REST)
+                .switchIfEmpty(env.message().getClient()
+                        .withRetrievalStrategy(EntityRetrievalStrategy.REST)
                         .getUserById(env.member().getId())
                         .filter(ignored -> firstOpt.isEmpty()))
                 .switchIfEmpty(Mono.justOrEmpty(firstOpt.map(OptionValue::value))

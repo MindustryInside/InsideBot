@@ -10,6 +10,8 @@ final class SharedAttributeKeys {
     private SharedAttributeKeys() {
     }
 
+    static AttributeKey<Long> ID = valueOf("id");
+
     static AttributeKey<Snowflake> USER_ID = valueOf("user_id");
 
     static AttributeKey<Snowflake> CHANNEL_ID = valueOf("channel_id");

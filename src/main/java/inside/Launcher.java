@@ -27,7 +27,10 @@ import inside.data.api.EntityOperations;
 import inside.data.api.codec.LocaleCodec;
 import inside.data.api.r2dbc.DefaultDatabaseClient;
 import inside.data.entity.ModerationAction;
-import inside.data.schedule.*;
+import inside.data.schedule.ReactiveScheduler;
+import inside.data.schedule.ReactiveSchedulerImpl;
+import inside.data.schedule.SchedulerResources;
+import inside.data.schedule.Trigger;
 import inside.event.InteractionEventHandler;
 import inside.event.MessageEventHandler;
 import inside.event.ReactionRoleEventHandler;
@@ -46,6 +49,7 @@ import inside.interaction.component.game.TicTacToeGameListener;
 import inside.service.GameService;
 import inside.service.InteractionService;
 import inside.service.MessageService;
+import inside.service.job.JobFactoryImpl;
 import inside.service.task.ActivityTask;
 import inside.util.func.UnsafeRunnable;
 import inside.util.json.AdapterModule;
@@ -187,7 +191,7 @@ public class Launcher {
         ReactiveScheduler scheduler = new ReactiveSchedulerImpl(databaseClient,
                 new SchedulerResources(Schedulers.boundedElastic(), "inside-scheduler"),
                 polymorphicJacksonResources.getObjectMapper(),
-                new DefaultJobFactory());
+                new JobFactoryImpl(entityRetriever));
 
         DiscordClient.builder(configuration.token())
                 .onClientResponse(ResponseFunction.emptyIfNotFound())
@@ -236,7 +240,7 @@ public class Launcher {
                             .addCommand(new AdminConfigCommand(messageService, entityRetriever))
                             // админские
                             .addCommand(new DeleteCommand(messageService, entityRetriever))
-                            .addCommand(new WarnCommand(messageService, entityRetriever))
+                            .addCommand(new WarnCommand(messageService, entityRetriever, scheduler))
                             .addCommand(new WarnsCommand(messageService, entityRetriever))
                             .build();
 
