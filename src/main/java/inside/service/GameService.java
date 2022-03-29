@@ -5,7 +5,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import inside.Configuration;
-import inside.TicTacToeGame;
+import inside.interaction.chatinput.common.TicTacToeGame;
 
 import java.util.Optional;
 
@@ -26,7 +26,7 @@ public class GameService extends BaseService {
         return Optional.ofNullable(games.getIfPresent(userId));
     }
 
-    public void registerTTTGame(TicTacToeGame game) {
+    public void registerGame(TicTacToeGame game) {
         games.put(game.getXUserId(), game);
         games.put(game.getOUserId(), game);
     }

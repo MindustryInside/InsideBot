@@ -1,4 +1,4 @@
-package inside;
+package inside.interaction.chatinput.common;
 
 import discord4j.common.util.Snowflake;
 
@@ -17,7 +17,7 @@ public class TicTacToeGame {
     private final Snowflake xUserId;
     private final Snowflake oUserId;
 
-    private volatile boolean lastX;
+    private boolean lastX;
 
     public TicTacToeGame(int size, Snowflake xUserId, Snowflake oUserId, boolean firstX) {
         this.grid = new byte[size][size];
@@ -25,6 +25,15 @@ public class TicTacToeGame {
         this.oUserId = Objects.requireNonNull(oUserId, "oUserId");
 
         lastX = !firstX;
+    }
+
+    public boolean has(int x, int y) {
+        if (x > grid.length || y > grid[x].length) {
+            return false;
+        }
+
+        byte s = grid[x][y];
+        return s == ABSENT;
     }
 
     public boolean play(int x, int y, boolean xSign) {
@@ -39,6 +48,7 @@ public class TicTacToeGame {
 
         grid[x][y] = xSign ? X_MASK : O_MASK;
         lastX = xSign;
+
         return true;
     }
 
@@ -62,7 +72,7 @@ public class TicTacToeGame {
         //  x
         // x
         for (int x = 0; x < grid.length; x++) {
-            ct.apply(grid[x][2 - x]);
+            ct.apply(grid[x][grid.length - 1 - x]);
         }
 
         if (ct.xseq == grid.length || ct.oseq == grid.length) {

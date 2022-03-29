@@ -11,7 +11,6 @@ import discord4j.core.object.component.LayoutComponent;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
-import inside.TicTacToeGame;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.annotation.ChatInputCommand;
 import inside.interaction.chatinput.InteractionCommand;
@@ -22,6 +21,7 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -32,6 +32,25 @@ import static inside.service.InteractionService.applyCustomId;
 public class TicTacToeGameCommand extends InteractionCommand {
 
     private static final int SIZE = 3;
+    private static List<LayoutComponent> rows;
+
+    static {
+        List<LayoutComponent> rows = new ArrayList<>();
+        List<ActionComponent> components = new ArrayList<>();
+        for (int i = 1, c = SIZE * SIZE; i <= c; i++) {
+            components.add(Button.primary(CUSTOM_ID_PREFIX + "ox-game-" + (i - 1),
+                    ReactionEmoji.unicode(i + "\u20E3")));
+
+            if (i % 3 == 0) {
+                rows.add(ActionRow.of(components));
+                components.clear();
+            }
+        }
+
+        rows.add(ActionRow.of(Button.danger(CUSTOM_ID_PREFIX + "ox-game-exit", "Закончить игру")));
+
+        TicTacToeGameCommand.rows = Collections.unmodifiableList(rows);
+    }
 
     private final GameService gameService;
 
@@ -75,7 +94,6 @@ public class TicTacToeGameCommand extends InteractionCommand {
                 .map(ApplicationCommandInteractionOptionValue::asBoolean)
                 .orElse(false);
 
-        // String botCustomId = applyCustomId("ox-bot");
         String userCustomId = applyCustomId("ox-user");
         String exitCustomId = applyCustomId("ox-exit");
 
@@ -83,21 +101,7 @@ public class TicTacToeGameCommand extends InteractionCommand {
 
             var g = new TicTacToeGame(SIZE, userId, userId, xSign);
 
-            gameService.registerTTTGame(g);
-
-            List<LayoutComponent> rows = new ArrayList<>();
-            List<ActionComponent> components = new ArrayList<>();
-            for (int i = 1, c = SIZE * SIZE; i <= c; i++) {
-                components.add(Button.primary(CUSTOM_ID_PREFIX + "ox-game-" + (i - 1),
-                        ReactionEmoji.unicode(i + "\u20E3")));
-
-                if (i % 3 == 0) {
-                    rows.add(ActionRow.of(components));
-                    components.clear();
-                }
-            }
-
-            rows.add(ActionRow.of(Button.danger(CUSTOM_ID_PREFIX + "ox-game-exit", "Закончить игру")));
+            gameService.registerGame(g);
 
             return env.event().deferReply().then(env.event().editReply()
                     .withEmbedsOrNull(List.of(EmbedCreateSpec.builder()
@@ -123,21 +127,7 @@ public class TicTacToeGameCommand extends InteractionCommand {
 
                     var g = new TicTacToeGame(SIZE, xUserId, oUserId, xSign);
 
-                    gameService.registerTTTGame(g);
-
-                    List<LayoutComponent> rows = new ArrayList<>();
-                    List<ActionComponent> components = new ArrayList<>();
-                    for (int i = 1, c = SIZE * SIZE; i <= c; i++) {
-                        components.add(Button.primary(CUSTOM_ID_PREFIX + "ox-game-" + (i - 1),
-                                ReactionEmoji.unicode(i + "\u20E3")));
-
-                        if (i % 3 == 0) {
-                            rows.add(ActionRow.of(components));
-                            components.clear();
-                        }
-                    }
-
-                    rows.add(ActionRow.of(Button.danger(CUSTOM_ID_PREFIX + "ox-game-exit", "Закончить игру")));
+                    gameService.registerGame(g);
 
                     String xUserStr = MessageUtil.getUserMention(xUserId) + " (**x**)";
                     String oUserStr = "с " + MessageUtil.getUserMention(oUserId) + " (**o**)";
@@ -154,7 +144,6 @@ public class TicTacToeGameCommand extends InteractionCommand {
 
         return env.event().reply("Выбор оппонента для игры")
                 .withComponents(List.of(ActionRow.of(
-                        /*Button.primary(botCustomId, "Играть со мной"),*/
                         Button.primary(userCustomId, "Стать оппонентом"),
                         Button.danger(exitCustomId, "Завершить поиск"))))
                 .and(Mono.firstWithSignal(onExit, onSearch));

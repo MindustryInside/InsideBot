@@ -47,7 +47,7 @@ public class RepositoryInvocationHandler implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, @Nullable Object[] args) {
-        if (method.getDeclaringClass() == Object.class)  {
+        if (method.getDeclaringClass() == Object.class) {
             switch (method.getName()) {
                 case "hashCode": return System.identityHashCode(proxy);
                 case "equals": return args != null && proxy == args[0] ? Boolean.TRUE : Boolean.FALSE;
