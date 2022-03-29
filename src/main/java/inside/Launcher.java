@@ -42,7 +42,7 @@ import inside.interaction.chatinput.moderation.DeleteCommand;
 import inside.interaction.chatinput.moderation.WarnCommand;
 import inside.interaction.chatinput.moderation.WarnsCommand;
 import inside.interaction.chatinput.settings.*;
-import inside.interaction.component.TicTacToeGameListener;
+import inside.interaction.component.game.TicTacToeGameListener;
 import inside.service.GameService;
 import inside.service.InteractionService;
 import inside.service.MessageService;

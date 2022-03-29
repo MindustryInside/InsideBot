@@ -1,4 +1,4 @@
-package inside.interaction.component;
+package inside.interaction.component.game;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.component.ActionRow;
@@ -8,6 +8,8 @@ import discord4j.core.spec.EmbedCreateSpec;
 import inside.interaction.ButtonInteractionEnvironment;
 import inside.interaction.annotation.ComponentProvider;
 import inside.interaction.chatinput.common.TicTacToeGame;
+import inside.interaction.chatinput.common.TicTacToeGameCommand;
+import inside.interaction.component.ButtonListener;
 import inside.service.GameService;
 import inside.service.MessageService;
 import inside.util.MessageUtil;
@@ -101,9 +103,17 @@ public class TicTacToeGameListener implements ButtonListener {
                                             .map(c -> (Button) c)
                                             .map(c -> {
                                                 String s = c.getCustomId().orElseThrow();
-                                                if (s.equals("inside-ox-game-" + idx)) {
+                                                if (s.equals("inside-ox-game-exit")) {
+                                                    return c;
+                                                }
+
+                                                int idx0 = Integer.parseInt(s.substring("inside-ox-game-".length()));
+                                                int x0 = idx0 / TicTacToeGameCommand.SIZE;
+                                                int y0 = idx0 % TicTacToeGameCommand.SIZE;
+                                                if (g.has(x0, y0)) {
                                                     return c.disabled();
                                                 }
+
                                                 return c;
                                             })
                                             .collect(Collectors.toList()))

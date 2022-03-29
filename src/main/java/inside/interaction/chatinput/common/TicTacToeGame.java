@@ -33,7 +33,7 @@ public class TicTacToeGame {
         }
 
         byte s = grid[x][y];
-        return s == ABSENT;
+        return s != ABSENT;
     }
 
     public boolean play(int x, int y, boolean xSign) {

@@ -31,7 +31,8 @@ import static inside.service.InteractionService.applyCustomId;
 @ChatInputCommand(name = "ox", description = "Начать игру в крестики-нолики.")
 public class TicTacToeGameCommand extends InteractionCommand {
 
-    private static final int SIZE = 3;
+    public static final int SIZE = 3;
+
     private static List<LayoutComponent> rows;
 
     static {
@@ -115,7 +116,7 @@ public class TicTacToeGameCommand extends InteractionCommand {
 
         Mono<Void> onExit = env.interactionService().awaitButtonInteraction(userId, exitCustomId,
                 cenv -> cenv.event().deferEdit().then(cenv.event().deleteReply()));
-        Mono<Void> onSearch = env.interactionService().awaitButtonInteraction(userId, userCustomId,
+        Mono<Void> onSearch = env.interactionService().awaitButtonInteraction(userCustomId,
                 cenv -> {
                     Snowflake id = cenv.event().getInteraction().getUser().getId();
                     if (id.equals(userId)) {
