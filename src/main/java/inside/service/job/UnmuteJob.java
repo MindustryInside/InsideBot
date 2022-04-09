@@ -30,7 +30,7 @@ public class UnmuteJob implements Job {
 
     public static JobDetail createDetails(ModerationAction action) {
         return JobDetail.builder()
-                .jobClass(RemindJob.class)
+                .jobClass(UnmuteJob.class)
                 .key(GROUP, "job-" + UUID.randomUUID())
                 .putJobData("id", action.id())
                 .build();

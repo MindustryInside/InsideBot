@@ -3,6 +3,8 @@ package inside;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import discord4j.common.util.Snowflake;
+import discord4j.discordjson.possible.Possible;
 import discord4j.rest.util.Color;
 import inside.service.MessageService;
 import org.immutables.value.Value;
@@ -27,6 +29,10 @@ public interface Configuration {
 
     default Tasks tasks() {
         return ImmutableTasks.of();
+    }
+
+    default Other other() {
+        return ImmutableOther.of();
     }
 
     String token();
@@ -66,6 +72,15 @@ public interface Configuration {
         default Duration awaitComponentTimeout() {
             return Duration.ofMinutes(13);
         }
+    }
+
+    @Value.Immutable(singleton = true)
+    @JsonSerialize(as = ImmutableOther.class)
+    @JsonDeserialize(as = ImmutableOther.class)
+    interface Other {
+
+        @JsonProperty("alive_forever_thread_id")
+        Possible<Snowflake> aliveForeverThreadId();
     }
 
     @Value.Immutable(singleton = true)

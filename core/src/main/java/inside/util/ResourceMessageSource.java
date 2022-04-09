@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class ResourceMessageSource {
-    private static final ConcurrentMap<Tuple2<String, Locale>, MessageFormat> formats = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Tuple2<String, Locale>, MessageFormat> formats = new ConcurrentHashMap<>();
 
     private final String baseName;
 

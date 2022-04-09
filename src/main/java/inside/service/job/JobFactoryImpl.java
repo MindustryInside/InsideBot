@@ -5,6 +5,8 @@ import inside.data.schedule.Job;
 import inside.data.schedule.JobDetail;
 import inside.data.schedule.JobFactory;
 import inside.data.schedule.TriggerFiredBundle;
+import inside.util.Try;
+import io.netty.util.internal.EmptyArrays;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Mono;
 import reactor.util.Logger;
@@ -34,7 +36,10 @@ public class JobFactoryImpl implements JobFactory {
                     log.debug("Producing instance of Job '{}' ({})", jobDetail.key(), jobClass.getName());
                 }
 
-                Constructor<Job> constructor = (Constructor<Job>) jobClass.getDeclaredConstructor(entityRetriever.getClass());
+                var constructor = Try.ofCallable(() -> (Constructor<Job>) jobClass.getDeclaredConstructor(entityRetriever.getClass()))
+                        .or(Try.ofCallable(() -> (Constructor<Job>) jobClass.getDeclaredConstructor(EmptyArrays.EMPTY_CLASSES)))
+                        .get();
+
                 return constructor.newInstance();
             } catch (Exception e) {
                 throw Exceptions.propagate(new IllegalStateException("Problem instantiating class '" + jobDetail.jobClass().getName() + "'", e));

@@ -41,9 +41,7 @@ import inside.interaction.chatinput.InteractionGuildCommand;
 import inside.interaction.chatinput.common.*;
 import inside.interaction.chatinput.guild.EmojiCommand;
 import inside.interaction.chatinput.guild.LeaderboardCommand;
-import inside.interaction.chatinput.moderation.DeleteCommand;
-import inside.interaction.chatinput.moderation.WarnCommand;
-import inside.interaction.chatinput.moderation.WarnsCommand;
+import inside.interaction.chatinput.moderation.*;
 import inside.interaction.chatinput.settings.*;
 import inside.interaction.component.game.TicTacToeGameListener;
 import inside.service.GameService;
@@ -51,6 +49,8 @@ import inside.service.InteractionService;
 import inside.service.MessageService;
 import inside.service.job.JobFactoryImpl;
 import inside.service.task.ActivityTask;
+import inside.service.task.AliveForeverThreadTask;
+import inside.service.task.Task;
 import inside.util.func.UnsafeRunnable;
 import inside.util.json.AdapterModule;
 import io.r2dbc.pool.ConnectionPool;
@@ -242,6 +242,8 @@ public class Launcher {
                             .addCommand(new DeleteCommand(messageService, entityRetriever))
                             .addCommand(new WarnCommand(messageService, entityRetriever, scheduler))
                             .addCommand(new WarnsCommand(messageService, entityRetriever))
+                            .addCommand(new MuteCommand(messageService, entityRetriever, scheduler))
+                            .addCommand(new UnmuteCommand(messageService, entityRetriever))
                             .build();
 
                     var cmds = interactionCommandHolder.getCommands().values();
@@ -284,9 +286,14 @@ public class Launcher {
                     Mono<Void> registerEvents = gateway.on(handlers)
                             .then();
 
-                    Mono<Void> registerTasks = Flux.just(
-                                    new ActivityTask(configuration, entityRetriever))
-                            .flatMap(task -> Flux.interval(task.getInterval())
+                    List<Task> tasks = new ArrayList<>();
+                    tasks.add(new ActivityTask(configuration, entityRetriever));
+
+                    configuration.other().aliveForeverThreadId()
+                            .toOptional().ifPresent(id -> tasks.add(new AliveForeverThreadTask(id)));
+
+                    Mono<Void> registerTasks = Flux.fromIterable(tasks)
+                            .flatMap(task -> Flux.interval(Duration.ZERO, task.getInterval())
                                     .flatMap(l -> task.execute()))
                             .then();
 

@@ -232,7 +232,6 @@ public class WarnCommand extends ModerationCommand {
                                             .flatMap(c -> c.createMessage("Вы получили автоматический мут за нарушение правил " + ajcomp)))
                                     .then(entityRetriever.save(autoMute))
                                     .zipWith(Mono.justOrEmpty(inst).filter(i -> muteRoleId.isPresent()))
-                                    .log()
                                     .flatMap(TupleUtils.function((act, i) -> {
                                         JobDetail job = UnmuteJob.createDetails(act);
 
