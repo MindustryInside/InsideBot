@@ -18,8 +18,10 @@ import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.rest.util.Color;
 import inside.data.EntityRetriever;
+import inside.data.entity.EmojiDataWithPeriod;
 import inside.data.entity.ImmutableStarboard;
 import inside.data.entity.ImmutableStarboardConfig;
+import inside.data.entity.StarboardConfig;
 import inside.data.entity.base.ConfigEntity;
 import inside.service.MessageService;
 import inside.util.ContextUtil;
@@ -34,9 +36,7 @@ import reactor.util.context.Context;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -77,6 +77,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter {
         return Mono.zip(initContext, starboardConfig)
                 .flatMap(function((context, config) -> {
                     List<ReactionEmoji> emojis = config.emojis().stream()
+                            .map(EmojiDataWithPeriod::emoji)
                             .map(ReactionEmoji::of)
                             .toList();
 
@@ -117,14 +118,10 @@ public class StarboardEventHandler extends ReactiveEventAdapter {
                                     computeEmbed(context, source, guildId, embedSpec);
                                     embedSpec.color(lerp(offsetColor, targetColor, Mathf.round(count / 6f, lerpStep)));
 
-                                    String emoji = MessageUtil.getEmojiString(emojis.get(Math.toIntExact(
-                                            Mathf.clamp((count - 1) / 5, 0, emojis.size() - 1))));
-
-                                    String text = "%s **%s** %s".formatted(
-                                            emoji, count, MessageUtil.getChannelMention(source.getChannelId()));
-
                                     return channel.createMessage(MessageCreateSpec.builder()
-                                                    .content(text)
+                                                    .content("%s **%s** %s".formatted(
+                                                            MessageUtil.getEmojiString(getCurrentEmoji(config, count).emoji()), count,
+                                                            MessageUtil.getChannelMention(source.getChannelId())))
                                                     .addEmbed(embedSpec.build())
                                                     .build())
                                             .flatMap(target -> {
@@ -160,15 +157,11 @@ public class StarboardEventHandler extends ReactiveEventAdapter {
 
                                             embedSpec.color(lerp(offsetColor, targetColor, Mathf.round(count / 6f, lerpStep)));
 
-                                            String emoji = MessageUtil.getEmojiString(emojis.get(Math.toIntExact(
-                                                    Mathf.clamp((count - 1) / 5, 0, emojis.size() - 1))));
-
-                                            String text = "%s **%s** %s".formatted(
-                                                    emoji, count, MessageUtil.getChannelMention(source.getChannelId()));
-
                                             return target.edit(MessageEditSpec.builder()
                                                     .addEmbed(embedSpec.build())
-                                                    .contentOrNull(text)
+                                                    .contentOrNull("%s **%s** %s".formatted(
+                                                            MessageUtil.getEmojiString(getCurrentEmoji(config, count).emoji()),
+                                                            count, MessageUtil.getChannelMention(source.getChannelId())))
                                                     .build());
                                         });
                             }))
@@ -195,6 +188,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter {
         return Mono.zip(initContext, starboardConfig)
                 .flatMap(function((context, config) -> {
                     List<ReactionEmoji> emojis = config.emojis().stream()
+                            .map(EmojiDataWithPeriod::emoji)
                             .map(ReactionEmoji::of)
                             .toList();
 
@@ -249,14 +243,10 @@ public class StarboardEventHandler extends ReactiveEventAdapter {
 
                                 embedSpec.color(lerp(offsetColor, targetColor, Mathf.round(count / 6f, lerpStep)));
 
-                                var formatted = emojis.stream()
-                                        .map(MessageUtil::getEmojiString)
-                                        .toList();
-
                                 Snowflake sourceChannelId = event.getChannelId();
 
                                 String text = "%s **%s** %s".formatted(
-                                        formatted.get(Math.toIntExact(Mathf.clamp((count - 1) / 5, 0, formatted.size() - 1))),
+                                        MessageUtil.getEmojiString(getCurrentEmoji(config, count).emoji()),
                                         count, MessageUtil.getChannelMention(sourceChannelId));
 
                                 return target.edit(MessageEditSpec.builder()
@@ -361,6 +351,25 @@ public class StarboardEventHandler extends ReactiveEventAdapter {
         var fields = embed.getFields();
         return fields.size() >= 1 && embed.getFooter().isPresent() &&
                 fields.stream().noneMatch(Embed.Field::isInline);
+    }
+
+    private static EmojiDataWithPeriod getCurrentEmoji(StarboardConfig config, long count) {
+        var emojis = new ArrayList<>(config.emojis());
+        emojis.sort(Comparator.comparingInt(EmojiDataWithPeriod::period));
+
+        EmojiDataWithPeriod cnd = null;
+        for (int i = 0, t = config.threshold(); i < emojis.size(); i++) {
+            EmojiDataWithPeriod e = emojis.get(i);
+            if (count >= t) {
+                cnd = e;
+            }
+
+            t += e.period();
+        }
+
+        Objects.requireNonNull(cnd, "cnd");
+
+        return cnd;
     }
 
     private static Color lerp(Color source, Color target, float t) {

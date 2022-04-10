@@ -9,17 +9,20 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class EntityRetrieverImpl implements EntityRetriever {
 
-    private static final List<EmojiData> defaultStarsEmojis = Arrays.asList(
+    private static final List<EmojiDataWithPeriod> defaultStarsEmojis = Stream.of(
             EmojiData.builder().name("\u2B50").build(),
             EmojiData.builder().name("\uD83C\uDF1F").build(),
             EmojiData.builder().name("\uD83D\uDCAB").build()
-    );
+    )
+    .map(e -> EmojiDataWithPeriod.builder().emoji(e).build())
+    .collect(Collectors.toList());
 
     private final Configuration configuration;
     private final RepositoryHolder repositoryHolder;

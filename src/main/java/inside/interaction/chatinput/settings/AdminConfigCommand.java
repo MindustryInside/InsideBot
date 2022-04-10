@@ -33,12 +33,12 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @ChatInputCommand(name = "admin-config", description = "Настройки модерации.", permissions = PermissionCategory.ADMIN)
 public class AdminConfigCommand extends ConfigOwnerCommand {
 
-    private static final long MAX_INT53 = 9007199254740991L;
+    // (1L << 53) - 1
+    private static final long MAX_INT53 = 0x1fffffffffffffL;
     private static final Set<String> clearAliases = Set.of("clear", "clean", "delete", "remove", "удалить", "отчистить");
 
     public AdminConfigCommand(MessageService messageService, EntityRetriever entityRetriever) {
@@ -74,6 +74,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
                     .flatMap(config -> Mono.justOrEmpty(env.getOption("value")
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asBoolean))
+                            .filter(s -> s != config.enabled())
                             .switchIfEmpty(messageService.text(env, "Функции модерации: **%s**",
                                     config.enabled() ? "включены" : "выключены").then(Mono.never()))
                             .flatMap(state -> messageService.text(env, "Функции модерации: **%s**",
@@ -89,7 +90,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
             super(owner);
 
             addOption(builder -> builder.name("value")
-                    .description("Новое базовое время жизни предупреждения или 'отчистить'. (в формате 1д 3ч 44мин)")
+                    .description("Новая длительность предупреждений по умолчанию или 'отчистить'. (в формате 1д 3ч 44мин)")
                     .type(ApplicationCommandOption.Type.STRING.getValue()));
         }
 
@@ -105,7 +106,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
                     .flatMap(config -> Mono.justOrEmpty(env.getOption("value")
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asString))
-                            .switchIfEmpty(messageService.text(env, "Текущая базовая длительность предупреждений: **%s**",
+                            .switchIfEmpty(messageService.text(env, "Текущая длительность предупреждений по умолчанию: **%s**",
                                     config.warnExpireInterval().map(formatDuration).orElse("не установлена"))
                                     .then(Mono.never()))
                             .flatMap(str -> {
@@ -115,8 +116,13 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
                                     return messageService.err(env, "Неправильный формат длительности");
                                 }
 
-                                return messageService.text(env, delete ? "Базовая длительность предупреждений сброшена"
-                                                : "Базовая длительность предупреждений обновлена: **%s**",
+                                if (Objects.equals(config.muteBaseInterval().orElse(null), inter)) {
+                                    return messageService.err(env, "Длительность предупреждений по умолчанию не была обновлена");
+                                }
+
+                                return messageService.text(env, delete
+                                                ? "Длительность предупреждений по умолчанию сброшена"
+                                                : "Длительность предупреждений по умолчанию обновлена: **%s**",
                                                 Optional.ofNullable(inter).map(formatDuration).orElse("не установлена"))
                                         .and(owner.entityRetriever.save(config.withWarnExpireInterval(
                                                 Optional.ofNullable(inter))));
@@ -131,7 +137,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
             super(owner);
 
             addOption(builder -> builder.name("value")
-                    .description("Новая базовая длительность мута или 'отчистить'. (в формате 1д 3ч 44мин)")
+                    .description("Новая длительность мута по умолчанию или 'отчистить', чтобы убрать её. (в формате 1д 3ч 44мин)")
                     .type(ApplicationCommandOption.Type.STRING.getValue()));
         }
 
@@ -147,7 +153,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
                     .flatMap(config -> Mono.justOrEmpty(env.getOption("value")
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asString))
-                            .switchIfEmpty(messageService.text(env, "Текущая базовая длительность мута: **%s**",
+                            .switchIfEmpty(messageService.text(env, "Текущая длительность мута по умолчанию: **%s**",
                                     config.muteBaseInterval().map(formatDuration).orElse("не установлена"))
                                     .then(Mono.never()))
                             .flatMap(str -> {
@@ -157,9 +163,13 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
                                     return messageService.err(env, "Неправильный формат длительности");
                                 }
 
-                                return messageService.text(env, delete ?
-                                                "Базовая длительность мута сброшена"
-                                                : "Базовая длительность мута обновлена: **%s**",
+                                if (Objects.equals(config.muteBaseInterval().orElse(null), inter)) {
+                                    return messageService.err(env, "Длительность мута по умолчанию не была обновлена");
+                                }
+
+                                return messageService.text(env, delete
+                                                ? "Длительность мута по умолчанию сброшена"
+                                                : "Длительность мута по умолчанию обновлена: **%s**",
                                                 Optional.ofNullable(inter).map(formatDuration).orElse("не установлена"))
                                         .and(owner.entityRetriever.save(config.withMuteBaseInterval(
                                                 Optional.ofNullable(inter))));
@@ -333,12 +343,14 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
                 addOption(builder -> builder.name("type")
                         .description("Тип наказания.")
                         .required(true)
-                        .choices(Stream.of(ModerationAction.Type.values())
-                                .map(type -> ApplicationCommandOptionChoiceData.builder()
-                                        .name(type.name()) // TODO: сюда перевод
-                                        .value(type.name())
-                                        .build())
-                                .collect(Collectors.toList()))
+                        .addChoice(ApplicationCommandOptionChoiceData.builder()
+                                .name("Мьют")
+                                .value(ModerationAction.Type.mute.name())
+                                .build())
+                        .addChoice(ApplicationCommandOptionChoiceData.builder()
+                                .name("Предупреждение")
+                                .value(ModerationAction.Type.warn.name())
+                                .build())
                         .type(ApplicationCommandOption.Type.STRING.getValue()));
 
                 addOption(builder -> builder.name("interval")

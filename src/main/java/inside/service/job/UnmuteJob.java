@@ -24,7 +24,7 @@ public class UnmuteJob implements Job {
 
     public static final String GROUP = "unmute";
 
-    protected UnmuteJob(EntityRetriever entityRetriever) {
+    public UnmuteJob(EntityRetriever entityRetriever) {
         this.entityRetriever = entityRetriever;
     }
 

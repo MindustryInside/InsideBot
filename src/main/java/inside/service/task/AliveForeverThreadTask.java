@@ -6,6 +6,7 @@ import inside.Launcher;
 import org.reactivestreams.Publisher;
 
 import java.time.Duration;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 // 🛰️ 📡 🛰️ 📡 🛰️ 📡 🛰️ 📡 🛰️ 📡 🛰️ 📡 🛰️ 📡 🛰️ 📡
@@ -14,7 +15,8 @@ public class AliveForeverThreadTask implements Task {
 
     private final Snowflake channelId;
 
-    private final AtomicBoolean receive = new AtomicBoolean(false);
+    private final AtomicBoolean receive = new AtomicBoolean(
+            ThreadLocalRandom.current().nextBoolean());
 
     public AliveForeverThreadTask(Snowflake channelId) {
         this.channelId = channelId;

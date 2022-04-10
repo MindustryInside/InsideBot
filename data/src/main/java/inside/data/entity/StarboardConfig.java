@@ -1,6 +1,5 @@
 package inside.data.entity;
 
-import discord4j.discordjson.json.EmojiData;
 import inside.data.annotation.Column;
 import inside.data.annotation.Entity;
 import inside.data.annotation.Table;
@@ -25,7 +24,7 @@ public interface StarboardConfig extends ConfigEntity {
     long starboardChannelId();
 
     @Column
-    List<EmojiData> emojis();
+    List<EmojiDataWithPeriod> emojis();
 
     @Column(name = "self_starring")
     boolean selfStarring();

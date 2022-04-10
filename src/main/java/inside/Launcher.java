@@ -286,7 +286,7 @@ public class Launcher {
                     Mono<Void> registerEvents = gateway.on(handlers)
                             .then();
 
-                    List<Task> tasks = new ArrayList<>();
+                    List<Task> tasks = new ArrayList<>(2);
                     tasks.add(new ActivityTask(configuration, entityRetriever));
 
                     configuration.other().aliveForeverThreadId()

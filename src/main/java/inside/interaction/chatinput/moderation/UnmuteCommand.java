@@ -55,6 +55,7 @@ public class UnmuteCommand extends ModerationCommand {
                         .switchIfEmpty(messageService.err(env, "Вы не можете размьютить администраторов").then(Mono.never())))
                 .flatMap(TupleUtils.function((config, target) -> {
 
+                    // По-хорошему надо бы и планировку отменять, но там всё равно есть проверка на существование записи в таблице с мутами/киками
                     Mono<Void> delete = entityRetriever.getAllModerationActionById(ModerationAction.Type.mute, guildId, targetId)
                             .single()
                             .flatMap(entityRetriever::delete);

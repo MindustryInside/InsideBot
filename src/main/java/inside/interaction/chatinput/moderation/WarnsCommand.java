@@ -59,9 +59,7 @@ public class WarnsCommand extends InteractionGuildCommand {
                 .flatMap(ApplicationCommandInteraction::getResolved)
                 .flatMap(c -> c.getMember(targetId))
                 .map(ResolvedMember::getDisplayName)
-                .orElseGet(() -> env.event().getInteraction()
-                        .getMember().orElseThrow()
-                        .getDisplayName());
+                .orElseGet(author::getDisplayName);
 
         Function<MessagePaginator.Page, ? extends Mono<MessageCreateSpec>> paginator = page ->
                 entityRetriever.getAllModerationActionById(ModerationAction.Type.warn, guildId, targetId)

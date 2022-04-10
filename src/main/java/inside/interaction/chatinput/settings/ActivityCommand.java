@@ -55,6 +55,7 @@ public class ActivityCommand extends ConfigOwnerCommand {
                     .flatMap(config -> Mono.justOrEmpty(env.getOption("value")
                                     .flatMap(ApplicationCommandInteractionOption::getValue)
                                     .map(ApplicationCommandInteractionOptionValue::asBoolean))
+                            .filter(s -> s != config.enabled())
                             .switchIfEmpty(messageService.text(env, "Выдача роли активного пользователя: **%s**",
                                     config.enabled() ? "включена" : "выключена").then(Mono.never()))
                             .flatMap(state -> messageService.text(env, "Выдача роли активного пользователя: **%s**",
@@ -88,6 +89,8 @@ public class ActivityCommand extends ConfigOwnerCommand {
                             .switchIfEmpty(messageService.text(env, "Текущая роль активного пользователя: **%s**",
                                     config.roleId() == -1 ? "не установлена" : MessageUtil.getRoleMention(config.roleId()))
                                     .then(Mono.never()))
+                            .filter(l -> l != config.roleId())
+                            .switchIfEmpty(messageService.err(env, "Роль активного пользователя не изменена").then(Mono.never()))
                             .flatMap(roleId -> messageService.text(env, "Новая роль активного пользователя: %s",
                                     MessageUtil.getRoleMention(roleId))
                                     .and(owner.entityRetriever.save(config.withRoleId(roleId)))));
@@ -120,6 +123,8 @@ public class ActivityCommand extends ConfigOwnerCommand {
                                     .map(Math::toIntExact))
                             .switchIfEmpty(messageService.text(env, "Текущий порог активности: **%s**", config.messageThreshold() == -1
                                     ? "не установлен" : config.messageThreshold()).then(Mono.never()))
+                            .filter(s -> s != config.messageThreshold())
+                            .switchIfEmpty(messageService.text(env, "Порог активности не изменён").then(Mono.never()))
                             .flatMap(l -> messageService.text(env, "Новый порог активности: **%s**", l)
                                     .and(owner.entityRetriever.save(config.withMessageThreshold(l)))));
         }
@@ -154,6 +159,10 @@ public class ActivityCommand extends ConfigOwnerCommand {
                                 Interval inter = MessageUtil.parseInterval(str);
                                 if (inter == null) {
                                     return messageService.err(env, "Неправильный формат длительности");
+                                }
+
+                                if (inter.equals(config.countingInterval())) {
+                                    return messageService.err(env, "Период подсчёта активности не изменён");
                                 }
 
                                 return messageService.text(env, "Новый период подсчёта активности: **%s**",

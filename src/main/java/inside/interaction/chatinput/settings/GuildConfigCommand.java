@@ -65,6 +65,8 @@ public class GuildConfigCommand extends ConfigOwnerCommand {
                                     .map(Locale::new)) // безопасно
                             .switchIfEmpty(messageService.text(env, "Текущий язык бота: **%s**",
                                     config.locale().getDisplayName(config.locale())).then(Mono.never()))
+                            .filter(l -> !l.equals(config.locale()))
+                            .switchIfEmpty(messageService.text(env, "Язык бота не изменён").then(Mono.never()))
                             .flatMap(locale -> messageService.text(env, "Язык изменён на: **%s**", locale.getDisplayName(locale))
                                     .and(owner.entityRetriever.save(config.withLocale(locale)))));
         }
@@ -93,18 +95,13 @@ public class GuildConfigCommand extends ConfigOwnerCommand {
                                     .map(ApplicationCommandInteractionOptionValue::asString))
                             .switchIfEmpty(messageService.text(env, "Текущий часовой пояс бота: **%s**",
                                     config.timezone()).then(Mono.never()))
-                            .flatMap(tz -> {
-                                try {
-                                    ZoneId timezone = ZoneId.of(tz);
-                                    return messageService.text(env, "Часовой пояс изменён на: **%s**", timezone)
-                                            .and(owner.entityRetriever.save(config.withTimezone(timezone)));
-                                } catch (Throwable t) {
-                                    return ZoneId.getAvailableZoneIds().stream()
+                            .flatMap(tz -> Mono.fromCallable(() -> ZoneId.of(tz))
+                                    .flatMap(id -> messageService.text(env, "Часовой пояс изменён на: **%s**", id)
+                                            .and(owner.entityRetriever.save(config.withTimezone(id))))
+                                    .onErrorResume(e -> ZoneId.getAvailableZoneIds().stream()
                                             .min(Comparator.comparingInt(s -> Strings.damerauLevenshtein(s, tz)))
                                             .map(s -> messageService.err(env, "Часовой пояс не найден. Может вы имели в виду \"%s\"?", s))
-                                            .orElseGet(() -> messageService.err(env, "Часовой пояс не найден"));
-                                }
-                            }));
+                                            .orElseGet(() -> messageService.err(env, "Часовой пояс не найден")))));
         }
     }
 

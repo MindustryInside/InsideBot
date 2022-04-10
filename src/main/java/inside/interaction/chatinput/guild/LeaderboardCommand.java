@@ -65,8 +65,7 @@ public class LeaderboardCommand extends InteractionGuildCommand {
                                 activity.messageCount())))
                         .collect(Collectors.joining())
                         .flatMap(str -> {
-                            if (seenAuthor.get()) {
-                                seenAuthor.set(false);
+                            if (seenAuthor.compareAndSet(true, false)) {
                                 return Mono.just(str);
                             }
 

@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.regex.Pattern;
 
 public class DurationFormat {
 
@@ -40,14 +41,14 @@ public class DurationFormat {
     }
 
     private static DurationFormatter buildRegExFormatter(ResourceBundle bundle, Locale locale) {
-        String regExSeparator = bundle.getString("duration-format.regex.separator");
+        Pattern regExSeparator = Pattern.compile(bundle.getString("duration-format.regex.separator"));
 
         DurationFormatBuilder builder = new DurationFormatBuilder();
         builder.appendYears();
         if (bundle.containsKey("duration-format.years.regex")) {
             builder.appendSuffix(
-                    bundle.getString("duration-format.years.regex").split(regExSeparator),
-                    bundle.getString("duration-format.years.list").split(regExSeparator));
+                    regExSeparator.split("duration-format.years.regex"),
+                    regExSeparator.split("duration-format.years.list"));
         } else {
             builder.appendSuffix(bundle.getString("duration-format.year"), bundle.getString("duration-format.years"));
         }
@@ -56,8 +57,8 @@ public class DurationFormat {
         builder.appendMonths();
         if (bundle.containsKey("duration-format.months.regex")) {
             builder.appendSuffix(
-                    bundle.getString("duration-format.months.regex").split(regExSeparator),
-                    bundle.getString("duration-format.months.list").split(regExSeparator));
+                    regExSeparator.split(bundle.getString("duration-format.months.regex")),
+                    regExSeparator.split(bundle.getString("duration-format.months.list")));
         } else {
             builder.appendSuffix(bundle.getString("duration-format.month"), bundle.getString("duration-format.months"));
         }
@@ -66,8 +67,8 @@ public class DurationFormat {
         builder.appendWeeks();
         if (bundle.containsKey("duration-format.weeks.regex")) {
             builder.appendSuffix(
-                    bundle.getString("duration-format.weeks.regex").split(regExSeparator),
-                    bundle.getString("duration-format.weeks.list").split(regExSeparator));
+                    regExSeparator.split(bundle.getString("duration-format.weeks.regex")),
+                    regExSeparator.split(bundle.getString("duration-format.weeks.list")));
         } else {
             builder.appendSuffix(bundle.getString("duration-format.week"), bundle.getString("duration-format.weeks"));
         }
@@ -76,8 +77,8 @@ public class DurationFormat {
         builder.appendDays();
         if (bundle.containsKey("duration-format.days.regex")) {
             builder.appendSuffix(
-                    bundle.getString("duration-format.days.regex").split(regExSeparator),
-                    bundle.getString("duration-format.days.list").split(regExSeparator));
+                    regExSeparator.split(bundle.getString("duration-format.days.regex")),
+                    regExSeparator.split(bundle.getString("duration-format.days.list")));
         } else {
             builder.appendSuffix(bundle.getString("duration-format.day"), bundle.getString("duration-format.days"));
         }
@@ -86,8 +87,8 @@ public class DurationFormat {
         builder.appendHours();
         if (bundle.containsKey("duration-format.hours.regex")) {
             builder.appendSuffix(
-                    bundle.getString("duration-format.hours.regex").split(regExSeparator),
-                    bundle.getString("duration-format.hours.list").split(regExSeparator));
+                    regExSeparator.split(bundle.getString("duration-format.hours.regex")),
+                    regExSeparator.split(bundle.getString("duration-format.hours.list")));
         } else {
             builder.appendSuffix(bundle.getString("duration-format.hour"), bundle.getString("duration-format.hours"));
         }
@@ -96,8 +97,8 @@ public class DurationFormat {
         builder.appendMinutes();
         if (bundle.containsKey("duration-format.minutes.regex")) {
             builder.appendSuffix(
-                    bundle.getString("duration-format.minutes.regex").split(regExSeparator),
-                    bundle.getString("duration-format.minutes.list").split(regExSeparator));
+                    regExSeparator.split(bundle.getString("duration-format.minutes.regex")),
+                    regExSeparator.split(bundle.getString("duration-format.minutes.list")));
         } else {
             builder.appendSuffix(bundle.getString("duration-format.minute"), bundle.getString("duration-format.minutes"));
         }
@@ -106,8 +107,8 @@ public class DurationFormat {
         builder.appendSeconds();
         if (bundle.containsKey("duration-format.seconds.regex")) {
             builder.appendSuffix(
-                    bundle.getString("duration-format.seconds.regex").split(regExSeparator),
-                    bundle.getString("duration-format.seconds.list").split(regExSeparator));
+                    regExSeparator.split(bundle.getString("duration-format.seconds.regex")),
+                    regExSeparator.split(bundle.getString("duration-format.seconds.list")));
         } else {
             builder.appendSuffix(bundle.getString("duration-format.second"), bundle.getString("duration-format.seconds"));
         }
@@ -116,8 +117,8 @@ public class DurationFormat {
         builder.appendMillis();
         if (bundle.containsKey("duration-format.milliseconds.regex")) {
             builder.appendSuffix(
-                    bundle.getString("duration-format.milliseconds.regex").split(regExSeparator),
-                    bundle.getString("duration-format.milliseconds.list").split(regExSeparator));
+                    regExSeparator.split(bundle.getString("duration-format.milliseconds.regex")),
+                    regExSeparator.split(bundle.getString("duration-format.milliseconds.list")));
         } else {
             builder.appendSuffix(bundle.getString("duration-format.millisecond"), bundle.getString("duration-format.milliseconds"));
         }
