@@ -17,7 +17,7 @@ public class DurationFormatter {
     }
 
     DurationFormatter(DurationPrinter printer, @Nullable Locale locale) {
-        this.printer = Objects.requireNonNull(printer, "printer");
+        this.printer = Objects.requireNonNull(printer);
         this.locale = locale;
     }
 

@@ -11,7 +11,6 @@ import inside.data.EntityRetriever;
 import inside.data.entity.EmojiDataWithPeriod;
 import inside.data.entity.StarboardConfig;
 import inside.interaction.ChatInputInteractionEnvironment;
-import inside.interaction.PermissionCategory;
 import inside.interaction.annotation.ChatInputCommand;
 import inside.interaction.annotation.Subcommand;
 import inside.interaction.annotation.SubcommandGroup;
@@ -30,7 +29,7 @@ import java.util.regex.Matcher;
 import static inside.interaction.chatinput.settings.ReactionRolesCommand.emojiPattern;
 import static reactor.function.TupleUtils.function;
 
-@ChatInputCommand(name = "starboard", description = "Настройки звёздной доски.", permissions = PermissionCategory.ADMIN)
+@ChatInputCommand(value = "starboard")// = "Настройки звёздной доски.", permissions = PermissionCategory.ADMIN)
 public class StarboardCommand extends ConfigOwnerCommand {
 
     public StarboardCommand(MessageService messageService, EntityRetriever entityRetriever) {
@@ -43,7 +42,7 @@ public class StarboardCommand extends ConfigOwnerCommand {
         addSubcommand(new EmojisSubcommandGroup(this));
     }
 
-    @Subcommand(name = "enable", description = "Включить ведение звёздной доски.")
+    @Subcommand(value = "enable")// = "Включить ведение звёздной доски.")
     protected static class EnableSubcommand extends InteractionSubcommand<StarboardCommand> {
 
         protected EnableSubcommand(StarboardCommand owner) {
@@ -75,7 +74,7 @@ public class StarboardCommand extends ConfigOwnerCommand {
         }
     }
 
-    @Subcommand(name = "self-starring", description = "Настроить учёт собственной реакции.")
+    @Subcommand(value = "self-starring")// = "Настроить учёт собственной реакции.")
     protected static class SelfStarringSubcommand extends InteractionSubcommand<StarboardCommand> {
 
         protected SelfStarringSubcommand(StarboardCommand owner) {
@@ -106,7 +105,7 @@ public class StarboardCommand extends ConfigOwnerCommand {
         }
     }
 
-    @Subcommand(name = "threshold", description = "Настроить порог реакция для добавления звёздной доски.")
+    @Subcommand(value = "threshold")// = "Настроить порог реакция для добавления звёздной доски.")
     protected static class ThresholdSubcommand extends InteractionSubcommand<StarboardCommand> {
 
         protected ThresholdSubcommand(StarboardCommand owner) {
@@ -137,7 +136,7 @@ public class StarboardCommand extends ConfigOwnerCommand {
         }
     }
 
-    @Subcommand(name = "channel", description = "Настроить канал для ведения звёздной доски.")
+    @Subcommand(value = "channel")// = "Настроить канал для ведения звёздной доски.")
     protected static class ChannelSubcommand extends InteractionSubcommand<StarboardCommand> {
 
         protected ChannelSubcommand(StarboardCommand owner) {
@@ -170,7 +169,7 @@ public class StarboardCommand extends ConfigOwnerCommand {
         }
     }
 
-    @SubcommandGroup(name = "emojis", description = "Настроить учитываемые в подсчёте реакции.")
+    @SubcommandGroup(value = "emojis")// = "Настроить учитываемые в подсчёте реакции.")
     protected static class EmojisSubcommandGroup extends ConfigOwnerCommand {
 
         protected EmojisSubcommandGroup(StarboardCommand owner) {
@@ -182,7 +181,7 @@ public class StarboardCommand extends ConfigOwnerCommand {
             addSubcommand(new ListSubcommand(this));
         }
 
-        @Subcommand(name = "add", description = "Добавить эмодзи в список.")
+        @Subcommand(value = "add")// = "Добавить эмодзи в список.")
         protected static class AddSubcommand extends InteractionSubcommand<EmojisSubcommandGroup> {
 
             protected AddSubcommand(EmojisSubcommandGroup owner) {
@@ -254,7 +253,7 @@ public class StarboardCommand extends ConfigOwnerCommand {
             }
         }
 
-        @Subcommand(name = "remove", description = "Удалить эмодзи из списка.")
+        @Subcommand(value = "remove")// = "Удалить эмодзи из списка.")
         protected static class RemoveSubcommand extends InteractionSubcommand<EmojisSubcommandGroup> {
 
             protected RemoveSubcommand(EmojisSubcommandGroup owner) {
@@ -313,7 +312,7 @@ public class StarboardCommand extends ConfigOwnerCommand {
             }
         }
 
-        @Subcommand(name = "clear", description = "Отчистить список эмодзи.")
+        @Subcommand(value = "clear")// = "Отчистить список эмодзи.")
         protected static class ClearSubcommand extends InteractionSubcommand<EmojisSubcommandGroup> {
 
             protected ClearSubcommand(EmojisSubcommandGroup owner) {
@@ -335,7 +334,7 @@ public class StarboardCommand extends ConfigOwnerCommand {
             }
         }
 
-        @Subcommand(name = "list", description = "Отобразить список эмодзи.")
+        @Subcommand(value = "list")// = "Отобразить список эмодзи.")
         protected static class ListSubcommand extends InteractionSubcommand<EmojisSubcommandGroup> {
 
             protected ListSubcommand(EmojisSubcommandGroup owner) {

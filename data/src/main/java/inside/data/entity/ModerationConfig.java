@@ -35,4 +35,7 @@ public interface ModerationConfig extends ConfigEntity {
 
     @Column(name = "mute_role_id")
     Optional<Long> muteRoleId();
+
+    @Column(name = "ping_spam_threshold")
+    Optional<Integer> pingSpamThreshold();
 }

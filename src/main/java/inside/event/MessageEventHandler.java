@@ -19,7 +19,6 @@ import reactor.function.TupleUtils;
 import reactor.util.context.Context;
 
 import java.time.Instant;
-import java.util.Objects;
 
 import static inside.util.ContextUtil.KEY_LOCALE;
 import static inside.util.ContextUtil.KEY_TIMEZONE;
@@ -36,11 +35,11 @@ public class MessageEventHandler extends ReactiveEventAdapter {
     public MessageEventHandler(EntityRetriever entityRetriever, CommandHandler commandHandler,
                                Configuration configuration, InteractionService interactionService,
                                MessageService messageService) {
-        this.entityRetriever = Objects.requireNonNull(entityRetriever, "entityRetriever");
-        this.commandHandler = Objects.requireNonNull(commandHandler, "commandHandler");
-        this.configuration = Objects.requireNonNull(configuration, "configuration");
-        this.interactionService = Objects.requireNonNull(interactionService, "interactionService");
-        this.messageService = Objects.requireNonNull(messageService, "messageService");
+        this.entityRetriever = entityRetriever;
+        this.commandHandler = commandHandler;
+        this.configuration = configuration;
+        this.interactionService = interactionService;
+        this.messageService = messageService;
     }
 
     @Override

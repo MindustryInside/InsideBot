@@ -18,9 +18,10 @@ public class PingCommand extends Command {
     @Override
     public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction) {
         long start = System.currentTimeMillis();
-        return env.channel().createMessage("Подождите...")
+        return env.channel().createMessage(messageService.get(env.context(), "commands.common.ping.testing"))
                 .flatMap(message -> message.edit(MessageEditSpec.builder()
-                        .contentOrNull(String.format("Понг! %sмс", System.currentTimeMillis() - start))
+                        .contentOrNull(messageService.format(env.context(), "commands.common.ping.completed",
+                                System.currentTimeMillis() - start))
                         .build()))
                 .then();
     }

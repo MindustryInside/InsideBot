@@ -13,25 +13,17 @@ import reactor.util.annotation.Nullable;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.StringTokenizer;
-import java.util.regex.Pattern;
 
 public abstract class MessageUtil {
 
-    public static final Pattern snowflakePattern = Pattern.compile("^[0-9]{1,20}$");
-
-    private MessageUtil() {
-
-    }
+    private MessageUtil() {}
 
     public static String substringTo(String message, int maxLength) {
-        Objects.requireNonNull(message, "message");
         return message.length() >= maxLength ? message.substring(0, maxLength - 4) + "..." : message;
     }
 
     public static String getEmojiString(ReactionEmoji emoji) {
-        Objects.requireNonNull(emoji, "emoji");
         return emoji.asUnicodeEmoji().map(ReactionEmoji.Unicode::getRaw)
                 .orElseGet(() -> emoji.asCustomEmoji()
                         .map(ReactionEmoji.Custom::asFormat)
@@ -39,7 +31,6 @@ public abstract class MessageUtil {
     }
 
     public static String getEmojiString(EmojiData data) {
-        Objects.requireNonNull(data, "data");
         String name = data.name().orElseThrow(IllegalArgumentException::new);
         if (data.id().isPresent()) {
             return String.format("<%s:%s:%s>", data.animated().toOptional()

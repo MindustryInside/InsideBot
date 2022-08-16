@@ -27,8 +27,8 @@ public class TicTacToeGameListener implements ButtonListener {
     private final GameService gameService;
 
     public TicTacToeGameListener(MessageService messageService, GameService gameService) {
-        this.messageService = Objects.requireNonNull(messageService, "messageService");
-        this.gameService = Objects.requireNonNull(gameService, "gameService");
+        this.messageService = Objects.requireNonNull(messageService);
+        this.gameService = Objects.requireNonNull(gameService);
     }
 
     @Override

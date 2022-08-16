@@ -10,11 +10,13 @@ import inside.interaction.annotation.ChatInputCommand;
 import inside.interaction.annotation.Subcommand;
 import inside.interaction.annotation.SubcommandGroup;
 import inside.service.MessageService;
+import inside.util.ResourceMessageSource;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public abstract class InteractionCommand {
 
@@ -24,7 +26,7 @@ public abstract class InteractionCommand {
     private final List<ApplicationCommandOptionData> options = new ArrayList<>();
 
     protected InteractionCommand(MessageService messageService) {
-        this.messageService = Objects.requireNonNull(messageService, "messageService");
+        this.messageService = messageService;
     }
 
     public Publisher<?> execute(ChatInputInteractionEnvironment env) {
@@ -39,10 +41,6 @@ public abstract class InteractionCommand {
         return metadata.name;
     }
 
-    public String getDescription() {
-        return metadata.description;
-    }
-
     public ApplicationCommandOption.Type getType() {
         return metadata.type;
     }
@@ -53,43 +51,66 @@ public abstract class InteractionCommand {
 
     public ApplicationCommandRequest getRequest() {
         return ApplicationCommandRequest.builder()
-                .name(metadata.name)
-                .description(metadata.description)
+                .name(messageService.get(metadata.name + ".name"))
+                .nameLocalizationsOrNull(getAll(metadata.name + ".name"))
+                .description(messageService.get(metadata.name + ".description"))
+                .descriptionLocalizationsOrNull(getAll(metadata.name + ".description"))
                 .options(getOptions())
                 .build();
+    }
+
+    protected Map<String, String> getAll(String code) {
+        return ResourceMessageSource.supportedLocaled.stream()
+                .filter(l -> !l.equals(messageService.configuration.discord().locale()) &&
+                        messageService.messageSource.contains(code, l))
+                .collect(Collectors.toMap(Locale::toString, l -> messageService.messageSource.get(code, l)));
     }
 
     public List<ApplicationCommandOptionData> getOptions() {
         return options;
     }
 
+    @Deprecated
     protected void addOption(Consumer<? super ImmutableApplicationCommandOptionData.Builder> option) {
         var mutatedOption = ApplicationCommandOptionData.builder();
         option.accept(mutatedOption);
         options.add(mutatedOption.build());
     }
 
-    protected record CommandMetadata(String name, String description, ApplicationCommandOption.Type type,
-                                     EnumSet<PermissionCategory> permissions) {
+    protected void addOption(String name, Consumer<? super ImmutableApplicationCommandOptionData.Builder> option) {
+        String base = metadata.name + ".options." + name;
+        var mutatedOption = ApplicationCommandOptionData.builder()
+                .name(messageService.get(base + ".name"))
+                .nameLocalizationsOrNull(getAll(base + ".name"))
+                .description(messageService.get(base + ".description"))
+                .descriptionLocalizationsOrNull(getAll(base + ".description"));
+        option.accept(mutatedOption);
+        options.add(mutatedOption.build());
+    }
+
+    public record CommandMetadata(String name, ApplicationCommandOption.Type type,
+                                  EnumSet<PermissionCategory> permissions) {
 
         private static CommandMetadata from(Class<? extends InteractionCommand> type) {
             var chatInputCommand = type.getDeclaredAnnotation(ChatInputCommand.class);
             if (chatInputCommand != null) {
-                return new CommandMetadata(chatInputCommand.name(), chatInputCommand.description(),
+                return new CommandMetadata(chatInputCommand.value(),
                         ApplicationCommandOption.Type.UNKNOWN,
                         EnumSet.copyOf(Arrays.asList(chatInputCommand.permissions())));
             }
 
             var subcommand = type.getDeclaredAnnotation(Subcommand.class);
             if (subcommand != null) {
-                return new CommandMetadata(subcommand.name(), subcommand.description(),
-                        ApplicationCommandOption.Type.SUB_COMMAND, EnumSet.noneOf(PermissionCategory.class));
+                return new CommandMetadata(subcommand.value(),
+                        ApplicationCommandOption.Type.SUB_COMMAND,
+                        EnumSet.noneOf(PermissionCategory.class));
             }
 
             var subcommandGroup = type.getDeclaredAnnotation(SubcommandGroup.class);
             if (subcommandGroup != null) {
-                return new CommandMetadata(subcommandGroup.name(), subcommandGroup.description(),
-                        ApplicationCommandOption.Type.SUB_COMMAND_GROUP, EnumSet.noneOf(PermissionCategory.class));
+                return new CommandMetadata(subcommandGroup.value(),
+                        ApplicationCommandOption.Type.SUB_COMMAND_GROUP,
+                        EnumSet.noneOf(PermissionCategory.class));
             }
 
             throw new UnsupportedOperationException("Unknown annotation");

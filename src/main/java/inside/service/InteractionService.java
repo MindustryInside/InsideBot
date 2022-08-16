@@ -18,6 +18,7 @@ import inside.interaction.component.ComponentListener;
 import inside.interaction.component.SelectMenuListener;
 import inside.util.ContextUtil;
 import inside.util.Mathf;
+import inside.util.ResourceMessageSource;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
@@ -48,9 +49,9 @@ public class InteractionService extends BaseService {
     public InteractionService(GatewayDiscordClient client, Configuration configuration, MessageService messageService,
                               EntityRetriever entityRetriever) {
         super(client);
-        this.configuration = Objects.requireNonNull(configuration, "configuration");
-        this.messageService = Objects.requireNonNull(messageService, "messageService");
-        this.entityRetriever = Objects.requireNonNull(entityRetriever, "entityRetriever");
+        this.configuration = Objects.requireNonNull(configuration);
+        this.messageService = Objects.requireNonNull(messageService);
+        this.entityRetriever = Objects.requireNonNull(entityRetriever);
 
         this.componentInteractions = Caffeine.newBuilder()
                 .expireAfterWrite(configuration.discord().awaitComponentTimeout())
@@ -70,7 +71,7 @@ public class InteractionService extends BaseService {
                 .switchIfEmpty(Mono.justOrEmpty(componentInteractions.getIfPresent(customId))
                         .switchIfEmpty(messageService.err(env, "Это взаимодействие недоступно.\n" +
                                 "Вызовите команду повторно, чтобы начать новое.").then(Mono.never()))
-                        .filter(TupleUtils.predicate((userId, listener) -> userId.equals(AVAILABLE_FOR_ALL) || userId.equals(
+                        .filter(TupleUtils.predicate((userId, listener) -> userId == AVAILABLE_FOR_ALL || userId.equals(
                                 env.event().getInteraction().getUser().getId())))
                         .map(Tuple2::getT2)
                         .switchIfEmpty(messageService.err(env, "Вы не можете участвовать в чужом взаимодействии.\n" +
@@ -122,7 +123,7 @@ public class InteractionService extends BaseService {
             language = language.substring(0, sep);
         }
         Locale locale = new Locale(language);
-        return MessageService.supportedLocaled.contains(locale) ? locale : configuration.discord().locale();
+        return ResourceMessageSource.supportedLocaled.contains(locale) ? locale : configuration.discord().locale();
     }
 
     public void registerComponentListener(ComponentListener listener) {
@@ -165,53 +166,49 @@ public class InteractionService extends BaseService {
         });
     }
 
-    private static class ButtonListenerDelegate<R> implements ButtonListener {
+    private record ButtonListenerDelegate<R>(
+            Function<? super ButtonInteractionEnvironment, ? extends Publisher<R>> delegate,
+            Sinks.One<? super R> sink) implements ButtonListener {
 
-        private final Function<? super ButtonInteractionEnvironment, ? extends Publisher<R>> delegate;
-        private final Sinks.One<? super R> sink;
+            private ButtonListenerDelegate {
+                Objects.requireNonNull(delegate);
+                Objects.requireNonNull(sink);
+            }
 
-        public ButtonListenerDelegate(Function<? super ButtonInteractionEnvironment, ? extends Publisher<R>> delegate,
-                                      Sinks.One<? super R> sink) {
-            this.delegate = Objects.requireNonNull(delegate, "delegate");
-            this.sink = Objects.requireNonNull(sink, "sink");
+            @Override
+            public Publisher<?> handle(ButtonInteractionEnvironment env) {
+                return Mono.from(delegate.apply(env))
+                        .doOnSuccess(value -> {
+                            if (value == null) {
+                                sink.emitEmpty(Sinks.EmitFailureHandler.FAIL_FAST);
+                            } else {
+                                sink.emitValue(value, Sinks.EmitFailureHandler.FAIL_FAST);
+                            }
+                        })
+                        .doOnError(t -> sink.emitError(t, Sinks.EmitFailureHandler.FAIL_FAST));
+            }
         }
 
-        @Override
-        public Publisher<?> handle(ButtonInteractionEnvironment env) {
-            return Mono.from(delegate.apply(env))
-                    .doOnSuccess(value -> {
-                        if (value == null) {
-                            sink.emitEmpty(Sinks.EmitFailureHandler.FAIL_FAST);
-                        } else {
-                            sink.emitValue(value, Sinks.EmitFailureHandler.FAIL_FAST);
-                        }
-                    })
-                    .doOnError(t -> sink.emitError(t, Sinks.EmitFailureHandler.FAIL_FAST));
+    private record SelectMenuListenerDelegate<R>(
+            Function<? super SelectMenuInteractionEnvironment, ? extends Publisher<R>> delegate,
+            Sinks.One<? super R> sink) implements SelectMenuListener {
+
+            private SelectMenuListenerDelegate {
+                Objects.requireNonNull(delegate);
+                Objects.requireNonNull(sink);
+            }
+
+            @Override
+            public Publisher<?> handle(SelectMenuInteractionEnvironment env) {
+                return Mono.from(delegate.apply(env))
+                        .doOnSuccess(value -> {
+                            if (value == null) {
+                                sink.emitEmpty(Sinks.EmitFailureHandler.FAIL_FAST);
+                            } else {
+                                sink.emitValue(value, Sinks.EmitFailureHandler.FAIL_FAST);
+                            }
+                        })
+                        .doOnError(t -> sink.emitError(t, Sinks.EmitFailureHandler.FAIL_FAST));
+            }
         }
-    }
-
-    private static class SelectMenuListenerDelegate<R> implements SelectMenuListener {
-
-        private final Function<? super SelectMenuInteractionEnvironment, ? extends Publisher<R>> delegate;
-        private final Sinks.One<? super R> sink;
-
-        public SelectMenuListenerDelegate(Function<? super SelectMenuInteractionEnvironment, ? extends Publisher<R>> delegate,
-                                          Sinks.One<? super R> sink) {
-            this.delegate = Objects.requireNonNull(delegate, "delegate");
-            this.sink = Objects.requireNonNull(sink, "sink");
-        }
-
-        @Override
-        public Publisher<?> handle(SelectMenuInteractionEnvironment env) {
-            return Mono.from(delegate.apply(env))
-                    .doOnSuccess(value -> {
-                        if (value == null) {
-                            sink.emitEmpty(Sinks.EmitFailureHandler.FAIL_FAST);
-                        } else {
-                            sink.emitValue(value, Sinks.EmitFailureHandler.FAIL_FAST);
-                        }
-                    })
-                    .doOnError(t -> sink.emitError(t, Sinks.EmitFailureHandler.FAIL_FAST));
-        }
-    }
 }

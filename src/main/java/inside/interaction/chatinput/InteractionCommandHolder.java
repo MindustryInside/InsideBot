@@ -1,7 +1,9 @@
 package inside.interaction.chatinput;
 
+import inside.service.MessageService;
+
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -13,8 +15,8 @@ public class InteractionCommandHolder {
         this.commands = Collections.unmodifiableMap(commands);
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static Builder builder(MessageService messageService) {
+        return new Builder(messageService);
     }
 
     public Map<String, InteractionCommand> getCommands() {
@@ -26,14 +28,15 @@ public class InteractionCommandHolder {
     }
 
     public static class Builder {
-        private final Map<String, InteractionCommand> commands = new LinkedHashMap<>();
+        private final MessageService messageService;
+        private final Map<String, InteractionCommand> commands = new HashMap<>();
 
-        public Map<String, InteractionCommand> getCommands() {
-            return Collections.unmodifiableMap(commands);
+        private Builder(MessageService messageService) {
+            this.messageService = messageService;
         }
 
         public Builder addCommand(InteractionCommand interactionCommand) {
-            commands.put(interactionCommand.getName(), interactionCommand);
+            commands.put(messageService.get(interactionCommand.getName() + ".name"), interactionCommand);
             return this;
         }
 

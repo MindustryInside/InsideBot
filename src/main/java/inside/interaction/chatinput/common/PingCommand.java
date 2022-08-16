@@ -6,7 +6,7 @@ import inside.interaction.chatinput.InteractionCommand;
 import inside.service.MessageService;
 import org.reactivestreams.Publisher;
 
-@ChatInputCommand(name = "ping", description = "Получить задержку ответа бота.")
+@ChatInputCommand(value = "commands.common.ping")
 public class PingCommand extends InteractionCommand {
 
     public PingCommand(MessageService messageService) {
@@ -17,8 +17,10 @@ public class PingCommand extends InteractionCommand {
     public Publisher<?> execute(ChatInputInteractionEnvironment env) {
         long start = System.currentTimeMillis();
 
-        return env.event().deferReply().then(env.event().createFollowup("Подождите..."))
+        return env.event().deferReply().then(env.event().createFollowup(
+                messageService.get(env.context(), "commands.common.ping.testing")))
                 .flatMap(message -> env.event().editFollowup(message.getId())
-                        .withContentOrNull(String.format("Понг! %sмс", System.currentTimeMillis() - start)));
+                        .withContentOrNull(messageService.format(env.context(), "commands.common.ping.completed",
+                                System.currentTimeMillis() - start)));
     }
 }

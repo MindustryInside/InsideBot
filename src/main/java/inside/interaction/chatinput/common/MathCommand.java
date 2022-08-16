@@ -2,7 +2,7 @@ package inside.interaction.chatinput.common;
 
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
-import discord4j.core.object.command.ApplicationCommandOption;
+import discord4j.core.object.command.ApplicationCommandOption.Type;
 import discord4j.core.object.entity.Message;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.annotation.ChatInputCommand;
@@ -14,16 +14,13 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-@ChatInputCommand(name = "math", description = "Вычислить математическое выражение.")
+@ChatInputCommand(value = "commands.common.math")
 public class MathCommand extends InteractionCommand {
 
     public MathCommand(MessageService messageService) {
         super(messageService);
 
-        addOption(builder -> builder.name("expression")
-                .description("Математическое выражение.")
-                .required(true)
-                .type(ApplicationCommandOption.Type.STRING.getValue()));
+        addOption("expression", spec -> spec.type(Type.STRING.getValue()).required(true));
     }
 
     @Override
@@ -37,7 +34,7 @@ public class MathCommand extends InteractionCommand {
                 .publishOn(Schedulers.boundedElastic())
                 .onErrorResume(t -> t instanceof ArithmeticException || t instanceof Expression.ExpressionException ||
                                 t instanceof NumberFormatException,
-                        t -> messageService.err(env, "Неправильное выражение").then(Mono.empty()))
+                        t -> messageService.err(env, "commands.common.math.invalid-expression").then(Mono.empty()))
                 .flatMap(decimal -> env.event().deferReply()
                         .then(env.event().editReply(MessageUtil.substringTo(expression + " = " + decimal.toString(),
                                 Message.MAX_CONTENT_LENGTH))));

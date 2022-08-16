@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@ChatInputCommand(name = "leaderboard", description = "Отобразить список активных пользователей.")
+@ChatInputCommand("commands.common.leaderboard")
 public class LeaderboardCommand extends InteractionGuildCommand {
 
     public static final int PER_PAGE = 10;
@@ -36,17 +36,20 @@ public class LeaderboardCommand extends InteractionGuildCommand {
 
     public LeaderboardCommand(MessageService messageService, EntityRetriever entityRetriever) {
         super(messageService);
-        this.entityRetriever = Objects.requireNonNull(entityRetriever, "entityRetriever");
+        this.entityRetriever = Objects.requireNonNull(entityRetriever);
     }
 
     @Override
     public Publisher<?> execute(ChatInputInteractionEnvironment env) {
         Snowflake authorId = env.event().getInteraction().getUser().getId();
         Snowflake guildId = env.event().getInteraction().getGuildId().orElseThrow();
+
         AtomicBoolean seenAuthor = new AtomicBoolean();
 
         Function<Activity, String> pattern = wallet -> "**%d.** %s " +
-                (wallet.userId() == authorId.asLong() ? " (**вы**)" : "") + " - %d %n";
+                (wallet.userId() == authorId.asLong() ? " (**" +
+                        messageService.get(env.context(), "common.you")
+                        + "**)" : "") + " - %d %n";
 
         Function<MessagePaginator.Page, ? extends Mono<MessageCreateSpec>> paginator = page ->
                 entityRetriever.getAllActivityInGuild(guildId)
@@ -54,7 +57,7 @@ public class LeaderboardCommand extends InteractionGuildCommand {
                                 .thenComparing(a -> a.incrementMessageCount()
                                         .lastSentMessage().orElse(Instant.MIN))
                                 .reversed())
-                        .index().skip(page.getPage() * PER_PAGE).take(PER_PAGE, true)
+                        .index().skip(page.getPage() * (long)PER_PAGE).take(PER_PAGE, true)
                         .doOnNext(TupleUtils.consumer((idx, activity) -> {
                             if (activity.userId() == authorId.asLong()) {
                                 seenAuthor.set(true);
@@ -77,24 +80,28 @@ public class LeaderboardCommand extends InteractionGuildCommand {
                         })
                         .map(str -> MessageCreateSpec.builder()
                                 .addEmbed(EmbedCreateSpec.builder()
-                                        .title("Таблица активных пользователей (сообщения)")
+                                        .title(messageService.get(env.context(), "commands.common.leaderboard.title"))
                                         .description(str)
                                         .color(env.configuration().discord().embedColor())
-                                        .footer(String.format("Страница %s/%s", page.getPage() + 1, page.getPageCount()), null)
+                                        .footer(messageService.format(env.context(), "common.page",
+                                                page.getPage() + 1, page.getPageCount()), null)
                                         .build())
                                 .components(page.getItemsCount() > PER_PAGE
                                         ? Possible.of(List.of(ActionRow.of(
-                                        page.previousButton(id -> Button.primary(id, "Предыдущая Страница")),
-                                        page.nextButton(id -> Button.primary(id, "Следующая Страница")))))
+                                        page.previousButton(id -> Button.primary(id,
+                                                messageService.format(env.context(), "common.previous-page"))),
+                                        page.nextButton(id -> Button.primary(id,
+                                                messageService.format(env.context(), "common.next-page"))))))
                                         : Possible.absent())
                                 .build());
 
         return entityRetriever.getActivityConfigById(guildId)
                 .filter(ConfigEntity::enabled)
-                .switchIfEmpty(messageService.err(env, "Награждение активности пользователей выключено").then(Mono.never()))
+                .switchIfEmpty(messageService.err(env, "commands.common.leaderboard.disabled").then(Mono.never()))
                 .flatMap(c -> entityRetriever.activityCountInGuild(guildId))
+                .map(Math::toIntExact)
                 .filter(l -> l > 0)
-                .switchIfEmpty(messageService.err(env, "Список активных пользователей пуст").then(Mono.never()))
+                .switchIfEmpty(messageService.err(env, "commands.common.leaderboard.empty").then(Mono.never()))
                 .flatMap(l -> MessagePaginator.paginate(env, l, PER_PAGE, paginator));
     }
 }

@@ -9,7 +9,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface SubcommandGroup {
 
-    String name();
-
-    String description();
+    String value();
 }

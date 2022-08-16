@@ -2,7 +2,7 @@ package inside.interaction.chatinput.common;
 
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
-import discord4j.core.object.command.ApplicationCommandOption;
+import discord4j.core.object.command.ApplicationCommandOption.Type;
 import discord4j.core.object.entity.Message;
 import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import inside.interaction.ChatInputInteractionEnvironment;
@@ -16,12 +16,11 @@ import org.reactivestreams.Publisher;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
-@ChatInputCommand(name = "1337", description = "Перевести текст в leet speak.")
+@ChatInputCommand(value = "commands.common.1337")
 public class LeetSpeakCommand extends InteractionCommand {
     static final Map<String, String> rusLeetSpeak;
     static final Map<String, String> engLeetSpeak;
@@ -52,7 +51,6 @@ public class LeetSpeakCommand extends InteractionCommand {
 
     @SuppressWarnings("unchecked")
     static <K, V> Map<K, V> mapOf(Object... values){
-        Objects.requireNonNull(values, "values");
         Preconditions.requireArgument((values.length & 1) == 0, "length is odd");
         Map<K, V> map = new HashMap<>();
 
@@ -99,9 +97,7 @@ public class LeetSpeakCommand extends InteractionCommand {
     public LeetSpeakCommand(MessageService messageService) {
         super(messageService);
 
-        addOption(builder -> builder.name("type")
-                .description("Тип перевода.")
-                .type(ApplicationCommandOption.Type.STRING.getValue())
+        addOption("type", s -> s.type(Type.STRING.getValue())
                 .required(true)
                 .addChoice(ApplicationCommandOptionChoiceData.builder()
                         .name("Английский")
@@ -112,10 +108,7 @@ public class LeetSpeakCommand extends InteractionCommand {
                         .value("ru")
                         .build()));
 
-        addOption(builder -> builder.name("text")
-                .description("Текс для перевода.")
-                .type(ApplicationCommandOption.Type.STRING.getValue())
-                .required(true));
+        addOption("text", s -> s.type(Type.STRING.getValue()).required(true));
     }
 
     @Override
@@ -133,6 +126,6 @@ public class LeetSpeakCommand extends InteractionCommand {
                 .filter(Predicate.not(String::isBlank))
                 .map(s -> MessageUtil.substringTo(s, Message.MAX_CONTENT_LENGTH))
                 .map(env.event()::reply)
-                .orElseGet(() -> messageService.err(env, "Не удалось перевести текст"));
+                .orElseGet(() -> messageService.err(env, "common.could-not-translate"));
     }
 }

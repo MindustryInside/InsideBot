@@ -11,7 +11,7 @@ import java.util.Objects;
 public record OptionValue(String value) {
 
     public OptionValue(String value) {
-        this.value = Objects.requireNonNull(value, "value");
+        this.value = Objects.requireNonNull(value);
     }
 
     public long asLong() {

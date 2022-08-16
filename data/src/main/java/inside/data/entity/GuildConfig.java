@@ -9,7 +9,6 @@ import org.immutables.value.Value;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 
 @Entity
 @Table(name = "guild_config")
@@ -21,11 +20,8 @@ public interface GuildConfig extends GuildEntity {
     }
 
     static String formatPrefix(String prefix){
-        Objects.requireNonNull(prefix, "prefix");
-        if(prefix.chars().filter(Character::isLetter).count() >= 2 || prefix.length() > 4){
-            return prefix + " ";
-        }
-        return prefix;
+        return prefix.chars().filter(Character::isLetter).count() >= 2
+                || prefix.length() > 4 ? prefix + " " : prefix;
     }
 
     @Column

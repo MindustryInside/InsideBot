@@ -9,14 +9,12 @@ import inside.data.EntityRetriever;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
-import java.util.Objects;
-
 public class ReactionRoleEventHandler extends ReactiveEventAdapter {
 
     private final EntityRetriever entityRetriever;
 
     public ReactionRoleEventHandler(EntityRetriever entityRetriever) {
-        this.entityRetriever = Objects.requireNonNull(entityRetriever, "entityRetriever");
+        this.entityRetriever = entityRetriever;
     }
 
     @Override

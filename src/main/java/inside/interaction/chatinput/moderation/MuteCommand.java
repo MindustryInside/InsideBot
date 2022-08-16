@@ -5,10 +5,9 @@ import discord4j.common.util.TimestampFormat;
 import discord4j.core.object.audit.AuditLogEntry;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
-import discord4j.core.object.command.ApplicationCommandOption;
+import discord4j.core.object.command.ApplicationCommandOption.Type;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
-import discord4j.discordjson.possible.Possible;
 import discord4j.rest.util.AllowedMentions;
 import discord4j.rest.util.Permission;
 import discord4j.rest.util.PermissionSet;
@@ -31,35 +30,26 @@ import reactor.core.publisher.Mono;
 import reactor.function.TupleUtils;
 
 import java.time.Instant;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.UUID;
 import java.util.function.Predicate;
 
-@ChatInputCommand(name = "mute", description = "Выдать мут пользователю. " +
-        "Если роль для мута не установлена попытаюсь выдать таймаут",
-        permissions = PermissionCategory.MODERATOR)
+@ChatInputCommand(value = "commands.moderation.mute", permissions = PermissionCategory.MODERATOR)
 public class MuteCommand extends ModerationCommand {
 
     private final ReactiveScheduler reactiveScheduler;
 
     public MuteCommand(MessageService messageService, EntityRetriever entityRetriever, ReactiveScheduler reactiveScheduler) {
         super(messageService, entityRetriever);
-        this.reactiveScheduler = Objects.requireNonNull(reactiveScheduler, "reactiveScheduler");
+        this.reactiveScheduler = reactiveScheduler;
 
-        addOption(builder -> builder.name("target")
-                .description("Нарушитель правил.")
-                .type(ApplicationCommandOption.Type.USER.getValue())
-                .required(true));
+        addOption("target", s -> s.type(Type.USER.getValue()).required(true));
 
-        addOption(builder -> builder.name("reason")
-                .description("Причина мута.")
-                .type(ApplicationCommandOption.Type.STRING.getValue()));
+        addOption("reason", s -> s.type(Type.STRING.getValue())
+                .maxLength(AuditLogEntry.MAX_REASON_LENGTH));
 
-        addOption(builder -> builder.name("interval")
-                .description("Длительность мута.")
-                .type(ApplicationCommandOption.Type.STRING.getValue()));
+        addOption("interval", s -> s.type(Type.STRING.getValue()));
     }
 
     @Override
@@ -78,11 +68,7 @@ public class MuteCommand extends ModerationCommand {
                 .map(ApplicationCommandInteractionOptionValue::asString)
                 .orElse(null);
 
-        if (reason != null && reason.length() >= AuditLogEntry.MAX_REASON_LENGTH) {
-            return messageService.err(env, "Строка причины слишком длинная (лимит: **%s**)", AuditLogEntry.MAX_REASON_LENGTH);
-        }
-
-        String intervalstr = env.getOption("interval")
+        String intervalstr = env.getOption("time")
                 .flatMap(ApplicationCommandInteractionOption::getValue)
                 .map(ApplicationCommandInteractionOptionValue::asString)
                 .orElse(null);
@@ -92,21 +78,21 @@ public class MuteCommand extends ModerationCommand {
                         .filterWhen(member -> BooleanUtils.not(entityRetriever.getAllModerationActionById(
                                 ModerationAction.Type.mute, guildId, member.getId())
                                 .hasElements()))
-                        .switchIfEmpty(messageService.err(env, "Пользователь уже находится в мьюте").then(Mono.never()))
+                        .switchIfEmpty(messageService.err(env, "commands.moderation.mute.already-muted").then(Mono.never()))
                         .filter(Predicate.not(User::isBot))
-                        .switchIfEmpty(messageService.err(env, "Вы не можете мьютить ботов").then(Mono.never()))
+                        .switchIfEmpty(messageService.err(env, "commands.moderation.mute.target-is-bot").then(Mono.never()))
                         .filter(u -> !u.getId().equals(author.getId()))
-                        .switchIfEmpty(messageService.err(env, "Вы не можете мьютить самого себя").then(Mono.never()))
+                        .switchIfEmpty(messageService.err(env, "commands.moderation.mute.self-mute").then(Mono.never()))
                         .filterWhen(u -> u.getBasePermissions()
                                 .map(p -> p.equals(PermissionSet.all()) || !p.contains(Permission.ADMINISTRATOR)))
-                        .switchIfEmpty(messageService.err(env, "Вы не можете мьютить администраторов").then(Mono.never())))
+                        .switchIfEmpty(messageService.err(env, "commands.moderation.mute.target-is-admin").then(Mono.never())))
                 .flatMap(TupleUtils.function((config, target) -> {
                     Interval interval = config.muteBaseInterval().orElse(null);
                     if (intervalstr != null) {
                         interval = MessageUtil.parseInterval(intervalstr);
 
                         if (interval == null) {
-                            return messageService.err(env, "Неправильный формат длительности");
+                            return messageService.err(env, "common.invalid-interval-format");
                         }
                     }
 
@@ -137,10 +123,11 @@ public class MuteCommand extends ModerationCommand {
 
                     Mono<Void> mute = Mono.justOrEmpty(config.muteRoleId())
                             .map(Snowflake::of)
-                            .switchIfEmpty(target.edit()
-                                    .withCommunicationDisabledUntil(Possible.of(endTimestamp))
-                                    .then(Mono.empty()))
-                            .flatMap(l -> target.addRole(l, reason));
+                            // TODO: убрать. будет мут только по роли. таймаут для юзеров всё таки больше
+                            // .switchIfEmpty(target.edit()
+                            //         .withCommunicationDisabledUntil(Possible.of(endTimestamp))
+                            //         .then(Mono.empty()))
+                            .flatMap(target::addRole);
 
                     return messageService.text(env, "Пользователь **%s** получил мьют %s",
                                     MessageUtil.getUserMention(targetId), jcomp)

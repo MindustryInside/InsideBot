@@ -7,12 +7,12 @@ import discord4j.core.object.command.ApplicationCommandOption;
 import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import inside.data.EntityRetriever;
 import inside.interaction.ChatInputInteractionEnvironment;
-import inside.interaction.PermissionCategory;
 import inside.interaction.annotation.ChatInputCommand;
 import inside.interaction.annotation.Subcommand;
 import inside.interaction.annotation.SubcommandGroup;
 import inside.interaction.chatinput.InteractionSubcommand;
 import inside.service.MessageService;
+import inside.util.ResourceMessageSource;
 import inside.util.Strings;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-@ChatInputCommand(name = "config", description = "Общие настройки.", permissions = PermissionCategory.ADMIN)
+@ChatInputCommand(value = "config")// = "Общие настройки.", permissions = PermissionCategory.ADMIN)
 public class GuildConfigCommand extends ConfigOwnerCommand {
 
     public GuildConfigCommand(MessageService messageService, EntityRetriever entityRetriever) {
@@ -35,7 +35,7 @@ public class GuildConfigCommand extends ConfigOwnerCommand {
         addSubcommand(new PrefixesSubcommandGroup(this));
     }
 
-    @Subcommand(name = "locale", description = "Настроить язык.")
+    @Subcommand(value = "locale")// = "Настроить язык.")
     protected static class LocaleSubcommand extends InteractionSubcommand<GuildConfigCommand> {
 
         protected LocaleSubcommand(GuildConfigCommand owner) {
@@ -43,7 +43,7 @@ public class GuildConfigCommand extends ConfigOwnerCommand {
 
             addOption(builder -> builder.name("value")
                     .description("Новый язык.")
-                    .choices(MessageService.supportedLocaled.stream()
+                    .choices(ResourceMessageSource.supportedLocaled.stream()
                             .map(l -> ApplicationCommandOptionChoiceData.builder()
                                     .name(l.getDisplayName(l))
                                     .value(l.getLanguage())
@@ -72,7 +72,7 @@ public class GuildConfigCommand extends ConfigOwnerCommand {
         }
     }
 
-    @Subcommand(name = "timezone", description = "Настроить временную зону.")
+    @Subcommand(value = "timezone")// = "Настроить временную зону.")
     protected static class TimeZoneSubcommand extends InteractionSubcommand<GuildConfigCommand> {
 
         protected TimeZoneSubcommand(GuildConfigCommand owner) {
@@ -105,7 +105,7 @@ public class GuildConfigCommand extends ConfigOwnerCommand {
         }
     }
 
-    @SubcommandGroup(name = "prefixes", description = "Настроить префиксы.")
+    @SubcommandGroup(value = "prefixes")// = "Настроить префиксы.")
     protected static class PrefixesSubcommandGroup extends ConfigOwnerCommand {
 
         protected PrefixesSubcommandGroup(GuildConfigCommand owner) {
@@ -117,7 +117,7 @@ public class GuildConfigCommand extends ConfigOwnerCommand {
             addSubcommand(new ListSubcommand(this));
         }
 
-        @Subcommand(name = "add", description = "Добавить эмодзи в список.")
+        @Subcommand(value = "add")// = "Добавить эмодзи в список.")
         protected static class AddSubcommand extends InteractionSubcommand<PrefixesSubcommandGroup> {
 
             protected AddSubcommand(PrefixesSubcommandGroup owner) {
@@ -155,7 +155,7 @@ public class GuildConfigCommand extends ConfigOwnerCommand {
             }
         }
 
-        @Subcommand(name = "remove", description = "Удалить эмодзи из списка.")
+        @Subcommand(value = "remove")// = "Удалить эмодзи из списка.")
         protected static class RemoveSubcommand extends InteractionSubcommand<PrefixesSubcommandGroup> {
 
             protected RemoveSubcommand(PrefixesSubcommandGroup owner) {
@@ -193,7 +193,7 @@ public class GuildConfigCommand extends ConfigOwnerCommand {
             }
         }
 
-        @Subcommand(name = "clear", description = "Отчистить список эмодзи.")
+        @Subcommand(value = "clear")// = "Отчистить список эмодзи.")
         protected static class ClearSubcommand extends InteractionSubcommand<PrefixesSubcommandGroup> {
 
             protected ClearSubcommand(PrefixesSubcommandGroup owner) {
@@ -215,7 +215,7 @@ public class GuildConfigCommand extends ConfigOwnerCommand {
             }
         }
 
-        @Subcommand(name = "list", description = "Отобразить список эмодзи.")
+        @Subcommand(value = "list")// = "Отобразить список эмодзи.")
         protected static class ListSubcommand extends InteractionSubcommand<PrefixesSubcommandGroup> {
 
             protected ListSubcommand(PrefixesSubcommandGroup owner) {

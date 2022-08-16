@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import discord4j.common.util.Snowflake;
 import discord4j.discordjson.possible.Possible;
 import discord4j.rest.util.Color;
-import inside.service.MessageService;
+import inside.util.ResourceMessageSource;
 import org.immutables.value.Value;
 
 import java.time.Duration;
@@ -61,7 +61,7 @@ public interface Configuration {
         }
 
         default Locale locale() {
-            return MessageService.supportedLocaled.get(1); // английский
+            return ResourceMessageSource.supportedLocaled.get(1); // английский
         }
 
         default List<String> prefixes() {

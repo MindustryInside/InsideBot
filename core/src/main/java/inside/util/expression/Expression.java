@@ -16,11 +16,11 @@ public class Expression {
     protected static Map<String, BigDecimal> defaultVariables;
 
     protected static Map<String, Operator> getDefaultOperators() {
-        if (defaultOperators != null) {
+        if (defaultOperators != null) { // weeeee, гонки
             return defaultOperators;
         }
 
-        defaultOperators = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        defaultOperators = new HashMap<>();
         addOperator(defaultOperators, Operator.create("+", true, 10, (mc, a, b) -> a.add(b, mc)));
         addOperator(defaultOperators, Operator.create("-", true, 10, (mc, a, b) -> a.subtract(b, mc)));
         addOperator(defaultOperators, Operator.create("*", true, 20, (mc, a, b) -> a.multiply(b, mc)));
@@ -137,9 +137,9 @@ public class Expression {
         map.put(name, op);
     }
 
-    protected Map<String, Operator> operators = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-    protected Map<String, Function> functions = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-    protected Map<String, BigDecimal> variables = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    protected Map<String, Operator> operators = new HashMap<>();
+    protected Map<String, Function> functions = new HashMap<>();
+    protected Map<String, BigDecimal> variables = new HashMap<>();
 
     protected final String str;
     protected final MathContext mc;
@@ -149,8 +149,8 @@ public class Expression {
     }
 
     public Expression(String str, MathContext mc) {
-        this.str = Objects.requireNonNull(str, "str");
-        this.mc = Objects.requireNonNull(mc, "mc");
+        this.str = Objects.requireNonNull(str);
+        this.mc = Objects.requireNonNull(mc);
     }
 
     protected Map<String, Operator> getOperators() {

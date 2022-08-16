@@ -14,8 +14,6 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 
-import java.util.Objects;
-
 import static inside.util.ContextUtil.KEY_LOCALE;
 import static inside.util.ContextUtil.KEY_TIMEZONE;
 
@@ -28,10 +26,10 @@ public class InteractionEventHandler extends ReactiveEventAdapter {
 
     public InteractionEventHandler(Configuration configuration, InteractionCommandHolder interactionCommandHolder,
                                    InteractionService interactionService, EntityRetriever entityRetriever) {
-        this.configuration = Objects.requireNonNull(configuration, "configuration");
-        this.interactionCommandHolder = Objects.requireNonNull(interactionCommandHolder, "interactionCommandHolder");
-        this.interactionService = Objects.requireNonNull(interactionService, "interactionService");
-        this.entityRetriever = Objects.requireNonNull(entityRetriever, "entityRetriever");
+        this.configuration = configuration;
+        this.interactionCommandHolder = interactionCommandHolder;
+        this.interactionService = interactionService;
+        this.entityRetriever = entityRetriever;
     }
 
     @Override

@@ -2,7 +2,7 @@ package inside.interaction.chatinput.common;
 
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
-import discord4j.core.object.command.ApplicationCommandOption;
+import discord4j.core.object.command.ApplicationCommandOption.Type;
 import discord4j.core.object.entity.Message;
 import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import inside.interaction.ChatInputInteractionEnvironment;
@@ -12,7 +12,7 @@ import inside.service.MessageService;
 import inside.util.MessageUtil;
 import org.reactivestreams.Publisher;
 
-@ChatInputCommand(name = "r", description = "Изменить раскладку текста.")
+@ChatInputCommand(value = "commands.common.r")
 public class TextLayoutCommand extends InteractionCommand {
     static final String[] engPattern;
     static final String[] rusPattern;
@@ -41,9 +41,7 @@ public class TextLayoutCommand extends InteractionCommand {
     public TextLayoutCommand(MessageService messageService) {
         super(messageService);
 
-        addOption(builder -> builder.name("type")
-                .description("Тип раскладки c которой нужно переводить текст.")
-                .type(ApplicationCommandOption.Type.STRING.getValue())
+        addOption("type", s -> s.type(Type.STRING.getValue())
                 .required(true)
                 .addChoice(ApplicationCommandOptionChoiceData.builder()
                         .name("Английская")
@@ -54,10 +52,7 @@ public class TextLayoutCommand extends InteractionCommand {
                         .value("ru")
                         .build()));
 
-        addOption(builder -> builder.name("text")
-                .description("Текст для перевода.")
-                .type(ApplicationCommandOption.Type.STRING.getValue())
-                .required(true));
+        addOption("text", s -> s.type(Type.STRING.getValue()).required(true));
     }
 
     @Override
@@ -74,6 +69,6 @@ public class TextLayoutCommand extends InteractionCommand {
                 .map(str -> russian ? text2eng(str) : text2rus(str))
                 .map(s -> MessageUtil.substringTo(s, Message.MAX_CONTENT_LENGTH))
                 .map(env.event()::reply)
-                .orElseGet(() -> messageService.err(env, "Не удалось перевести текст"));
+                .orElseGet(() -> messageService.err(env, "common.could-not-translate"));
     }
 }

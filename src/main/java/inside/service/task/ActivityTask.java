@@ -17,8 +17,8 @@ public class ActivityTask implements Task {
     private final EntityRetriever entityRetriever;
 
     public ActivityTask(Configuration configuration, EntityRetriever entityRetriever) {
-        this.configuration = Objects.requireNonNull(configuration, "configuration");
-        this.entityRetriever = Objects.requireNonNull(entityRetriever, "entityRetriever");
+        this.configuration = Objects.requireNonNull(configuration);
+        this.entityRetriever = Objects.requireNonNull(entityRetriever);
     }
 
     @Override

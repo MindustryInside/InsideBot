@@ -11,8 +11,8 @@ public class CommandInteraction {
     private final List<CommandOption> options;
 
     public CommandInteraction(String commandName, List<CommandOption> options) {
-        this.commandName = Objects.requireNonNull(commandName, "commandName");
-        this.options = Objects.requireNonNull(options, "options");
+        this.commandName = Objects.requireNonNull(commandName);
+        this.options = Objects.requireNonNull(options);
     }
 
     public String getCommandName() {

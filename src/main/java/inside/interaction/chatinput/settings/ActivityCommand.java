@@ -3,7 +3,7 @@ package inside.interaction.chatinput.settings;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
-import discord4j.core.object.command.ApplicationCommandOption;
+import discord4j.core.object.command.ApplicationCommandOption.Type;
 import inside.data.EntityRetriever;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.PermissionCategory;
@@ -20,7 +20,7 @@ import reactor.core.publisher.Mono;
 import java.time.temporal.TemporalAmount;
 import java.util.function.Function;
 
-@ChatInputCommand(name = "activity", description = "Настройки роли активного пользователя.", permissions = PermissionCategory.ADMIN)
+@ChatInputCommand(value = "commands.common.activity", permissions = PermissionCategory.ADMIN)
 public class ActivityCommand extends ConfigOwnerCommand {
 
     public ActivityCommand(MessageService messageService, EntityRetriever entityRetriever) {
@@ -32,15 +32,13 @@ public class ActivityCommand extends ConfigOwnerCommand {
         addSubcommand(new CountingIntervalSubcommand(this));
     }
 
-    @Subcommand(name = "enable", description = "Включить выдачу роли активного пользовать.")
+    @Subcommand("enable")
     protected static class EnableSubcommand extends InteractionSubcommand<ActivityCommand> {
 
         protected EnableSubcommand(ActivityCommand owner) {
             super(owner);
 
-            addOption(builder -> builder.name("value")
-                    .description("Новое состояние.")
-                    .type(ApplicationCommandOption.Type.BOOLEAN.getValue()));
+            addOption("value", s -> s.type(Type.BOOLEAN.getValue()));
         }
 
         @Override
@@ -64,15 +62,13 @@ public class ActivityCommand extends ConfigOwnerCommand {
         }
     }
 
-    @Subcommand(name = "active-role", description = "Настроить роль активного пользователя.")
+    @Subcommand("active-role")
     protected static class ActiveRoleSubcommand extends InteractionSubcommand<ActivityCommand> {
 
         protected ActiveRoleSubcommand(ActivityCommand owner) {
             super(owner);
 
-            addOption(builder -> builder.name("value")
-                    .description("Новая роль активного пользователя.")
-                    .type(ApplicationCommandOption.Type.ROLE.getValue()));
+            addOption("value", s -> s.type(Type.ROLE.getValue()));
         }
 
         @Override
@@ -97,17 +93,13 @@ public class ActivityCommand extends ConfigOwnerCommand {
         }
     }
 
-    @Subcommand(name = "message-threshold", description = "Настроить минимальный порог сообщений для выдачи роли.")
+    @Subcommand("message-threshold")
     protected static class MessageThresholdSubcommand extends InteractionSubcommand<ActivityCommand> {
 
         protected MessageThresholdSubcommand(ActivityCommand owner) {
             super(owner);
 
-            addOption(builder -> builder.name("value")
-                    .description("Новый минимальный порог для получения роли активного пользователя.")
-                    .type(ApplicationCommandOption.Type.INTEGER.getValue())
-                    .minValue(0d)
-                    .maxValue((double) Integer.MAX_VALUE));
+            addOption("value", s -> s.type(Type.INTEGER.getValue()).minValue(0d).maxValue((double) Integer.MAX_VALUE));
         }
 
         @Override
@@ -130,15 +122,13 @@ public class ActivityCommand extends ConfigOwnerCommand {
         }
     }
 
-    @Subcommand(name = "counting-interval", description = "Настроить период подсчёта активности.")
+    @Subcommand("counting-interval")
     protected static class CountingIntervalSubcommand extends InteractionSubcommand<ActivityCommand> {
 
         protected CountingIntervalSubcommand(ActivityCommand owner) {
             super(owner);
 
-            addOption(builder -> builder.name("value")
-                    .description("Новый период подсчёта. (в формате 1д 3ч 44мин)")
-                    .type(ApplicationCommandOption.Type.STRING.getValue()));
+            addOption("value", s -> s.type(Type.STRING.getValue()));
         }
 
         @Override

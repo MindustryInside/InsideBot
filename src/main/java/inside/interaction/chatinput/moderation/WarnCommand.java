@@ -5,7 +5,7 @@ import discord4j.common.util.TimestampFormat;
 import discord4j.core.object.audit.AuditLogEntry;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
-import discord4j.core.object.command.ApplicationCommandOption;
+import discord4j.core.object.command.ApplicationCommandOption.Type;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
 import discord4j.discordjson.possible.Possible;
@@ -31,7 +31,6 @@ import reactor.core.publisher.Mono;
 import reactor.function.TupleUtils;
 
 import java.time.Instant;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.UUID;
@@ -39,7 +38,7 @@ import java.util.function.Predicate;
 
 import static inside.data.entity.ModerationAction.timeoutLimit;
 
-@ChatInputCommand(name = "warn", description = "Выдать предупреждение пользователю.", permissions = PermissionCategory.MODERATOR)
+@ChatInputCommand(value = "commands.moderation.warn", permissions = PermissionCategory.MODERATOR)
 public class WarnCommand extends ModerationCommand {
 
     private final ReactiveScheduler reactiveScheduler;
@@ -47,24 +46,16 @@ public class WarnCommand extends ModerationCommand {
     public WarnCommand(MessageService messageService, EntityRetriever entityRetriever,
                        ReactiveScheduler reactiveScheduler) {
         super(messageService, entityRetriever);
-        this.reactiveScheduler = Objects.requireNonNull(reactiveScheduler, "reactiveScheduler");
+        this.reactiveScheduler = reactiveScheduler;
 
-        addOption(builder -> builder.name("target")
-                .description("Нарушитель правил.")
-                .type(ApplicationCommandOption.Type.USER.getValue())
-                .required(true));
+        addOption("target", s -> s.type(Type.USER.getValue()).required(true));
 
-        addOption(builder -> builder.name("reason")
-                .description("Причина предупреждения.")
-                .type(ApplicationCommandOption.Type.STRING.getValue()));
+        addOption("reason", s -> s.type(Type.STRING.getValue())
+                .minLength(AuditLogEntry.MAX_REASON_LENGTH));
 
-        addOption(builder -> builder.name("interval")
-                .description("Длительность предупреждений.")
-                .type(ApplicationCommandOption.Type.STRING.getValue()));
+        addOption("interval", s -> s.type(Type.STRING.getValue()));
 
-        addOption(builder -> builder.name("count")
-                .description("Количество предупреждений.")
-                .type(ApplicationCommandOption.Type.INTEGER.getValue())
+        addOption("count", s -> s.type(Type.INTEGER.getValue())
                 .minValue(1d)
                 .maxValue((double) Integer.MAX_VALUE));
     }
@@ -85,11 +76,7 @@ public class WarnCommand extends ModerationCommand {
                 .map(ApplicationCommandInteractionOptionValue::asString)
                 .orElse(null);
 
-        if (reason != null && reason.length() >= AuditLogEntry.MAX_REASON_LENGTH) {
-            return messageService.err(env, "Строка причины слишком длинная (лимит: **%s**)", AuditLogEntry.MAX_REASON_LENGTH);
-        }
-
-        String intervalstr = env.getOption("interval")
+        String intervalstr = env.getOption("time")
                 .flatMap(ApplicationCommandInteractionOption::getValue)
                 .map(ApplicationCommandInteractionOptionValue::asString)
                 .orElse(null);
@@ -103,25 +90,25 @@ public class WarnCommand extends ModerationCommand {
         return entityRetriever.getModerationConfigById(guildId)
                 .zipWith(env.event().getClient().getMemberById(guildId, targetId)
                         .filter(Predicate.not(User::isBot))
-                        .switchIfEmpty(messageService.err(env, "Вы не можете выдавать предупреждения ботам").then(Mono.never()))
+                        .switchIfEmpty(messageService.err(env, "commands.moderation.warn.target-is-bot").then(Mono.never()))
                         .filter(u -> !u.getId().equals(author.getId()))
-                        .switchIfEmpty(messageService.err(env, "Вы не можете выдавать предупреждения самому себе").then(Mono.never()))
+                        .switchIfEmpty(messageService.err(env, "commands.moderation.warn.self-warn").then(Mono.never()))
                         .filterWhen(u -> u.getBasePermissions()
                                 .map(p -> p.equals(PermissionSet.all()) || !p.contains(Permission.ADMINISTRATOR)))
-                        .switchIfEmpty(messageService.err(env, "Вы не можете выдавать предупреждения администраторам").then(Mono.never())))
+                        .switchIfEmpty(messageService.err(env, "commands.moderation.warn.target-is-admin").then(Mono.never())))
                 .flatMap(TupleUtils.function((config, target) -> {
                     Interval interval = config.warnExpireInterval().orElse(null);
                     if (intervalstr != null) {
                         interval = MessageUtil.parseInterval(intervalstr);
 
                         if (interval == null) {
-                            return messageService.err(env, "Неправильный формат длительности");
+                            return messageService.err(env, "common.invalid-interval-format");
                         }
                     }
 
                     AllowedMentions allowTarget = AllowedMentions.builder().allowUser(targetId).build();
 
-                    Optional<Instant> endTimestamp = Optional.ofNullable(interval)
+                    var endTimestamp = Optional.ofNullable(interval)
                             .map(i -> Instant.now().plus(i));
 
                     ModerationAction action = ModerationAction.builder()
@@ -153,7 +140,7 @@ public class WarnCommand extends ModerationCommand {
                         }
 
                         return messageService.text(env, "Пользователь **%s** получил **%s** %s %s", MessageUtil.getUserMention(targetId),
-                                        count, messageService.getPluralized(env.context(), "common.plurals.warn", count), jcomp)
+                                        count, messageService.getPluralized(env.context(), "common.warn", count), jcomp)
                                 .withAllowedMentions(allowTarget)
                                 .and(entityRetriever.save(action)
                                         .repeat(count - 1));
@@ -244,7 +231,6 @@ public class WarnCommand extends ModerationCommand {
                                         return reactiveScheduler.scheduleJob(job, trigger);
                                     }));
                         }
-                        default -> Mono.empty();
                     });
                 }));
     }

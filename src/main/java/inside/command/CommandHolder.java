@@ -11,8 +11,8 @@ public final class CommandHolder {
     private final Map<Command, CommandInfo> commandInfo;
 
     public CommandHolder(Map<String[], Command> commands, Map<Command, CommandInfo> commandInfo) {
-        this.commands = Objects.requireNonNull(commands, "commands");
-        this.commandInfo = Objects.requireNonNull(commandInfo, "commandInfo");
+        this.commands = Objects.requireNonNull(commands);
+        this.commandInfo = Objects.requireNonNull(commandInfo);
     }
 
     public static CommandHolder.Builder builder() {
@@ -45,8 +45,8 @@ public final class CommandHolder {
     }
 
     public static class Builder {
-        private final Map<String[], Command> commands = new LinkedHashMap<>();
-        private final Map<Command, CommandInfo> commandInfo = new LinkedHashMap<>();
+        private final Map<String[], Command> commands = new HashMap<>();
+        private final Map<Command, CommandInfo> commandInfo = new HashMap<>();
 
         private CommandInfo compile(Command command) {
             DiscordCommand meta = command.getAnnotation();

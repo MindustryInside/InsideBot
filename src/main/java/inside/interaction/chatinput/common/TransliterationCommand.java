@@ -2,7 +2,7 @@ package inside.interaction.chatinput.common;
 
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
-import discord4j.core.object.command.ApplicationCommandOption;
+import discord4j.core.object.command.ApplicationCommandOption.Type;
 import discord4j.core.object.entity.Message;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.annotation.ChatInputCommand;
@@ -19,11 +19,11 @@ import java.util.function.UnaryOperator;
 
 import static inside.interaction.chatinput.common.LeetSpeakCommand.mapOf;
 
-@ChatInputCommand(name = "tr", description = "Перевести текст в транслитерацию.")
+@ChatInputCommand(value = "commands.common.tr")
 public class TransliterationCommand extends InteractionCommand {
     static final Map<String, String> transliteration;
 
-    static{
+    static {
         transliteration = mapOf(
                 "a", "а", "b", "б", "v", "в", "g", "г",
                 "d", "д", "e", "е", "yo", "ё", "zh", "ж",
@@ -37,7 +37,7 @@ public class TransliterationCommand extends InteractionCommand {
         );
     }
 
-    static String translit(String text){
+    static String translit(String text) {
         UnaryOperator<String> get = s -> {
             String result = Optional.ofNullable(transliteration.get(s.toLowerCase()))
                     .or(transliteration.entrySet().stream()
@@ -49,19 +49,19 @@ public class TransliterationCommand extends InteractionCommand {
         };
 
         int len = text.length();
-        if(len == 1){
+        if (len == 1) {
             return get.apply(text);
         }
 
         StringBuilder result = new StringBuilder();
-        for(int i = 0; i < len; ){
+        for (int i = 0; i < len; ) {
             String c = text.substring(i, i + (i <= len - 2 ? 2 : 1));
             String translited = get.apply(c);
-            if(Strings.isEmpty(translited)){
+            if (Strings.isEmpty(translited)) {
                 translited = get.apply(c.charAt(0) + "");
                 result.append(Strings.isEmpty(translited) ? c.charAt(0) : translited);
                 i++;
-            }else{
+            } else {
                 result.append(translited);
                 i += 2;
             }
@@ -72,10 +72,7 @@ public class TransliterationCommand extends InteractionCommand {
     public TransliterationCommand(MessageService messageService) {
         super(messageService);
 
-        addOption(builder -> builder.name("text")
-                .description("Текст на транслитерацию.")
-                .required(true)
-                .type(ApplicationCommandOption.Type.STRING.getValue()));
+        addOption("text", s -> s.required(true).type(Type.STRING.getValue()));
     }
 
     @Override
@@ -87,6 +84,6 @@ public class TransliterationCommand extends InteractionCommand {
                 .filter(Predicate.not(String::isBlank))
                 .map(s -> MessageUtil.substringTo(s, Message.MAX_CONTENT_LENGTH))
                 .map(env.event()::reply)
-                .orElseGet(() -> messageService.err(env, "Не удалось перевести текст"));
+                .orElseGet(() -> messageService.err(env, "common.could-not-translate"));
     }
 }

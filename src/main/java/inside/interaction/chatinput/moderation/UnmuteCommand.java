@@ -3,7 +3,7 @@ package inside.interaction.chatinput.moderation;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
-import discord4j.core.object.command.ApplicationCommandOption;
+import discord4j.core.object.command.ApplicationCommandOption.Type;
 import discord4j.core.object.entity.Member;
 import discord4j.discordjson.possible.Possible;
 import discord4j.rest.util.Permission;
@@ -21,16 +21,13 @@ import reactor.function.TupleUtils;
 
 import java.util.Optional;
 
-@ChatInputCommand(name = "unmute", description = "Снятие мута с пользователя.", permissions = PermissionCategory.MODERATOR)
+@ChatInputCommand(value = "commands.moderation.unmute", permissions = PermissionCategory.MODERATOR)
 public class UnmuteCommand extends ModerationCommand {
 
     public UnmuteCommand(MessageService messageService, EntityRetriever entityRetriever) {
         super(messageService, entityRetriever);
 
-        addOption(builder -> builder.name("target")
-                .description("Нарушитель правил.")
-                .type(ApplicationCommandOption.Type.USER.getValue())
-                .required(true));
+        addOption("target", s -> s.type(Type.USER.getValue()).required(true));
     }
 
     @Override
@@ -49,10 +46,10 @@ public class UnmuteCommand extends ModerationCommand {
                         .filterWhen(member -> entityRetriever.moderationActionCountById(
                                 ModerationAction.Type.mute, guildId, member.getId())
                                 .map(l -> l > 0))
-                        .switchIfEmpty(messageService.err(env, "Пользователь не находится в мьюте").then(Mono.never()))
+                        .switchIfEmpty(messageService.err(env, "commands.moderation.unmute.target-is-not-muted").then(Mono.never()))
                         .filterWhen(u -> u.getBasePermissions()
                                 .map(p -> p.equals(PermissionSet.all()) || !p.contains(Permission.ADMINISTRATOR)))
-                        .switchIfEmpty(messageService.err(env, "Вы не можете размьютить администраторов").then(Mono.never())))
+                        .switchIfEmpty(messageService.err(env, "commands.moderation.unmute.target-is-admin").then(Mono.never())))
                 .flatMap(TupleUtils.function((config, target) -> {
 
                     // По-хорошему надо бы и планировку отменять, но там всё равно есть проверка на существование записи в таблице с мутами/киками
@@ -69,7 +66,7 @@ public class UnmuteCommand extends ModerationCommand {
                                     Possible.of(Optional.empty())))
                             .then();
 
-                    return messageService.text(env, "Пользователь **%s** размьючен", MessageUtil.getUserMention(targetId))
+                    return messageService.text(env, "commands.moderation.unmute.successful", MessageUtil.getUserMention(targetId))
                             .and(unmute)
                             .and(delete);
                 }));

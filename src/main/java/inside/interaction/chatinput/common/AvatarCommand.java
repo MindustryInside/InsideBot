@@ -1,7 +1,7 @@
 package inside.interaction.chatinput.common;
 
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
-import discord4j.core.object.command.ApplicationCommandOption;
+import discord4j.core.object.command.ApplicationCommandOption.Type;
 import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.core.spec.EmbedCreateSpec;
 import inside.interaction.ChatInputInteractionEnvironment;
@@ -11,16 +11,13 @@ import inside.service.MessageService;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
-@ChatInputCommand(name = "avatar", description = "Получить аватар указанного пользователя.")
+@ChatInputCommand("commands.common.avatar")
 public class AvatarCommand extends InteractionCommand {
 
     public AvatarCommand(MessageService messageService) {
         super(messageService);
 
-        addOption(builder -> builder.name("target")
-                .description("Пользователь, чей аватар нужно получить. По умолчанию отправляю ваш аватар")
-                .type(ApplicationCommandOption.Type.USER.getValue())
-                .required(false));
+        addOption("target", s -> s.type(Type.USER.getValue()).required(false));
     }
 
     @Override
@@ -32,7 +29,8 @@ public class AvatarCommand extends InteractionCommand {
                 .orElse(Mono.just(env.event().getInteraction().getUser()))
                 .flatMap(user -> env.event().reply()
                         .withEmbeds(EmbedCreateSpec.builder()
-                                .description(String.format("Аватар **%s** (%s):", user.getUsername(), user.getMention()))
+                                .description(messageService.format(env.context(), "commands.common.avatar.format",
+                                        user.getUsername(), user.getMention()))
                                 .color(env.configuration().discord().embedColor())
                                 .image(user.getAvatarUrl() + "?size=512")
                                 .build()));

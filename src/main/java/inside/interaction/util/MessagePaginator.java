@@ -15,7 +15,7 @@ import reactor.util.function.Tuple2;
 
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import static inside.util.Mathf.random;
@@ -34,16 +34,16 @@ public final class MessagePaginator {
     private MessagePaginator() {
     }
 
-    public static Mono<Void> paginate(InteractionEnvironment env, long itemsCount, long perPage,
+    public static Mono<Void> paginate(InteractionEnvironment env, int itemsCount, int perPage,
                                       Function<? super Page, ? extends Mono<MessageCreateSpec>> messageGenerator) {
         return paginate(env, 0, itemsCount, perPage, messageGenerator);
     }
 
-    public static Mono<Void> paginate(InteractionEnvironment env, long initialPage, long itemsCount, long perPage,
+    public static Mono<Void> paginate(InteractionEnvironment env, int initialPage, int itemsCount, int perPage,
                                       Function<? super Page, ? extends Mono<MessageCreateSpec>> messageGenerator) {
         return Mono.deferContextual(ctx -> {
             String baseCustomId = InteractionService.CUSTOM_ID_PREFIX + "paginator-" + Integer.toHexString(random.nextInt());
-            AtomicLong currentPage = new AtomicLong();
+            AtomicInteger currentPage = new AtomicInteger();
             AtomicBoolean active = new AtomicBoolean(true);
             Snowflake userId = env.event().getInteraction().getUser().getId();
 
@@ -51,7 +51,7 @@ public final class MessagePaginator {
                 if (!active.get()) { // На всякий случай
                     return Mono.error(new IllegalStateException("Inactive paginator"));
                 }
-                long newPage = currentPage.decrementAndGet();
+                int newPage = currentPage.decrementAndGet();
                 return messageGenerator.apply(new Page(newPage, itemsCount, perPage, baseCustomId))
                         .zipWith(Mono.just(env0));
             };
@@ -60,7 +60,7 @@ public final class MessagePaginator {
                 if (!active.get()) {
                     return Mono.error(new IllegalStateException("inactive paginator"));
                 }
-                long newPage = currentPage.incrementAndGet();
+                int newPage = currentPage.incrementAndGet();
                 return messageGenerator.apply(new Page(newPage, itemsCount, perPage, baseCustomId))
                         .zipWith(Mono.just(env0));
             };
@@ -97,31 +97,31 @@ public final class MessagePaginator {
 
     public static final class Page {
 
-        private final long page;
-        private final long itemsCount;
-        private final long perPage;
+        private final int page;
+        private final int itemsCount;
+        private final int perPage;
         private final String baseCustomId;
 
-        private Page(long page, long itemsCount, long perPage, String baseCustomId) {
+        private Page(int page, int itemsCount, int perPage, String baseCustomId) {
             this.page = page;
             this.itemsCount = itemsCount;
             this.perPage = perPage;
             this.baseCustomId = baseCustomId;
         }
 
-        public long getPage() {
+        public int getPage() {
             return page;
         }
 
-        public long getPageCount() {
-            return (long) Math.ceil(itemsCount / (double) perPage);
+        public int getPageCount() {
+            return (int) Math.ceil(itemsCount / (double) perPage);
         }
 
-        public long getItemsCount() {
+        public int getItemsCount() {
             return itemsCount;
         }
 
-        public long getPerPage() {
+        public int getPerPage() {
             return perPage;
         }
 
@@ -130,7 +130,7 @@ public final class MessagePaginator {
         }
 
         public Button nextButton(Function<? super String, ? extends Button> buttonFactory) {
-            long skipPages = page * perPage;
+            int skipPages = page * perPage;
             boolean disabled = skipPages + perPage >= itemsCount || itemsCount < perPage;
             return buttonFactory.apply(baseCustomId + NEXT_ID).disabled(disabled);
         }

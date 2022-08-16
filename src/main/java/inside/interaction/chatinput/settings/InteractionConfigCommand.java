@@ -12,6 +12,6 @@ abstract class InteractionConfigCommand extends InteractionGuildCommand {
 
     public InteractionConfigCommand(MessageService messageService, EntityRetriever entityRetriever) {
         super(messageService);
-        this.entityRetriever = Objects.requireNonNull(entityRetriever, "entityRetriever");
+        this.entityRetriever = Objects.requireNonNull(entityRetriever);
     }
 }

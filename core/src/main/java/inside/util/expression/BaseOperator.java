@@ -12,7 +12,7 @@ public abstract class BaseOperator implements Operator {
     protected final int priority;
 
     public BaseOperator(String name, boolean leftAssociative, boolean unary, int priority) {
-        this.name = Objects.requireNonNull(name, "name");
+        this.name = Objects.requireNonNull(name);
         this.leftAssociative = leftAssociative;
         this.unary = unary;
         this.priority = priority;

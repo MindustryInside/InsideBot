@@ -11,7 +11,7 @@ public abstract class BaseFunction implements Function {
     protected final int minParametersCount;
 
     public BaseFunction(String name, int minParametersCount, int maxParametersCount) {
-        this.name = Objects.requireNonNull(name, "name");
+        this.name = Objects.requireNonNull(name);
         this.minParametersCount = minParametersCount;
         this.maxParametersCount = maxParametersCount;
     }

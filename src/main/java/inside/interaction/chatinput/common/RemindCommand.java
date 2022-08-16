@@ -3,7 +3,7 @@ package inside.interaction.chatinput.common;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
-import discord4j.core.object.command.ApplicationCommandOption;
+import discord4j.core.object.command.ApplicationCommandOption.Type;
 import discord4j.core.object.entity.User;
 import inside.data.schedule.JobDetail;
 import inside.data.schedule.ReactiveScheduler;
@@ -22,7 +22,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
-@ChatInputCommand(name = "remind", description = "Запланировать напоминание.")
+@ChatInputCommand(value = "commands.common.remind")
 public class RemindCommand extends InteractionCommand {
 
     private final ReactiveScheduler reactiveScheduler;
@@ -31,15 +31,9 @@ public class RemindCommand extends InteractionCommand {
         super(messageService);
         this.reactiveScheduler = Objects.requireNonNull(reactiveScheduler, "reactiveScheduler");
 
-        addOption(builder -> builder.name("delay")
-                .description("На сколько нужно отложить напоминание. (В формате 1 день, 3 секунды)")
-                .required(true)
-                .type(ApplicationCommandOption.Type.STRING.getValue()));
+        addOption("delay", s -> s.required(true).type(Type.STRING.getValue()));
 
-        addOption(builder -> builder.name("text")
-                .description("Что конкретно нужно напомнить.")
-                .required(true)
-                .type(ApplicationCommandOption.Type.STRING.getValue()));
+        addOption("text", s -> s.required(true).type(Type.STRING.getValue()));
     }
 
     @Override
@@ -52,7 +46,7 @@ public class RemindCommand extends InteractionCommand {
                 .orElse(null);
 
         if (delay == null) {
-            return messageService.err(env, "Неправильный формат длительности");
+            return messageService.err(env, "common.invalid-interval-format");
         }
 
         String text = env.getOption("text")
@@ -72,6 +66,6 @@ public class RemindCommand extends InteractionCommand {
                 .asTrigger();
 
         return reactiveScheduler.scheduleJob(job, trigger)
-                .then(messageService.text(env, "Напоминание запланировано"));
+                .then(messageService.text(env, "commands.common.remind.success"));
     }
 }

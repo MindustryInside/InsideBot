@@ -8,8 +8,6 @@ import java.time.Period;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAmount;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 
 import static java.time.temporal.ChronoUnit.*;
@@ -20,8 +18,6 @@ public class DurationFormatBuilder {
     private static final int PRINT_ZERO_IF_SUPPORTED = 3;
     private static final int PRINT_ZERO_ALWAYS = 4;
     private static final int PRINT_ZERO_NEVER = 5;
-
-    private static final ConcurrentMap<String, Pattern> PATTERNS = new ConcurrentHashMap<>();
     private static final int MAX_UNIT = YEARS.ordinal();
 
     private int printZeroSetting;
@@ -267,10 +263,6 @@ public class DurationFormatBuilder {
         return this;
     }
 
-    private static Pattern getPattern(String regexp) {
-        return PATTERNS.computeIfAbsent(regexp, Pattern::compile);
-    }
-
     interface PeriodFieldAffix {
 
         int calculatePrintedLength(int value);
@@ -281,13 +273,13 @@ public class DurationFormatBuilder {
 
         int scan(String periodStr, int position);
 
-        String[] getAffixes();
+        List<String> getAffixes();
 
         void finish(Set<? extends PeriodFieldAffix> affixesToIgnore);
     }
 
     static abstract class IgnorableAffix implements PeriodFieldAffix {
-        private volatile String[] otherAffixes;
+        private volatile Set<String> otherAffixes;
 
         @Override
         public void finish(Set<? extends PeriodFieldAffix> periodFieldAffixesToIgnore) {
@@ -316,15 +308,17 @@ public class DurationFormatBuilder {
                         }
                     }
                 }
-                otherAffixes = affixesToIgnore.toArray(new String[0]);
+
+                otherAffixes = affixesToIgnore;
             }
         }
 
         protected boolean matchesOtherAffix(int textLength, String periodStr, int position) {
-            if (otherAffixes != null) {
+            var o = otherAffixes;
+            if (o != null) {
                 // ignore case when affix length differs
                 // match case when affix length is same
-                for (String affixToIgnore : otherAffixes) {
+                for (String affixToIgnore : o) {
                     int textToIgnoreLength = affixToIgnore.length();
                     if (textLength < textToIgnoreLength && periodStr.regionMatches(true, position, affixToIgnore, 0, textToIgnoreLength) ||
                             textLength == textToIgnoreLength && periodStr.regionMatches(false, position, affixToIgnore, 0, textToIgnoreLength)) {
@@ -400,8 +394,8 @@ public class DurationFormatBuilder {
         }
 
         @Override
-        public String[] getAffixes() {
-            return new String[]{text};
+        public List<String> getAffixes() {
+            return List.of(text);
         }
     }
 
@@ -482,29 +476,29 @@ public class DurationFormatBuilder {
         }
 
         @Override
-        public String[] getAffixes() {
-            return new String[]{singularText, pluralText};
+        public List<String> getAffixes() {
+            return List.of(singularText, pluralText);
         }
     }
 
     static class RegExAffix extends IgnorableAffix {
         private static final Comparator<String> LENGTH_DESC_COMPARATOR = (o1, o2) -> o2.length() - o1.length();
 
-        private final String[] suffixes;
+        private final List<String> suffixes;
         private final Pattern[] patterns;
-
         // The parse method has to iterate over the suffixes from the longest one to the shortest one
         // Otherwise it might consume not enough characters.
-        private final String[] suffixesSortedDescByLength;
+        private final List<String> suffixesSortedDescByLength;
 
         RegExAffix(String[] regExes, String[] texts) {
-            suffixes = texts.clone();
+            suffixes = List.of(texts);
             patterns = new Pattern[regExes.length];
             for (int i = 0; i < regExes.length; i++) {
-                patterns[i] = getPattern(regExes[i]);
+                patterns[i] = Pattern.compile(regExes[i]);
             }
-            suffixesSortedDescByLength = suffixes.clone();
-            Arrays.sort(suffixesSortedDescByLength, LENGTH_DESC_COMPARATOR);
+            suffixesSortedDescByLength = suffixes.stream()
+                    .sorted(LENGTH_DESC_COMPARATOR)
+                    .toList();
         }
 
         private int selectSuffixIndex(int value) {
@@ -519,12 +513,12 @@ public class DurationFormatBuilder {
 
         @Override
         public int calculatePrintedLength(int value) {
-            return suffixes[selectSuffixIndex(value)].length();
+            return suffixes.get(selectSuffixIndex(value)).length();
         }
 
         @Override
         public void formatTo(StringBuilder buf, int value) {
-            buf.append(suffixes[selectSuffixIndex(value)]);
+            buf.append(suffixes.get(selectSuffixIndex(value)));
         }
 
         @Override
@@ -555,15 +549,15 @@ public class DurationFormatBuilder {
         }
 
         @Override
-        public String[] getAffixes() {
-            return suffixes.clone();
+        public List<String> getAffixes() {
+            return suffixes;
         }
     }
 
     static class CompositeAffix extends IgnorableAffix {
         private final PeriodFieldAffix left;
         private final PeriodFieldAffix right;
-        private final String[] leftRightCombinations;
+        private final List<String> leftRightCombinations;
 
         CompositeAffix(PeriodFieldAffix left, PeriodFieldAffix right) {
             this.left = Objects.requireNonNull(left, "left");
@@ -577,7 +571,7 @@ public class DurationFormatBuilder {
                     result.add(leftText + rightText);
                 }
             }
-            leftRightCombinations = result.toArray(new String[0]);
+            leftRightCombinations = List.copyOf(result);
         }
 
         @Override
@@ -610,18 +604,15 @@ public class DurationFormatBuilder {
             if (leftPosition >= 0) {
                 int rightPosition = right.scan(periodStr, left.parse(periodStr, leftPosition));
                 if (!(rightPosition >= 0 && matchesOtherAffix(right.parse(periodStr, rightPosition) - leftPosition, periodStr, position))) {
-                    if (leftPosition > 0) {
-                        return leftPosition;
-                    }
-                    return rightPosition;
+                    return leftPosition > 0 ? leftPosition : rightPosition;
                 }
             }
             return ~position;
         }
 
         @Override
-        public String[] getAffixes() {
-            return leftRightCombinations.clone();
+        public List<String> getAffixes() {
+            return leftRightCombinations;
         }
     }
 

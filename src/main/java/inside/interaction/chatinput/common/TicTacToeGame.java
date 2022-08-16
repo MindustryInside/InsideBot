@@ -21,8 +21,8 @@ public class TicTacToeGame {
 
     public TicTacToeGame(int size, Snowflake xUserId, Snowflake oUserId, boolean firstX) {
         this.grid = new byte[size][size];
-        this.xUserId = Objects.requireNonNull(xUserId, "xUserId");
-        this.oUserId = Objects.requireNonNull(oUserId, "oUserId");
+        this.xUserId = Objects.requireNonNull(xUserId);
+        this.oUserId = Objects.requireNonNull(oUserId);
 
         lastX = !firstX;
     }

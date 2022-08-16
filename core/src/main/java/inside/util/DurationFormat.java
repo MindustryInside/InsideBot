@@ -47,8 +47,8 @@ public class DurationFormat {
         builder.appendYears();
         if (bundle.containsKey("duration-format.years.regex")) {
             builder.appendSuffix(
-                    regExSeparator.split("duration-format.years.regex"),
-                    regExSeparator.split("duration-format.years.list"));
+                    regExSeparator.split(bundle.getString("duration-format.years.regex")),
+                    regExSeparator.split(bundle.getString("duration-format.years.list")));
         } else {
             builder.appendSuffix(bundle.getString("duration-format.year"), bundle.getString("duration-format.years"));
         }

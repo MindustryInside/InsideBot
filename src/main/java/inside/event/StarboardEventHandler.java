@@ -55,8 +55,8 @@ public class StarboardEventHandler extends ReactiveEventAdapter {
     private final MessageService messageService;
 
     public StarboardEventHandler(EntityRetriever entityRetriever, MessageService messageService) {
-        this.entityRetriever = Objects.requireNonNull(entityRetriever, "entityRetriever");
-        this.messageService = Objects.requireNonNull(messageService, "messageService");
+        this.entityRetriever = entityRetriever;
+        this.messageService = messageService;
     }
 
     @Override
@@ -367,7 +367,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter {
             t += e.period();
         }
 
-        Objects.requireNonNull(cnd, "cnd");
+        Objects.requireNonNull(cnd);
 
         return cnd;
     }

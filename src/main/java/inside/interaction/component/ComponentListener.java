@@ -8,7 +8,7 @@ public interface ComponentListener {
 
     default String getCustomId() {
         ComponentProvider ann = getClass().getAnnotation(ComponentProvider.class);
-        Objects.requireNonNull(ann, "ann");
+        Objects.requireNonNull(ann);
         return ann.value();
     }
 }

@@ -51,11 +51,11 @@ public class Lazy<T> implements Supplier<T> {
 
     @SuppressWarnings("unchecked")
     public static <T> Lazy<T> of(Supplier<? extends T> delegate) {
-        if (delegate.equals(EMPTY)) {
+        if (EMPTY.equals(delegate)) {
             return empty();
         }
-        if (delegate instanceof Lazy) {
-            return (Lazy<T>) delegate;
+        if (delegate instanceof Lazy l) {
+            return l;
         }
         return new Lazy<>(delegate);
     }
@@ -64,9 +64,7 @@ public class Lazy<T> implements Supplier<T> {
     public T get() {
         if (initialized.compareAndSet(false, true)) {
             value = delegate.get();
-            initialized.set(true);
         }
-
         return value;
     }
 

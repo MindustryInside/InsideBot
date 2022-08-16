@@ -36,10 +36,10 @@ public final class CommandHandler {
 
     public CommandHandler(EntityRetriever entityRetriever, CommandHolder commandHolder,
                           MessageService messageService, Configuration configuration) {
-        this.entityRetriever = Objects.requireNonNull(entityRetriever, "entityRetriever");
-        this.commandHolder = Objects.requireNonNull(commandHolder, "commandHolder");
-        this.messageService = Objects.requireNonNull(messageService, "messageService");
-        this.configuration = Objects.requireNonNull(configuration, "configuration");
+        this.entityRetriever = Objects.requireNonNull(entityRetriever);
+        this.commandHolder = Objects.requireNonNull(commandHolder);
+        this.messageService = Objects.requireNonNull(messageService);
+        this.configuration = Objects.requireNonNull(configuration);
     }
 
 
@@ -77,7 +77,8 @@ public final class CommandHandler {
                                         .flatMap(commandInfo -> Arrays.stream(commandInfo.key()))
                                         .min(Comparator.comparingInt(a -> Strings.damerauLevenshtein(a, commandName))))
                                 .switchIfEmpty(prefix.map(GuildConfig::formatPrefix).flatMap(str ->
-                                        messageService.err(env, "Неизвестная команда. Напишите %shelp для получения списка команд.", str)).then(Mono.never()))
+                                        messageService.err(env, "Неизвестная команда. Напишите %shelp для получения списка команд.", str))
+                                        .then(Mono.never()))
                                 .flatMap(s0 -> messageService.err(env, "Команда не найдена. Может вы имели ввиду \"%s\"?", s0));
                     }
 

@@ -25,7 +25,8 @@ import java.util.stream.Collectors;
 import static inside.data.entity.ReactionRole.MAX_PER_MESSAGE;
 import static reactor.bool.BooleanUtils.not;
 
-@ChatInputCommand(name = "reaction-roles", description = "Настройки реакций-ролей.", permissions = PermissionCategory.ADMIN)
+@ChatInputCommand(value = "reaction-roles", permissions = PermissionCategory.ADMIN)
+// = "Настройки реакций-ролей."
 public class ReactionRolesCommand extends ConfigOwnerCommand {
 
     public static Pattern emojiPattern = Pattern.compile("^\\p{So}$");
@@ -45,7 +46,7 @@ public class ReactionRolesCommand extends ConfigOwnerCommand {
                 MessageUtil.getEmojiString(e.emoji()));
     }
 
-    @Subcommand(name = "list", description = "Отобразить текущий список реакций-ролей для указанного сообщения.")
+    @Subcommand(value = "list")// = "Отобразить текущий список реакций-ролей для указанного сообщения.")
     protected static class ListSubcommand extends InteractionSubcommand<ReactionRolesCommand> {
 
         protected ListSubcommand(ReactionRolesCommand owner) {
@@ -80,7 +81,7 @@ public class ReactionRolesCommand extends ConfigOwnerCommand {
         }
     }
 
-    @Subcommand(name = "add", description = "Добавить новую реакцию-роль к сообщению.")
+    @Subcommand(value = "add")// = "Добавить новую реакцию-роль к сообщению.")
     protected static class AddSubcommand extends InteractionSubcommand<ReactionRolesCommand> {
 
         protected AddSubcommand(ReactionRolesCommand owner) {
@@ -160,7 +161,7 @@ public class ReactionRolesCommand extends ConfigOwnerCommand {
         }
     }
 
-    @Subcommand(name = "remove", description = "Удалить реакцию-роль с сообщения.")
+    @Subcommand(value = "remove")// = "Удалить реакцию-роль с сообщения.")
     protected static class RemoveSubcommand extends InteractionSubcommand<ReactionRolesCommand> {
 
         protected RemoveSubcommand(ReactionRolesCommand owner) {
@@ -204,7 +205,7 @@ public class ReactionRolesCommand extends ConfigOwnerCommand {
         }
     }
 
-    @Subcommand(name = "clear", description = "Удалить все реакции-роли с сообщения.")
+    @Subcommand(value = "clear")// = "Удалить все реакции-роли с сообщения.")
     protected static class ClearSubcommand extends InteractionSubcommand<ReactionRolesCommand> {
 
         protected ClearSubcommand(ReactionRolesCommand owner) {

@@ -2,7 +2,11 @@ package inside.interaction.chatinput.moderation;
 
 import discord4j.common.util.Snowflake;
 import discord4j.common.util.TimestampFormat;
-import discord4j.core.object.command.*;
+import discord4j.core.object.command.ApplicationCommandInteraction;
+import discord4j.core.object.command.ApplicationCommandInteractionOption;
+import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
+import discord4j.core.object.command.ApplicationCommandOption.Type;
+import discord4j.core.object.command.ResolvedMember;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Member;
@@ -28,7 +32,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@ChatInputCommand(name = "warns", description = "Отобразить список предупреждений.")
+@ChatInputCommand("commands.moderation.warns")
 public class WarnsCommand extends InteractionGuildCommand {
 
     public static final int PER_PAGE = 10;
@@ -37,11 +41,9 @@ public class WarnsCommand extends InteractionGuildCommand {
 
     public WarnsCommand(MessageService messageService, EntityRetriever entityRetriever) {
         super(messageService);
-        this.entityRetriever = Objects.requireNonNull(entityRetriever, "entityRetriever");
+        this.entityRetriever = Objects.requireNonNull(entityRetriever);
 
-        addOption(builder -> builder.name("target")
-                .description("Пользователь, чьи предупреждения нужно показать. По умолчанию ваши")
-                .type(ApplicationCommandOption.Type.USER.getValue()));
+        addOption("target", s -> s.type(Type.USER.getValue()));
     }
 
     @Override
@@ -64,31 +66,36 @@ public class WarnsCommand extends InteractionGuildCommand {
         Function<MessagePaginator.Page, ? extends Mono<MessageCreateSpec>> paginator = page ->
                 entityRetriever.getAllModerationActionById(ModerationAction.Type.warn, guildId, targetId)
                         .sort(BaseEntity.timestampComparator)
-                        .index().skip(page.getPage() * PER_PAGE).take(PER_PAGE, true)
+                        .index().skip(page.getPage() * (long)PER_PAGE).take(PER_PAGE, true)
                         .map(TupleUtils.function((idx, action) -> String.format("**%d.** %s, Модератор: %s" +
                                         action.reason().map(str -> ", Причина: %s").orElse("") + "%n", idx + 1,
                                 TimestampFormat.LONG_DATE_TIME.format(InternalId.getTimestamp(action.id())),
                                 MessageUtil.getMemberMention(Snowflake.of(action.adminId())), action.reason().orElse(""))))
                         .collect(Collectors.joining())
-                        .map(str -> String.format(targetId.equals(author.getId()) ? "Ваши предупреждения"
-                                : "Предупреждения пользователя **%s** (%s)",
-                                nickname, MessageUtil.getMemberMention(targetId)) + "\n\n" + str)
+                        .map(str -> String.format(targetId.equals(author.getId())
+                                ? messageService.get(env.context(), "commands.moderation.warns.title.your")
+                                : messageService.format(env.context(), "commands.moderation.warns.title",
+                                nickname, MessageUtil.getMemberMention(targetId)) + "\n\n" + str))
                         .map(str -> MessageCreateSpec.builder()
                                 .addEmbed(EmbedCreateSpec.builder()
                                         .description(str)
                                         .color(env.configuration().discord().embedColor())
-                                        .footer(String.format("Страница %s/%s", page.getPage() + 1, page.getPageCount()), null)
+                                        .footer(messageService.format(env.context(), "page",
+                                                page.getPage() + 1, page.getPageCount()), null)
                                         .build())
                                 .components(page.getItemsCount() > PER_PAGE
                                         ? Possible.of(List.of(ActionRow.of(
-                                        page.previousButton(id -> Button.primary(id, "Предыдущая Страница")),
-                                        page.nextButton(id -> Button.primary(id, "Следующая Страница")))))
+                                        page.previousButton(id -> Button.primary(id,
+                                                messageService.get(env.context(), "common.previous-page"))),
+                                        page.nextButton(id -> Button.primary(id,
+                                                messageService.get(env.context(), "common.next-page"))))))
                                         : Possible.absent())
                                 .build());
 
         return entityRetriever.moderationActionCountById(ModerationAction.Type.warn, guildId, targetId)
+                .map(Math::toIntExact)
                 .filter(l -> l > 0)
-                .switchIfEmpty(messageService.err(env, "Пользователь не имеет предупреждений").then(Mono.never()))
+                .switchIfEmpty(messageService.err(env, "commands.moderation.warns.no-warns").then(Mono.never()))
                 .flatMap(l -> MessagePaginator.paginate(env, l, PER_PAGE, paginator));
     }
 }

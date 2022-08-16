@@ -8,6 +8,8 @@ import discord4j.common.JacksonResources;
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.ReactiveEventAdapter;
+import discord4j.core.object.presence.ClientActivity;
+import discord4j.core.object.presence.ClientPresence;
 import discord4j.discordjson.json.ApplicationCommandRequest;
 import discord4j.gateway.intent.Intent;
 import discord4j.gateway.intent.IntentSet;
@@ -31,18 +33,12 @@ import inside.data.schedule.ReactiveScheduler;
 import inside.data.schedule.ReactiveSchedulerImpl;
 import inside.data.schedule.SchedulerResources;
 import inside.data.schedule.Trigger;
-import inside.event.InteractionEventHandler;
-import inside.event.MessageEventHandler;
-import inside.event.ReactionRoleEventHandler;
-import inside.event.StarboardEventHandler;
+import inside.event.*;
 import inside.interaction.chatinput.InteractionCommand;
 import inside.interaction.chatinput.InteractionCommandHolder;
 import inside.interaction.chatinput.InteractionGuildCommand;
 import inside.interaction.chatinput.common.*;
 import inside.interaction.chatinput.guild.EmojiCommand;
-import inside.interaction.chatinput.guild.LeaderboardCommand;
-import inside.interaction.chatinput.moderation.*;
-import inside.interaction.chatinput.settings.*;
 import inside.interaction.component.game.TicTacToeGameListener;
 import inside.service.GameService;
 import inside.service.InteractionService;
@@ -53,6 +49,7 @@ import inside.service.task.AliveForeverThreadTask;
 import inside.service.task.Task;
 import inside.util.func.UnsafeRunnable;
 import inside.util.json.AdapterModule;
+import inside.util.json.CorrectPrettyPrinter;
 import io.r2dbc.pool.ConnectionPool;
 import io.r2dbc.pool.ConnectionPoolConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
@@ -78,6 +75,9 @@ import java.util.Objects;
 import static reactor.function.TupleUtils.function;
 
 public class Launcher {
+    // TODO:
+    // 1. Сделать обработку исправленных сообщений (которые были похожи на команды)
+
     public static final AllowedMentions suppressAll = AllowedMentions.suppressAll();
 
     private static final Logger log = Loggers.getLogger(Launcher.class);
@@ -103,6 +103,7 @@ public class Launcher {
         printBanner();
 
         JacksonResources jacksonResources = JacksonResources.create()
+                .withMapperFunction(o -> o.setDefaultPrettyPrinter(new CorrectPrettyPrinter()))
                 .withMapperFunction(objectMapper -> objectMapper
                         .registerModule(new JavaTimeModule())
                         .registerModule(new AdapterModule())
@@ -199,6 +200,8 @@ public class Launcher {
                 .setDefaultAllowedMentions(suppressAll)
                 .build()
                 .gateway()
+                .setInitialPresence(s -> ClientPresence.online(
+                        ClientActivity.watching("When are you arriving?..")))
                 .setEnabledIntents(IntentSet.of(
                         Intent.GUILDS,
                         Intent.GUILD_MEMBERS,
@@ -211,15 +214,13 @@ public class Launcher {
                 .withGateway(gateway -> {
                     Launcher.gateway = gateway;
 
-                    // shard-aware resources
-                    // services
                     var messageService = new MessageService(gateway, configuration);
                     var interactionService = new InteractionService(gateway, configuration, messageService, entityRetriever);
                     var gameService = new GameService(gateway, configuration);
 
                     interactionService.registerComponentListener(new TicTacToeGameListener(messageService, gameService));
 
-                    var interactionCommandHolder = InteractionCommandHolder.builder()
+                    var interactionCommandHolder = InteractionCommandHolder.builder(messageService)
                             // разное
                             .addCommand(new MathCommand(messageService))
                             .addCommand(new PingCommand(messageService))
@@ -228,32 +229,33 @@ public class Launcher {
                             .addCommand(new TextLayoutCommand(messageService))
                             .addCommand(new TransliterationCommand(messageService))
                             .addCommand(new RemindCommand(messageService, scheduler))
-                            .addCommand(new TicTacToeGameCommand(messageService, gameService))
+                            // .addCommand(new TicTacToeGameCommand(messageService, gameService))
                             // разное, но серверное
                             .addCommand(new EmojiCommand(messageService))
-                            .addCommand(new LeaderboardCommand(messageService, entityRetriever))
+                            // .addCommand(new LeaderboardCommand(messageService, entityRetriever))
                             // настройки
-                            .addCommand(new ActivityCommand(messageService, entityRetriever))
-                            .addCommand(new ReactionRolesCommand(messageService, entityRetriever))
-                            .addCommand(new StarboardCommand(messageService, entityRetriever))
-                            .addCommand(new GuildConfigCommand(messageService, entityRetriever))
-                            .addCommand(new AdminConfigCommand(messageService, entityRetriever))
+                            // .addCommand(new ActivityCommand(messageService, entityRetriever))
+                            // .addCommand(new ReactionRolesCommand(messageService, entityRetriever))
+                            // .addCommand(new StarboardCommand(messageService, entityRetriever))
+                            // .addCommand(new GuildConfigCommand(messageService, entityRetriever))
+                            // .addCommand(new AdminConfigCommand(messageService, entityRetriever))
                             // админские
-                            .addCommand(new DeleteCommand(messageService, entityRetriever))
-                            .addCommand(new WarnCommand(messageService, entityRetriever, scheduler))
-                            .addCommand(new WarnsCommand(messageService, entityRetriever))
-                            .addCommand(new MuteCommand(messageService, entityRetriever, scheduler))
-                            .addCommand(new UnmuteCommand(messageService, entityRetriever))
+                            // .addCommand(new DeleteCommand(messageService, entityRetriever))
+                            // .addCommand(new WarnCommand(messageService, entityRetriever, scheduler))
+                            // .addCommand(new WarnsCommand(messageService, entityRetriever))
+                            // .addCommand(new MuteCommand(messageService, entityRetriever, scheduler))
+                            // .addCommand(new UnmuteCommand(messageService, entityRetriever))
                             .build();
 
                     var cmds = interactionCommandHolder.getCommands().values();
                     List<ApplicationCommandRequest> globalCommands = new ArrayList<>();
                     List<ApplicationCommandRequest> guildCommands = new ArrayList<>();
                     for (InteractionCommand value : cmds) {
+                        var req = value.getRequest();
                         if (value instanceof InteractionGuildCommand) {
-                            guildCommands.add(value.getRequest());
+                            guildCommands.add(req);
                         } else {
-                            globalCommands.add(value.getRequest());
+                            globalCommands.add(req);
                         }
                     }
 
@@ -270,7 +272,8 @@ public class Launcher {
                                     interactionService, entityRetriever),
                             new MessageEventHandler(entityRetriever, commandHandler, configuration, interactionService, messageService),
                             new ReactionRoleEventHandler(entityRetriever),
-                            new StarboardEventHandler(entityRetriever, messageService));
+                            new StarboardEventHandler(entityRetriever, messageService),
+                            new ModerationEventHandler(entityRetriever));
 
                     Mono<Void> registerCommands = Mono.zip(gateway.rest().getApplicationId(), Mono.just(globalCommands))
                             .flatMapMany(function((appId, glob) -> gateway.rest().getApplicationService()

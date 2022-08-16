@@ -3,7 +3,7 @@ package inside.interaction.chatinput.common;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
-import discord4j.core.object.command.ApplicationCommandOption;
+import discord4j.core.object.command.ApplicationCommandOption.Type;
 import discord4j.core.object.component.ActionComponent;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
@@ -28,7 +28,7 @@ import java.util.Objects;
 import static inside.service.InteractionService.CUSTOM_ID_PREFIX;
 import static inside.service.InteractionService.applyCustomId;
 
-@ChatInputCommand(name = "ox", description = "Начать игру в крестики-нолики.")
+@ChatInputCommand(value = "commands.common.ox")
 public class TicTacToeGameCommand extends InteractionCommand {
 
     public static final int SIZE = 3;
@@ -57,11 +57,9 @@ public class TicTacToeGameCommand extends InteractionCommand {
 
     public TicTacToeGameCommand(MessageService messageService, GameService gameService) {
         super(messageService);
-        this.gameService = Objects.requireNonNull(gameService, "gameService");
+        this.gameService = Objects.requireNonNull(gameService);
 
-        addOption(builder -> builder.name("sign")
-                .description("Каким знаком играть. По умолчанию крестиком")
-                .choices(ApplicationCommandOptionChoiceData.builder()
+        addOption("sign", s -> s.choices(ApplicationCommandOptionChoiceData.builder()
                                 .name("x")
                                 .value("x")
                                 .build(),
@@ -69,11 +67,9 @@ public class TicTacToeGameCommand extends InteractionCommand {
                                 .name("o")
                                 .value("o")
                                 .build())
-                .type(ApplicationCommandOption.Type.STRING.getValue()));
+                .type(Type.STRING.getValue()));
 
-        addOption(builder -> builder.name("self-game")
-                .description("Начать игру самим с собой")
-                .type(ApplicationCommandOption.Type.BOOLEAN.getValue()));
+        addOption("self-game", s -> s.type(Type.BOOLEAN.getValue()));
     }
 
     @Override
@@ -99,7 +95,6 @@ public class TicTacToeGameCommand extends InteractionCommand {
         String exitCustomId = applyCustomId("ox-exit");
 
         if (selfGame) {
-
             var g = new TicTacToeGame(SIZE, userId, userId, xSign);
 
             gameService.registerGame(g);

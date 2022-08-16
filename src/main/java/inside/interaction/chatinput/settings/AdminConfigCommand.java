@@ -34,7 +34,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@ChatInputCommand(name = "admin-config", description = "Настройки модерации.", permissions = PermissionCategory.ADMIN)
+@ChatInputCommand(value = "admin-config", permissions = PermissionCategory.ADMIN)// = "Настройки модерации."
 public class AdminConfigCommand extends ConfigOwnerCommand {
 
     // (1L << 53) - 1
@@ -53,7 +53,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
         addSubcommand(new MuteRoleResetSubcommand(this));
     }
 
-    @Subcommand(name = "enable", description = "Включить модерацию.")
+    @Subcommand("enable")// = "Включить модерацию.")
     protected static class EnableSubcommand extends InteractionSubcommand<AdminConfigCommand> {
 
         protected EnableSubcommand(AdminConfigCommand owner) {
@@ -83,7 +83,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
         }
     }
 
-    @Subcommand(name = "warn-expire-interval", description = "Настроить базовое время жизни предупреждения.")
+    @Subcommand("warn-expire-interval")// = "Настроить базовое время жизни предупреждения.")
     protected static class WarnExpireIntervalSubcommand extends InteractionSubcommand<AdminConfigCommand> {
 
         protected WarnExpireIntervalSubcommand(AdminConfigCommand owner) {
@@ -130,7 +130,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
         }
     }
 
-    @Subcommand(name = "mute-base-interval", description = "Настроить базовую длительность мута.")
+    @Subcommand("mute-base-interval")// = "Настроить базовую длительность мута.")
     protected static class MuteBaseIntervalSubcommand extends InteractionSubcommand<AdminConfigCommand> {
 
         protected MuteBaseIntervalSubcommand(AdminConfigCommand owner) {
@@ -177,7 +177,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
         }
     }
 
-    @SubcommandGroup(name = "admin-roles", description = "Настроить админ-роли.")
+    @SubcommandGroup("admin-roles")// = "Настроить админ-роли.")
     protected static class AdminRolesSubcommandGroup extends ConfigOwnerCommand {
 
         protected AdminRolesSubcommandGroup(AdminConfigCommand owner) {
@@ -189,7 +189,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
             addSubcommand(new ListSubcommand(this));
         }
 
-        @Subcommand(name = "add", description = "Добавить роль в список.")
+        @Subcommand("add")// = "Добавить роль в список.")
         protected static class AddSubcommand extends InteractionSubcommand<AdminRolesSubcommandGroup> {
 
             protected AddSubcommand(AdminRolesSubcommandGroup owner) {
@@ -229,7 +229,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
             }
         }
 
-        @Subcommand(name = "remove", description = "Удалить роль из списка.")
+        @Subcommand("remove")// = "Удалить роль из списка.")
         protected static class RemoveSubcommand extends InteractionSubcommand<AdminRolesSubcommandGroup> {
 
             protected RemoveSubcommand(AdminRolesSubcommandGroup owner) {
@@ -269,7 +269,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
             }
         }
 
-        @Subcommand(name = "clear", description = "Отчистить список ролей.")
+        @Subcommand("clear")// = "Отчистить список ролей.")
         protected static class ClearSubcommand extends InteractionSubcommand<AdminRolesSubcommandGroup> {
 
             protected ClearSubcommand(AdminRolesSubcommandGroup owner) {
@@ -291,7 +291,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
             }
         }
 
-        @Subcommand(name = "list", description = "Отобразить список ролей.")
+        @Subcommand("list")// = "Отобразить список ролей.")
         protected static class ListSubcommand extends InteractionSubcommand<AdminRolesSubcommandGroup> {
 
             protected ListSubcommand(AdminRolesSubcommandGroup owner) {
@@ -315,7 +315,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
         }
     }
 
-    @SubcommandGroup(name = "threshold-punishment", description = "Настроить админ-роли.")
+    @SubcommandGroup("threshold-punishment")// = "Настроить админ-роли.")
     protected static class ThresholdPunishmentsSubcommandGroup extends ConfigOwnerCommand {
 
         protected ThresholdPunishmentsSubcommandGroup(AdminConfigCommand owner) {
@@ -327,7 +327,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
             addSubcommand(new ListSubcommand(this));
         }
 
-        @Subcommand(name = "add", description = "Добавить новое авто-наказание в список.")
+        @Subcommand("add")// = "Добавить новое авто-наказание в список.")
         protected static class AddSubcommand extends InteractionSubcommand<ThresholdPunishmentsSubcommandGroup> {
 
             protected AddSubcommand(ThresholdPunishmentsSubcommandGroup owner) {
@@ -415,7 +415,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
             }
         }
 
-        @Subcommand(name = "remove", description = "Удалить авто-наказание из списка.")
+        @Subcommand("remove")// = "Удалить авто-наказание из списка.")
         protected static class RemoveSubcommand extends InteractionSubcommand<ThresholdPunishmentsSubcommandGroup> {
 
             protected RemoveSubcommand(ThresholdPunishmentsSubcommandGroup owner) {
@@ -462,7 +462,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
             }
         }
 
-        @Subcommand(name = "clear", description = "Отчистить список авто-наказаний.")
+        @Subcommand("clear")// = "Отчистить список авто-наказаний.")
         protected static class ClearSubcommand extends InteractionSubcommand<ThresholdPunishmentsSubcommandGroup> {
 
             protected ClearSubcommand(ThresholdPunishmentsSubcommandGroup owner) {
@@ -484,7 +484,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
             }
         }
 
-        @Subcommand(name = "list", description = "Отобразить список авто-наказаний.")
+        @Subcommand("list")// = "Отобразить список авто-наказаний.")
         protected static class ListSubcommand extends InteractionSubcommand<ThresholdPunishmentsSubcommandGroup> {
 
             private static final int PER_PAGE = 10;
@@ -513,7 +513,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
                                         .flatMapIterable(Map::entrySet))
                                 .switchIfEmpty(messageService.err(env, "Список авто-наказаний пуст").then(Mono.never()))
                                 .sort(Comparator.comparingLong(Map.Entry::getKey))
-                                .skip(page.getPage() * PER_PAGE).take(PER_PAGE, true)
+                                .skip(page.getPage() * (long)PER_PAGE).take(PER_PAGE, true)
                                 .map(entry -> formatter.apply(entry.getKey(), entry.getValue()))
                                 .collect(Collectors.joining())
                                 .map(str -> MessageCreateSpec.builder()
@@ -539,7 +539,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
         }
     }
 
-    @Subcommand(name = "mute-role", description = "Настроить роль мута. При отсутствии используется таймаут")
+    @Subcommand("mute-role")// = "Настроить роль мута. При отсутствии используется таймаут")
     protected static class MuteRoleSubcommand extends InteractionSubcommand<AdminConfigCommand> {
 
         protected MuteRoleSubcommand(AdminConfigCommand owner) {
@@ -570,7 +570,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
         }
     }
 
-    @Subcommand(name = "mute-role-reset", description = "Сбросить роль мута.")
+    @Subcommand("mute-role-reset")// = "Сбросить роль мута.")
     protected static class MuteRoleResetSubcommand extends InteractionSubcommand<AdminConfigCommand> {
 
         protected MuteRoleResetSubcommand(AdminConfigCommand owner) {

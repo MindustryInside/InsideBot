@@ -7,10 +7,10 @@ import reactor.core.publisher.Mono;
 import java.util.Objects;
 
 public abstract class Command {
-    protected MessageService messageService;
+    protected final MessageService messageService;
 
     public Command(MessageService messageService) {
-        this.messageService = Objects.requireNonNull(messageService, "messageService");
+        this.messageService = Objects.requireNonNull(messageService);
     }
 
     public Publisher<Boolean> filter(CommandEnvironment env) {

@@ -1,5 +1,7 @@
 package inside.interaction.chatinput;
 
+import discord4j.discordjson.json.ApplicationCommandRequest;
+
 public abstract class InteractionSubcommand<T extends InteractionCommand> extends InteractionCommand {
 
     protected final T owner;
@@ -9,7 +11,8 @@ public abstract class InteractionSubcommand<T extends InteractionCommand> extend
         this.owner = owner;
     }
 
-    public T getOwner() {
-        return owner;
+    @Override
+    public ApplicationCommandRequest getRequest() {
+        return super.getRequest();
     }
 }

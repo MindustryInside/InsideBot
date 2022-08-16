@@ -11,9 +11,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ChatInputCommand {
 
-    String name();
-
-    String description();
+    String value();
 
     PermissionCategory[] permissions() default {PermissionCategory.EVERYONE};
 }
