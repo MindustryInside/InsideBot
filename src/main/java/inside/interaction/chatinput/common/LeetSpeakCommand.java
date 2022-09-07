@@ -56,7 +56,7 @@ public class LeetSpeakCommand extends InteractionCommand {
     @SuppressWarnings("unchecked")
     static <K, V> Map<K, V> mapOf(Object... values){
         Preconditions.requireArgument((values.length & 1) == 0, "length is odd");
-        Map<K, V> map = new HashMap<>();
+        Map<K, V> map = new HashMap<>(values.length / 2);
 
         for(int i = 0; i < values.length / 2; ++i){
             map.put((K)values[i * 2], (V)values[i * 2 + 1]);

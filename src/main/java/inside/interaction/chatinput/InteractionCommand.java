@@ -97,7 +97,7 @@ public abstract class InteractionCommand {
         };
 
         // TODO возможно не лучший формат для имени
-        String nameCode = info.nameCode + ".choices." + choice;
+        String nameCode = info.nameCode + ".choices." + choice.name();
         return ApplicationCommandOptionChoiceData.builder()
                 .name(messageService.get(nameCode))
                 .nameLocalizationsOrNull(getAll(nameCode))

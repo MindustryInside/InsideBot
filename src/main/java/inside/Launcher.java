@@ -37,8 +37,7 @@ import inside.event.*;
 import inside.interaction.chatinput.InteractionCommand;
 import inside.interaction.chatinput.InteractionCommandHolder;
 import inside.interaction.chatinput.InteractionGuildCommand;
-import inside.interaction.chatinput.common.AvatarCommand;
-import inside.interaction.chatinput.common.PingCommand;
+import inside.interaction.chatinput.common.*;
 import inside.interaction.chatinput.guild.EmojiCommand;
 import inside.interaction.component.game.TicTacToeGameListener;
 import inside.service.GameService;
@@ -223,11 +222,11 @@ public class Launcher {
 
                     var interactionCommandHolder = InteractionCommandHolder.builder(messageService)
                             // разное
-                            // .addCommand(new MathCommand(messageService))
+                            .addCommand(new MathCommand(messageService))
                             .addCommand(new PingCommand(messageService))
                             .addCommand(new AvatarCommand(messageService))
-                            // .addCommand(new LeetSpeakCommand(messageService))
-                            // .addCommand(new TextLayoutCommand(messageService))
+                            .addCommand(new LeetSpeakCommand(messageService))
+                            .addCommand(new TextLayoutCommand(messageService))
                             // .addCommand(new TransliterationCommand(messageService))
                             // .addCommand(new RemindCommand(messageService, scheduler))
                             // .addCommand(new TicTacToeGameCommand(messageService, gameService))
