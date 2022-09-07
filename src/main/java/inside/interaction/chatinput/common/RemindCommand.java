@@ -22,7 +22,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
-@ChatInputCommand(name = "remind", description = "Запланировать напоминание.")
+@ChatInputCommand(name = "remind", description = "commands.remind.description")
 public class RemindCommand extends InteractionCommand {
 
     private final ReactiveScheduler reactiveScheduler;
@@ -31,13 +31,13 @@ public class RemindCommand extends InteractionCommand {
         super(messageService);
         this.reactiveScheduler = Objects.requireNonNull(reactiveScheduler, "reactiveScheduler");
 
-        addOption(builder -> builder.name("delay")
-                .description("На сколько нужно отложить напоминание. (В формате 1 день, 3 секунды)")
+        addOption(builder -> builder.name(messageService.get(null,"commands.remind.params-delay"))
+                .description(messageService.get(null,"commands.remind.params-delay-desc"))
                 .required(true)
                 .type(ApplicationCommandOption.Type.STRING.getValue()));
 
-        addOption(builder -> builder.name("text")
-                .description("Что конкретно нужно напомнить.")
+        addOption(builder -> builder.name(messageService.get(null,"commands.remind.params-text"))
+                .description(messageService.get(null,"commands.remind.params-text-desc"))
                 .required(true)
                 .type(ApplicationCommandOption.Type.STRING.getValue()));
     }
@@ -52,7 +52,7 @@ public class RemindCommand extends InteractionCommand {
                 .orElse(null);
 
         if (delay == null) {
-            return messageService.err(env, "Неправильный формат длительности");
+            return messageService.err(env, messageService.get(null,"commands.remind.time-error"));
         }
 
         String text = env.getOption("text")
@@ -72,6 +72,6 @@ public class RemindCommand extends InteractionCommand {
                 .asTrigger();
 
         return reactiveScheduler.scheduleJob(job, trigger)
-                .then(messageService.text(env, "Напоминание запланировано"));
+                .then(messageService.text(env, messageService.get(null, "commands.remind.succes")));
     }
 }

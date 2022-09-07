@@ -11,14 +11,14 @@ import inside.service.MessageService;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
-@ChatInputCommand(name = "avatar", description = "Получить аватар указанного пользователя.")
+@ChatInputCommand(name = "commands.avatar.key", description = "commands.avatar.desc2")
 public class AvatarCommand extends InteractionCommand {
 
     public AvatarCommand(MessageService messageService) {
         super(messageService);
 
         addOption(builder -> builder.name("target")
-                .description("Пользователь, чей аватар нужно получить. По умолчанию отправляю ваш аватар")
+                .description(messageService.get(null,"command.avatar.params-target"))
                 .type(ApplicationCommandOption.Type.USER.getValue())
                 .required(false));
     }
@@ -32,7 +32,7 @@ public class AvatarCommand extends InteractionCommand {
                 .orElse(Mono.just(env.event().getInteraction().getUser()))
                 .flatMap(user -> env.event().reply()
                         .withEmbeds(EmbedCreateSpec.builder()
-                                .description(String.format("Аватар **%s** (%s):", user.getUsername(), user.getMention()))
+                                .description(String.format(messageService.get(null,"command.avatar.message"), user.getUsername(), user.getMention()))
                                 .color(env.configuration().discord().embedColor())
                                 .image(user.getAvatarUrl() + "?size=512")
                                 .build()));

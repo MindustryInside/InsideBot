@@ -19,7 +19,7 @@ import java.util.function.UnaryOperator;
 
 import static inside.interaction.chatinput.common.LeetSpeakCommand.mapOf;
 
-@ChatInputCommand(name = "tr", description = "Перевести текст в транслитерацию.")
+@ChatInputCommand(name = "commands.tr.name", description = "commands.tr.desc")
 public class TransliterationCommand extends InteractionCommand {
     static final Map<String, String> transliteration;
 
@@ -73,7 +73,7 @@ public class TransliterationCommand extends InteractionCommand {
         super(messageService);
 
         addOption(builder -> builder.name("text")
-                .description("Текст на транслитерацию.")
+                .description(messageService.get(null,"commands.tr.params-text"))
                 .required(true)
                 .type(ApplicationCommandOption.Type.STRING.getValue()));
     }
@@ -87,6 +87,6 @@ public class TransliterationCommand extends InteractionCommand {
                 .filter(Predicate.not(String::isBlank))
                 .map(s -> MessageUtil.substringTo(s, Message.MAX_CONTENT_LENGTH))
                 .map(env.event()::reply)
-                .orElseGet(() -> messageService.err(env, "Не удалось перевести текст"));
+                .orElseGet(() -> messageService.err(env, messageService.get(null,"commands.tr.error")));
     }
 }

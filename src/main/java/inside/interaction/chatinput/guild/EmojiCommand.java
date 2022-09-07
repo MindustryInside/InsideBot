@@ -12,14 +12,14 @@ import inside.service.MessageService;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
-@ChatInputCommand(name = "emoji", description = "Получить изображение эмодзи.")
+@ChatInputCommand(name = "commands.emoji.name", description = "commands.emoji.desc")
 public class EmojiCommand extends InteractionGuildCommand {
 
     public EmojiCommand(MessageService messageService) {
         super(messageService);
 
         addOption(builder -> builder.name("emoji")
-                .description("Идентификатор/имя реакции или юникод символ.")
+                .description(messageService.get(null,"commands.emoji.params-emoji"))
                 .required(true)
                 .type(ApplicationCommandOption.Type.STRING.getValue()));
     }
@@ -38,12 +38,12 @@ public class EmojiCommand extends InteractionGuildCommand {
                 .filter(emoji -> emoji.asFormat().equals(emojistr) || emoji.getName().equals(emojistr) ||
                         emoji.getId().asString().equals(emojistr))
                 .next()
-                .switchIfEmpty(messageService.err(env, "Неправильный формат эмодзи").then(Mono.empty()))
+                .switchIfEmpty(messageService.err(env, messageService.get(null,"commands.emoji.incorrect-format")).then(Mono.empty()))
                 .flatMap(emoji -> env.event().reply()
                         .withEmbeds(EmbedCreateSpec.builder()
                                 .color(env.configuration().discord().embedColor())
                                 .image(emoji.getImageUrl() + "?size=512")
-                                .description(String.format("Эмодзи **%s** (%s):", emoji.getName(), emoji.asFormat()))
+                                .description(String.format(messageService.get(null,"commands.emoji.header"), emoji.getName(), emoji.asFormat()))
                                 .footer(String.format("ID: %s", emoji.getId().asString()), null)
                                 .build()))
                 .then();

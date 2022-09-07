@@ -8,7 +8,7 @@ import inside.command.DiscordCommand;
 import inside.service.MessageService;
 import org.reactivestreams.Publisher;
 
-@DiscordCommand(key = "ping", description = "Отобразить время ответа бота.")
+@DiscordCommand(key = "commands.ping.key", description = "commands.ping.desc")
 public class PingCommand extends Command {
 
     public PingCommand(MessageService messageService) {
@@ -18,9 +18,9 @@ public class PingCommand extends Command {
     @Override
     public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction) {
         long start = System.currentTimeMillis();
-        return env.channel().createMessage("Подождите...")
+        return env.channel().createMessage(messageService.get(null,"inside.static.wait"))
                 .flatMap(message -> message.edit(MessageEditSpec.builder()
-                        .contentOrNull(String.format("Понг! %sмс", System.currentTimeMillis() - start))
+                        .contentOrNull(String.format(messageService.get(null,"commands.ping.message"), System.currentTimeMillis() - start))
                         .build()))
                 .then();
     }

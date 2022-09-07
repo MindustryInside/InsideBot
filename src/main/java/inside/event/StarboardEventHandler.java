@@ -295,7 +295,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter {
         }
 
         embedSpec.description(content);
-        embedSpec.addField("Источник", String.format("[Прыгнуть!](https://discordapp.com/channels/%s/%s/%s)",
+        embedSpec.addField(messageService.get(null, "events.starboard.source-header"), String.format(messageService.get(null, "events.starboard.source-link"),
                 guildId.asString(), source.getChannelId().asString(), source.getId().asString()), false);
 
         embedSpec.footer(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
@@ -310,7 +310,7 @@ public class StarboardEventHandler extends ReactiveEventAdapter {
                 .collect(Collectors.toSet());
 
         if (!files.isEmpty()) {
-            embedSpec.addField("Файл" + (files.size() > 1 ? "ы" : ""), files.stream()
+            embedSpec.addField((files.size() > 1 ? messageService.get(null, "events.starboard.files") : messageService.get(null, "events.starboard.file")), files.stream()
                     .map(att -> String.format("[%s](%s)%n", att.getFilename(), att.getUrl()))
                     .collect(Collectors.joining()), false);
         }

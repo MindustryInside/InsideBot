@@ -12,7 +12,7 @@ import inside.service.MessageService;
 import inside.util.MessageUtil;
 import org.reactivestreams.Publisher;
 
-@ChatInputCommand(name = "r", description = "Изменить раскладку текста.")
+@ChatInputCommand(name = "commands.r.name", description = "commands.r.desc")
 public class TextLayoutCommand extends InteractionCommand {
     static final String[] engPattern;
     static final String[] rusPattern;
@@ -42,20 +42,20 @@ public class TextLayoutCommand extends InteractionCommand {
         super(messageService);
 
         addOption(builder -> builder.name("type")
-                .description("Тип раскладки c которой нужно переводить текст.")
+                .description(messageService.get(null,"commands.r.type"))
                 .type(ApplicationCommandOption.Type.STRING.getValue())
                 .required(true)
                 .addChoice(ApplicationCommandOptionChoiceData.builder()
-                        .name("Английская")
+                        .name(messageService.get(null,"commands.r.type-en"))
                         .value("en")
                         .build())
                 .addChoice(ApplicationCommandOptionChoiceData.builder()
-                        .name("Русская")
+                        .name(messageService.get(null,"commands.r.type-ru"))
                         .value("ru")
                         .build()));
 
         addOption(builder -> builder.name("text")
-                .description("Текст для перевода.")
+                .description(messageService.get(null,"commands.r.input-inviter"))
                 .type(ApplicationCommandOption.Type.STRING.getValue())
                 .required(true));
     }
@@ -74,6 +74,6 @@ public class TextLayoutCommand extends InteractionCommand {
                 .map(str -> russian ? text2eng(str) : text2rus(str))
                 .map(s -> MessageUtil.substringTo(s, Message.MAX_CONTENT_LENGTH))
                 .map(env.event()::reply)
-                .orElseGet(() -> messageService.err(env, "Не удалось перевести текст"));
+                .orElseGet(() -> messageService.err(env, messageService.get(null,"commands.r.translate-error")));
     }
 }

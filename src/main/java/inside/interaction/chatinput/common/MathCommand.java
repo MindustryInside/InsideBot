@@ -14,14 +14,14 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-@ChatInputCommand(name = "math", description = "Вычислить математическое выражение.")
+@ChatInputCommand(name = "commands.math.name", description = "commands.math.desc")
 public class MathCommand extends InteractionCommand {
 
     public MathCommand(MessageService messageService) {
         super(messageService);
 
-        addOption(builder -> builder.name("expression")
-                .description("Математическое выражение.")
+        addOption(builder -> builder.name(messageService.get(null,"commands.math.params-expression"))
+                .description(messageService.get(null,"commands.math.params-expression-desc"))
                 .required(true)
                 .type(ApplicationCommandOption.Type.STRING.getValue()));
     }
@@ -37,7 +37,7 @@ public class MathCommand extends InteractionCommand {
                 .publishOn(Schedulers.boundedElastic())
                 .onErrorResume(t -> t instanceof ArithmeticException || t instanceof Expression.ExpressionException ||
                                 t instanceof NumberFormatException,
-                        t -> messageService.err(env, "Неправильное выражение").then(Mono.empty()))
+                        t -> messageService.err(env, messageService.get(null,"commands.math.expression-error")).then(Mono.empty()))
                 .flatMap(decimal -> env.event().deferReply()
                         .then(env.event().editReply(MessageUtil.substringTo(expression + " = " + decimal.toString(),
                                 Message.MAX_CONTENT_LENGTH))));

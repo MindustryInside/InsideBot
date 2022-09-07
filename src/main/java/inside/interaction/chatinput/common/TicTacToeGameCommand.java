@@ -28,7 +28,7 @@ import java.util.Objects;
 import static inside.service.InteractionService.CUSTOM_ID_PREFIX;
 import static inside.service.InteractionService.applyCustomId;
 
-@ChatInputCommand(name = "ox", description = "Начать игру в крестики-нолики.")
+@ChatInputCommand(name = "commands.ox.name", description = "commands.ox.desc")
 public class TicTacToeGameCommand extends InteractionCommand {
 
     public static final int SIZE = 3;
@@ -48,7 +48,8 @@ public class TicTacToeGameCommand extends InteractionCommand {
             }
         }
 
-        rows.add(ActionRow.of(Button.danger(CUSTOM_ID_PREFIX + "ox-game-exit", "Закончить игру")));
+        //TODO: nonstatic object reference in static context
+        rows.add(ActionRow.of(Button.danger(CUSTOM_ID_PREFIX + "ox-game-exit", "commands.ox.close")));
 
         TicTacToeGameCommand.rows = Collections.unmodifiableList(rows);
     }
@@ -60,7 +61,7 @@ public class TicTacToeGameCommand extends InteractionCommand {
         this.gameService = Objects.requireNonNull(gameService, "gameService");
 
         addOption(builder -> builder.name("sign")
-                .description("Каким знаком играть. По умолчанию крестиком")
+                .description(messageService.get(null,"commands.ox.select-start-type"))
                 .choices(ApplicationCommandOptionChoiceData.builder()
                                 .name("x")
                                 .value("x")
@@ -72,7 +73,7 @@ public class TicTacToeGameCommand extends InteractionCommand {
                 .type(ApplicationCommandOption.Type.STRING.getValue()));
 
         addOption(builder -> builder.name("self-game")
-                .description("Начать игру самим с собой")
+                .description(messageService.get(null,"commands.ox.self-play"))
                 .type(ApplicationCommandOption.Type.BOOLEAN.getValue()));
     }
 
@@ -81,7 +82,7 @@ public class TicTacToeGameCommand extends InteractionCommand {
         Snowflake userId = env.event().getInteraction().getUser().getId();
 
         if (gameService.getTTTGame(userId).isPresent()) {
-            return messageService.err(env, "Сначала закончите активную игру");
+            return messageService.err(env, messageService.get(null,"commands.ox.in-game"));
         }
 
         boolean xSign = env.getOption("sign")
@@ -106,8 +107,8 @@ public class TicTacToeGameCommand extends InteractionCommand {
 
             return env.event().deferReply().then(env.event().editReply()
                     .withEmbedsOrNull(List.of(EmbedCreateSpec.builder()
-                            .title("Крестики-Нолики")
-                            .description("Игра %s самим с собой\n**Текущий ход:** %s\n\n%s".formatted(
+                            .title(messageService.get(null,"commands.ox.header"))
+                            .description(messageService.get(null,"commands.ox.desc-self").formatted(
                                     MessageUtil.getUserMention(userId), xSign ? "x" : "o", g.asText()))
                             .color(env.configuration().discord().embedColor())
                             .build()))
@@ -120,7 +121,7 @@ public class TicTacToeGameCommand extends InteractionCommand {
                 cenv -> {
                     Snowflake id = cenv.event().getInteraction().getUser().getId();
                     if (id.equals(userId)) {
-                        return messageService.err(cenv, "Вы не можете так начать игру самим с собой");
+                        return messageService.err(cenv, messageService.get(null,"commands.ox.self-start-error"));
                     }
 
                     Snowflake xUserId = xSign ? userId : id;
@@ -135,18 +136,18 @@ public class TicTacToeGameCommand extends InteractionCommand {
 
                     return cenv.event().edit()
                             .withEmbeds(List.of(EmbedCreateSpec.builder()
-                                    .title("Крестики-Нолики")
-                                    .description("Игра %s %s\n**Текущий ход:** %s\n\n%s".formatted(xUserStr, oUserStr,
+                                    .title(messageService.get(null,"commands.ox.header"))
+                                    .description(messageService.get(null,"commands.ox.desc-2p").formatted(xUserStr, oUserStr,
                                             xSign ? "x" : "o", g.asText()))
                                     .color(env.configuration().discord().embedColor())
                                     .build()))
                             .withComponents(rows);
                 });
 
-        return env.event().reply("Выбор оппонента для игры")
+        return env.event().reply(messageService.get(null,"commands.ox.op-select-header"))
                 .withComponents(List.of(ActionRow.of(
-                        Button.primary(userCustomId, "Стать оппонентом"),
-                        Button.danger(exitCustomId, "Завершить поиск"))))
+                        Button.primary(userCustomId, messageService.get(null,"commands.ox,op-select-do")),
+                        Button.danger(exitCustomId, messageService.get(null,"commands.ox.op-select-close")))))
                 .and(Mono.firstWithSignal(onExit, onSearch));
     }
 }

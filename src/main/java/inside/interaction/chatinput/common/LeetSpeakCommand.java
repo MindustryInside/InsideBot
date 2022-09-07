@@ -21,7 +21,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
-@ChatInputCommand(name = "1337", description = "Перевести текст в leet speak.")
+@ChatInputCommand(name = "commands.leet.name", description = "commands.leet.desc")
 public class LeetSpeakCommand extends InteractionCommand {
     static final Map<String, String> rusLeetSpeak;
     static final Map<String, String> engLeetSpeak;
@@ -100,20 +100,20 @@ public class LeetSpeakCommand extends InteractionCommand {
         super(messageService);
 
         addOption(builder -> builder.name("type")
-                .description("Тип перевода.")
+                .description(messageService.get(null,"commands.leet.type"))
                 .type(ApplicationCommandOption.Type.STRING.getValue())
                 .required(true)
                 .addChoice(ApplicationCommandOptionChoiceData.builder()
-                        .name("Английский")
+                        .name(messageService.get(null,"commands.leet.type-en"))
                         .value("en")
                         .build())
                 .addChoice(ApplicationCommandOptionChoiceData.builder()
-                        .name("Русский")
+                        .name(messageService.get(null,"commands.leet.type-ru"))
                         .value("ru")
                         .build()));
 
         addOption(builder -> builder.name("text")
-                .description("Текс для перевода.")
+                .description(messageService.get(null,"commands.leet.input-inviter"))
                 .type(ApplicationCommandOption.Type.STRING.getValue())
                 .required(true));
     }
@@ -133,6 +133,6 @@ public class LeetSpeakCommand extends InteractionCommand {
                 .filter(Predicate.not(String::isBlank))
                 .map(s -> MessageUtil.substringTo(s, Message.MAX_CONTENT_LENGTH))
                 .map(env.event()::reply)
-                .orElseGet(() -> messageService.err(env, "Не удалось перевести текст"));
+                .orElseGet(() -> messageService.err(env, messageService.get(null,"commands.leet.translate-error")));
     }
 }
