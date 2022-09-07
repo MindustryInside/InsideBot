@@ -11,7 +11,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
-@DiscordCommand(key = "avatar", params = "[пользователь]", description = "Отправить увеличенный в размере аватар пользователя.")
+@DiscordCommand(key = "commands.avatar.key", params = "commands.avatar.params", description = "commands.avatar.desc")
 public class AvatarCommand extends Command {
 
     public AvatarCommand(MessageService messageService) {
@@ -41,11 +41,11 @@ public class AvatarCommand extends Command {
                         .filter(ignored -> firstOpt.isEmpty()))
                 .switchIfEmpty(Mono.justOrEmpty(firstOpt.map(OptionValue::value))
                         .flatMap(q -> MemberSearch.search(env, q)))
-                .switchIfEmpty(messageService.err(env, "Пользователь с ID не найден").then(Mono.never()))
+                .switchIfEmpty(messageService.err(env, messageService.get(null,"inside.static.user-by-id-not-found")).then(Mono.never()))
                 .flatMap(target -> env.channel().createMessage(EmbedCreateSpec.builder()
                         .image(target.getAvatarUrl() + "?size=512")
                         .color(env.configuration().discord().embedColor())
-                        .description(String.format("Аватар **%s** (%s):", target.getUsername(), target.getMention()))
+                        .description(String.format(messageService.get(null,"commands.avatar.message"), target.getUsername(), target.getMention()))
                         .build()))
                 .then();
     }

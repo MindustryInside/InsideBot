@@ -8,7 +8,7 @@ import inside.command.DiscordCommand;
 import inside.service.MessageService;
 import org.reactivestreams.Publisher;
 
-@DiscordCommand(key = "ping", description = "Отобразить время ответа бота.")
+@DiscordCommand(key = "commands.ping.key", description = "commands.ping.desc")
 public class PingCommand extends Command {
 
     public PingCommand(MessageService messageService) {

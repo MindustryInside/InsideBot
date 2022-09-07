@@ -77,13 +77,12 @@ public final class CommandHandler {
                                         .flatMap(commandInfo -> Arrays.stream(commandInfo.key()))
                                         .min(Comparator.comparingInt(a -> Strings.damerauLevenshtein(a, commandName))))
                                 .switchIfEmpty(prefix.map(GuildConfig::formatPrefix).flatMap(str ->
-                                        messageService.err(env, "Неизвестная команда. Напишите %shelp для получения списка команд.", str))
-                                        .then(Mono.never()))
-                                .flatMap(s0 -> messageService.err(env, "Команда не найдена. Может вы имели ввиду \"%s\"?", s0));
+                                        messageService.err(env, messageService.get(null,"inside.static.command-not-found-undef"), str)).then(Mono.never()))
+                                .flatMap(s0 -> messageService.err(env, messageService.get(null,"inside.static.command-not-found-predict"), s0));
                     }
 
                     CommandInfo info = commandHolder.getCommandInfoMap().get(cmd);
-                    String argsres = "Используйте: %s%s" + (info.paramText().isEmpty() ? "" : " *%s*");
+                    String argsres = messageService.get(null,"inside.static.command-how-to-use") + (info.paramText().isEmpty() ? "" : " *%s*");
 
                     List<CommandOption> opts = new ArrayList<>(info.params().length);
 
@@ -120,7 +119,7 @@ public final class CommandHandler {
                             if (next == -1) {
                                 if (!satisfied) {
                                     awaitEdit(env.message().getId());
-                                    return messageService.errTitled(env, "Слишком мало аргументов",
+                                    return messageService.errTitled(env, messageService.get(null,"inside.static.arguments-not-enough"),
                                             argsres, GuildConfig.formatPrefix(prx),
                                             commandName, env.context(), info.paramText());
                                 } else {
@@ -138,7 +137,7 @@ public final class CommandHandler {
                                 if (!satisfied) {
                                     awaitEdit(env.message().getId());
 
-                                    return messageService.errTitled(env, "Слишком много аргументов",
+                                    return messageService.errTitled(env, messageService.get(null,"inside.static.arguments-overflow"),
                                             argsres, GuildConfig.formatPrefix(prx), commandName, info.paramText());
                                 }
 
@@ -150,7 +149,7 @@ public final class CommandHandler {
                     if (!satisfied && info.params().length > 0 && !info.params()[0].optional()) {
                         awaitEdit(env.message().getId());
 
-                        return messageService.errTitled(env, "Слишком мало аргументов",
+                        return messageService.errTitled(env, messageService.get(null,"inside.static.arguments-not-enough"),
                                 argsres, GuildConfig.formatPrefix(prx), commandName, info.paramText());
                     }
 
@@ -165,8 +164,8 @@ public final class CommandHandler {
                                     .flatMap(Guild::getOwner)
                                     .flatMap(User::getPrivateChannel)
                                     .flatMap(c -> c.createMessage(EmbedCreateSpec.builder()
-                                            .title("Недостаточно прав")
-                                            .description(String.format("Предоставьте мне эти права для использования этой команды: \n%s", s))
+                                            .title(messageService.get(null,"inside.static.no-permissions"))
+                                            .description(String.format(messageService.get(null,"inside.static.give-me-perms"), s))
                                             .color(configuration.discord().embedColor())
                                             .build())))
                             .then();
