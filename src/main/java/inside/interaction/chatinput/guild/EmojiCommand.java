@@ -7,18 +7,18 @@ import discord4j.core.object.command.ApplicationCommandOption.Type;
 import discord4j.core.spec.EmbedCreateSpec;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.annotation.ChatInputCommand;
+import inside.interaction.annotation.Option;
 import inside.interaction.chatinput.InteractionGuildCommand;
 import inside.service.MessageService;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
-@ChatInputCommand(value = "commands.common.emoji")
+@ChatInputCommand("commands.common.emoji")
+@Option(name = "emoji", type = Type.STRING, required = true)
 public class EmojiCommand extends InteractionGuildCommand {
 
     public EmojiCommand(MessageService messageService) {
         super(messageService);
-
-        addOption("emoji", s -> s.required(true).type(Type.STRING.getValue()));
     }
 
     @Override

@@ -11,6 +11,7 @@ import inside.data.schedule.SimpleScheduleSpec;
 import inside.data.schedule.Trigger;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.annotation.ChatInputCommand;
+import inside.interaction.annotation.Option;
 import inside.interaction.chatinput.InteractionCommand;
 import inside.service.MessageService;
 import inside.service.job.RemindJob;
@@ -19,21 +20,18 @@ import io.r2dbc.postgresql.codec.Interval;
 import org.reactivestreams.Publisher;
 
 import java.time.Instant;
-import java.util.Objects;
 import java.util.UUID;
 
-@ChatInputCommand(value = "commands.common.remind")
+@ChatInputCommand("commands.common.remind")
+@Option(name = "delay", type = Type.STRING, required = true)
+@Option(name = "text", type = Type.STRING, required = true)
 public class RemindCommand extends InteractionCommand {
 
     private final ReactiveScheduler reactiveScheduler;
 
     public RemindCommand(MessageService messageService, ReactiveScheduler reactiveScheduler) {
         super(messageService);
-        this.reactiveScheduler = Objects.requireNonNull(reactiveScheduler, "reactiveScheduler");
-
-        addOption("delay", s -> s.required(true).type(Type.STRING.getValue()));
-
-        addOption("text", s -> s.required(true).type(Type.STRING.getValue()));
+        this.reactiveScheduler = reactiveScheduler;
     }
 
     @Override

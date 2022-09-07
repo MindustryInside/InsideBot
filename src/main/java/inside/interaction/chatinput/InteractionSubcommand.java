@@ -1,6 +1,6 @@
 package inside.interaction.chatinput;
 
-import discord4j.discordjson.json.ApplicationCommandRequest;
+import discord4j.discordjson.json.ImmutableApplicationCommandRequest;
 
 public abstract class InteractionSubcommand<T extends InteractionCommand> extends InteractionCommand {
 
@@ -12,7 +12,7 @@ public abstract class InteractionSubcommand<T extends InteractionCommand> extend
     }
 
     @Override
-    public ApplicationCommandRequest getRequest() {
-        return super.getRequest();
+    public final ImmutableApplicationCommandRequest asRequest() {
+        throw new UnsupportedOperationException();
     }
 }

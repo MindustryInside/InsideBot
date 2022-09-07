@@ -6,6 +6,7 @@ import discord4j.core.object.command.ApplicationCommandOption.Type;
 import discord4j.core.object.entity.Message;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.annotation.ChatInputCommand;
+import inside.interaction.annotation.Option;
 import inside.interaction.chatinput.InteractionCommand;
 import inside.service.MessageService;
 import inside.util.MessageUtil;
@@ -14,13 +15,12 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-@ChatInputCommand(value = "commands.common.math")
+@ChatInputCommand("commands.common.math")
+@Option(name = "expression", type = Type.STRING, required = true)
 public class MathCommand extends InteractionCommand {
 
     public MathCommand(MessageService messageService) {
         super(messageService);
-
-        addOption("expression", spec -> spec.type(Type.STRING.getValue()).required(true));
     }
 
     @Override

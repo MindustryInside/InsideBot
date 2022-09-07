@@ -6,6 +6,7 @@ import discord4j.core.object.command.ApplicationCommandOption.Type;
 import discord4j.core.object.entity.Message;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.annotation.ChatInputCommand;
+import inside.interaction.annotation.Option;
 import inside.interaction.chatinput.InteractionCommand;
 import inside.service.MessageService;
 import inside.util.MessageUtil;
@@ -19,7 +20,8 @@ import java.util.function.UnaryOperator;
 
 import static inside.interaction.chatinput.common.LeetSpeakCommand.mapOf;
 
-@ChatInputCommand(value = "commands.common.tr")
+@ChatInputCommand("commands.common.tr")
+@Option(name = "text", type = Type.STRING, required = true)
 public class TransliterationCommand extends InteractionCommand {
     static final Map<String, String> transliteration;
 
@@ -71,8 +73,6 @@ public class TransliterationCommand extends InteractionCommand {
 
     public TransliterationCommand(MessageService messageService) {
         super(messageService);
-
-        addOption("text", s -> s.required(true).type(Type.STRING.getValue()));
     }
 
     @Override

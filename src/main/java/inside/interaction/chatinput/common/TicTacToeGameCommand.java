@@ -10,9 +10,10 @@ import discord4j.core.object.component.Button;
 import discord4j.core.object.component.LayoutComponent;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.EmbedCreateSpec;
-import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.annotation.ChatInputCommand;
+import inside.interaction.annotation.Choice;
+import inside.interaction.annotation.Option;
 import inside.interaction.chatinput.InteractionCommand;
 import inside.service.GameService;
 import inside.service.MessageService;
@@ -23,12 +24,13 @@ import reactor.core.publisher.Mono;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 import static inside.service.InteractionService.CUSTOM_ID_PREFIX;
 import static inside.service.InteractionService.applyCustomId;
 
-@ChatInputCommand(value = "commands.common.ox")
+@ChatInputCommand("commands.common.ox")
+@Option(name = "sign", type = Type.STRING, choices = {@Choice(name = "x", value = "x"), @Choice(name = "o", value = "o")})
+@Option(name = "self-game", type = Type.BOOLEAN)
 public class TicTacToeGameCommand extends InteractionCommand {
 
     public static final int SIZE = 3;
@@ -37,7 +39,7 @@ public class TicTacToeGameCommand extends InteractionCommand {
 
     static {
         List<LayoutComponent> rows = new ArrayList<>();
-        List<ActionComponent> components = new ArrayList<>();
+        List<ActionComponent> components = new ArrayList<>(3);
         for (int i = 1, c = SIZE * SIZE; i <= c; i++) {
             components.add(Button.primary(CUSTOM_ID_PREFIX + "ox-game-" + (i - 1),
                     ReactionEmoji.unicode(i + "\u20E3")));
@@ -57,19 +59,7 @@ public class TicTacToeGameCommand extends InteractionCommand {
 
     public TicTacToeGameCommand(MessageService messageService, GameService gameService) {
         super(messageService);
-        this.gameService = Objects.requireNonNull(gameService);
-
-        addOption("sign", s -> s.choices(ApplicationCommandOptionChoiceData.builder()
-                                .name("x")
-                                .value("x")
-                                .build(),
-                        ApplicationCommandOptionChoiceData.builder()
-                                .name("o")
-                                .value("o")
-                                .build())
-                .type(Type.STRING.getValue()));
-
-        addOption("self-game", s -> s.type(Type.BOOLEAN.getValue()));
+        this.gameService = gameService;
     }
 
     @Override

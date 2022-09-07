@@ -18,6 +18,7 @@ import inside.data.entity.ModerationAction;
 import inside.data.entity.base.BaseEntity;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.annotation.ChatInputCommand;
+import inside.interaction.annotation.Option;
 import inside.interaction.chatinput.InteractionGuildCommand;
 import inside.interaction.util.MessagePaginator;
 import inside.service.MessageService;
@@ -33,6 +34,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @ChatInputCommand("commands.moderation.warns")
+@Option(name = "target", type = Type.USER)
 public class WarnsCommand extends InteractionGuildCommand {
 
     public static final int PER_PAGE = 10;
@@ -42,8 +44,6 @@ public class WarnsCommand extends InteractionGuildCommand {
     public WarnsCommand(MessageService messageService, EntityRetriever entityRetriever) {
         super(messageService);
         this.entityRetriever = Objects.requireNonNull(entityRetriever);
-
-        addOption("target", s -> s.type(Type.USER.getValue()));
     }
 
     @Override

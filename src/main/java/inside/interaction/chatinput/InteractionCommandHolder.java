@@ -2,7 +2,6 @@ package inside.interaction.chatinput;
 
 import inside.service.MessageService;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -12,7 +11,7 @@ public class InteractionCommandHolder {
     private final Map<String, InteractionCommand> commands;
 
     private InteractionCommandHolder(Map<String, InteractionCommand> commands) {
-        this.commands = Collections.unmodifiableMap(commands);
+        this.commands = commands;
     }
 
     public static Builder builder(MessageService messageService) {
@@ -36,7 +35,7 @@ public class InteractionCommandHolder {
         }
 
         public Builder addCommand(InteractionCommand interactionCommand) {
-            commands.put(messageService.get(interactionCommand.getName() + ".name"), interactionCommand);
+            commands.put(messageService.get(interactionCommand.info.nameCode() + ".name"), interactionCommand);
             return this;
         }
 

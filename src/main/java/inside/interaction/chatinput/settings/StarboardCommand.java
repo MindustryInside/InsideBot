@@ -3,7 +3,7 @@ package inside.interaction.chatinput.settings;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
-import discord4j.core.object.command.ApplicationCommandOption;
+import discord4j.core.object.command.ApplicationCommandOption.Type;
 import discord4j.core.object.entity.GuildEmoji;
 import discord4j.core.object.entity.channel.Channel;
 import discord4j.discordjson.json.EmojiData;
@@ -12,9 +12,11 @@ import inside.data.entity.EmojiDataWithPeriod;
 import inside.data.entity.StarboardConfig;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.annotation.ChatInputCommand;
+import inside.interaction.annotation.Option;
 import inside.interaction.annotation.Subcommand;
 import inside.interaction.annotation.SubcommandGroup;
 import inside.interaction.chatinput.InteractionSubcommand;
+import inside.interaction.chatinput.InteractionSubcommandGroup;
 import inside.service.MessageService;
 import inside.util.MessageUtil;
 import org.reactivestreams.Publisher;
@@ -30,7 +32,7 @@ import static inside.interaction.chatinput.settings.ReactionRolesCommand.emojiPa
 import static reactor.function.TupleUtils.function;
 
 @ChatInputCommand(value = "starboard")// = "Настройки звёздной доски.", permissions = PermissionCategory.ADMIN)
-public class StarboardCommand extends ConfigOwnerCommand {
+public class StarboardCommand extends InteractionSubcommandGroup {
 
     public StarboardCommand(MessageService messageService, EntityRetriever entityRetriever) {
         super(messageService, entityRetriever);
@@ -42,15 +44,12 @@ public class StarboardCommand extends ConfigOwnerCommand {
         addSubcommand(new EmojisSubcommandGroup(this));
     }
 
-    @Subcommand(value = "enable")// = "Включить ведение звёздной доски.")
+    @Subcommand("enable")// = "Включить ведение звёздной доски.")
+    @Option(name = "value", type = Type.BOOLEAN)
     protected static class EnableSubcommand extends InteractionSubcommand<StarboardCommand> {
 
         protected EnableSubcommand(StarboardCommand owner) {
             super(owner);
-
-            addOption(builder -> builder.name("value")
-                    .description("Новое состояние.")
-                    .type(ApplicationCommandOption.Type.BOOLEAN.getValue()));
         }
 
         @Override
@@ -74,15 +73,12 @@ public class StarboardCommand extends ConfigOwnerCommand {
         }
     }
 
-    @Subcommand(value = "self-starring")// = "Настроить учёт собственной реакции.")
+    @Subcommand("self-starring")// = "Настроить учёт собственной реакции.")
+    @Option(name = "value", type = Type.BOOLEAN)
     protected static class SelfStarringSubcommand extends InteractionSubcommand<StarboardCommand> {
 
         protected SelfStarringSubcommand(StarboardCommand owner) {
             super(owner);
-
-            addOption(builder -> builder.name("value")
-                    .description("Новое состояние.")
-                    .type(ApplicationCommandOption.Type.BOOLEAN.getValue()));
         }
 
         @Override
@@ -105,17 +101,12 @@ public class StarboardCommand extends ConfigOwnerCommand {
         }
     }
 
-    @Subcommand(value = "threshold")// = "Настроить порог реакция для добавления звёздной доски.")
+    @Subcommand("threshold")// = "Настроить порог реакция для добавления звёздной доски.")
+    @Option(name = "value", type = Type.INTEGER, minValue = 0, maxValue = Integer.MAX_VALUE)
     protected static class ThresholdSubcommand extends InteractionSubcommand<StarboardCommand> {
 
         protected ThresholdSubcommand(StarboardCommand owner) {
             super(owner);
-
-            addOption(builder -> builder.name("value")
-                    .description("Новый порог.")
-                    .type(ApplicationCommandOption.Type.INTEGER.getValue())
-                    .minValue(0d)
-                    .maxValue((double) Integer.MAX_VALUE));
         }
 
         @Override
@@ -136,16 +127,12 @@ public class StarboardCommand extends ConfigOwnerCommand {
         }
     }
 
-    @Subcommand(value = "channel")// = "Настроить канал для ведения звёздной доски.")
+    @Subcommand("channel")// = "Настроить канал для ведения звёздной доски.")
+    @Option(name = "value", type = Type.CHANNEL, channelTypes = Channel.Type.GUILD_TEXT)
     protected static class ChannelSubcommand extends InteractionSubcommand<StarboardCommand> {
 
         protected ChannelSubcommand(StarboardCommand owner) {
             super(owner);
-
-            addOption(builder -> builder.name("value")
-                    .description("Новый текстовый канал.")
-                    .type(ApplicationCommandOption.Type.CHANNEL.getValue())
-                    .channelTypes(Channel.Type.GUILD_TEXT.getValue()));
         }
 
         @Override
@@ -170,7 +157,7 @@ public class StarboardCommand extends ConfigOwnerCommand {
     }
 
     @SubcommandGroup(value = "emojis")// = "Настроить учитываемые в подсчёте реакции.")
-    protected static class EmojisSubcommandGroup extends ConfigOwnerCommand {
+    protected static class EmojisSubcommandGroup extends InteractionSubcommandGroup {
 
         protected EmojisSubcommandGroup(StarboardCommand owner) {
             super(owner.messageService, owner.entityRetriever);
@@ -181,22 +168,13 @@ public class StarboardCommand extends ConfigOwnerCommand {
             addSubcommand(new ListSubcommand(this));
         }
 
-        @Subcommand(value = "add")// = "Добавить эмодзи в список.")
+        @Subcommand("add")// = "Добавить эмодзи в список.")
+        @Option(name = "value", type = Type.STRING, required = true)
+        @Option(name = "period", type = Type.INTEGER, minValue = 1, maxValue = Integer.MAX_VALUE)
         protected static class AddSubcommand extends InteractionSubcommand<EmojisSubcommandGroup> {
 
             protected AddSubcommand(EmojisSubcommandGroup owner) {
                 super(owner);
-
-                addOption(builder -> builder.name("value")
-                        .description("Идентификатор/название эмодзи или юникод символ.")
-                        .required(true)
-                        .type(ApplicationCommandOption.Type.STRING.getValue()));
-
-                addOption(builder -> builder.name("period")
-                        .description("Количество реакций необходимое для перехода к следующему эмодзи в ембеде. По умолчанию 5")
-                        .minValue(1d)
-                        .maxValue((double) Integer.MAX_VALUE)
-                        .type(ApplicationCommandOption.Type.INTEGER.getValue()));
             }
 
             @Override
@@ -253,16 +231,12 @@ public class StarboardCommand extends ConfigOwnerCommand {
             }
         }
 
-        @Subcommand(value = "remove")// = "Удалить эмодзи из списка.")
+        @Subcommand("remove")// = "Удалить эмодзи из списка.")
+        @Option(name = "value", type = Type.STRING, required = true)
         protected static class RemoveSubcommand extends InteractionSubcommand<EmojisSubcommandGroup> {
 
             protected RemoveSubcommand(EmojisSubcommandGroup owner) {
                 super(owner);
-
-                addOption(builder -> builder.name("value")
-                        .description("Идентификатор/название эмодзи или юникод символ.")
-                        .required(true)
-                        .type(ApplicationCommandOption.Type.STRING.getValue()));
             }
 
             @Override

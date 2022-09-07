@@ -13,6 +13,7 @@ import inside.data.entity.ModerationAction;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.PermissionCategory;
 import inside.interaction.annotation.ChatInputCommand;
+import inside.interaction.annotation.Option;
 import inside.service.MessageService;
 import inside.util.MessageUtil;
 import org.reactivestreams.Publisher;
@@ -22,12 +23,11 @@ import reactor.function.TupleUtils;
 import java.util.Optional;
 
 @ChatInputCommand(value = "commands.moderation.unmute", permissions = PermissionCategory.MODERATOR)
+@Option(name = "target", type = Type.USER, required = true)
 public class UnmuteCommand extends ModerationCommand {
 
     public UnmuteCommand(MessageService messageService, EntityRetriever entityRetriever) {
         super(messageService, entityRetriever);
-
-        addOption("target", s -> s.type(Type.USER.getValue()).required(true));
     }
 
     @Override

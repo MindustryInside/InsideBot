@@ -3,23 +3,21 @@ package inside.interaction.chatinput.settings;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
-import discord4j.core.object.command.ApplicationCommandOption;
+import discord4j.core.object.command.ApplicationCommandOption.Type;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.discordjson.Id;
-import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import discord4j.discordjson.possible.Possible;
 import inside.data.EntityRetriever;
 import inside.data.entity.ModerationAction;
 import inside.data.entity.PunishmentSettings;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.PermissionCategory;
-import inside.interaction.annotation.ChatInputCommand;
-import inside.interaction.annotation.Subcommand;
-import inside.interaction.annotation.SubcommandGroup;
+import inside.interaction.annotation.*;
 import inside.interaction.chatinput.InteractionSubcommand;
+import inside.interaction.chatinput.InteractionSubcommandGroup;
 import inside.interaction.util.MessagePaginator;
 import inside.service.MessageService;
 import inside.util.DurationFormat;
@@ -34,8 +32,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@ChatInputCommand(value = "admin-config", permissions = PermissionCategory.ADMIN)// = "Настройки модерации."
-public class AdminConfigCommand extends ConfigOwnerCommand {
+@ChatInputCommand(value = "commands.admin.admin-config", permissions = PermissionCategory.ADMIN)
+public class AdminConfigCommand extends InteractionSubcommandGroup {
 
     // (1L << 53) - 1
     private static final long MAX_INT53 = 0x1fffffffffffffL;
@@ -53,15 +51,12 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
         addSubcommand(new MuteRoleResetSubcommand(this));
     }
 
-    @Subcommand("enable")// = "Включить модерацию.")
+    @Subcommand("enable")
+    @Option(name = "value", type = Type.BOOLEAN)
     protected static class EnableSubcommand extends InteractionSubcommand<AdminConfigCommand> {
 
         protected EnableSubcommand(AdminConfigCommand owner) {
             super(owner);
-
-            addOption(builder -> builder.name("value")
-                    .description("Новое состояние.")
-                    .type(ApplicationCommandOption.Type.BOOLEAN.getValue()));
         }
 
         @Override
@@ -83,15 +78,12 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
         }
     }
 
-    @Subcommand("warn-expire-interval")// = "Настроить базовое время жизни предупреждения.")
+    @Subcommand("warn-expire-interval")
+    @Option(name = "value", type = Type.STRING)
     protected static class WarnExpireIntervalSubcommand extends InteractionSubcommand<AdminConfigCommand> {
 
         protected WarnExpireIntervalSubcommand(AdminConfigCommand owner) {
             super(owner);
-
-            addOption(builder -> builder.name("value")
-                    .description("Новая длительность предупреждений по умолчанию или 'отчистить'. (в формате 1д 3ч 44мин)")
-                    .type(ApplicationCommandOption.Type.STRING.getValue()));
         }
 
         @Override
@@ -130,15 +122,12 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
         }
     }
 
-    @Subcommand("mute-base-interval")// = "Настроить базовую длительность мута.")
+    @Subcommand("mute-base-interval")
+    @Option(name = "value", type = Type.STRING)
     protected static class MuteBaseIntervalSubcommand extends InteractionSubcommand<AdminConfigCommand> {
 
         protected MuteBaseIntervalSubcommand(AdminConfigCommand owner) {
             super(owner);
-
-            addOption(builder -> builder.name("value")
-                    .description("Новая длительность мута по умолчанию или 'отчистить', чтобы убрать её. (в формате 1д 3ч 44мин)")
-                    .type(ApplicationCommandOption.Type.STRING.getValue()));
         }
 
         @Override
@@ -177,8 +166,8 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
         }
     }
 
-    @SubcommandGroup("admin-roles")// = "Настроить админ-роли.")
-    protected static class AdminRolesSubcommandGroup extends ConfigOwnerCommand {
+    @SubcommandGroup("admin-roles")
+    protected static class AdminRolesSubcommandGroup extends InteractionSubcommandGroup {
 
         protected AdminRolesSubcommandGroup(AdminConfigCommand owner) {
             super(owner.messageService, owner.entityRetriever);
@@ -189,16 +178,12 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
             addSubcommand(new ListSubcommand(this));
         }
 
-        @Subcommand("add")// = "Добавить роль в список.")
+        @Subcommand("add")
+        @Option(name = "value", type = Type.ROLE, required = true)
         protected static class AddSubcommand extends InteractionSubcommand<AdminRolesSubcommandGroup> {
 
             protected AddSubcommand(AdminRolesSubcommandGroup owner) {
                 super(owner);
-
-                addOption(builder -> builder.name("value")
-                        .description("Роль, которую нужно добавить в список.")
-                        .required(true)
-                        .type(ApplicationCommandOption.Type.ROLE.getValue()));
             }
 
             @Override
@@ -229,16 +214,12 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
             }
         }
 
-        @Subcommand("remove")// = "Удалить роль из списка.")
+        @Subcommand("remove")
+        @Option(name = "value", type = Type.ROLE, required = true)
         protected static class RemoveSubcommand extends InteractionSubcommand<AdminRolesSubcommandGroup> {
 
             protected RemoveSubcommand(AdminRolesSubcommandGroup owner) {
                 super(owner);
-
-                addOption(builder -> builder.name("value")
-                        .description("Роль, которую нужно удалить из списка.")
-                        .required(true)
-                        .type(ApplicationCommandOption.Type.ROLE.getValue()));
             }
 
             @Override
@@ -269,7 +250,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
             }
         }
 
-        @Subcommand("clear")// = "Отчистить список ролей.")
+        @Subcommand("clear")
         protected static class ClearSubcommand extends InteractionSubcommand<AdminRolesSubcommandGroup> {
 
             protected ClearSubcommand(AdminRolesSubcommandGroup owner) {
@@ -291,7 +272,7 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
             }
         }
 
-        @Subcommand("list")// = "Отобразить список ролей.")
+        @Subcommand("list")
         protected static class ListSubcommand extends InteractionSubcommand<AdminRolesSubcommandGroup> {
 
             protected ListSubcommand(AdminRolesSubcommandGroup owner) {
@@ -315,8 +296,8 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
         }
     }
 
-    @SubcommandGroup("threshold-punishment")// = "Настроить админ-роли.")
-    protected static class ThresholdPunishmentsSubcommandGroup extends ConfigOwnerCommand {
+    @SubcommandGroup("threshold-punishment")
+    protected static class ThresholdPunishmentsSubcommandGroup extends InteractionSubcommandGroup {
 
         protected ThresholdPunishmentsSubcommandGroup(AdminConfigCommand owner) {
             super(owner.messageService, owner.entityRetriever);
@@ -327,35 +308,15 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
             addSubcommand(new ListSubcommand(this));
         }
 
-        @Subcommand("add")// = "Добавить новое авто-наказание в список.")
+        @Subcommand("add")
+        @Option(name = "warn-number", type = Type.INTEGER, minValue = 1, maxValue = MAX_INT53, required = true)
+        @Option(name = "type", type = Type.STRING, required = true,
+                choices = {@Choice(name = "Мьют", value = "mute"), @Choice(name = "Предупреждение", value = "warn")})
+        @Option(name = "interval", type = Type.STRING)
         protected static class AddSubcommand extends InteractionSubcommand<ThresholdPunishmentsSubcommandGroup> {
 
             protected AddSubcommand(ThresholdPunishmentsSubcommandGroup owner) {
                 super(owner);
-
-                addOption(builder -> builder.name("warn-number")
-                        .description("Номер предупреждения.")
-                        .required(true)
-                        .type(ApplicationCommandOption.Type.INTEGER.getValue())
-                        .minValue(1d)
-                        .maxValue((double) MAX_INT53));
-
-                addOption(builder -> builder.name("type")
-                        .description("Тип наказания.")
-                        .required(true)
-                        .addChoice(ApplicationCommandOptionChoiceData.builder()
-                                .name("Мьют")
-                                .value(ModerationAction.Type.mute.name())
-                                .build())
-                        .addChoice(ApplicationCommandOptionChoiceData.builder()
-                                .name("Предупреждение")
-                                .value(ModerationAction.Type.warn.name())
-                                .build())
-                        .type(ApplicationCommandOption.Type.STRING.getValue()));
-
-                addOption(builder -> builder.name("interval")
-                        .description("Длительность наказания.")
-                        .type(ApplicationCommandOption.Type.STRING.getValue()));
             }
 
             @Override
@@ -416,17 +377,11 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
         }
 
         @Subcommand("remove")// = "Удалить авто-наказание из списка.")
+        @Option(name = "warn-number", type = Type.INTEGER, required = true, minValue = 1, maxValue = MAX_INT53)
         protected static class RemoveSubcommand extends InteractionSubcommand<ThresholdPunishmentsSubcommandGroup> {
 
             protected RemoveSubcommand(ThresholdPunishmentsSubcommandGroup owner) {
                 super(owner);
-
-                addOption(builder -> builder.name("warn-number")
-                        .description("Номер предупреждения.")
-                        .required(true)
-                        .type(ApplicationCommandOption.Type.INTEGER.getValue())
-                        .minValue(1d)
-                        .maxValue((double) MAX_INT53));
             }
 
             @Override
@@ -540,14 +495,11 @@ public class AdminConfigCommand extends ConfigOwnerCommand {
     }
 
     @Subcommand("mute-role")// = "Настроить роль мута. При отсутствии используется таймаут")
+    @Option(name = "value", type = Type.ROLE)
     protected static class MuteRoleSubcommand extends InteractionSubcommand<AdminConfigCommand> {
 
         protected MuteRoleSubcommand(AdminConfigCommand owner) {
             super(owner);
-
-            addOption(builder -> builder.name("value")
-                    .description("Новая роль мута.")
-                    .type(ApplicationCommandOption.Type.ROLE.getValue()));
         }
 
         @Override

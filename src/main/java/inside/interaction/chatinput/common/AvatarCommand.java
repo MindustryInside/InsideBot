@@ -6,18 +6,18 @@ import discord4j.core.retriever.EntityRetrievalStrategy;
 import discord4j.core.spec.EmbedCreateSpec;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.annotation.ChatInputCommand;
+import inside.interaction.annotation.Option;
 import inside.interaction.chatinput.InteractionCommand;
 import inside.service.MessageService;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 @ChatInputCommand("commands.common.avatar")
+@Option(name = "target", type = Type.USER, required = true)
 public class AvatarCommand extends InteractionCommand {
 
     public AvatarCommand(MessageService messageService) {
         super(messageService);
-
-        addOption("target", s -> s.type(Type.USER.getValue()).required(false));
     }
 
     @Override

@@ -6,7 +6,7 @@ import inside.interaction.chatinput.InteractionCommand;
 import inside.service.MessageService;
 import org.reactivestreams.Publisher;
 
-@ChatInputCommand(value = "commands.common.ping")
+@ChatInputCommand("commands.common.ping")
 public class PingCommand extends InteractionCommand {
 
     public PingCommand(MessageService messageService) {

@@ -37,7 +37,8 @@ import inside.event.*;
 import inside.interaction.chatinput.InteractionCommand;
 import inside.interaction.chatinput.InteractionCommandHolder;
 import inside.interaction.chatinput.InteractionGuildCommand;
-import inside.interaction.chatinput.common.*;
+import inside.interaction.chatinput.common.AvatarCommand;
+import inside.interaction.chatinput.common.PingCommand;
 import inside.interaction.chatinput.guild.EmojiCommand;
 import inside.interaction.component.game.TicTacToeGameListener;
 import inside.service.GameService;
@@ -222,13 +223,13 @@ public class Launcher {
 
                     var interactionCommandHolder = InteractionCommandHolder.builder(messageService)
                             // разное
-                            .addCommand(new MathCommand(messageService))
+                            // .addCommand(new MathCommand(messageService))
                             .addCommand(new PingCommand(messageService))
                             .addCommand(new AvatarCommand(messageService))
-                            .addCommand(new LeetSpeakCommand(messageService))
-                            .addCommand(new TextLayoutCommand(messageService))
-                            .addCommand(new TransliterationCommand(messageService))
-                            .addCommand(new RemindCommand(messageService, scheduler))
+                            // .addCommand(new LeetSpeakCommand(messageService))
+                            // .addCommand(new TextLayoutCommand(messageService))
+                            // .addCommand(new TransliterationCommand(messageService))
+                            // .addCommand(new RemindCommand(messageService, scheduler))
                             // .addCommand(new TicTacToeGameCommand(messageService, gameService))
                             // разное, но серверное
                             .addCommand(new EmojiCommand(messageService))
@@ -251,7 +252,8 @@ public class Launcher {
                     List<ApplicationCommandRequest> globalCommands = new ArrayList<>();
                     List<ApplicationCommandRequest> guildCommands = new ArrayList<>();
                     for (InteractionCommand value : cmds) {
-                        var req = value.getRequest();
+                        var req = value.asRequest();
+                        log.info(req.toString());
                         if (value instanceof InteractionGuildCommand) {
                             guildCommands.add(req);
                         } else {

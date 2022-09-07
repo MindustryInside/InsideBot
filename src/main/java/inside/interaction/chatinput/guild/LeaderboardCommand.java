@@ -22,7 +22,6 @@ import reactor.function.TupleUtils;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -36,7 +35,7 @@ public class LeaderboardCommand extends InteractionGuildCommand {
 
     public LeaderboardCommand(MessageService messageService, EntityRetriever entityRetriever) {
         super(messageService);
-        this.entityRetriever = Objects.requireNonNull(entityRetriever);
+        this.entityRetriever = entityRetriever;
     }
 
     @Override

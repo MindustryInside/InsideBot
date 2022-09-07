@@ -4,9 +4,10 @@ import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
 import discord4j.core.object.command.ApplicationCommandOption.Type;
 import discord4j.core.object.entity.Message;
-import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.annotation.ChatInputCommand;
+import inside.interaction.annotation.Choice;
+import inside.interaction.annotation.Option;
 import inside.interaction.chatinput.InteractionCommand;
 import inside.service.MessageService;
 import inside.util.MessageUtil;
@@ -21,6 +22,9 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 @ChatInputCommand(value = "commands.common.1337")
+@Option(name = "type", type = Type.STRING, required = true,
+        choices = {@Choice(name = "English", value = "en"), @Choice(name = "Russian", value = "ru")}) // TODO перевести
+@Option(name = "text", type = Type.STRING, required = true)
 public class LeetSpeakCommand extends InteractionCommand {
     static final Map<String, String> rusLeetSpeak;
     static final Map<String, String> engLeetSpeak;
@@ -96,19 +100,6 @@ public class LeetSpeakCommand extends InteractionCommand {
 
     public LeetSpeakCommand(MessageService messageService) {
         super(messageService);
-
-        addOption("type", s -> s.type(Type.STRING.getValue())
-                .required(true)
-                .addChoice(ApplicationCommandOptionChoiceData.builder()
-                        .name("Английский")
-                        .value("en")
-                        .build())
-                .addChoice(ApplicationCommandOptionChoiceData.builder()
-                        .name("Русский")
-                        .value("ru")
-                        .build()));
-
-        addOption("text", s -> s.type(Type.STRING.getValue()).required(true));
     }
 
     @Override

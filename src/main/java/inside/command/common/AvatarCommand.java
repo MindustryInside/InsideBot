@@ -41,11 +41,13 @@ public class AvatarCommand extends Command {
                         .filter(ignored -> firstOpt.isEmpty()))
                 .switchIfEmpty(Mono.justOrEmpty(firstOpt.map(OptionValue::value))
                         .flatMap(q -> MemberSearch.search(env, q)))
-                .switchIfEmpty(messageService.err(env, messageService.get(null,"inside.static.user-by-id-not-found")).then(Mono.never()))
+                .switchIfEmpty(messageService.err(env, messageService.get(env.context(),
+                        "inside.static.user-by-id-not-found")).then(Mono.never()))
                 .flatMap(target -> env.channel().createMessage(EmbedCreateSpec.builder()
                         .image(target.getAvatarUrl() + "?size=512")
                         .color(env.configuration().discord().embedColor())
-                        .description(String.format(messageService.get(null,"commands.avatar.message"), target.getUsername(), target.getMention()))
+                        .description(messageService.format(env.context(), "commands.avatar.message",
+                                        target.getUsername(), target.getMention()))
                         .build()))
                 .then();
     }

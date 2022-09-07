@@ -166,49 +166,115 @@ public class InteractionService extends BaseService {
         });
     }
 
-    private record ButtonListenerDelegate<R>(
-            Function<? super ButtonInteractionEnvironment, ? extends Publisher<R>> delegate,
-            Sinks.One<? super R> sink) implements ButtonListener {
+    private static final class ButtonListenerDelegate<R> implements ButtonListener {
+        private final Function<? super ButtonInteractionEnvironment, ? extends Publisher<R>> delegate;
+        private final Sinks.One<? super R> sink;
 
-            private ButtonListenerDelegate {
-                Objects.requireNonNull(delegate);
-                Objects.requireNonNull(sink);
-            }
 
-            @Override
-            public Publisher<?> handle(ButtonInteractionEnvironment env) {
-                return Mono.from(delegate.apply(env))
-                        .doOnSuccess(value -> {
-                            if (value == null) {
-                                sink.emitEmpty(Sinks.EmitFailureHandler.FAIL_FAST);
-                            } else {
-                                sink.emitValue(value, Sinks.EmitFailureHandler.FAIL_FAST);
-                            }
-                        })
-                        .doOnError(t -> sink.emitError(t, Sinks.EmitFailureHandler.FAIL_FAST));
-            }
+        private ButtonListenerDelegate(Function<? super ButtonInteractionEnvironment, ? extends Publisher<R>> delegate, Sinks.One<? super R> sink) {
+            Objects.requireNonNull(delegate);
+            Objects.requireNonNull(sink);
+            this.delegate = delegate;
+            this.sink = sink;
         }
 
-    private record SelectMenuListenerDelegate<R>(
-            Function<? super SelectMenuInteractionEnvironment, ? extends Publisher<R>> delegate,
-            Sinks.One<? super R> sink) implements SelectMenuListener {
-
-            private SelectMenuListenerDelegate {
-                Objects.requireNonNull(delegate);
-                Objects.requireNonNull(sink);
-            }
-
-            @Override
-            public Publisher<?> handle(SelectMenuInteractionEnvironment env) {
-                return Mono.from(delegate.apply(env))
-                        .doOnSuccess(value -> {
-                            if (value == null) {
-                                sink.emitEmpty(Sinks.EmitFailureHandler.FAIL_FAST);
-                            } else {
-                                sink.emitValue(value, Sinks.EmitFailureHandler.FAIL_FAST);
-                            }
-                        })
-                        .doOnError(t -> sink.emitError(t, Sinks.EmitFailureHandler.FAIL_FAST));
-            }
+        @Override
+        public Publisher<?> handle(ButtonInteractionEnvironment env) {
+            return Mono.from(delegate.apply(env))
+                    .doOnSuccess(value -> {
+                        if (value == null) {
+                            sink.emitEmpty(Sinks.EmitFailureHandler.FAIL_FAST);
+                        } else {
+                            sink.emitValue(value, Sinks.EmitFailureHandler.FAIL_FAST);
+                        }
+                    })
+                    .doOnError(t -> sink.emitError(t, Sinks.EmitFailureHandler.FAIL_FAST));
         }
+
+        public Function<? super ButtonInteractionEnvironment, ? extends Publisher<R>> delegate() {
+            return delegate;
+        }
+
+        public Sinks.One<? super R> sink() {
+            return sink;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this) return true;
+            if (obj == null || obj.getClass() != this.getClass()) return false;
+            var that = (ButtonListenerDelegate) obj;
+            return Objects.equals(this.delegate, that.delegate) &&
+                    Objects.equals(this.sink, that.sink);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(delegate, sink);
+        }
+
+        @Override
+        public String toString() {
+            return "ButtonListenerDelegate[" +
+                    "delegate=" + delegate + ", " +
+                    "sink=" + sink + ']';
+        }
+
+    }
+
+    private static final class SelectMenuListenerDelegate<R> implements SelectMenuListener {
+        private final Function<? super SelectMenuInteractionEnvironment, ? extends Publisher<R>> delegate;
+        private final Sinks.One<? super R> sink;
+
+
+        private SelectMenuListenerDelegate(Function<? super SelectMenuInteractionEnvironment, ? extends Publisher<R>> delegate, Sinks.One<? super R> sink) {
+            Objects.requireNonNull(delegate);
+            Objects.requireNonNull(sink);
+            this.delegate = delegate;
+            this.sink = sink;
+        }
+
+        @Override
+        public Publisher<?> handle(SelectMenuInteractionEnvironment env) {
+            return Mono.from(delegate.apply(env))
+                    .doOnSuccess(value -> {
+                        if (value == null) {
+                            sink.emitEmpty(Sinks.EmitFailureHandler.FAIL_FAST);
+                        } else {
+                            sink.emitValue(value, Sinks.EmitFailureHandler.FAIL_FAST);
+                        }
+                    })
+                    .doOnError(t -> sink.emitError(t, Sinks.EmitFailureHandler.FAIL_FAST));
+        }
+
+        public Function<? super SelectMenuInteractionEnvironment, ? extends Publisher<R>> delegate() {
+            return delegate;
+        }
+
+        public Sinks.One<? super R> sink() {
+            return sink;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this) return true;
+            if (obj == null || obj.getClass() != this.getClass()) return false;
+            var that = (SelectMenuListenerDelegate) obj;
+            return Objects.equals(this.delegate, that.delegate) &&
+                    Objects.equals(this.sink, that.sink);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(delegate, sink);
+        }
+
+        @Override
+        public String toString() {
+            return "SelectMenuListenerDelegate[" +
+                    "delegate=" + delegate + ", " +
+                    "sink=" + sink + ']';
+        }
+
+    }
 }

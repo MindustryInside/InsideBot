@@ -3,7 +3,7 @@ package inside.interaction.chatinput.settings;
 import discord4j.common.util.Snowflake;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
-import discord4j.core.object.command.ApplicationCommandOption;
+import discord4j.core.object.command.ApplicationCommandOption.Type;
 import discord4j.core.object.entity.GuildEmoji;
 import discord4j.discordjson.json.EmojiData;
 import inside.data.EntityRetriever;
@@ -11,8 +11,10 @@ import inside.data.entity.ReactionRole;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.PermissionCategory;
 import inside.interaction.annotation.ChatInputCommand;
+import inside.interaction.annotation.Option;
 import inside.interaction.annotation.Subcommand;
 import inside.interaction.chatinput.InteractionSubcommand;
+import inside.interaction.chatinput.InteractionSubcommandGroup;
 import inside.service.MessageService;
 import inside.util.MessageUtil;
 import org.reactivestreams.Publisher;
@@ -27,8 +29,9 @@ import static reactor.bool.BooleanUtils.not;
 
 @ChatInputCommand(value = "reaction-roles", permissions = PermissionCategory.ADMIN)
 // = "Настройки реакций-ролей."
-public class ReactionRolesCommand extends ConfigOwnerCommand {
+public class ReactionRolesCommand extends InteractionSubcommandGroup {
 
+    // (я не особо уверен что это находит только эмодзи)
     public static Pattern emojiPattern = Pattern.compile("^\\p{So}$");
 
     public ReactionRolesCommand(MessageService messageService, EntityRetriever entityRetriever) {
@@ -46,16 +49,12 @@ public class ReactionRolesCommand extends ConfigOwnerCommand {
                 MessageUtil.getEmojiString(e.emoji()));
     }
 
-    @Subcommand(value = "list")// = "Отобразить текущий список реакций-ролей для указанного сообщения.")
+    @Subcommand("list")// = "Отобразить текущий список реакций-ролей для указанного сообщения.")
+    @Option(name = "message-id", required = true, type = Type.STRING)
     protected static class ListSubcommand extends InteractionSubcommand<ReactionRolesCommand> {
 
         protected ListSubcommand(ReactionRolesCommand owner) {
             super(owner);
-
-            addOption(builder -> builder.name("message-id")
-                    .description("Идентификатор ассоциируемого сообщения.")
-                    .required(true)
-                    .type(ApplicationCommandOption.Type.STRING.getValue()));
         }
 
         @Override
@@ -81,26 +80,14 @@ public class ReactionRolesCommand extends ConfigOwnerCommand {
         }
     }
 
-    @Subcommand(value = "add")// = "Добавить новую реакцию-роль к сообщению.")
+    @Subcommand("add")// = "Добавить новую реакцию-роль к сообщению.")
+    @Option(name = "emoji", required = true, type = Type.STRING)
+    @Option(name = "message-id", required = true, type = Type.STRING) // TODO: лимит на длину
+    @Option(name = "role", required = true, type = Type.ROLE)
     protected static class AddSubcommand extends InteractionSubcommand<ReactionRolesCommand> {
 
         protected AddSubcommand(ReactionRolesCommand owner) {
             super(owner);
-
-            addOption(builder -> builder.name("emoji")
-                    .description("Идентификатор/имя реакции или юникод символ.")
-                    .required(true)
-                    .type(ApplicationCommandOption.Type.STRING.getValue()));
-
-            addOption(builder -> builder.name("message-id")
-                    .description("Идентификатор ассоциируемого сообщения.")
-                    .required(true)
-                    .type(ApplicationCommandOption.Type.STRING.getValue()));
-
-            addOption(builder -> builder.name("role")
-                    .description("Выдаваемая при нажатии роль.")
-                    .required(true)
-                    .type(ApplicationCommandOption.Type.ROLE.getValue()));
         }
 
         @Override
@@ -162,20 +149,12 @@ public class ReactionRolesCommand extends ConfigOwnerCommand {
     }
 
     @Subcommand(value = "remove")// = "Удалить реакцию-роль с сообщения.")
+    @Option(name = "message-id", required = true, type = Type.STRING)
+    @Option(name = "role", required = true, type = Type.ROLE)
     protected static class RemoveSubcommand extends InteractionSubcommand<ReactionRolesCommand> {
 
         protected RemoveSubcommand(ReactionRolesCommand owner) {
             super(owner);
-
-            addOption(builder -> builder.name("message-id")
-                    .description("Идентификатор сообщения, с которого нужно удалить реакцию-роль.")
-                    .required(true)
-                    .type(ApplicationCommandOption.Type.STRING.getValue()));
-
-            addOption(builder -> builder.name("role")
-                    .description("Получаемая при нажатии роль.")
-                    .required(true)
-                    .type(ApplicationCommandOption.Type.ROLE.getValue()));
         }
 
         @Override
@@ -206,15 +185,11 @@ public class ReactionRolesCommand extends ConfigOwnerCommand {
     }
 
     @Subcommand(value = "clear")// = "Удалить все реакции-роли с сообщения.")
+    @Option(name = "message-id", required = true, type = Type.STRING)
     protected static class ClearSubcommand extends InteractionSubcommand<ReactionRolesCommand> {
 
         protected ClearSubcommand(ReactionRolesCommand owner) {
             super(owner);
-
-            addOption(builder -> builder.name("message-id")
-                    .description("Идентификатор сообщения, с которого нужно убрать все реакции-роли.")
-                    .required(true)
-                    .type(ApplicationCommandOption.Type.STRING.getValue()));
         }
 
         @Override

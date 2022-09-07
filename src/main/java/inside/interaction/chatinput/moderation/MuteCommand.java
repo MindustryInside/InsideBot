@@ -20,6 +20,7 @@ import inside.data.schedule.Trigger;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.PermissionCategory;
 import inside.interaction.annotation.ChatInputCommand;
+import inside.interaction.annotation.Option;
 import inside.service.MessageService;
 import inside.service.job.UnmuteJob;
 import inside.util.MessageUtil;
@@ -36,6 +37,9 @@ import java.util.UUID;
 import java.util.function.Predicate;
 
 @ChatInputCommand(value = "commands.moderation.mute", permissions = PermissionCategory.MODERATOR)
+@Option(name = "target", type = Type.USER, required = true)
+@Option(name = "reason", type = Type.STRING, maxValue = AuditLogEntry.MAX_REASON_LENGTH)
+@Option(name = "interval", type = Type.STRING)
 public class MuteCommand extends ModerationCommand {
 
     private final ReactiveScheduler reactiveScheduler;
@@ -43,13 +47,6 @@ public class MuteCommand extends ModerationCommand {
     public MuteCommand(MessageService messageService, EntityRetriever entityRetriever, ReactiveScheduler reactiveScheduler) {
         super(messageService, entityRetriever);
         this.reactiveScheduler = reactiveScheduler;
-
-        addOption("target", s -> s.type(Type.USER.getValue()).required(true));
-
-        addOption("reason", s -> s.type(Type.STRING.getValue())
-                .maxLength(AuditLogEntry.MAX_REASON_LENGTH));
-
-        addOption("interval", s -> s.type(Type.STRING.getValue()));
     }
 
     @Override

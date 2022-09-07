@@ -18,12 +18,11 @@ public abstract class InteractionGuildCommand extends InteractionCommand {
         Member author = env.event().getInteraction().getMember().orElseThrow();
 
         return author.getBasePermissions()
-                .map(set -> getPermissions().contains(PermissionCategory.EVERYONE) ||
-                        getPermissions().contains(PermissionCategory.MODERATOR) && (set.contains(Permission.BAN_MEMBERS) ||
+                .map(set -> info.permissions().contains(PermissionCategory.EVERYONE) ||
+                        info.permissions().contains(PermissionCategory.MODERATOR) && (set.contains(Permission.BAN_MEMBERS) ||
                                 set.contains(Permission.KICK_MEMBERS) || set.contains(Permission.MODERATE_MEMBERS)) ||
-                        getPermissions().contains(PermissionCategory.ADMIN) && set.contains(Permission.ADMINISTRATOR))
+                        info.permissions().contains(PermissionCategory.ADMIN) && set.contains(Permission.ADMINISTRATOR))
                 .filter(Boolean::booleanValue)
-                .switchIfEmpty(messageService.err(env, "Вы не можете использовать эту команду, " +
-                        "так как у вас недостаточно прав").thenReturn(false));
+                .switchIfEmpty(messageService.err(env, "common.not-enough-permissions").thenReturn(false));
     }
 }

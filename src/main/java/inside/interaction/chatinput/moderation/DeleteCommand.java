@@ -8,6 +8,7 @@ import inside.data.EntityRetriever;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.PermissionCategory;
 import inside.interaction.annotation.ChatInputCommand;
+import inside.interaction.annotation.Option;
 import inside.service.MessageService;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
@@ -18,17 +19,13 @@ import java.time.Duration;
 import java.time.Instant;
 
 @ChatInputCommand(value = "commands.moderation.delete", permissions = PermissionCategory.MODERATOR)
+@Option(name = "count", type = Type.INTEGER, minValue = 1, maxValue = DeleteCommand.MAX_DELETED_MESSAGES, required = true)
 public class DeleteCommand extends ModerationCommand {
 
-    private static final int MAX_DELETED_MESSAGES = 100;
+    protected static final int MAX_DELETED_MESSAGES = 100;
 
     public DeleteCommand(MessageService messageService, EntityRetriever entityRetriever) {
         super(messageService, entityRetriever);
-
-        addOption("count", s -> s.type(Type.INTEGER.getValue())
-                .required(true)
-                .minValue(1d)
-                .maxValue((double) MAX_DELETED_MESSAGES));
     }
 
     @Override

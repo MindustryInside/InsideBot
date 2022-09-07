@@ -4,15 +4,19 @@ import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.command.ApplicationCommandInteractionOptionValue;
 import discord4j.core.object.command.ApplicationCommandOption.Type;
 import discord4j.core.object.entity.Message;
-import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.annotation.ChatInputCommand;
+import inside.interaction.annotation.Choice;
+import inside.interaction.annotation.Option;
 import inside.interaction.chatinput.InteractionCommand;
 import inside.service.MessageService;
 import inside.util.MessageUtil;
 import org.reactivestreams.Publisher;
 
-@ChatInputCommand(value = "commands.common.r")
+@ChatInputCommand("commands.common.r")
+@Option(name = "type", type = Type.STRING, required = true,
+        choices = {@Choice(name = "English", value = "en"), @Choice(name = "Russian", value = "ru")}) // TODO перевести
+@Option(name = "text", type = Type.STRING, required = true)
 public class TextLayoutCommand extends InteractionCommand {
     static final String[] engPattern;
     static final String[] rusPattern;
@@ -40,19 +44,6 @@ public class TextLayoutCommand extends InteractionCommand {
 
     public TextLayoutCommand(MessageService messageService) {
         super(messageService);
-
-        addOption("type", s -> s.type(Type.STRING.getValue())
-                .required(true)
-                .addChoice(ApplicationCommandOptionChoiceData.builder()
-                        .name("Английская")
-                        .value("en")
-                        .build())
-                .addChoice(ApplicationCommandOptionChoiceData.builder()
-                        .name("Русская")
-                        .value("ru")
-                        .build()));
-
-        addOption("text", s -> s.type(Type.STRING.getValue()).required(true));
     }
 
     @Override

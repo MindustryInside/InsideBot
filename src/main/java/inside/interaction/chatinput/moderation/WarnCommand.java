@@ -22,6 +22,7 @@ import inside.data.schedule.Trigger;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.PermissionCategory;
 import inside.interaction.annotation.ChatInputCommand;
+import inside.interaction.annotation.Option;
 import inside.service.MessageService;
 import inside.service.job.UnmuteJob;
 import inside.util.MessageUtil;
@@ -39,6 +40,10 @@ import java.util.function.Predicate;
 import static inside.data.entity.ModerationAction.timeoutLimit;
 
 @ChatInputCommand(value = "commands.moderation.warn", permissions = PermissionCategory.MODERATOR)
+@Option(name = "target", type = Type.USER, required = true)
+@Option(name = "reason", type = Type.STRING, maxLength = AuditLogEntry.MAX_REASON_LENGTH)
+@Option(name = "interval", type = Type.STRING)
+@Option(name = "count", type = Type.INTEGER, minValue = 1, maxValue = Integer.MAX_VALUE)
 public class WarnCommand extends ModerationCommand {
 
     private final ReactiveScheduler reactiveScheduler;
@@ -47,17 +52,6 @@ public class WarnCommand extends ModerationCommand {
                        ReactiveScheduler reactiveScheduler) {
         super(messageService, entityRetriever);
         this.reactiveScheduler = reactiveScheduler;
-
-        addOption("target", s -> s.type(Type.USER.getValue()).required(true));
-
-        addOption("reason", s -> s.type(Type.STRING.getValue())
-                .minLength(AuditLogEntry.MAX_REASON_LENGTH));
-
-        addOption("interval", s -> s.type(Type.STRING.getValue()));
-
-        addOption("count", s -> s.type(Type.INTEGER.getValue())
-                .minValue(1d)
-                .maxValue((double) Integer.MAX_VALUE));
     }
 
     @Override

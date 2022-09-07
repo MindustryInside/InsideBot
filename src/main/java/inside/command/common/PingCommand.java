@@ -18,10 +18,9 @@ public class PingCommand extends Command {
     @Override
     public Publisher<?> execute(CommandEnvironment env, CommandInteraction interaction) {
         long start = System.currentTimeMillis();
-        return env.channel().createMessage(messageService.get(env.context(), "commands.common.ping.testing"))
+        return env.channel().createMessage(messageService.get(null,"inside.static.wait"))
                 .flatMap(message -> message.edit(MessageEditSpec.builder()
-                        .contentOrNull(messageService.format(env.context(), "commands.common.ping.completed",
-                                System.currentTimeMillis() - start))
+                        .contentOrNull(String.format(messageService.get(null,"commands.ping.message"), System.currentTimeMillis() - start))
                         .build()))
                 .then();
     }

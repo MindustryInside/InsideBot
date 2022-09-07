@@ -8,8 +8,10 @@ import inside.data.EntityRetriever;
 import inside.interaction.ChatInputInteractionEnvironment;
 import inside.interaction.PermissionCategory;
 import inside.interaction.annotation.ChatInputCommand;
+import inside.interaction.annotation.Option;
 import inside.interaction.annotation.Subcommand;
 import inside.interaction.chatinput.InteractionSubcommand;
+import inside.interaction.chatinput.InteractionSubcommandGroup;
 import inside.service.MessageService;
 import inside.util.DurationFormat;
 import inside.util.MessageUtil;
@@ -21,7 +23,7 @@ import java.time.temporal.TemporalAmount;
 import java.util.function.Function;
 
 @ChatInputCommand(value = "commands.common.activity", permissions = PermissionCategory.ADMIN)
-public class ActivityCommand extends ConfigOwnerCommand {
+public class ActivityCommand extends InteractionSubcommandGroup {
 
     public ActivityCommand(MessageService messageService, EntityRetriever entityRetriever) {
         super(messageService, entityRetriever);
@@ -33,12 +35,11 @@ public class ActivityCommand extends ConfigOwnerCommand {
     }
 
     @Subcommand("enable")
+    @Option(name = "value", type = Type.BOOLEAN)
     protected static class EnableSubcommand extends InteractionSubcommand<ActivityCommand> {
 
         protected EnableSubcommand(ActivityCommand owner) {
             super(owner);
-
-            addOption("value", s -> s.type(Type.BOOLEAN.getValue()));
         }
 
         @Override
@@ -63,12 +64,11 @@ public class ActivityCommand extends ConfigOwnerCommand {
     }
 
     @Subcommand("active-role")
+    @Option(name = "value", type = Type.ROLE)
     protected static class ActiveRoleSubcommand extends InteractionSubcommand<ActivityCommand> {
 
         protected ActiveRoleSubcommand(ActivityCommand owner) {
             super(owner);
-
-            addOption("value", s -> s.type(Type.ROLE.getValue()));
         }
 
         @Override
@@ -94,12 +94,11 @@ public class ActivityCommand extends ConfigOwnerCommand {
     }
 
     @Subcommand("message-threshold")
+    @Option(name = "value", type = Type.INTEGER, minValue = 0, maxValue = Integer.MAX_VALUE)
     protected static class MessageThresholdSubcommand extends InteractionSubcommand<ActivityCommand> {
 
         protected MessageThresholdSubcommand(ActivityCommand owner) {
             super(owner);
-
-            addOption("value", s -> s.type(Type.INTEGER.getValue()).minValue(0d).maxValue((double) Integer.MAX_VALUE));
         }
 
         @Override
@@ -123,12 +122,11 @@ public class ActivityCommand extends ConfigOwnerCommand {
     }
 
     @Subcommand("counting-interval")
+    @Option(name = "value", type = Type.STRING)
     protected static class CountingIntervalSubcommand extends InteractionSubcommand<ActivityCommand> {
 
         protected CountingIntervalSubcommand(ActivityCommand owner) {
             super(owner);
-
-            addOption("value", s -> s.type(Type.STRING.getValue()));
         }
 
         @Override
